@@ -1,0 +1,36 @@
+# Ignorar core de WordPress
+/wp-admin/
+/wp-includes/
+
+# Ignorar contenido subido por usuarios
+/wp-content/uploads/
+
+# Ignorar themes que no sean el child nuestro
+/wp-content/themes/*
+!/wp-content/themes/printing-services-child/
+
+# Ignorar plugins que no sean el nuestro
+/wp-content/plugins/*
+!/wp-content/plugins/ge-webtoprint-calculator/
+
+# Ignorar archivos de configuración sensibles
+wp-config.php
+wp-config-local.php
+
+# Ignorar backups y archivos temporales
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.old
+*.zip
+
+# Ignorar cosas de sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar carpetas de IDEs/editores
+.vscode/
+.idea/
+*.code-workspace
