@@ -55,3 +55,36 @@ function ge_wtp_init() {
     // require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-pricing-engine.php';
 }
 add_action( 'init', 'ge_wtp_init', 20 );
+
+/**
+ * Registrar menú de administración Web-to-Print.
+ */
+function ge_wtp_register_admin_menu() {
+    add_menu_page(
+        __( 'GE Web-to-Print', 'ge-webtoprint' ), // Título de la página
+        __( 'Web-to-Print', 'ge-webtoprint' ),    // Título del menú
+        'manage_options',                         // Capability
+        'ge-webtoprint',                          // Slug del menú
+        'ge_wtp_render_admin_page',              // Callback
+        'dashicons-printer'                       // Icono
+    );
+}
+add_action( 'admin_menu', 'ge_wtp_register_admin_menu' );
+
+/**
+ * Renderizar la página principal del panel Web-to-Print.
+ */
+function ge_wtp_render_admin_page() {
+    ?>
+    <div class="wrap">
+        <h1><?php esc_html_e( 'GE Web-to-Print · Panel', 'ge-webtoprint' ); ?></h1>
+        <p>
+            <?php esc_html_e(
+                'Plugin base funcionando. Aquí más adelante vamos a configurar estados de pedido y calculadora de costos.',
+                'ge-webtoprint'
+            ); ?>
+        </p>
+    </div>
+    <?php
+}
+
