@@ -86,3 +86,37 @@ Tareas:
   - [ ] Alta de pedido.
   - [ ] Cambio de estado.
   - [ ] Emails básicos de WooCommerce.
+
+### 2025-12-04 – WordPress local + PrintSpace + Header GraphExpress
+
+**Hecho hoy**
+
+- [x] Descomprimir theme PrintSpace comprado y copiarlo a:
+  - [x] `wp-content/themes/printspace` (repo).
+  - [x] `/var/www/html/wp-content/themes/printspace` (WordPress local).
+- [x] Activar PrintSpace como theme en el entorno local.
+- [x] Instalar plugins incluidos con el theme (haru-printspace, revslider, etc.).
+- [x] Instalar WooCommerce manualmente y ajustar permisos de `/var/www/html` para que WordPress pueda escribir sin FTP.
+- [x] Añadir `define('FS_METHOD', 'direct');` a `wp-config.php` para usar el método de escritura `direct`.
+- [x] Instalar Elementor y otros plugins necesarios desde el panel sin pedir FTP.
+- [x] Crear child theme `graphexpress-child` en el repo (style.css, functions.php, front-page.php).
+- [x] Commitear y pushear la rama `feature/graphexpress-child-home` con el child theme.
+- [x] Crear header `Main Header GraphExpress` con Header Builder (Haru) y comprobar que se ve en su propia URL de preview.
+
+**Pendiente / siguiente sesión**
+
+- [ ] Asignar correctamente `Main Header GraphExpress` como header global:
+  - [ ] Verificar opciones de `Header Builder Type` y selección de header en el Customizer.
+  - [ ] Verificar metabox de asignación en el CPT `haru_header` (Display On: Entire Site / Front Page).
+  - [ ] Revisar metabox de Header en la página de inicio para que no sobrescriba el global.
+- [ ] Investigar por qué el widget de logo no persiste la imagen (SVG/PNG) en el header:
+  - [ ] Probar con imagen PNG simple.
+  - [ ] Revisar si el widget usa “Site Logo” o imagen fija.
+  - [ ] Documentar la solución en el runbook.
+- [ ] Integrar y probar el child theme `graphexpress-child` en el WP local:
+  - [ ] Activar el child una vez estable el header.
+  - [ ] Comprobar que `front-page.php` se renderiza correctamente como home.
+- [ ] Decidir el uso de plugins “pro” (drag-and-drop-file-uploads-wc-pro, wc-designer-pro):
+  - [ ] Mantenerlos desactivados si no son críticos en esta fase.
+  - [ ] Documentar requisitos (simplexml, WooCommerce inicializado, etc.) si se van a usar.
+
