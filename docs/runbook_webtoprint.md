@@ -167,3 +167,78 @@ Versión inicial (MVP) del sitio debe lograr:
 - Mensajes de commit claros (en español o inglés, pero descriptivos).
 - **Nunca** tocar el panel Ferozo ni otros sitios (Tickex, AAJC, Graphexpress, etc.) sin backup previo.
 - Documentar cualquier cambio relevante en este runbook y/o en `checklist.md`.
+
+## 2025-12-04 – Entorno local WordPress (PrintSpace) y header GraphExpress
+
+### Contexto general
+
+- Se trabaja con un WordPress local en WSL/Ubuntu con DocumentRoot en `/var/www/html`.
+- El repositorio `REPO-GRAPHEXPRESS` solo versiona `wp-content` (plugins, themes, etc.), no el core de WordPress ni `wp-config.php`.
+- La rama activa para esta fase es `feature/graphexpress-child-home`.
+
+### Theme PrintSpace y plugins
+
+- Se descomprime el theme comprado `printspace-141` en `F:\GIT\theme\printspace-141` (`/mnt/f/GIT/theme/printspace-141`).
+- El ZIP principal `printspace.zip` se extrae en `_printspace_theme/printspace` y desde ahí se copia la carpeta `printspace` a:
+  - `wp-content/themes/printspace` dentro del repo.
+  - `/var/www/html/wp-content/themes/printspace` en el WordPress local.
+- Se activa el theme PrintSpace en `http://localhost/wp-admin/`.
+- Se instalan plugins incluidos con el theme:
+  - `haru-printspace` (plugin del theme).
+  - `revslider`.
+  - `drag-and-drop-file-uploads-wc-pro` (más tarde desactivado por errores).
+  - `wc-designer-pro` (da error si falta `simplexml`).
+- Se instala WooCommerce manualmente:
+  - Descargar ZIP oficial a `/tmp`.
+  - Descomprimir en `/var/www/html/wp-content/plugins/woocommerce`.
+  - Ajustar permisos y propietario a `www-data:www-data`.
+- Se corrige el pedido de FTP del instalador de plugins:
+  - Propietario recursivo de `/var/www/html` → `www-data:www-data`.
+  - Directorios: `chmod 755`, archivos: `chmod 644`.
+  - Se añade `define('FS_METHOD', 'direct');` en `wp-config.php`.
+- A partir de entonces, la instalación de plugins desde el panel de WordPress ya no solicita credenciales FTP.
+
+### Child theme graphexpress-child y Git
+
+- Codex crea un nuevo child theme `graphexpress-child` dentro de `wp-content/themes` con:
+  - `style.css` apuntando al parent `printspace`.
+  - `functions.php` encolando los estilos del parent + child.
+  - `front-page.php` con un layout base para la home de GraphExpress.
+- Se actualiza `.gitignore` para permitir versionar el child theme.
+- En la rama `feature/graphexpress-child-home` se commitean:
+  - `.gitignore` actualizado.
+  - `wp-content/themes/graphexpress-child/{style.css,functions.php,front-page.php}`.
+- Se hace push a remoto:
+  - `git push -u origin feature/graphexpress-child-home`.
+
+### Header Builder y logo GraphExpress
+
+- Con el plugin `haru-printspace` activo, el theme ofrece gestionar el header vía Header & Footer Builder.
+- Se crea un header nuevo tipo `Header`:
+  - Título: `Main Header GraphExpress`.
+  - Editable con Elementor.
+- El header se visualiza correctamente en su URL interna:
+  - `http://localhost/index.php/haru_header/main-header-graphexpress/`.
+- Desde el Customizer se intenta:
+  - Cambiar `Header Builder Type` a modo “Header Builder”.
+  - Asignar el header creado, pero al experimentar con opciones el header del sitio llega a desaparecer.
+  - Se usa “Reset selection” y vuelve el header por defecto del theme (PrintSpace), dejando el header custom creado pero sin asignar globalmente.
+- Se sube el logo de GraphExpress (SVG + PNG) a la librería de medios:
+  - Ambos se ven bien en Media Library.
+  - En el Header Builder, al elegir el logo en el widget correspondiente, la imagen parece no persistir al guardar (se “borra” la selección).
+- Pendiente:
+  - Revisar por qué el widget de logo no guarda la imagen (posible conflicto de configuración del builder, uso del “Site Logo” vs imagen directa, o sobreescritura por opciones globales del theme).
+  - Asegurar que el CPT `haru_header` tenga asignación “Display On: Entire Site” y que el Customizer apunte a `Main Header GraphExpress` como header global.
+
+### Próximos pasos sugeridos
+
+1. Desde Codex:
+   - Revisar el child theme `graphexpress-child` y consolidar el layout de `front-page.php` según la estructura definida para GraphExpress (hero, servicios, proceso, CTA).
+   - Asegurar que el child se integra correctamente con PrintSpace (estilos, hooks, templates).
+2. En WordPress local:
+   - Resolver la asignación de `Main Header GraphExpress` como header global (Header Builder + Customizer + metaboxes de páginas).
+   - Investigar el comportamiento del widget de logo y documentar la solución (PNG vs SVG, uso de “Site Identity”, etc.).
+3. Plugins opcionales/conflictivos:
+   - Evaluar si `drag-and-drop-file-uploads-wc-pro` y `wc-designer-pro` son realmente necesarios en esta etapa.
+   - Si no lo son, mantenerlos desactivados en el entorno de desarrollo y documentar esa decisión en el runbook.
+
