@@ -34,3 +34,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.code-workspace
+
+# --- Allow GraphExpress child theme to be versioned ---
+!wp-content/themes/graphexpress-child/
+!wp-content/themes/graphexpress-child/**
