@@ -5,6 +5,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class GE_WTP_Catalog {
+    const BNA_SOURCE_URL = 'https://www.bna.com.ar/Personas';
+    const BNA_CRON_HOOK = 'ge_wtp_refresh_bna_rate';
+
     public static function products() {
         return array(
             'adhesivo' => array(
@@ -101,6 +104,117 @@ final class GE_WTP_Catalog {
 
     public static function exchange_updated_at() {
         return (string) get_option( 'ge_wtp_bna_rate_updated_at', '' );
+    }
+
+    public static function cron_schedules( $schedules ) {
+        $schedules['ge_every_four_hours'] = array(
+            'interval' => 4 * HOUR_IN_SECONDS,
+            'display'  => 'Cada cuatro horas',
+        );
+
+        return $schedules;
+    }
+
+    public static function ensure_exchange_schedule() {
+        if ( ! wp_next_scheduled( self::BNA_CRON_HOOK ) ) {
+            wp_schedule_event( time() + MINUTE_IN_SECONDS, 'ge_every_four_hours', self::BNA_CRON_HOOK );
+        }
+    }
+
+    public static function clear_exchange_schedule() {
+        wp_clear_scheduled_hook( self::BNA_CRON_HOOK );
+    }
+
+    public static function refresh_exchange_rate( $force = false ) {
+        if ( ! $force && get_transient( 'ge_wtp_bna_refresh_lock' ) ) {
+            return self::exchange_rate();
+        }
+
+        set_transient( 'ge_wtp_bna_refresh_lock', '1', MINUTE_IN_SECONDS );
+        $response = wp_remote_get(
+            self::BNA_SOURCE_URL,
+            array(
+                'timeout'     => 20,
+                'redirection' => 3,
+                'user-agent'  => 'GraphExpress/1.1; ' . home_url( '/' ),
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            update_option( 'ge_wtp_bna_last_error', $response->get_error_message(), false );
+            delete_transient( 'ge_wtp_bna_refresh_lock' );
+            return $response;
+        }
+
+        $status = (int) wp_remote_retrieve_response_code( $response );
+        $body = (string) wp_remote_retrieve_body( $response );
+        if ( 200 !== $status || '' === $body ) {
+            $error = new WP_Error( 'bna_http_error', 'Banco Nación respondió HTTP ' . $status . '.' );
+            update_option( 'ge_wtp_bna_last_error', $error->get_error_message(), false );
+            delete_transient( 'ge_wtp_bna_refresh_lock' );
+            return $error;
+        }
+
+        $quote = self::parse_bna_billet_quote( $body );
+        if ( is_wp_error( $quote ) ) {
+            update_option( 'ge_wtp_bna_last_error', $quote->get_error_message(), false );
+            delete_transient( 'ge_wtp_bna_refresh_lock' );
+            return $quote;
+        }
+
+        update_option( 'ge_wtp_bna_sell_rate', $quote['sell'], false );
+        update_option( 'ge_wtp_bna_rate_label', 'Dólar billete vendedor Banco Nación', false );
+        update_option( 'ge_wtp_bna_rate_updated_at', $quote['updated_at'], false );
+        update_option( 'ge_wtp_bna_source_date', $quote['source_date'], false );
+        delete_option( 'ge_wtp_bna_last_error' );
+        delete_transient( 'ge_wtp_bna_refresh_lock' );
+
+        return $quote['sell'];
+    }
+
+    public static function parse_bna_billet_quote( $html ) {
+        if ( ! class_exists( 'DOMDocument' ) ) {
+            return new WP_Error( 'bna_dom_missing', 'La extensión DOM de PHP no está disponible.' );
+        }
+
+        $previous = libxml_use_internal_errors( true );
+        $document = new DOMDocument();
+        $loaded = $document->loadHTML( '<?xml encoding="utf-8" ?>' . (string) $html );
+        libxml_clear_errors();
+        libxml_use_internal_errors( $previous );
+        if ( ! $loaded ) {
+            return new WP_Error( 'bna_invalid_html', 'No se pudo interpretar la página del Banco Nación.' );
+        }
+
+        $xpath = new DOMXPath( $document );
+        $rows = $xpath->query( '//*[@id="billetes"]//tr[td[contains(normalize-space(.), "Dolar U.S.A")]]' );
+        if ( ! $rows || 0 === $rows->length ) {
+            return new WP_Error( 'bna_quote_missing', 'No se encontró la cotización del dólar billete.' );
+        }
+
+        $cells = $xpath->query( './td', $rows->item( 0 ) );
+        if ( ! $cells || $cells->length < 3 ) {
+            return new WP_Error( 'bna_sell_missing', 'No se encontró el valor vendedor del Banco Nación.' );
+        }
+
+        $raw_sell = preg_replace( '/[^0-9,.]/', '', $cells->item( 2 )->textContent );
+        if ( false !== strpos( $raw_sell, ',' ) ) {
+            $raw_sell = str_replace( '.', '', $raw_sell );
+            $raw_sell = str_replace( ',', '.', $raw_sell );
+        }
+        $sell = (float) $raw_sell;
+        if ( $sell < 500 || $sell > 5000 ) {
+            return new WP_Error( 'bna_sell_invalid', 'El valor vendedor recibido está fuera del rango de seguridad.' );
+        }
+
+        $date_nodes = $xpath->query( '//*[@id="billetes"]//th[contains(concat(" ", normalize-space(@class), " "), " fechaCot ")]' );
+        $source_date = $date_nodes && $date_nodes->length ? trim( $date_nodes->item( 0 )->textContent ) : wp_date( 'd/m/Y' );
+
+        return array(
+            'sell'        => $sell,
+            'source_date' => $source_date,
+            'updated_at'  => current_time( 'mysql' ),
+        );
     }
 
     public static function ars_to_usd( $amount, $rate = null ) {

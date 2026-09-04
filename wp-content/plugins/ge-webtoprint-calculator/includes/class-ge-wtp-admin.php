@@ -9,6 +9,7 @@ final class GE_WTP_Admin {
         add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
         add_action( 'admin_post_ge_wtp_save_settings', array( __CLASS__, 'save_settings' ) );
         add_action( 'admin_post_ge_wtp_sync_products', array( __CLASS__, 'sync_products' ) );
+        add_action( 'admin_post_ge_wtp_refresh_bna_rate', array( __CLASS__, 'refresh_bna_rate' ) );
     }
 
     public static function register_menu() {
@@ -51,6 +52,12 @@ final class GE_WTP_Admin {
                     </table>
                     <?php submit_button( 'Guardar cotización' ); ?>
                 </form>
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                    <input type="hidden" name="action" value="ge_wtp_refresh_bna_rate">
+                    <?php wp_nonce_field( 'ge_wtp_refresh_bna_rate' ); ?>
+                    <?php submit_button( 'Actualizar ahora desde Banco Nación', 'secondary' ); ?>
+                </form>
+                <p><small>Actualización automática cada cuatro horas. Si Banco Nación no responde o devuelve un valor inválido, se conserva la última cotización válida.</small></p>
             </div>
             <div style="max-width:760px;background:#fff;border:1px solid #dcdcde;padding:24px;margin-top:18px;">
                 <h2>Catálogo Markcom</h2>
@@ -92,6 +99,18 @@ final class GE_WTP_Admin {
         check_admin_referer( 'ge_wtp_sync_products' );
         GE_WTP_Catalog::sync_products();
         wp_safe_redirect( admin_url( 'admin.php?page=ge-webtoprint&updated=1' ) );
+        exit;
+    }
+
+    public static function refresh_bna_rate() {
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_die( 'Acceso denegado.', 403 );
+        }
+        check_admin_referer( 'ge_wtp_refresh_bna_rate' );
+
+        $result = GE_WTP_Catalog::refresh_exchange_rate( true );
+        $status = is_wp_error( $result ) ? 'bna_error' : 'bna_updated';
+        wp_safe_redirect( add_query_arg( $status, '1', admin_url( 'admin.php?page=ge-webtoprint' ) ) );
         exit;
     }
 }

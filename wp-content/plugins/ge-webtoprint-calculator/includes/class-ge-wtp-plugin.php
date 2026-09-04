@@ -16,9 +16,12 @@ final class GE_WTP_Plugin {
     }
 
     private function __construct() {
+        add_filter( 'cron_schedules', array( 'GE_WTP_Catalog', 'cron_schedules' ) );
+        add_action( GE_WTP_Catalog::BNA_CRON_HOOK, array( 'GE_WTP_Catalog', 'refresh_exchange_rate' ) );
         add_action( 'init', array( $this, 'load_textdomain' ), 1 );
         add_action( 'init', array( $this, 'register_order_statuses' ), 5 );
         add_action( 'init', array( $this, 'maybe_upgrade' ), 20 );
+        add_action( 'init', array( 'GE_WTP_Catalog', 'ensure_exchange_schedule' ), 30 );
         add_filter( 'wc_order_statuses', array( $this, 'add_order_statuses' ) );
 
         GE_WTP_Portal::init();
@@ -37,7 +40,13 @@ final class GE_WTP_Plugin {
         self::install_role_and_page();
         GE_WTP_Documents::ensure_private_directory();
         update_option( 'ge_wtp_needs_product_sync', 'yes', false );
+        GE_WTP_Catalog::ensure_exchange_schedule();
+        wp_schedule_single_event( time() + 10, GE_WTP_Catalog::BNA_CRON_HOOK );
         flush_rewrite_rules();
+    }
+
+    public static function deactivate() {
+        GE_WTP_Catalog::clear_exchange_schedule();
     }
 
     public function maybe_upgrade() {
