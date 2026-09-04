@@ -118,6 +118,7 @@ final class GE_WTP_Catalog {
         }
 
         foreach ( self::products() as $key => $data ) {
+            $sku = 'MKC-' . strtoupper( $key );
             $ids = get_posts(
                 array(
                     'post_type'      => 'product',
@@ -129,7 +130,12 @@ final class GE_WTP_Catalog {
                 )
             );
 
-            $product = $ids ? wc_get_product( $ids[0] ) : new WC_Product_Simple();
+            $product_id = $ids ? (int) $ids[0] : 0;
+            if ( ! $product_id ) {
+                $product_id = (int) wc_get_product_id_by_sku( $sku );
+            }
+
+            $product = $product_id ? wc_get_product( $product_id ) : new WC_Product_Simple();
             if ( ! $product ) {
                 $product = new WC_Product_Simple();
             }
@@ -142,7 +148,9 @@ final class GE_WTP_Catalog {
             $product->set_short_description( $data['category'] );
             $product->set_virtual( true );
             $product->set_regular_price( (string) min( $data['prices'] ) );
-            $product->set_sku( 'MKC-' . strtoupper( $key ) );
+            if ( $product->get_sku() !== $sku ) {
+                $product->set_sku( $sku );
+            }
             $product_id = $product->save();
 
             update_post_meta( $product_id, '_ge_markcom_key', $key );
