@@ -1,0 +1,26 @@
+.ge-digital-calculator { margin: 28px 0; padding: clamp(22px, 4vw, 34px); border: 1px solid #e1e4eb; border-radius: 22px; background: #f7f8fb; color: #171b2d; }
+.ge-digital-heading span { color: #6d45ef; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.ge-digital-heading h2 { margin: 6px 0 8px; font-size: 27px; letter-spacing: -.04em; }
+.ge-digital-heading p { margin: 0 0 24px; color: #697083; font-size: 12px; line-height: 1.55; }
+.ge-digital-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.ge-digital-field { margin: 0 !important; display: block; color: #697083; font-size: 11px; font-weight: 800; }
+.ge-digital-field > span { display: block; margin-bottom: 6px; }
+.ge-digital-field select, .ge-digital-field input[type="number"] { width: 100%; height: 45px; margin: 0; padding: 0 12px; border: 1px solid #d8dce5; border-radius: 11px; color: #171b2d; background: #fff; font: inherit; }
+.ge-field-checkbox { grid-column: 1 / -1; padding: 14px 16px; display: flex; align-items: center; gap: 11px; border: 1px solid #ded8fa; border-radius: 12px; background: #f0ecff; cursor: pointer; }
+.ge-field-checkbox input { width: 18px; height: 18px; margin: 0; }
+.ge-field-checkbox > span { margin: 0; color: #171b2d; }
+.ge-field-checkbox strong, .ge-field-checkbox small { display: block; }
+.ge-field-checkbox small { margin-top: 3px; color: #697083; font-weight: 500; }
+.ge-digital-upload { margin-top: 16px; padding: 15px; display: block; border: 1px dashed #bfc4d0; border-radius: 12px; background: #fff; }
+.ge-digital-upload > span, .ge-digital-upload small { display: block; }
+.ge-digital-upload > span { margin-bottom: 8px; font-size: 11px; font-weight: 850; }
+.ge-digital-upload small { margin-top: 7px; color: #697083; font-size: 10px; }
+.ge-digital-total { margin-top: 20px; padding: 20px; display: grid; grid-template-columns: 1fr auto; gap: 20px; border-radius: 15px; color: #fff; background: #171b2d; }
+.ge-digital-total small, .ge-digital-total span, .ge-digital-total strong { display: block; }
+.ge-digital-total small { color: rgba(255,255,255,.55); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.ge-digital-total strong { margin-top: 4px; font-size: 20px; }
+.ge-digital-total span { margin-top: 4px; color: rgba(255,255,255,.65); font-size: 10px; }
+.ge-digital-warning { margin: 12px 0; color: #8b5a00; font-size: 11px; }
+.ge-digital-submit { padding: 14px 18px; display: block; border-radius: 11px; color: #fff !important; background: #6d45ef; text-align: center; font-size: 12px; font-weight: 850; }
+.ge-digital-notes { margin: 20px 0 0; padding-left: 18px; color: #697083; font-size: 10px; line-height: 1.65; }
+@media (max-width: 520px) { .ge-digital-fields { grid-template-columns: 1fr; } .ge-field-checkbox { grid-column: auto; } .ge-digital-total { grid-template-columns: 1fr; } }
