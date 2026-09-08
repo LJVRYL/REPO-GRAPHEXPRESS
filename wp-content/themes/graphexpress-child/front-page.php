@@ -31,6 +31,7 @@ $portal_page = get_page_by_path('cliente-markcom');
 $portal_url = $portal_page ? get_permalink($portal_page) : home_url('/cliente-markcom/');
 $shop_url = graphexpress_shop_url();
 $store_is_public = graphexpress_store_is_public();
+$careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url('/trabaja-con-nosotros/');
 ?>
 <!doctype html>
 <html <?php language_attributes(); ?>>
@@ -65,9 +66,11 @@ $store_is_public = graphexpress_store_is_public();
 
         <nav class="gx-nav" id="gx-navigation" aria-label="Navegación principal">
             <a href="<?php echo esc_url($shop_url); ?>"><?php echo $store_is_public ? 'Tienda' : 'Tienda · Próximamente'; ?></a>
+            <a href="<?php echo esc_url(class_exists('GE_WTP_Knowledge_Base') ? GE_WTP_Knowledge_Base::archive_url() : home_url('/guias/')); ?>">Guías</a>
             <a href="#servicios">Servicios</a>
             <a href="#trabajos">Trabajos</a>
             <a href="#proceso">Cómo trabajamos</a>
+            <a href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a>
             <a href="#contacto">Contacto</a>
         </nav>
 
@@ -254,6 +257,8 @@ $store_is_public = graphexpress_store_is_public();
             <span class="gx-contact-word">EXPRESS</span>
         </div>
     </section>
+
+    <?php if ( class_exists( 'GE_WTP_Newsletter' ) ) { echo GE_WTP_Newsletter::signup_block(); } ?>
 </main>
 
 <footer class="gx-footer">
@@ -263,7 +268,7 @@ $store_is_public = graphexpress_store_is_public();
             <p>Soluciones gráficas integrales para empresas, instituciones y comercios.</p>
         </div>
         <div><h3>Servicios</h3><a href="#servicios">Offset & digital</a><a href="#servicios">Gran formato</a><a href="#servicios">Gráfica editorial</a></div>
-        <div><h3>Contacto</h3><a href="tel:+5491151393899">+54 9 11 5139-3899</a><a href="mailto:imprentagraphexpress@gmail.com">Enviar un email</a><span>Microcentro, CABA</span></div>
+        <div><h3>Contacto</h3><a href="tel:+5491151393899">+54 9 11 5139-3899</a><a href="mailto:imprentagraphexpress@gmail.com">Enviar un email</a><a href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a><span>Microcentro, CABA</span></div>
         <div><h3>Tienda & clientes</h3><a href="<?php echo esc_url($shop_url); ?>"><?php echo $store_is_public ? 'Ver productos' : 'Tienda próximamente'; ?></a><a href="<?php echo esc_url($portal_url); ?>">Ingresar al portal</a><a href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Solicitar cotización</a></div>
     </div>
     <div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> Graph Express</span><span>Hecho para imprimir grandes ideas.</span></div>

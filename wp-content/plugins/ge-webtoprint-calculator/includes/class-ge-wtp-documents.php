@@ -67,7 +67,7 @@ final class GE_WTP_Documents {
             if ( UPLOAD_ERR_NO_FILE === (int) $file['error'] ) {
                 continue;
             }
-            if ( UPLOAD_ERR_OK !== (int) $file['error'] || (int) $file['size'] > 20 * MB_IN_BYTES ) {
+            if ( UPLOAD_ERR_OK !== (int) $file['error'] || (int) $file['size'] > 1024 * MB_IN_BYTES ) {
                 continue;
             }
 

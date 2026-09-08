@@ -67,8 +67,16 @@ function graphexpress_shop_url() {
 /**
  * La tienda puede mantenerse privada mientras se completa el catálogo.
  */
+function graphexpress_is_local_site() {
+    $host = strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST));
+    return in_array($host, array('localhost', '127.0.0.1', '::1'), true) || 'local' === wp_get_environment_type();
+}
+
 function graphexpress_store_is_public() {
-    return 'public' === (string) get_option('graphexpress_store_visibility', 'public');
+    if (graphexpress_is_local_site()) {
+        return true;
+    }
+    return 'public' === (string) get_option('graphexpress_store_visibility', 'private');
 }
 
 function graphexpress_hide_storefront_until_launch() {

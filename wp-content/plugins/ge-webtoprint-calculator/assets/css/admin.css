@@ -1,0 +1,95 @@
+.ge-admin-wrap{max-width:1420px;margin:24px 28px 0 8px;color:#1e1b31}
+.ge-admin-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:10px 0 28px}
+.ge-admin-heading span,.ge-admin-panel-head span{display:block;color:#6c4cff;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:800}
+.ge-admin-heading h1{font-size:38px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.035em}
+.ge-admin-heading p{font-size:15px;color:#6f6c7b;margin:0}
+.ge-admin-heading-actions{display:flex;gap:9px}
+.ge-admin-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.ge-admin-metrics article,.ge-admin-panel{background:#fff;border:1px solid #e4e1eb;border-radius:16px;box-shadow:0 8px 28px rgba(33,28,57,.045)}
+.ge-admin-metrics article{padding:22px}
+.ge-admin-metrics span{display:block;color:#6f6c7b;font-weight:700}
+.ge-admin-metrics strong{display:block;font-size:38px;line-height:1;margin:18px 0 7px}
+.ge-admin-metrics small{color:#918e9d}
+.ge-admin-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,.7fr);gap:20px}
+.ge-admin-order-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,.65fr);gap:20px}
+.ge-admin-panel{padding:24px;margin-bottom:20px}
+.ge-admin-panel-head{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:20px}
+.ge-admin-panel-head h2{font-size:21px;margin:5px 0 0}
+.ge-admin-panel-head a{text-decoration:none}
+.ge-admin-shortcuts{display:grid;gap:8px}
+.ge-admin-shortcuts>a{display:flex;align-items:center;gap:14px;padding:15px;border-radius:12px;background:#f7f6f9;color:#1e1b31;text-decoration:none}
+.ge-admin-shortcuts b{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#ffd84a}
+.ge-admin-shortcuts span{display:grid;gap:3px}
+.ge-admin-shortcuts small{color:#777382}
+.ge-admin-table-scroll{overflow-x:auto}
+.ge-admin-table{width:100%;border-collapse:collapse}
+.ge-admin-table th{padding:11px 12px;border-bottom:1px solid #e7e4ec;color:#7b7788;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+.ge-admin-table td{padding:15px 12px;border-bottom:1px solid #efedf2;vertical-align:middle}
+.ge-admin-table tr:last-child td{border-bottom:0}
+.ge-admin-table td>small{display:block;color:#8b8794;margin-top:4px}
+.ge-admin-order{font-weight:800;text-decoration:none}
+.ge-admin-status{display:inline-flex;padding:7px 10px;border-radius:99px;background:#efedf5;color:#514b67;font-size:11px;font-weight:800;white-space:nowrap}
+.ge-status-ge-enviado,.ge-candidate-nuevo{background:#fff0be;color:#715b00}
+.ge-status-ge-produccion,.ge-candidate-entrevista{background:#e9e2ff;color:#5131bd}
+.ge-status-ge-listo,.ge-status-ge-cobrado{background:#dff6e8;color:#17663a}
+.ge-admin-empty{display:grid;place-items:center;gap:6px;min-height:150px;color:#85818e;text-align:center}
+.ge-admin-back{display:inline-block;margin-bottom:15px;text-decoration:none}
+.ge-admin-order-hero{display:flex;justify-content:space-between;align-items:end;padding:28px 32px;margin-bottom:20px;border-radius:18px;background:#1e1b31;color:#fff}
+.ge-admin-order-hero span{color:#ffd84a;text-transform:uppercase;font-size:11px;font-weight:800;letter-spacing:.1em}
+.ge-admin-order-hero h2{font-size:30px;margin:7px 0}
+.ge-admin-order-hero p{margin:0;color:#c8c4d3}
+.ge-admin-order-hero>strong{font-size:28px}
+.ge-admin-items>div{display:flex;justify-content:space-between;padding:15px 0;border-bottom:1px solid #ece9f0}
+.ge-admin-items span{display:grid;gap:4px}
+.ge-admin-items small{color:#85818e}
+.ge-admin-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
+.ge-admin-meta>div{display:grid;gap:5px;padding:14px;background:#f7f6f9;border-radius:10px}
+.ge-admin-meta small,.ge-admin-note small{color:#817d8b}
+.ge-admin-note{margin-top:18px;padding:16px;border-left:3px solid #6c4cff;background:#f8f7fb}
+.ge-admin-note p{margin:5px 0 0}
+.ge-admin-form{display:grid;gap:14px}
+.ge-admin-form label{display:grid;gap:6px;font-weight:700}
+.ge-admin-form input,.ge-admin-form select,.ge-admin-form textarea{width:100%;max-width:none}
+.ge-admin-document-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:25px}
+.ge-admin-document{display:flex;align-items:center;gap:12px;padding:13px;margin-bottom:8px;border:1px solid #e6e3eb;border-radius:10px;text-decoration:none}
+.ge-admin-document>b{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:#eee9ff}
+.ge-admin-document span{display:grid;gap:3px}
+.ge-admin-document small{color:#7f7b88}
+.ge-admin-upload{padding:18px;border-radius:12px;background:#f7f6f9}
+.ge-admin-candidates{display:grid;gap:12px}
+.ge-admin-candidates article{display:grid;grid-template-columns:1fr 220px;gap:28px;padding:22px;border:1px solid #e8e5ed;border-radius:13px}
+.ge-candidate-main h3{font-size:20px;margin:10px 0 4px}
+.ge-candidate-main>p{margin:0;color:#777382}
+.ge-candidate-links{display:flex;gap:16px;flex-wrap:wrap;margin-top:15px}
+.ge-candidate-links a{text-decoration:none}
+.ge-candidate-main blockquote{margin:15px 0 0;padding:12px 15px;border-left:3px solid #ffd84a;background:#faf9f5}
+.ge-candidate-form{align-content:start}
+.ge-candidate-form>small{color:#888491}
+@media(max-width:1100px){.ge-admin-metrics{grid-template-columns:1fr 1fr}
+.ge-admin-layout,.ge-admin-order-grid{grid-template-columns:1fr}
+.ge-admin-document-grid{grid-template-columns:1fr}
+}
+@media(max-width:782px){.ge-admin-wrap{margin-right:12px}
+.ge-admin-heading{align-items:flex-start;flex-direction:column}
+.ge-admin-metrics{grid-template-columns:1fr}
+.ge-admin-candidates article{grid-template-columns:1fr}
+.ge-admin-meta{grid-template-columns:1fr}
+}
+
+.ge-admin-wrap .nav-tab-wrapper{margin:0 0 20px;border-color:#dcd8e4}
+.ge-admin-wrap .nav-tab{padding:10px 18px;border-radius:9px 9px 0 0;font-weight:700}
+.ge-admin-communications{display:grid;grid-template-columns:minmax(320px,.75fr) minmax(0,1.25fr);gap:20px}
+.ge-admin-tab-panel{margin-top:20px}
+.ge-admin-campaigns{display:grid;gap:10px}
+.ge-admin-campaigns article{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:17px;border:1px solid #e8e5ed;border-radius:12px}
+.ge-admin-campaigns h3{margin:10px 0 5px}
+.ge-admin-campaigns small{color:#85818e}
+.ge-admin-campaigns article>div:last-child{display:flex;gap:8px;flex-wrap:wrap}
+.ge-admin-campaigns form{margin:0}
+.ge-mail-sent{background:#dff6e8;color:#17663a}
+.ge-mail-failed{background:#fee5e4;color:#9d2721}
+.ge-admin-origin{display:inline-flex;padding:6px 9px;border-radius:99px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.ge-admin-origin.is-markcom{color:#5131bd;background:#e9e2ff}
+.ge-admin-origin.is-store{color:#17663a;background:#dff6e8}
+@media(max-width:1050px){.ge-admin-communications{grid-template-columns:1fr}}
+@media(max-width:782px){.ge-admin-campaigns article{align-items:flex-start;flex-direction:column}}

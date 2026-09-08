@@ -378,3 +378,21 @@ body.gx-home { margin: 0; color: var(--gx-ink); background: var(--gx-paper); fon
     .gx-store-page .gx-products-section .products { grid-template-columns: 1fr !important; }
     .gx-subcategory-grid { grid-template-columns: 1fr; }
 }
+
+/* Newsletter */
+.gx-newsletter { padding: 34px 0 90px; background: #fff; }
+.gx-newsletter-card { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(420px, .95fr); align-items: center; gap: 65px; padding: 58px 64px; overflow: hidden; border-radius: 28px; color: #fff; background: radial-gradient(circle at 85% 10%, rgba(109, 69, 239, .75), transparent 34%), #121729; }
+.gx-newsletter h2 { max-width: 680px; margin: 16px 0 14px; color: #fff; font-size: clamp(32px, 4vw, 50px); line-height: 1.02; letter-spacing: -.05em; }
+.gx-newsletter p { margin: 0; color: #c9cddd; font-size: 15px; line-height: 1.65; }
+.gx-newsletter form { display: grid; gap: 14px; }
+.gx-newsletter-fields { display: grid; grid-template-columns: .75fr 1fr auto; gap: 8px; }
+.gx-newsletter input[type="text"], .gx-newsletter input[type="email"] { min-width: 0; height: 51px; padding: 0 15px; border: 1px solid rgba(255,255,255,.18); border-radius: 11px; outline: 0; color: #fff; background: rgba(255,255,255,.09); font: inherit; }
+.gx-newsletter input::placeholder { color: #b9bdcb; }
+.gx-newsletter input:focus { border-color: #b7a4ff; box-shadow: 0 0 0 3px rgba(109,69,239,.25); }
+.gx-newsletter button { min-height: 51px; padding: 0 18px; border: 0; border-radius: 11px; color: #17152a; background: #ffd84a; font: inherit; font-size: 12px; font-weight: 850; cursor: pointer; white-space: nowrap; }
+.gx-newsletter label { display: flex; align-items: flex-start; gap: 9px; color: #c9cddd; font-size: 11px; line-height: 1.45; }
+.gx-newsletter label input { margin-top: 2px; accent-color: #ffd84a; }
+.gx-newsletter-notice { margin-bottom: 12px !important; padding: 11px 13px; border-radius: 9px; color: #dff6e8 !important; background: rgba(54,170,104,.2); }
+.gx-newsletter-notice.is-error { color: #ffe2df !important; background: rgba(207,65,55,.22); }
+@media (max-width: 1080px) { .gx-newsletter-card { grid-template-columns: 1fr; gap: 35px; } }
+@media (max-width: 780px) { .gx-newsletter { padding-bottom: 60px; } .gx-newsletter-card { width: min(100% - 32px, 1240px); padding: 42px 28px; } .gx-newsletter-fields { grid-template-columns: 1fr; } }

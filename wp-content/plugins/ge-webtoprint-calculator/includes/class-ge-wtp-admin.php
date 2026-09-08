@@ -13,14 +13,13 @@ final class GE_WTP_Admin {
     }
 
     public static function register_menu() {
-        add_menu_page(
+        add_submenu_page(
+            'ge-backoffice',
             'GE Web-to-Print',
-            'Web-to-Print',
+            'Configuración',
             'manage_woocommerce',
             'ge-webtoprint',
-            array( __CLASS__, 'render_page' ),
-            'dashicons-printer',
-            56
+            array( __CLASS__, 'render_page' )
         );
     }
 

@@ -25,6 +25,23 @@ final class GE_WTP_Plugin {
         add_filter( 'wc_order_statuses', array( $this, 'add_order_statuses' ) );
 
         GE_WTP_Portal::init();
+        GE_WTP_Notifications::init();
+        GE_WTP_Notification_Center::init();
+        GE_WTP_Knowledge_Base::init();
+        GE_WTP_Google_Auth::init();
+        GE_WTP_Canva::init();
+        GE_WTP_Review_Requests::init();
+        GE_WTP_Production::init();
+        GE_WTP_Supplier_Dispatch::init();
+        GE_WTP_Manual_Orders::init();
+        GE_WTP_Newsletter::init();
+        GE_WTP_Customers::init();
+        GE_WTP_Reorders::init();
+        GE_WTP_Artwork_Library::init();
+        GE_WTP_Delivery_Labels::init();
+        GE_WTP_Jobs::init();
+        GE_WTP_Backoffice::init();
+        GE_WTP_Staff_Portal::init();
         GE_WTP_Admin::init();
     }
 
@@ -38,6 +55,13 @@ final class GE_WTP_Plugin {
 
     public static function activate() {
         self::install_role_and_page();
+        GE_WTP_Jobs::ensure_page();
+        GE_WTP_Newsletter::install();
+        GE_WTP_Staff_Portal::install();
+        GE_WTP_Customers::install();
+        GE_WTP_Reorders::install();
+        GE_WTP_Artwork_Library::install();
+        GE_WTP_Knowledge_Base::install();
         GE_WTP_Documents::ensure_private_directory();
         update_option( 'ge_wtp_needs_product_sync', 'yes', false );
         GE_WTP_Catalog::ensure_exchange_schedule();
@@ -54,8 +78,14 @@ final class GE_WTP_Plugin {
 
         if ( GE_WTP_VERSION !== $installed ) {
             self::install_role_and_page();
+            GE_WTP_Jobs::ensure_page();
+            GE_WTP_Newsletter::install();
+            GE_WTP_Staff_Portal::install();
+            GE_WTP_Customers::install();
+            GE_WTP_Reorders::install();
+            GE_WTP_Artwork_Library::install();
+            GE_WTP_Knowledge_Base::install();
             GE_WTP_Documents::ensure_private_directory();
-            update_option( 'ge_wtp_needs_product_sync', 'yes', false );
             update_option( 'ge_wtp_version', GE_WTP_VERSION, false );
         }
 

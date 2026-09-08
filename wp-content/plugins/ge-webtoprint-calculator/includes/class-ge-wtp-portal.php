@@ -9,6 +9,8 @@ final class GE_WTP_Portal {
         add_shortcode( 'ge_markcom_portal', array( __CLASS__, 'render' ) );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
         add_filter( 'template_include', array( __CLASS__, 'template_include' ), 99 );
+        add_filter( 'login_redirect', array( __CLASS__, 'login_redirect' ), 20, 3 );
+        add_action( 'admin_post_nopriv_ge_markcom_login', array( __CLASS__, 'handle_login' ) );
 
         add_action( 'admin_post_ge_markcom_add_cart', array( __CLASS__, 'handle_add_cart' ) );
         add_action( 'admin_post_ge_markcom_remove_cart', array( __CLASS__, 'handle_remove_cart' ) );
@@ -38,6 +40,24 @@ final class GE_WTP_Portal {
         return is_user_logged_in() && ( current_user_can( 'manage_woocommerce' ) || current_user_can( 'ge_access_markcom_portal' ) );
     }
 
+    public static function login_redirect( $redirect_to, $requested_redirect_to, $user ) {
+        if ( $user instanceof WP_User && ( user_can( $user, 'manage_woocommerce' ) || user_can( $user, 'ge_access_markcom_portal' ) ) ) { return self::portal_url(); }
+        return $redirect_to;
+    }
+
+    public static function handle_login() {
+        check_admin_referer( 'ge_markcom_login' );
+        $login = sanitize_text_field( wp_unslash( $_POST['log'] ?? '' ) );
+        $password = isset( $_POST['pwd'] ) ? (string) wp_unslash( $_POST['pwd'] ) : '';
+        if ( '' === $login || '' === $password ) { self::login_error_redirect( 'empty' ); }
+        $user = wp_signon( array( 'user_login' => $login, 'user_password' => $password, 'remember' => ! empty( $_POST['rememberme'] ) ), is_ssl() );
+        if ( is_wp_error( $user ) ) { self::login_error_redirect( 'invalid' ); }
+        if ( ! user_can( $user, 'manage_woocommerce' ) && ! user_can( $user, 'ge_access_markcom_portal' ) ) { wp_logout(); self::login_error_redirect( 'access' ); }
+        wp_safe_redirect( self::portal_url() ); exit;
+    }
+
+    private static function login_error_redirect( $error ) { wp_safe_redirect( self::portal_url( '', array( 'login_error' => sanitize_key( $error ) ) ) ); exit; }
+
     public static function portal_url( $section = '', $extra = array() ) {
         $page = get_page_by_path( 'cliente-markcom' );
         $url = $page ? get_permalink( $page ) : home_url( '/cliente-markcom/' );
@@ -57,7 +77,7 @@ final class GE_WTP_Portal {
         }
 
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
-        $allowed = array( 'inicio', 'catalogo', 'pedidos', 'documentos' );
+        $allowed = array( 'inicio', 'catalogo', 'pedidos', 'guardados', 'documentos', 'perfil' );
         if ( ! in_array( $section, $allowed, true ) ) {
             $section = 'inicio';
         }
@@ -73,8 +93,12 @@ final class GE_WTP_Portal {
                     self::render_catalog();
                 } elseif ( 'pedidos' === $section ) {
                     self::render_orders();
+                } elseif ( 'guardados' === $section ) {
+                    GE_WTP_Reorders::render_markcom_saved();
                 } elseif ( 'documentos' === $section ) {
                     self::render_documents_library();
+                } elseif ( 'perfil' === $section ) {
+                    GE_WTP_Customers::render_for_portal();
                 } else {
                     self::render_dashboard();
                 }
@@ -112,23 +136,19 @@ final class GE_WTP_Portal {
                     <span class="ge-eyebrow">Acceso Markcom</span>
                     <h2>Ingresar al portal</h2>
                     <p>Usá las credenciales provistas por Graph Express.</p>
-                    <?php
-                    wp_login_form(
-                        array(
-                            'redirect'       => self::portal_url(),
-                            'label_username' => 'Usuario o email',
-                            'label_password' => 'Contraseña',
-                            'label_remember' => 'Mantener sesión iniciada',
-                            'label_log_in'   => 'Ingresar',
-                            'remember'       => true,
-                        )
-                    );
-                    ?>
+                    <?php self::render_login_error(); ?>
+                    <form class="ge-portal-login-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_markcom_login"><?php wp_nonce_field( 'ge_markcom_login' ); ?><p><label for="ge-portal-user">Usuario o email</label><input id="ge-portal-user" type="text" name="log" autocomplete="username" required></p><p><label for="ge-portal-password">Contraseña</label><input id="ge-portal-password" type="password" name="pwd" autocomplete="current-password" required></p><p class="login-remember"><label><input name="rememberme" type="checkbox" value="forever" checked> Mantener sesión iniciada</label></p><p class="login-submit"><button type="submit">Ingresar</button></p></form>
                 </section>
             </div>
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    private static function render_login_error() {
+        $error = sanitize_key( wp_unslash( $_GET['login_error'] ?? '' ) ); if ( ! $error ) { return; }
+        $messages = array( 'empty' => 'Completá el email y la contraseña.', 'invalid' => 'El email o la contraseña no son correctos.', 'access' => 'Esta cuenta no está habilitada para el portal Markcom.' );
+        echo '<div class="ge-login-error" role="alert">' . esc_html( $messages[ $error ] ?? 'No se pudo iniciar sesión.' ) . '</div>';
     }
 
     private static function render_header( $active ) {
@@ -137,7 +157,9 @@ final class GE_WTP_Portal {
             'inicio'     => 'Resumen',
             'catalogo'   => 'Productos',
             'pedidos'    => 'Pedidos',
+            'guardados'  => 'Guardados',
             'documentos' => 'Documentos',
+            'perfil'     => 'Mi perfil',
         );
         ?>
         <header class="ge-portal-header">
@@ -151,7 +173,7 @@ final class GE_WTP_Portal {
                 <?php endforeach; ?>
             </nav>
             <div class="ge-user-menu">
-                <span class="ge-user-avatar"><?php echo esc_html( strtoupper( substr( $user->display_name, 0, 1 ) ) ); ?></span>
+                <span class="ge-user-avatar"><?php echo class_exists( 'GE_WTP_Customers' ) ? GE_WTP_Customers::avatar_markup( $user->ID, 38 ) : esc_html( strtoupper( substr( $user->display_name, 0, 1 ) ) ); ?></span>
                 <span><strong><?php echo esc_html( $user->display_name ); ?></strong><small>Markcom</small></span>
                 <a href="<?php echo esc_url( wp_logout_url( self::portal_url() ) ); ?>">Salir</a>
             </div>
@@ -166,10 +188,15 @@ final class GE_WTP_Portal {
             'removed'        => array( 'success', 'Producto eliminado del carrito.' ),
             'order-created'  => array( 'success', 'Pedido generado correctamente. Graph Express ya puede revisarlo.' ),
             'document-added' => array( 'success', 'Documento cargado correctamente.' ),
+            'reorder-loaded'  => array( 'success', 'El pedido anterior se agregó al carrito. Podés revisar cantidades, destino, comentarios y archivos antes de generarlo.' ),
             'error'          => array( 'error', 'No pudimos completar la operación. Revisá los datos e intentá nuevamente.' ),
         );
         if ( isset( $messages[ $notice ] ) ) {
             printf( '<div class="ge-notice ge-notice-%1$s">%2$s</div>', esc_attr( $messages[ $notice ][0] ), esc_html( $messages[ $notice ][1] ) );
+        }
+        if ( 'reorder-loaded' === $notice && ! empty( $_GET['price_changes'] ) ) {
+            $changes = absint( $_GET['price_changes'] );
+            printf( '<div class="ge-notice ge-notice-warning">Atención: el precio actual cambió en %1$d producto%2$s desde el pedido anterior. El carrito ya muestra los valores vigentes.</div>', $changes, 1 === $changes ? '' : 's' );
         }
     }
 
@@ -249,6 +276,7 @@ final class GE_WTP_Portal {
         $first_price = reset( $product['prices'] );
         ?>
         <article class="ge-product-card" data-ge-product>
+            <?php echo GE_WTP_Reorders::markcom_favorite_form( $key ); ?>
             <div class="ge-product-visual ge-product-visual-<?php echo esc_attr( sanitize_html_class( $product['category'] ) ); ?>">
                 <span><?php echo esc_html( $product['number'] ); ?></span>
                 <div class="ge-product-shape"></div>
@@ -301,12 +329,15 @@ final class GE_WTP_Portal {
                 <p><span>IVA 21%</span><strong>USD <?php echo esc_html( number_format_i18n( $totals['tax_usd'], 2 ) ); ?></strong></p>
                 <p class="ge-cart-total"><span>Total</span><strong>USD <?php echo esc_html( number_format_i18n( $totals['total_usd'], 2 ) ); ?></strong></p>
             </div>
+            <?php GE_WTP_Reorders::current_cart_save_form(); ?>
+            <?php $source_order_id = GE_WTP_Reorders::source_order_id(); if ( $source_order_id ) : ?><div class="ge-reorder-source"><strong>Pedido basado en #<?php echo esc_html( $source_order_id ); ?></strong><small>Los archivos anteriores quedan como referencia. Podés adjuntar versiones nuevas antes de generar la orden.</small></div><?php endif; ?>
             <form class="ge-checkout-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="ge_markcom_create_order">
                 <?php wp_nonce_field( 'ge_markcom_create_order' ); ?>
+                <?php GE_WTP_Artwork_Library::render_order_picker(); ?>
                 <label>Referencia PO <input type="text" name="po_reference" placeholder="Puede completarse después"></label>
                 <label>Comentario general <textarea name="order_notes" rows="3" placeholder="Destino, fecha requerida u otra indicación"></textarea></label>
-                <label class="ge-file-field">Adjuntar artes o PO <input type="file" name="ge_documents[]" multiple accept=".pdf,.jpg,.jpeg,.png,.zip"><span>PDF, JPG, PNG o ZIP · hasta 20 MB</span></label>
+                <label class="ge-file-field">Adjuntar artes, originales o PO <input type="file" name="ge_documents[]" multiple accept=".pdf,.jpg,.jpeg,.png,.zip"><span>PDF, JPG, PNG o ZIP · capacidad prevista hasta 1 GB. En producción los originales se enviarán al almacenamiento externo.</span></label>
                 <button class="ge-button ge-button-primary ge-button-block" type="submit" <?php disabled( $rate <= 0 ); ?>>Generar pedido</button>
                 <?php if ( $rate <= 0 ) : ?><small class="ge-form-warning">Graph Express debe configurar el tipo de cambio.</small><?php endif; ?>
             </form>
@@ -362,6 +393,8 @@ final class GE_WTP_Portal {
                 <div class="ge-order-items">
                     <?php foreach ( $order->get_items() as $item ) : ?><div><span><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) . ' unidades' ); ?></small></span><strong><?php echo wp_kses_post( $order->get_formatted_line_subtotal( $item ) ); ?></strong></div><?php endforeach; ?>
                 </div>
+                <?php GE_WTP_Reorders::order_actions( $order, 'markcom-order' ); ?>
+                <?php GE_WTP_Artwork_Library::render_order_links( $order ); ?>
             </section>
             <aside class="ge-panel">
                 <span class="ge-eyebrow">Archivos</span><h2>Documentos del pedido</h2>
@@ -379,6 +412,7 @@ final class GE_WTP_Portal {
 
     private static function render_documents_library() {
         $orders = GE_WTP_Orders::get_orders();
+        GE_WTP_Artwork_Library::render_customer_library( get_current_user_id(), true );
         ?>
         <section class="ge-page-heading"><div><span class="ge-eyebrow">Archivo compartido</span><h1>Documentos</h1><p>Facturas, órdenes de compra, remitos, comprobantes y artes organizados por pedido.</p></div></section>
         <div class="ge-panel ge-doc-library">
@@ -442,6 +476,9 @@ final class GE_WTP_Portal {
             self::redirect( 'catalogo', 'error' );
         }
         GE_WTP_Documents::handle_uploaded_files( $order->get_id(), 'ge_documents', $po ? 'po' : 'arte' );
+        $artwork_ids = isset( $_POST['artwork_ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['artwork_ids'] ) ) : array();
+        GE_WTP_Artwork_Library::attach_to_order( $order, array_merge( GE_WTP_Artwork_Library::get_order_ids( $order ), $artwork_ids ) );
+        if ( class_exists( 'GE_WTP_Notifications' ) ) { GE_WTP_Notifications::send_order_created( $order ); }
         wp_safe_redirect( self::portal_url( 'pedidos', array( 'pedido' => $order->get_id(), 'ge_notice' => 'order-created' ) ) );
         exit;
     }
