@@ -54,6 +54,12 @@ final class GE_WTP_Knowledge_Base {
     }
 
     private static function seed_guides() {
+        $lock_key = 'ge_wtp_guide_seed_lock';
+        $lock_time = absint( get_option( $lock_key, 0 ) );
+        if ( $lock_time && $lock_time > time() - 300 ) { return; }
+        if ( $lock_time ) { delete_option( $lock_key ); }
+        if ( ! add_option( $lock_key, time(), '', 'no' ) ) { return; }
+
         $guides = array(
             'sangrado-y-marcas-de-corte' => array(
                 'title' => 'Qué es el sangrado y cómo colocar las marcas de corte', 'topic' => 'preparacion-de-archivos', 'icon' => '✂', 'color' => 'violet',
@@ -86,15 +92,19 @@ final class GE_WTP_Knowledge_Base {
                 'content' => self::google_drive_content(),
             ),
         );
-        foreach ( $guides as $slug => $guide ) {
-            $existing = get_posts( array( 'post_type' => self::POST_TYPE, 'name' => $slug, 'post_status' => 'any', 'numberposts' => 1, 'fields' => 'ids' ) );
-            if ( $existing ) { continue; }
-            $id = wp_insert_post( array( 'post_type' => self::POST_TYPE, 'post_status' => 'publish', 'post_name' => $slug, 'post_title' => $guide['title'], 'post_excerpt' => $guide['excerpt'], 'post_content' => $guide['content'] ) );
-            if ( $id && ! is_wp_error( $id ) ) {
-                wp_set_object_terms( $id, $guide['topic'], self::TAXONOMY );
-                update_post_meta( $id, '_ge_guide_icon', $guide['icon'] );
-                update_post_meta( $id, '_ge_guide_color', $guide['color'] );
+        try {
+            foreach ( $guides as $slug => $guide ) {
+                $existing = get_posts( array( 'post_type' => self::POST_TYPE, 'name' => $slug, 'post_status' => 'any', 'numberposts' => 1, 'fields' => 'ids' ) );
+                if ( $existing ) { continue; }
+                $id = wp_insert_post( array( 'post_type' => self::POST_TYPE, 'post_status' => 'publish', 'post_name' => $slug, 'post_title' => $guide['title'], 'post_excerpt' => $guide['excerpt'], 'post_content' => $guide['content'] ) );
+                if ( $id && ! is_wp_error( $id ) ) {
+                    wp_set_object_terms( $id, $guide['topic'], self::TAXONOMY );
+                    update_post_meta( $id, '_ge_guide_icon', $guide['icon'] );
+                    update_post_meta( $id, '_ge_guide_color', $guide['color'] );
+                }
             }
+        } finally {
+            delete_option( $lock_key );
         }
     }
 
