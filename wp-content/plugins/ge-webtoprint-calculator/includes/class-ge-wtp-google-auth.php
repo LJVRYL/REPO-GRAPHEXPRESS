@@ -80,6 +80,7 @@ final class GE_WTP_Google_Auth {
             </form>
         </section>
         <?php GE_WTP_Canva::render_settings(); ?>
+        <?php GE_WTP_Turnstile::render_settings(); ?>
         <section class="ge-integrations-coming"><article><b>DB</b><span><strong>Dropbox</strong><small>Selección de archivos · siguiente etapa</small></span></article><article><b>FP</b><span><strong>Freepik</strong><small>Recursos visuales e IA · próxima etapa</small></span></article><article><b>AD</b><span><strong>Adobe</strong><small>Vista y procesamiento PDF · pendiente</small></span></article><article><b>PDF</b><span><strong>Herramientas PDF</strong><small>Conversión y correcciones · pendiente</small></span></article></section>
         <?php
     }
@@ -87,7 +88,8 @@ final class GE_WTP_Google_Auth {
     public static function assets() {
         $account_page = function_exists( 'is_account_page' ) && is_account_page();
         $library_page = is_page( 'gestion' );
-        if ( self::enabled() && self::library_available() && $account_page ) {
+        $portal_page = is_page( 'cliente-markcom' );
+        if ( self::enabled() && self::library_available() && ( $account_page || $portal_page ) ) {
             wp_enqueue_script( 'google-identity-services', 'https://accounts.google.com/gsi/client', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
             wp_enqueue_style( 'ge-google-auth-front', GE_WTP_PLUGIN_URL . 'assets/css/google-auth.css', array(), GE_WTP_VERSION );
         }
@@ -102,6 +104,7 @@ final class GE_WTP_Google_Auth {
 
     public static function render_login_button() { self::render_button( 'signin_with', 'signin' ); }
     public static function render_register_button() { self::render_button( 'signup_with', 'signup' ); }
+    public static function render_portal_button( $registration = false ) { self::render_button( $registration ? 'signup_with' : 'signin_with', $registration ? 'signup' : 'signin' ); }
 
     private static function render_button( $text, $context ) {
         if ( ! self::enabled() || ! self::library_available() ) { return; }
@@ -233,12 +236,13 @@ final class GE_WTP_Google_Auth {
         $user = get_userdata( $user_id );
         if ( ! $user ) { self::login_redirect( 'failed' ); }
         wp_set_current_user( $user_id ); wp_set_auth_cookie( $user_id, true, is_ssl() ); do_action( 'wp_login', $user->user_login, $user );
-        $target = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/my-account/' );
+        $private_portal = user_can( $user, 'manage_woocommerce' ) || user_can( $user, 'ge_access_markcom_portal' );
+        $target = $private_portal && class_exists( 'GE_WTP_Portal' ) ? GE_WTP_Portal::portal_url() : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/my-account/' ) );
         wp_safe_redirect( add_query_arg( 'google_login', 'success', $target ) ); exit;
     }
 
     private static function login_redirect( $status ) {
-        $target = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : wp_login_url();
+        $target = class_exists( 'GE_WTP_Portal' ) ? GE_WTP_Portal::portal_url() : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : wp_login_url() );
         wp_safe_redirect( add_query_arg( 'google_login', $status, $target ) ); exit;
     }
 }

@@ -29,6 +29,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Notification_Center::init();
         GE_WTP_Knowledge_Base::init();
         GE_WTP_Google_Auth::init();
+        GE_WTP_Turnstile::init();
         GE_WTP_Canva::init();
         GE_WTP_Review_Requests::init();
         GE_WTP_Production::init();

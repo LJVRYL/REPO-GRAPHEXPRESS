@@ -12,10 +12,12 @@ final class GE_WTP_Notification_Center {
         add_action( 'admin_post_ge_notification_test', array( __CLASS__, 'handle_test' ) );
         add_action( self::CRON_HOOK, array( __CLASS__, 'maybe_send_digest' ) );
         add_action( 'init', array( __CLASS__, 'ensure_schedule' ), 35 );
+        add_filter( 'wp_mail_from', array( __CLASS__, 'mail_from' ) );
+        add_filter( 'wp_mail_from_name', array( __CLASS__, 'mail_from_name' ) );
     }
 
     public static function defaults() {
-        return array( 'recipients' => sanitize_email( get_option( 'admin_email' ) ), 'new_order' => 'yes', 'new_customer' => 'yes', 'new_candidate' => 'yes', 'new_incident' => 'yes', 'supplier_failure' => 'yes', 'production_digest' => 'yes', 'digest_hour' => 8 );
+        return array( 'sender_email' => 'servicio@graphexpress.com.ar', 'sender_name' => 'Graph Express', 'recipients' => sanitize_email( get_option( 'admin_email' ) ), 'new_order' => 'yes', 'new_customer' => 'yes', 'new_candidate' => 'yes', 'new_incident' => 'yes', 'supplier_failure' => 'yes', 'production_digest' => 'yes', 'digest_hour' => 8 );
     }
 
     public static function settings() { return wp_parse_args( get_option( self::OPTION, array() ), self::defaults() ); }
@@ -25,6 +27,16 @@ final class GE_WTP_Notification_Center {
         $raw = preg_split( '/[,;\s]+/', (string) self::settings()['recipients'] ); $emails = array();
         foreach ( $raw as $email ) { $email = sanitize_email( $email ); if ( is_email( $email ) ) { $emails[] = $email; } }
         return array_values( array_unique( $emails ) );
+    }
+
+    public static function mail_from( $email ) {
+        $configured = sanitize_email( self::settings()['sender_email'] ?? '' );
+        return is_email( $configured ) ? $configured : $email;
+    }
+
+    public static function mail_from_name( $name ) {
+        $configured = sanitize_text_field( self::settings()['sender_name'] ?? '' );
+        return $configured ?: $name;
     }
 
     public static function send_internal( $event, $subject, $html, $object_id = 0 ) {
@@ -41,7 +53,7 @@ final class GE_WTP_Notification_Center {
         <?php if ( $show_heading ) : ?><div class="ge-staff-heading"><div><span>Centro de avisos</span><h1>Notificaciones</h1><p>Elegí qué avisos internos recibe Graph Express y controlá su entrega.</p></div></div><?php else : ?><div class="ge-settings-section-heading"><span>Centro de avisos</span><h2>Notificaciones</h2><p>Elegí qué avisos internos recibe Graph Express y controlá su entrega.</p></div><?php endif; ?>
         <?php if ( ! empty( $_GET['notification_saved'] ) ) : ?><div class="ge-production-notice">La configuración de notificaciones quedó guardada.</div><?php endif; ?><?php if ( isset( $_GET['notification_test'] ) ) : ?><div class="ge-production-notice <?php echo 'sent' === $_GET['notification_test'] ? '' : 'is-error'; ?>"><?php echo 'sent' === $_GET['notification_test'] ? 'El correo de prueba fue enviado.' : 'No se pudo enviar la prueba. Habrá que revisar SMTP.'; ?></div><?php endif; ?>
         <div class="ge-notification-metrics"><article><span>Últimos registros</span><strong><?php echo esc_html( count( $logs ) ); ?></strong></article><article><span>Enviados</span><strong><?php echo esc_html( $sent ); ?></strong></article><article class="<?php echo $failed ? 'is-warning' : ''; ?>"><span>Fallidos</span><strong><?php echo esc_html( $failed ); ?></strong></article></div>
-        <form class="ge-notification-settings" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_notification_settings"><?php wp_nonce_field( 'ge_notification_settings' ); ?><section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Destinatarios</span><h2>¿Quién recibe los avisos internos?</h2></div></div><label class="ge-notification-recipient">Emails separados por coma<textarea name="recipients" rows="2" required><?php echo esc_textarea( $settings['recipients'] ); ?></textarea><small>Podés cargar una o varias casillas. Los correos operativos de los clientes no se modifican desde acá.</small></label></section><section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Eventos</span><h2>Avisos configurables</h2></div></div><div class="ge-notification-switches"><?php foreach ( self::event_labels() as $key => $data ) : ?><label><input type="checkbox" name="events[<?php echo esc_attr( $key ); ?>]" value="yes" <?php checked( $settings[ $key ], 'yes' ); ?>><span><strong><?php echo esc_html( $data[0] ); ?></strong><small><?php echo esc_html( $data[1] ); ?></small></span></label><?php endforeach; ?></div><label class="ge-digest-hour">Hora del resumen diario<select name="digest_hour"><?php for ( $hour = 0; $hour < 24; $hour++ ) : ?><option value="<?php echo esc_attr( $hour ); ?>" <?php selected( (int) $settings['digest_hour'], $hour ); ?>><?php echo esc_html( sprintf( '%02d:00', $hour ) ); ?></option><?php endfor; ?></select></label><div class="ge-notification-actions"><button class="ge-staff-button" type="submit">Guardar configuración</button></div></section></form>
+        <form class="ge-notification-settings" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_notification_settings"><?php wp_nonce_field( 'ge_notification_settings' ); ?><section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Correo saliente</span><h2>Identidad del remitente</h2></div></div><div class="ge-notification-sender"><label>Email remitente<input type="email" name="sender_email" value="<?php echo esc_attr( $settings['sender_email'] ); ?>" required></label><label>Nombre visible<input type="text" name="sender_name" value="<?php echo esc_attr( $settings['sender_name'] ); ?>" maxlength="100" required></label></div><p class="ge-notification-help">Los clientes verán esta identidad en confirmaciones, cambios de estado, verificaciones y avisos del portal.</p></section><section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Destinatarios</span><h2>¿Quién recibe los avisos internos?</h2></div></div><label class="ge-notification-recipient">Emails separados por coma<textarea name="recipients" rows="2" required><?php echo esc_textarea( $settings['recipients'] ); ?></textarea><small>Podés cargar una o varias casillas. Los correos operativos de los clientes no se modifican desde acá.</small></label></section><section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Eventos</span><h2>Avisos configurables</h2></div></div><div class="ge-notification-switches"><?php foreach ( self::event_labels() as $key => $data ) : ?><label><input type="checkbox" name="events[<?php echo esc_attr( $key ); ?>]" value="yes" <?php checked( $settings[ $key ], 'yes' ); ?>><span><strong><?php echo esc_html( $data[0] ); ?></strong><small><?php echo esc_html( $data[1] ); ?></small></span></label><?php endforeach; ?></div><label class="ge-digest-hour">Hora del resumen diario<select name="digest_hour"><?php for ( $hour = 0; $hour < 24; $hour++ ) : ?><option value="<?php echo esc_attr( $hour ); ?>" <?php selected( (int) $settings['digest_hour'], $hour ); ?>><?php echo esc_html( sprintf( '%02d:00', $hour ) ); ?></option><?php endfor; ?></select></label><div class="ge-notification-actions"><button class="ge-staff-button" type="submit">Guardar configuración</button></div></section></form>
         <form class="ge-notification-test" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_notification_test"><?php wp_nonce_field( 'ge_notification_test' ); ?><div><strong>Comprobar correo</strong><span>Envía una prueba a todos los destinatarios configurados.</span></div><button type="submit">Enviar email de prueba</button></form>
         <section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Trazabilidad</span><h2>Últimos correos</h2></div><strong><?php echo esc_html( count( $logs ) ); ?></strong></div><?php self::render_logs( $logs ); ?></section>
         <?php
@@ -50,7 +62,9 @@ final class GE_WTP_Notification_Center {
     public static function handle_settings() {
         self::guard(); check_admin_referer( 'ge_notification_settings' ); $defaults = self::defaults(); $events = (array) ( $_POST['events'] ?? array() );
         $emails = array(); foreach ( preg_split( '/[,;\s]+/', (string) wp_unslash( $_POST['recipients'] ?? '' ) ) as $email ) { $email = sanitize_email( $email ); if ( is_email( $email ) ) { $emails[] = $email; } }
-        $clean = array( 'recipients' => implode( ', ', array_unique( $emails ) ), 'digest_hour' => min( 23, absint( $_POST['digest_hour'] ?? 8 ) ) );
+        $sender_email = sanitize_email( wp_unslash( $_POST['sender_email'] ?? '' ) );
+        $sender_name = sanitize_text_field( wp_unslash( $_POST['sender_name'] ?? '' ) );
+        $clean = array( 'sender_email' => is_email( $sender_email ) ? $sender_email : $defaults['sender_email'], 'sender_name' => $sender_name ?: $defaults['sender_name'], 'recipients' => implode( ', ', array_unique( $emails ) ), 'digest_hour' => min( 23, absint( $_POST['digest_hour'] ?? 8 ) ) );
         foreach ( self::event_labels() as $key => $unused ) { $clean[ $key ] = ! empty( $events[ $key ] ) ? 'yes' : 'no'; }
         if ( ! $clean['recipients'] ) { $clean['recipients'] = $defaults['recipients']; }
         update_option( self::OPTION, $clean, false ); wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'settings', array( 'category' => 'notifications', 'notification_saved' => 1 ) ) ); exit;

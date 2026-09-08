@@ -11,6 +11,7 @@ final class GE_WTP_Portal {
         add_filter( 'template_include', array( __CLASS__, 'template_include' ), 99 );
         add_filter( 'login_redirect', array( __CLASS__, 'login_redirect' ), 20, 3 );
         add_action( 'admin_post_nopriv_ge_markcom_login', array( __CLASS__, 'handle_login' ) );
+        add_action( 'admin_post_nopriv_ge_customer_register', array( __CLASS__, 'handle_registration' ) );
 
         add_action( 'admin_post_ge_markcom_add_cart', array( __CLASS__, 'handle_add_cart' ) );
         add_action( 'admin_post_ge_markcom_remove_cart', array( __CLASS__, 'handle_remove_cart' ) );
@@ -50,13 +51,57 @@ final class GE_WTP_Portal {
         $login = sanitize_text_field( wp_unslash( $_POST['log'] ?? '' ) );
         $password = isset( $_POST['pwd'] ) ? (string) wp_unslash( $_POST['pwd'] ) : '';
         if ( '' === $login || '' === $password ) { self::login_error_redirect( 'empty' ); }
+        if ( class_exists( 'GE_WTP_Turnstile' ) && ! GE_WTP_Turnstile::verify( 'portal_login' ) ) { self::login_error_redirect( 'bot' ); }
         $user = wp_signon( array( 'user_login' => $login, 'user_password' => $password, 'remember' => ! empty( $_POST['rememberme'] ) ), is_ssl() );
         if ( is_wp_error( $user ) ) { self::login_error_redirect( 'invalid' ); }
-        if ( ! user_can( $user, 'manage_woocommerce' ) && ! user_can( $user, 'ge_access_markcom_portal' ) ) { wp_logout(); self::login_error_redirect( 'access' ); }
-        wp_safe_redirect( self::portal_url() ); exit;
+        if ( user_can( $user, 'manage_woocommerce' ) || user_can( $user, 'ge_access_markcom_portal' ) ) { wp_safe_redirect( self::portal_url() ); exit; }
+        if ( in_array( 'customer', (array) $user->roles, true ) ) {
+            $customer_area = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/mi-cuenta/' );
+            wp_safe_redirect( $customer_area ); exit;
+        }
+        wp_logout(); self::login_error_redirect( 'access' );
+    }
+
+    public static function handle_registration() {
+        check_admin_referer( 'ge_customer_register' );
+        if ( class_exists( 'GE_WTP_Turnstile' ) && ! GE_WTP_Turnstile::verify( 'portal_register' ) ) { self::registration_error_redirect( 'bot' ); }
+        $first_name = isset( $_POST['first_name'] ) ? sanitize_text_field( wp_unslash( $_POST['first_name'] ) ) : '';
+        $last_name = isset( $_POST['last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['last_name'] ) ) : '';
+        $email = isset( $_POST['email'] ) ? strtolower( sanitize_email( wp_unslash( $_POST['email'] ) ) ) : '';
+        $whatsapp = isset( $_POST['whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp'] ) ) : '';
+        $password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
+        $confirmation = isset( $_POST['password_confirmation'] ) ? (string) wp_unslash( $_POST['password_confirmation'] ) : '';
+        if ( ! $first_name || ! is_email( $email ) || ! $password ) { self::registration_error_redirect( 'missing' ); }
+        if ( email_exists( $email ) ) { self::registration_error_redirect( 'exists' ); }
+        if ( strlen( $password ) < 10 ) { self::registration_error_redirect( 'weak' ); }
+        if ( ! hash_equals( $password, $confirmation ) ) { self::registration_error_redirect( 'mismatch' ); }
+        if ( empty( $_POST['terms'] ) ) { self::registration_error_redirect( 'terms' ); }
+
+        if ( function_exists( 'wc_create_new_customer' ) ) {
+            $user_id = wc_create_new_customer( $email, '', $password, array( 'first_name' => $first_name, 'last_name' => $last_name, 'display_name' => trim( $first_name . ' ' . $last_name ) ) );
+        } else {
+            $base = sanitize_user( strtok( $email, '@' ), true ) ?: 'cliente';
+            $username = $base; $suffix = 1;
+            while ( username_exists( $username ) ) { $username = $base . $suffix; $suffix++; }
+            $user_id = wp_insert_user( array( 'user_login' => $username, 'user_email' => $email, 'user_pass' => $password, 'first_name' => $first_name, 'last_name' => $last_name, 'display_name' => trim( $first_name . ' ' . $last_name ), 'role' => get_role( 'customer' ) ? 'customer' : 'subscriber' ) );
+            if ( ! is_wp_error( $user_id ) ) { do_action( 'woocommerce_created_customer', $user_id, array(), false ); }
+        }
+        if ( is_wp_error( $user_id ) || ! $user_id ) { self::registration_error_redirect( 'failed' ); }
+        update_user_meta( $user_id, '_ge_whatsapp', $whatsapp );
+        update_user_meta( $user_id, 'billing_phone', $whatsapp );
+        update_user_meta( $user_id, '_ge_registration_source', 'portal' );
+        if ( ! empty( $_POST['newsletter_optin'] ) && class_exists( 'GE_WTP_Newsletter' ) ) {
+            GE_WTP_Newsletter::subscribe( $email, $first_name, $last_name, 'portal-registration' );
+            update_user_meta( $user_id, '_ge_newsletter_optin', 'yes' );
+        }
+        $user = get_userdata( $user_id );
+        wp_set_current_user( $user_id ); wp_set_auth_cookie( $user_id, true, is_ssl() ); do_action( 'wp_login', $user->user_login, $user );
+        $target = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/mi-perfil/' );
+        wp_safe_redirect( add_query_arg( 'registration_status', 'success', $target ) ); exit;
     }
 
     private static function login_error_redirect( $error ) { wp_safe_redirect( self::portal_url( '', array( 'login_error' => sanitize_key( $error ) ) ) ); exit; }
+    private static function registration_error_redirect( $error ) { wp_safe_redirect( self::portal_url( '', array( 'modo' => 'registro', 'registration_error' => sanitize_key( $error ) ) ) ); exit; }
 
     public static function portal_url( $section = '', $extra = array() ) {
         $page = get_page_by_path( 'cliente-markcom' );
@@ -114,6 +159,7 @@ final class GE_WTP_Portal {
     }
 
     private static function render_login() {
+        $registering = isset( $_GET['modo'] ) && 'registro' === sanitize_key( wp_unslash( $_GET['modo'] ) );
         ob_start();
         ?>
         <div class="ge-login-screen">
@@ -123,21 +169,43 @@ final class GE_WTP_Portal {
             </div>
             <div class="ge-login-grid">
                 <section class="ge-login-intro">
-                    <span class="ge-eyebrow ge-eyebrow-light">Portal corporativo</span>
+                    <span class="ge-eyebrow ge-eyebrow-light">Portal de clientes</span>
                     <h1>Producción gráfica, pedidos y documentos en un solo lugar.</h1>
-                    <p>Un espacio privado para consultar precios, generar órdenes y seguir cada trabajo de Markcom.</p>
+                    <p>Registrate para guardar tus datos y archivos, consultar pedidos y agilizar cada nuevo trabajo.</p>
                     <div class="ge-login-features">
-                        <span>Catálogo acordado</span>
+                        <span>Datos organizados</span>
                         <span>Seguimiento ordenado</span>
                         <span>Documentación centralizada</span>
                     </div>
                 </section>
                 <section class="ge-login-card">
-                    <span class="ge-eyebrow">Acceso Markcom</span>
-                    <h2>Ingresar al portal</h2>
-                    <p>Usá las credenciales provistas por Graph Express.</p>
-                    <?php self::render_login_error(); ?>
-                    <form class="ge-portal-login-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_markcom_login"><?php wp_nonce_field( 'ge_markcom_login' ); ?><p><label for="ge-portal-user">Usuario o email</label><input id="ge-portal-user" type="text" name="log" autocomplete="username" required></p><p><label for="ge-portal-password">Contraseña</label><input id="ge-portal-password" type="password" name="pwd" autocomplete="current-password" required></p><p class="login-remember"><label><input name="rememberme" type="checkbox" value="forever" checked> Mantener sesión iniciada</label></p><p class="login-submit"><button type="submit">Ingresar</button></p></form>
+                    <div class="ge-auth-tabs" role="navigation" aria-label="Acceso de clientes"><a class="<?php echo $registering ? '' : 'is-active'; ?>" href="<?php echo esc_url( self::portal_url() ); ?>">Ingresar</a><a class="<?php echo $registering ? 'is-active' : ''; ?>" href="<?php echo esc_url( self::portal_url( '', array( 'modo' => 'registro' ) ) ); ?>">Crear cuenta</a></div>
+                    <?php if ( $registering ) : ?>
+                        <span class="ge-eyebrow">Nueva cuenta</span>
+                        <h2>Registrate como cliente</h2>
+                        <p>Creá tu ficha para centralizar pedidos, entregas y archivos.</p>
+                        <?php self::render_registration_error(); ?>
+                        <form class="ge-portal-login-form ge-portal-register-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                            <input type="hidden" name="action" value="ge_customer_register"><?php wp_nonce_field( 'ge_customer_register' ); ?>
+                            <div class="ge-auth-name-grid"><p><label for="ge-register-name">Nombre</label><input id="ge-register-name" type="text" name="first_name" autocomplete="given-name" required maxlength="100"></p><p><label for="ge-register-lastname">Apellido <span>(opcional)</span></label><input id="ge-register-lastname" type="text" name="last_name" autocomplete="family-name" maxlength="100"></p></div>
+                            <p><label for="ge-register-email">Email</label><input id="ge-register-email" type="email" name="email" autocomplete="email" required maxlength="190"></p>
+                            <p><label for="ge-register-whatsapp">WhatsApp <span>(opcional)</span></label><input id="ge-register-whatsapp" type="tel" name="whatsapp" autocomplete="tel" maxlength="40" placeholder="+54 9 11..."></p>
+                            <p><label for="ge-register-password">Contraseña</label><input id="ge-register-password" type="password" name="password" autocomplete="new-password" required minlength="10"><small class="ge-field-help">Mínimo 10 caracteres.</small></p>
+                            <p><label for="ge-register-confirmation">Repetir contraseña</label><input id="ge-register-confirmation" type="password" name="password_confirmation" autocomplete="new-password" required minlength="10"></p>
+                            <p class="ge-auth-check"><label><input type="checkbox" name="terms" value="1" required> Acepto que Graph Express use estos datos para gestionar mi cuenta y mis pedidos.</label></p>
+                            <p class="ge-auth-check"><label><input type="checkbox" name="newsletter_optin" value="1"> Quiero recibir novedades y guías de impresión.</label></p>
+                            <?php if ( class_exists( 'GE_WTP_Turnstile' ) ) { GE_WTP_Turnstile::render_widget( 'portal_register' ); } ?>
+                            <p class="login-submit"><button type="submit">Crear mi cuenta</button></p>
+                        </form>
+                        <?php if ( class_exists( 'GE_WTP_Google_Auth' ) ) { GE_WTP_Google_Auth::render_portal_button( true ); } ?>
+                    <?php else : ?>
+                        <span class="ge-eyebrow">Acceso privado</span>
+                        <h2>Ingresar al portal</h2>
+                        <p>Usá tu email y contraseña de Graph Express.</p>
+                        <?php self::render_login_error(); ?>
+                        <form class="ge-portal-login-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_markcom_login"><?php wp_nonce_field( 'ge_markcom_login' ); ?><p><label for="ge-portal-user">Usuario o email</label><input id="ge-portal-user" type="text" name="log" autocomplete="username" required></p><p><label for="ge-portal-password">Contraseña</label><input id="ge-portal-password" type="password" name="pwd" autocomplete="current-password" required></p><p class="login-remember"><label><input name="rememberme" type="checkbox" value="forever" checked> Mantener sesión iniciada</label></p><?php if ( class_exists( 'GE_WTP_Turnstile' ) ) { GE_WTP_Turnstile::render_widget( 'portal_login' ); } ?><p class="login-submit"><button type="submit">Ingresar</button></p><a class="ge-forgot-password" href="<?php echo esc_url( wp_lostpassword_url( self::portal_url() ) ); ?>">¿Olvidaste tu contraseña?</a></form>
+                        <?php if ( class_exists( 'GE_WTP_Google_Auth' ) ) { GE_WTP_Google_Auth::render_portal_button( false ); } ?>
+                    <?php endif; ?>
                 </section>
             </div>
         </div>
@@ -147,8 +215,14 @@ final class GE_WTP_Portal {
 
     private static function render_login_error() {
         $error = sanitize_key( wp_unslash( $_GET['login_error'] ?? '' ) ); if ( ! $error ) { return; }
-        $messages = array( 'empty' => 'Completá el email y la contraseña.', 'invalid' => 'El email o la contraseña no son correctos.', 'access' => 'Esta cuenta no está habilitada para el portal Markcom.' );
+        $messages = array( 'empty' => 'Completá el email y la contraseña.', 'invalid' => 'El email o la contraseña no son correctos.', 'access' => 'Esta cuenta todavía no tiene un portal privado asignado.', 'bot' => 'No pudimos validar la protección anti-bots. Recargá la página e intentá nuevamente.' );
         echo '<div class="ge-login-error" role="alert">' . esc_html( $messages[ $error ] ?? 'No se pudo iniciar sesión.' ) . '</div>';
+    }
+
+    private static function render_registration_error() {
+        $error = sanitize_key( wp_unslash( $_GET['registration_error'] ?? '' ) ); if ( ! $error ) { return; }
+        $messages = array( 'missing' => 'Completá nombre, email y contraseña.', 'exists' => 'Ya existe una cuenta con ese email. Probá ingresar o recuperar la contraseña.', 'weak' => 'La contraseña debe tener al menos 10 caracteres.', 'mismatch' => 'Las contraseñas no coinciden.', 'terms' => 'Necesitamos tu autorización para crear la cuenta.', 'bot' => 'No pudimos validar la protección anti-bots. Recargá la página e intentá nuevamente.', 'failed' => 'No pudimos crear la cuenta. Revisá los datos e intentá nuevamente.' );
+        echo '<div class="ge-login-error" role="alert">' . esc_html( $messages[ $error ] ?? $messages['failed'] ) . '</div>';
     }
 
     private static function render_header( $active ) {
