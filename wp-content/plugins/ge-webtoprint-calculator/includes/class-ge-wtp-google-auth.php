@@ -236,8 +236,7 @@ final class GE_WTP_Google_Auth {
         $user = get_userdata( $user_id );
         if ( ! $user ) { self::login_redirect( 'failed' ); }
         wp_set_current_user( $user_id ); wp_set_auth_cookie( $user_id, true, is_ssl() ); do_action( 'wp_login', $user->user_login, $user );
-        $private_portal = user_can( $user, 'manage_woocommerce' ) || user_can( $user, 'ge_access_markcom_portal' );
-        $target = $private_portal && class_exists( 'GE_WTP_Portal' ) ? GE_WTP_Portal::portal_url() : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/my-account/' ) );
+        $target = class_exists( 'GE_WTP_Portal' ) ? GE_WTP_Portal::destination_for_user( $user ) : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/my-account/' ) );
         wp_safe_redirect( add_query_arg( 'google_login', 'success', $target ) ); exit;
     }
 

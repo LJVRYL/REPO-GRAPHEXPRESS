@@ -138,7 +138,15 @@ final class GE_WTP_Documents {
             return false;
         }
 
-        return current_user_can( 'manage_woocommerce' ) || (int) $order->get_customer_id() === get_current_user_id();
+        if ( current_user_can( 'manage_woocommerce' ) || current_user_can( 'ge_manage_operations' ) || (int) $order->get_customer_id() === get_current_user_id() ) {
+            return true;
+        }
+
+        $user = wp_get_current_user();
+        return 0 === (int) $order->get_customer_id()
+            && $user->exists()
+            && $order->get_billing_email()
+            && 0 === strcasecmp( $order->get_billing_email(), $user->user_email );
     }
 
     public static function download_url( $order_id, $document_id ) {

@@ -117,6 +117,10 @@ final class GE_WTP_Reorders {
         self::render_saved_screen( 'markcom' );
     }
 
+    public static function render_customer_saved() {
+        self::render_saved_screen( 'customer-portal' );
+    }
+
     public static function account_content() {
         self::render_saved_screen( 'account' );
     }
@@ -354,7 +358,12 @@ final class GE_WTP_Reorders {
 
     private static function markcom_key_from_name( $name ) { foreach ( GE_WTP_Catalog::products() as $key => $product ) { if ( 0 === strcasecmp( trim( $name ), trim( $product['name'] ) ) ) { return $key; } } return ''; }
     private static function find_saved( $id ) { foreach ( self::saved() as $item ) { if ( isset( $item['id'] ) && hash_equals( (string) $item['id'], (string) $id ) ) { return $item; } } return null; }
-    private static function can_access_order( $order ) { return $order && ( (int) $order->get_customer_id() === get_current_user_id() || current_user_can( 'manage_woocommerce' ) || current_user_can( 'ge_manage_operations' ) ); }
+    private static function can_access_order( $order ) {
+        if ( ! $order || ! is_user_logged_in() ) { return false; }
+        if ( (int) $order->get_customer_id() === get_current_user_id() || current_user_can( 'manage_woocommerce' ) || current_user_can( 'ge_manage_operations' ) ) { return true; }
+        $user = wp_get_current_user();
+        return 0 === (int) $order->get_customer_id() && $order->get_billing_email() && 0 === strcasecmp( $order->get_billing_email(), $user->user_email );
+    }
     private static function require_login() { if ( ! is_user_logged_in() ) { wp_die( 'Tenés que iniciar sesión.', 403 ); } }
 
     private static function redirect_to_cart( $source, $changes, $order_id = 0 ) {
@@ -368,7 +377,8 @@ final class GE_WTP_Reorders {
         elseif ( 'markcom-catalog' === $context ) { $url = GE_WTP_Portal::portal_url( 'catalogo' ); }
         elseif ( 'markcom' === $context ) { $url = GE_WTP_Portal::portal_url( 'guardados' ); }
         elseif ( 'account' === $context || 'woo' === $context ) { $url = wc_get_account_endpoint_url( self::ENDPOINT ); }
-        elseif ( 'markcom-order' === $context && $order_id ) { $url = GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order_id ) ); }
+        elseif ( in_array( $context, array( 'markcom-order', 'customer-order' ), true ) && $order_id ) { $url = GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order_id ) ); }
+        elseif ( 'customer-portal' === $context ) { $url = GE_WTP_Portal::portal_url( 'guardados' ); }
         else { $url = wp_get_referer(); }
         $url = $url ? $url : home_url( '/' );
         wp_safe_redirect( add_query_arg( 'ge_saved_notice', $notice, $url ) ); exit;

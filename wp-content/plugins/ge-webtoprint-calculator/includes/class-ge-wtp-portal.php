@@ -22,6 +22,10 @@ final class GE_WTP_Portal {
 
     public static function template_include( $template ) {
         if ( is_page( 'cliente-markcom' ) ) {
+            if ( self::is_staff_user() ) {
+                wp_safe_redirect( self::staff_url() );
+                exit;
+            }
             return GE_WTP_PLUGIN_DIR . 'templates/portal-shell.php';
         }
 
@@ -37,12 +41,38 @@ final class GE_WTP_Portal {
         wp_enqueue_script( 'ge-markcom-portal', GE_WTP_PLUGIN_URL . 'assets/js/portal.js', array(), GE_WTP_VERSION, true );
     }
 
+    public static function is_staff_user( $user = null ) {
+        $user = $user instanceof WP_User ? $user : wp_get_current_user();
+        return $user && $user->exists() && ( user_can( $user, 'manage_woocommerce' ) || user_can( $user, 'ge_manage_operations' ) );
+    }
+
+    public static function is_markcom_user( $user = null ) {
+        $user = $user instanceof WP_User ? $user : wp_get_current_user();
+        return $user && $user->exists() && ! self::is_staff_user( $user ) && user_can( $user, 'ge_access_markcom_portal' );
+    }
+
+    public static function is_customer_user( $user = null ) {
+        $user = $user instanceof WP_User ? $user : wp_get_current_user();
+        if ( ! $user || ! $user->exists() || self::is_staff_user( $user ) ) {
+            return false;
+        }
+        return self::is_markcom_user( $user ) || (bool) array_intersect( array( 'customer', 'subscriber' ), (array) $user->roles );
+    }
+
     public static function can_access() {
-        return is_user_logged_in() && ( current_user_can( 'manage_woocommerce' ) || current_user_can( 'ge_access_markcom_portal' ) );
+        return is_user_logged_in() && self::is_customer_user();
+    }
+
+    private static function staff_url() {
+        return class_exists( 'GE_WTP_Staff_Portal' ) ? GE_WTP_Staff_Portal::portal_url() : admin_url();
+    }
+
+    public static function destination_for_user( $user ) {
+        return $user instanceof WP_User && self::is_staff_user( $user ) ? self::staff_url() : self::portal_url();
     }
 
     public static function login_redirect( $redirect_to, $requested_redirect_to, $user ) {
-        if ( $user instanceof WP_User && ( user_can( $user, 'manage_woocommerce' ) || user_can( $user, 'ge_access_markcom_portal' ) ) ) { return self::portal_url(); }
+        if ( $user instanceof WP_User && ( self::is_staff_user( $user ) || self::is_customer_user( $user ) ) ) { return self::destination_for_user( $user ); }
         return $redirect_to;
     }
 
@@ -54,11 +84,7 @@ final class GE_WTP_Portal {
         if ( class_exists( 'GE_WTP_Turnstile' ) && ! GE_WTP_Turnstile::verify( 'portal_login' ) ) { self::login_error_redirect( 'bot' ); }
         $user = wp_signon( array( 'user_login' => $login, 'user_password' => $password, 'remember' => ! empty( $_POST['rememberme'] ) ), is_ssl() );
         if ( is_wp_error( $user ) ) { self::login_error_redirect( 'invalid' ); }
-        if ( user_can( $user, 'manage_woocommerce' ) || user_can( $user, 'ge_access_markcom_portal' ) ) { wp_safe_redirect( self::portal_url() ); exit; }
-        if ( in_array( 'customer', (array) $user->roles, true ) ) {
-            $customer_area = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/mi-cuenta/' );
-            wp_safe_redirect( $customer_area ); exit;
-        }
+        if ( self::is_staff_user( $user ) || self::is_customer_user( $user ) ) { wp_safe_redirect( self::destination_for_user( $user ) ); exit; }
         wp_logout(); self::login_error_redirect( 'access' );
     }
 
@@ -96,7 +122,7 @@ final class GE_WTP_Portal {
         }
         $user = get_userdata( $user_id );
         wp_set_current_user( $user_id ); wp_set_auth_cookie( $user_id, true, is_ssl() ); do_action( 'wp_login', $user->user_login, $user );
-        $target = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : home_url( '/mi-perfil/' );
+        $target = self::portal_url();
         wp_safe_redirect( add_query_arg( 'registration_status', 'success', $target ) ); exit;
     }
 
@@ -117,12 +143,19 @@ final class GE_WTP_Portal {
             return self::render_login();
         }
 
+        if ( self::is_staff_user() ) {
+            return '<div class="ge-portal-shell"><div class="ge-panel"><h2>Ingresando a Gestión…</h2><p><a href="' . esc_url( self::staff_url() ) . '">Continuar</a></p></div></div>';
+        }
+
         if ( ! self::can_access() ) {
-            return '<div class="ge-portal-shell"><div class="ge-panel ge-access-denied"><span class="ge-eyebrow">Acceso restringido</span><h2>Este usuario no tiene acceso al portal Markcom.</h2><p>Solicitá a Graph Express la habilitación de tu cuenta.</p></div></div>';
+            return '<div class="ge-portal-shell"><div class="ge-panel ge-access-denied"><span class="ge-eyebrow">Acceso restringido</span><h2>Este usuario no tiene acceso al portal de clientes.</h2><p>Solicitá a Graph Express la habilitación de tu cuenta.</p></div></div>';
         }
 
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
-        $allowed = array( 'inicio', 'catalogo', 'pedidos', 'guardados', 'documentos', 'perfil' );
+        $allowed = array( 'inicio', 'pedidos', 'guardados', 'documentos', 'perfil' );
+        if ( self::is_markcom_user() ) {
+            $allowed[] = 'catalogo';
+        }
         if ( ! in_array( $section, $allowed, true ) ) {
             $section = 'inicio';
         }
@@ -139,7 +172,7 @@ final class GE_WTP_Portal {
                 } elseif ( 'pedidos' === $section ) {
                     self::render_orders();
                 } elseif ( 'guardados' === $section ) {
-                    GE_WTP_Reorders::render_markcom_saved();
+                    if ( self::is_markcom_user() ) { GE_WTP_Reorders::render_markcom_saved(); } else { GE_WTP_Reorders::render_customer_saved(); }
                 } elseif ( 'documentos' === $section ) {
                     self::render_documents_library();
                 } elseif ( 'perfil' === $section ) {
@@ -150,8 +183,8 @@ final class GE_WTP_Portal {
                 ?>
             </main>
             <footer class="ge-portal-footer">
-                <span>Graph Express × Markcom</span>
-                <span>Precios netos antes de IVA · Condición de pago: PO a 30 días</span>
+                <span><?php echo esc_html( self::is_markcom_user() ? 'Graph Express × Markcom' : 'Graph Express · Portal de clientes' ); ?></span>
+                <span><?php echo esc_html( self::is_markcom_user() ? 'Precios netos antes de IVA · Condición de pago: PO a 30 días' : 'Pedidos, archivos y documentación en un solo lugar' ); ?></span>
             </footer>
         </div>
         <?php
@@ -229,17 +262,19 @@ final class GE_WTP_Portal {
         $user = wp_get_current_user();
         $items = array(
             'inicio'     => 'Resumen',
-            'catalogo'   => 'Productos',
             'pedidos'    => 'Pedidos',
             'guardados'  => 'Guardados',
             'documentos' => 'Documentos',
             'perfil'     => 'Mi perfil',
         );
+        if ( self::is_markcom_user() ) {
+            $items = array_merge( array( 'inicio' => 'Resumen', 'catalogo' => 'Productos' ), array_slice( $items, 1, null, true ) );
+        }
         ?>
         <header class="ge-portal-header">
             <a class="ge-portal-logo" href="<?php echo esc_url( self::portal_url() ); ?>">
                 <span class="ge-brand-mark">GX</span>
-                <span><strong>GRAPH EXPRESS</strong><small>Portal Markcom</small></span>
+                <span><strong>GRAPH EXPRESS</strong><small><?php echo esc_html( self::is_markcom_user() ? 'Portal Markcom' : 'Portal de clientes' ); ?></small></span>
             </a>
             <nav class="ge-portal-nav" aria-label="Navegación del portal">
                 <?php foreach ( $items as $key => $label ) : ?>
@@ -248,7 +283,7 @@ final class GE_WTP_Portal {
             </nav>
             <div class="ge-user-menu">
                 <span class="ge-user-avatar"><?php echo class_exists( 'GE_WTP_Customers' ) ? GE_WTP_Customers::avatar_markup( $user->ID, 38 ) : esc_html( strtoupper( substr( $user->display_name, 0, 1 ) ) ); ?></span>
-                <span><strong><?php echo esc_html( $user->display_name ); ?></strong><small>Markcom</small></span>
+                <span><strong><?php echo esc_html( $user->display_name ); ?></strong><small><?php echo esc_html( self::is_markcom_user() ? 'Markcom' : $user->user_email ); ?></small></span>
                 <a href="<?php echo esc_url( wp_logout_url( self::portal_url() ) ); ?>">Salir</a>
             </div>
         </header>
@@ -275,7 +310,8 @@ final class GE_WTP_Portal {
     }
 
     private static function render_dashboard() {
-        $orders = GE_WTP_Orders::get_orders( 100 );
+        $markcom = self::is_markcom_user();
+        $orders = $markcom ? GE_WTP_Orders::get_orders( 100 ) : GE_WTP_Orders::get_customer_orders( get_current_user_id(), 100 );
         $active_orders = array_filter(
             $orders,
             function ( $order ) {
@@ -290,20 +326,20 @@ final class GE_WTP_Portal {
         <section class="ge-welcome">
             <div>
                 <span class="ge-eyebrow">Bienvenido al portal</span>
-                <h1>Todo el trabajo de Markcom,<br>claro y centralizado.</h1>
-                <p>Consultá el catálogo acordado, armá un pedido y seguí producción, facturación y documentación desde acá.</p>
-                <a class="ge-button ge-button-primary" href="<?php echo esc_url( self::portal_url( 'catalogo' ) ); ?>">Crear nuevo pedido</a>
+                <h1><?php echo wp_kses_post( $markcom ? 'Todo el trabajo de Markcom,<br>claro y centralizado.' : 'Tus trabajos gráficos,<br>claros y centralizados.' ); ?></h1>
+                <p><?php echo esc_html( $markcom ? 'Consultá el catálogo acordado, armá un pedido y seguí producción, facturación y documentación desde acá.' : 'Consultá tus pedidos, documentación y archivos. También podés iniciar un nuevo pedido desde la tienda.' ); ?></p>
+                <a class="ge-button ge-button-primary" href="<?php echo esc_url( $markcom ? self::portal_url( 'catalogo' ) : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' ) ) ); ?>"><?php echo esc_html( $markcom ? 'Crear nuevo pedido' : 'Ir a la tienda' ); ?></a>
             </div>
-            <div class="ge-rate-card">
+            <?php if ( $markcom ) : ?><div class="ge-rate-card">
                 <span class="ge-rate-label">Tipo de cambio utilizado</span>
                 <strong><?php echo GE_WTP_Catalog::exchange_rate() > 0 ? esc_html( '$ ' . number_format_i18n( GE_WTP_Catalog::exchange_rate(), 2 ) ) : 'Pendiente'; ?></strong>
                 <span>ARS por USD</span>
                 <small><?php echo esc_html( GE_WTP_Catalog::exchange_label() ); ?></small>
                 <?php if ( GE_WTP_Catalog::exchange_updated_at() ) : ?><small>Actualizado: <?php echo esc_html( GE_WTP_Catalog::exchange_updated_at() ); ?></small><?php endif; ?>
-            </div>
+            </div><?php else : ?><div class="ge-rate-card"><span class="ge-rate-label">Tu cuenta</span><strong><?php echo esc_html( wp_get_current_user()->display_name ); ?></strong><span><?php echo esc_html( wp_get_current_user()->user_email ); ?></span><small>Datos y trabajos visibles sólo para vos.</small></div><?php endif; ?>
         </section>
         <section class="ge-stats">
-            <article><span>Productos disponibles</span><strong>9</strong><small>10 presentaciones</small></article>
+            <article><span><?php echo esc_html( $markcom ? 'Productos disponibles' : 'Pedidos totales' ); ?></span><strong><?php echo esc_html( $markcom ? 9 : count( $orders ) ); ?></strong><small><?php echo esc_html( $markcom ? '10 presentaciones' : 'En tu historial' ); ?></small></article>
             <article><span>Pedidos activos</span><strong><?php echo esc_html( count( $active_orders ) ); ?></strong><small>En seguimiento</small></article>
             <article><span>Documentos</span><strong><?php echo esc_html( $documents ); ?></strong><small>Archivos centralizados</small></article>
         </section>
@@ -326,6 +362,10 @@ final class GE_WTP_Portal {
     }
 
     private static function render_catalog() {
+        if ( ! self::is_markcom_user() ) {
+            self::render_dashboard();
+            return;
+        }
         $rate = GE_WTP_Catalog::exchange_rate();
         $cart = GE_WTP_Orders::cart();
         ?>
@@ -420,12 +460,13 @@ final class GE_WTP_Portal {
     }
 
     private static function render_orders() {
-        $orders = GE_WTP_Orders::get_orders();
+        $markcom = self::is_markcom_user();
+        $orders = $markcom ? GE_WTP_Orders::get_orders() : GE_WTP_Orders::get_customer_orders();
         $selected_id = isset( $_GET['pedido'] ) ? absint( $_GET['pedido'] ) : 0;
         $selected = $selected_id && function_exists( 'wc_get_order' ) ? wc_get_order( $selected_id ) : false;
         ?>
-        <section class="ge-page-heading"><div><span class="ge-eyebrow">Seguimiento</span><h1>Pedidos</h1><p>Cada orden conserva sus precios, tipo de cambio y documentación.</p></div><a class="ge-button ge-button-primary" href="<?php echo esc_url( self::portal_url( 'catalogo' ) ); ?>">Nuevo pedido</a></section>
-        <?php if ( $selected && GE_WTP_Documents::can_access_order( $selected ) && 'yes' === $selected->get_meta( '_ge_markcom_order' ) ) : ?>
+        <section class="ge-page-heading"><div><span class="ge-eyebrow">Seguimiento</span><h1>Pedidos</h1><p>Cada orden conserva sus productos, estado y documentación.</p></div><a class="ge-button ge-button-primary" href="<?php echo esc_url( $markcom ? self::portal_url( 'catalogo' ) : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' ) ) ); ?>">Nuevo pedido</a></section>
+        <?php if ( $selected && GE_WTP_Documents::can_access_order( $selected ) && ( ! $markcom || 'yes' === $selected->get_meta( '_ge_markcom_order' ) ) ) : ?>
             <?php self::render_order_detail( $selected ); ?>
         <?php else : ?>
             <div class="ge-panel ge-orders-panel"><?php self::render_order_rows( $orders ); ?></div>
@@ -458,16 +499,19 @@ final class GE_WTP_Portal {
 
     private static function render_order_detail( $order ) {
         $documents = GE_WTP_Documents::get_documents( $order->get_id() );
+        $markcom = 'yes' === $order->get_meta( '_ge_markcom_order' );
+        $reference = $order->get_meta( '_ge_markcom_reference' );
+        $reference = $reference ? $reference : '#' . $order->get_id();
         ?>
         <div class="ge-order-detail">
             <section class="ge-panel">
                 <a class="ge-back-link" href="<?php echo esc_url( self::portal_url( 'pedidos' ) ); ?>">← Volver a pedidos</a>
-                <div class="ge-order-title"><div><span class="ge-eyebrow">Orden</span><h2><?php echo esc_html( $order->get_meta( '_ge_markcom_reference' ) ); ?></h2><p>Creada el <?php echo esc_html( wc_format_datetime( $order->get_date_created(), 'd/m/Y H:i' ) ); ?></p></div><span class="ge-status ge-status-large"><?php echo esc_html( wc_get_order_status_name( $order->get_status() ) ); ?></span></div>
-                <div class="ge-order-meta"><div><small>PO</small><strong><?php echo esc_html( $order->get_meta( '_ge_markcom_po_reference' ) ? $order->get_meta( '_ge_markcom_po_reference' ) : 'Pendiente' ); ?></strong></div><div><small>Tipo de cambio</small><strong><?php echo esc_html( number_format_i18n( $order->get_meta( '_ge_markcom_exchange_rate' ), 2 ) . ' ARS/USD' ); ?></strong></div><div><small>Total</small><strong><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></strong></div></div>
+                <div class="ge-order-title"><div><span class="ge-eyebrow">Orden</span><h2><?php echo esc_html( $reference ); ?></h2><p>Creada el <?php echo esc_html( wc_format_datetime( $order->get_date_created(), 'd/m/Y H:i' ) ); ?></p></div><span class="ge-status ge-status-large"><?php echo esc_html( wc_get_order_status_name( $order->get_status() ) ); ?></span></div>
+                <div class="ge-order-meta"><?php if ( $markcom ) : ?><div><small>PO</small><strong><?php echo esc_html( $order->get_meta( '_ge_markcom_po_reference' ) ? $order->get_meta( '_ge_markcom_po_reference' ) : 'Pendiente' ); ?></strong></div><div><small>Tipo de cambio</small><strong><?php echo esc_html( number_format_i18n( $order->get_meta( '_ge_markcom_exchange_rate' ), 2 ) . ' ARS/USD' ); ?></strong></div><?php else : ?><div><small>Pago</small><strong><?php echo esc_html( $order->get_payment_method_title() ? $order->get_payment_method_title() : 'A coordinar' ); ?></strong></div><div><small>Entrega</small><strong><?php echo esc_html( $order->get_shipping_method() ? $order->get_shipping_method() : 'A coordinar' ); ?></strong></div><?php endif; ?><div><small>Total</small><strong><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></strong></div></div>
                 <div class="ge-order-items">
                     <?php foreach ( $order->get_items() as $item ) : ?><div><span><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) . ' unidades' ); ?></small></span><strong><?php echo wp_kses_post( $order->get_formatted_line_subtotal( $item ) ); ?></strong></div><?php endforeach; ?>
                 </div>
-                <?php GE_WTP_Reorders::order_actions( $order, 'markcom-order' ); ?>
+                <?php GE_WTP_Reorders::order_actions( $order, $markcom ? 'markcom-order' : 'customer-order' ); ?>
                 <?php GE_WTP_Artwork_Library::render_order_links( $order ); ?>
             </section>
             <aside class="ge-panel">
@@ -485,7 +529,7 @@ final class GE_WTP_Portal {
     }
 
     private static function render_documents_library() {
-        $orders = GE_WTP_Orders::get_orders();
+        $orders = self::is_markcom_user() ? GE_WTP_Orders::get_orders() : GE_WTP_Orders::get_customer_orders();
         GE_WTP_Artwork_Library::render_customer_library( get_current_user_id(), true );
         ?>
         <section class="ge-page-heading"><div><span class="ge-eyebrow">Archivo compartido</span><h1>Documentos</h1><p>Facturas, órdenes de compra, remitos, comprobantes y artes organizados por pedido.</p></div></section>
@@ -496,7 +540,8 @@ final class GE_WTP_Portal {
                 $documents = GE_WTP_Documents::get_documents( $order->get_id() );
                 if ( ! $documents ) { continue; }
                 $has_documents = true;
-                echo '<section><div class="ge-doc-order-title"><strong>' . esc_html( $order->get_meta( '_ge_markcom_reference' ) ) . '</strong><a href="' . esc_url( self::portal_url( 'pedidos', array( 'pedido' => $order->get_id() ) ) ) . '">Ver pedido →</a></div>';
+                $reference = $order->get_meta( '_ge_markcom_reference' );
+                echo '<section><div class="ge-doc-order-title"><strong>' . esc_html( $reference ? $reference : '#' . $order->get_id() ) . '</strong><a href="' . esc_url( self::portal_url( 'pedidos', array( 'pedido' => $order->get_id() ) ) ) . '">Ver pedido →</a></div>';
                 self::render_document_list( $order, $documents );
                 echo '</section>';
             }
@@ -523,7 +568,7 @@ final class GE_WTP_Portal {
     }
 
     public static function handle_add_cart() {
-        self::require_access();
+        self::require_markcom_access();
         check_admin_referer( 'ge_markcom_add_cart' );
         $key = isset( $_POST['product_key'] ) ? sanitize_key( wp_unslash( $_POST['product_key'] ) ) : '';
         $tier = isset( $_POST['tier'] ) ? absint( $_POST['tier'] ) : 0;
@@ -533,7 +578,7 @@ final class GE_WTP_Portal {
     }
 
     public static function handle_remove_cart() {
-        self::require_access();
+        self::require_markcom_access();
         check_admin_referer( 'ge_markcom_remove_cart' );
         $line_key = isset( $_POST['line_key'] ) ? sanitize_key( wp_unslash( $_POST['line_key'] ) ) : '';
         GE_WTP_Orders::remove_from_cart( $line_key );
@@ -541,7 +586,7 @@ final class GE_WTP_Portal {
     }
 
     public static function handle_create_order() {
-        self::require_access();
+        self::require_markcom_access();
         check_admin_referer( 'ge_markcom_create_order' );
         $po = isset( $_POST['po_reference'] ) ? wp_unslash( $_POST['po_reference'] ) : '';
         $notes = isset( $_POST['order_notes'] ) ? wp_unslash( $_POST['order_notes'] ) : '';
@@ -573,6 +618,12 @@ final class GE_WTP_Portal {
 
     private static function require_access() {
         if ( ! self::can_access() ) {
+            wp_die( 'Acceso denegado.', 403 );
+        }
+    }
+
+    private static function require_markcom_access() {
+        if ( ! is_user_logged_in() || ! self::is_markcom_user() ) {
             wp_die( 'Acceso denegado.', 403 );
         }
     }

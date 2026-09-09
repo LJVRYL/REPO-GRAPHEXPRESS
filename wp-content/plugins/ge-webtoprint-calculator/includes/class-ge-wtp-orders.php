@@ -211,6 +211,52 @@ final class GE_WTP_Orders {
         return wc_get_orders( $args );
     }
 
+    public static function get_customer_orders( $user_id = 0, $limit = 50 ) {
+        if ( ! function_exists( 'wc_get_orders' ) ) {
+            return array();
+        }
+
+        $user_id = $user_id ? absint( $user_id ) : get_current_user_id();
+        $user = $user_id ? get_userdata( $user_id ) : false;
+        if ( ! $user ) {
+            return array();
+        }
+
+        $query = array(
+            'limit'   => absint( $limit ),
+            'orderby' => 'date',
+            'order'   => 'DESC',
+        );
+        $orders = wc_get_orders( array_merge( $query, array( 'customer_id' => $user_id ) ) );
+
+        // También incorpora presupuestos/pedidos históricos creados como invitado
+        // con el mismo email, sin exponer órdenes pertenecientes a otra cuenta.
+        $guest_orders = wc_get_orders(
+            array_merge(
+                $query,
+                array(
+                    'customer_id'   => 0,
+                    'billing_email' => $user->user_email,
+                )
+            )
+        );
+
+        $unique = array();
+        foreach ( array_merge( $orders, $guest_orders ) as $order ) {
+            $unique[ $order->get_id() ] = $order;
+        }
+        usort(
+            $unique,
+            function ( $left, $right ) {
+                $left_date = $left->get_date_created();
+                $right_date = $right->get_date_created();
+                return ( $right_date ? $right_date->getTimestamp() : 0 ) <=> ( $left_date ? $left_date->getTimestamp() : 0 );
+            }
+        );
+
+        return array_slice( $unique, 0, absint( $limit ) );
+    }
+
     public static function get_all_orders( $limit = 100 ) {
         if ( ! function_exists( 'wc_get_orders' ) || ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_operations' ) ) ) {
             return array();
