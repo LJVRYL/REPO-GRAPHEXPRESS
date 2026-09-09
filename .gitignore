@@ -25,6 +25,14 @@ wp-config-local.php
 *.bak
 *.old
 *.zip
+wp-content/plugins/ge-webtoprint-calculator/data/*-costs.local.json
+wp-content/plugins/ge-webtoprint-calculator/includes/*.costs.local.php
+*Diagnostics.md
+
+# Imágenes de referencia descargadas; el catálogo usa solamente /generated.
+wp-content/plugins/ge-webtoprint-calculator/assets/images/products/*
+!wp-content/plugins/ge-webtoprint-calculator/assets/images/products/generated/
+!wp-content/plugins/ge-webtoprint-calculator/assets/images/products/generated/**
 
 # Ignorar cosas de sistema
 .DS_Store

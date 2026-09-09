@@ -128,6 +128,7 @@ body.ge-markcom-standalone { margin: 0; background: var(--ge-soft); }
 .ge-order-items > div { padding: 15px 0; border-top: 1px solid var(--ge-line); display: flex; justify-content: space-between; gap: 20px; }
 .ge-order-items span strong, .ge-order-items span small { display: block; }
 .ge-order-items span small { color: var(--ge-muted); }
+.ge-order-items .wc-item-meta{margin:5px 0 0;padding:0;list-style:none;color:var(--ge-muted);font-size:12px}.ge-order-items .wc-item-meta li{display:inline}.ge-order-items .wc-item-meta p{display:inline;margin:0}.ge-order-items .ge-order-fee{margin-top:5px;padding:13px 15px;border:1px solid #e3d9ff;border-radius:10px;background:#f6f2ff}.ge-order-items .ge-order-fee small{color:var(--ge-violet)}
 .ge-document-list a { margin-top: 10px; padding: 12px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--ge-line); border-radius: 12px; color: var(--ge-ink); text-decoration: none; }
 .ge-document-list strong, .ge-document-list small { display: block; }
 .ge-document-list small { color: var(--ge-muted); font-size: 11px; }

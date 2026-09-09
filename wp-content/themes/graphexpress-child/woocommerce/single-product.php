@@ -9,6 +9,7 @@ $shop_url = graphexpress_shop_url();
 $portal_url = home_url('/index.php/cliente-markcom/');
 $guides_url = class_exists('GE_WTP_Knowledge_Base') ? GE_WTP_Knowledge_Base::archive_url() : home_url('/guias/');
 $whatsapp = 'https://wa.me/5491151393899?text=' . rawurlencode('Hola Graph Express, quiero consultar por un producto de la tienda.');
+$cart_count = function_exists('WC') && WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
 ?>
 <!doctype html>
 <html <?php language_attributes(); ?>>
@@ -35,13 +36,14 @@ $whatsapp = 'https://wa.me/5491151393899?text=' . rawurlencode('Hola Graph Expre
             <a href="<?php echo esc_url(home_url('/#trabajos')); ?>">Trabajos</a>
             <a href="<?php echo esc_url(home_url('/#contacto')); ?>">Contacto</a>
         </nav>
-        <div class="gx-header-actions"><a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a><a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar</a></div>
+        <div class="gx-header-actions"><a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a><a class="gx-portal-link gx-cart-link" href="<?php echo esc_url(wc_get_cart_url()); ?>">Carrito<?php if ($cart_count) : ?> <b><?php echo esc_html($cart_count); ?></b><?php endif; ?></a><a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar</a></div>
     </div>
 </header>
 
 <main id="producto" class="gx-store-main gx-single-product-main">
     <div class="gx-wrap">
         <a class="gx-store-back" href="<?php echo esc_url(wp_get_referer() ?: $shop_url); ?>">← Volver al catálogo</a>
+        <?php wc_print_notices(); ?>
         <div class="gx-single-product-content">
             <?php
             do_action('woocommerce_before_main_content');

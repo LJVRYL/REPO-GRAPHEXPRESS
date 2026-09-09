@@ -99,6 +99,13 @@ final class GE_WTP_Production {
         $name = strtolower( remove_accents( $item->get_name() ) );
         $categories = $product_id ? wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'slugs' ) ) : array();
         $categories = is_wp_error( $categories ) ? array() : $categories;
+        $is_sublimation = false !== strpos( $source, 'windbanner' )
+            || false !== strpos( $source, 'sublim' )
+            || 0 === strpos( $catalog_key, 'windbanner' )
+            || preg_match( '/windflag|windbanner|bandera|sublim/', $name );
+        if ( $is_sublimation ) {
+            return array( 'supplier' => 'sublimation-pending', 'date' => self::business_date( $created, 5 ), 'reason' => 'Banderas o sublimación detectadas; proveedor pendiente.' );
+        }
         $is_offset = false !== strpos( $source, 'mardones' ) || 0 === strpos( $catalog_key, 'mardones-' ) || in_array( 'imprenta-offset', $categories, true );
         if ( $is_offset ) { return self::offset_assignment( $created ); }
         if ( false !== strpos( $source, 'druck' ) || in_array( 'imprenta-digital', $categories, true ) ) { return array( 'supplier' => 'druck', 'date' => self::business_date( $created, 2 ), 'reason' => 'Producto digital asignado a Druck con 2 días hábiles.' ); }
@@ -106,7 +113,6 @@ final class GE_WTP_Production {
             $fast = preg_match( '/banner|lona/', $name );
             return array( 'supplier' => 'bandurria', 'date' => self::business_date( $created, $fast ? 2 : 5 ), 'reason' => $fast ? 'Banner o lona Bandurria: mínimo 2 días hábiles.' : 'Gran formato Bandurria: 5 días hábiles.' );
         }
-        if ( preg_match( '/windflag|bandera|sublim/', $name ) ) { return array( 'supplier' => 'sublimation-pending', 'date' => self::business_date( $created, 5 ), 'reason' => 'Sublimación detectada; proveedor pendiente.' ); }
         if ( in_array( 'merchandising', $categories, true ) || preg_match( '/bolsa|lapicera|botella|merch/', $name ) ) { return array( 'supplier' => 'merch-pending', 'date' => self::business_date( $created, 5 ), 'reason' => 'Merchandising detectado; proveedor pendiente.' ); }
         if ( preg_match( '/lona|banner|adhesivo|cartel|fachada|totem|caballete|display|isla|tabla/', $name ) ) { return array( 'supplier' => 'bandurria', 'date' => self::business_date( $created, preg_match( '/lona|fachada|banner/', $name ) ? 2 : 5 ), 'reason' => preg_match( '/lona|banner/', $name ) ? 'Banner o lona manual asignado a Bandurria: mínimo 2 días hábiles.' : 'Producto corporativo asignado inicialmente a Bandurria.' ); }
         if ( $order_key = $item->get_meta( '_ge_product_key' ) ) {

@@ -1,0 +1,17 @@
+.ge-storefront-config { margin: 28px 0; padding: clamp(22px,4vw,34px); border: 1px solid #e1e4eb; border-radius: 22px; background: #f7f8fb; color: #171b2d; }
+.ge-storefront-heading > span { color: #6d45ef; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.ge-storefront-heading h2 { margin: 6px 0 8px; font-size: 27px; letter-spacing: -.04em; }
+.ge-storefront-heading p { margin: 0 0 22px; color: #697083; font-size: 12px; line-height: 1.55; }
+.ge-storefront-field, .ge-storefront-buy-row label, .ge-storefront-measures label { display: block; color: #697083; font-size: 11px; font-weight: 800; }
+.ge-storefront-field > span, .ge-storefront-buy-row label > span, .ge-storefront-measures label > span { display: block; margin-bottom: 7px; }
+.ge-storefront-field select, .ge-storefront-buy-row input, .ge-storefront-measures input { width: 100%; height: 48px; margin: 0; padding: 0 13px; border: 1px solid #d8dce5; border-radius: 11px; background: #fff; color: #171b2d; font: inherit; }
+.ge-storefront-measures { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.ge-storefront-buy-row { display: grid; grid-template-columns: 110px 1fr; gap: 14px; margin-top: 15px; }
+.ge-storefront-price { padding: 12px 16px; border-radius: 12px; background: #171b2d; color: #fff; }
+.ge-storefront-price small, .ge-storefront-price span, .ge-storefront-price strong { display: block; }
+.ge-storefront-price small, .ge-storefront-price span { color: rgba(255,255,255,.62); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.ge-storefront-price strong { margin: 2px 0; font-size: 22px; }
+.ge-storefront-submit { width: 100%; margin-top: 14px !important; padding: 15px 18px !important; border: 0 !important; border-radius: 11px !important; background: #6d45ef !important; color: #fff !important; font-size: 13px !important; font-weight: 850 !important; }
+.ge-storefront-secure { margin: 10px 0 0; color: #697083; font-size: 10px; text-align: center; }
+@media (max-width: 520px) { .ge-storefront-buy-row, .ge-storefront-measures { grid-template-columns: 1fr; } .ge-storefront-price { margin-top: 0; } }
+.ge-storefront-artworks{margin:20px 0;padding:18px;border:1px solid rgba(109,69,239,.2);border-radius:14px;background:#f8f6ff}.ge-storefront-artworks legend{padding:0 6px;font-weight:800;color:#17152a}.ge-storefront-artworks p{margin:0 0 12px;color:#6f6a7a}.ge-storefront-artworks label{display:flex;align-items:flex-start;gap:10px;margin:8px 0}.ge-storefront-artworks label span{display:flex;flex-direction:column}.ge-storefront-artworks label strong{font-size:12px;color:#6d45ef}.ge-storefront-account-note{margin:18px 0;padding:14px 16px;border-radius:12px;background:#f5f2ff}.ge-storefront-account-note a{font-weight:800;color:#6d45ef}

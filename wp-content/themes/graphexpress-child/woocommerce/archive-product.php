@@ -10,6 +10,7 @@ $shop_url = graphexpress_shop_url();
 $portal_url = home_url('/index.php/cliente-markcom/');
 $whatsapp = 'https://wa.me/5491151393899?text=' . rawurlencode('Hola Graph Express, quiero consultar por un producto de la tienda.');
 $current_term = is_product_category() ? get_queried_object() : null;
+$cart_count = function_exists('WC') && WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
 $is_store_home = is_shop() && ! is_search();
 $child_terms = $current_term ? get_terms(array(
     'taxonomy'   => 'product_cat',
@@ -42,11 +43,12 @@ $page_description = $is_store_home
         <button class="gx-menu-toggle" type="button" aria-expanded="false" aria-controls="gx-navigation"><span></span><span></span><span></span><span class="screen-reader-text">Abrir menú</span></button>
         <nav class="gx-nav" id="gx-navigation" aria-label="Navegación principal">
             <a href="<?php echo esc_url($shop_url); ?>">Tienda</a>
+            <a href="<?php echo esc_url(class_exists('GE_WTP_Knowledge_Base') ? GE_WTP_Knowledge_Base::archive_url() : home_url('/guias/')); ?>">Guías</a>
             <a href="<?php echo esc_url(home_url('/#servicios')); ?>">Servicios</a>
             <a href="<?php echo esc_url(home_url('/#trabajos')); ?>">Trabajos</a>
             <a href="<?php echo esc_url(home_url('/#contacto')); ?>">Contacto</a>
         </nav>
-        <div class="gx-header-actions"><a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a><a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar</a></div>
+        <div class="gx-header-actions"><a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a><a class="gx-portal-link gx-cart-link" href="<?php echo esc_url(wc_get_cart_url()); ?>">Carrito<?php if ($cart_count) : ?> <b><?php echo esc_html($cart_count); ?></b><?php endif; ?></a><a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar</a></div>
     </div>
 </header>
 

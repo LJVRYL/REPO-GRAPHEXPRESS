@@ -30,12 +30,18 @@ $symbols = array(
     'soportes-especiales'   => '✦',
     'portabanners'          => '▥',
     'placas-rigidas'        => '□',
+    'windbanners-banderas'  => '⚑',
+    'bases-windbanners'     => '⌖',
+    'carpas-gazebos'        => '⌂',
+    'popup-exhibicion'      => '◇',
+    'stands-backdrops'      => '▤',
+    'promocionales-textiles'=> '✦',
 );
 $symbol = isset($symbols[$group_slug]) ? $symbols[$group_slug] : 'GE';
 $attributes = array_slice($product->get_attributes(), 0, 2);
-$reference_price = $product->get_meta('_ge_reference_price_min');
-$show_reference_price = 'yes' === $product->get_meta('_ge_show_reference_price') && is_numeric($reference_price);
-$action_label = $product->get_meta('_ge_digital_config') ? 'Configurar producto' : 'Ver formatos';
+$reference_price = class_exists('GE_WTP_Storefront') ? GE_WTP_Storefront::minimum_price($product->get_id()) : $product->get_meta('_ge_reference_price_min');
+$show_reference_price = is_numeric($reference_price) && (float) $reference_price > 0;
+$action_label = $show_reference_price ? 'Configurar y comprar' : 'Ver formatos';
 ?>
 <li <?php wc_product_class('gx-product-tile gx-product-group-' . sanitize_html_class($group_slug), $product); ?>>
     <a class="gx-product-card-link" href="<?php the_permalink(); ?>">

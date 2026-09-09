@@ -160,6 +160,7 @@ final class GE_WTP_Digital_Catalog {
     public static function render_calculator() {
         global $product;
         if (! $product) { return; }
+        if (class_exists('GE_WTP_Storefront') && GE_WTP_Storefront::config($product->get_id())) { return; }
         $config = $product->get_meta('_ge_digital_config');
         if (! is_array($config) || empty($config['fields'])) { return; }
         ?>
@@ -183,7 +184,7 @@ final class GE_WTP_Digital_Catalog {
                     </label>
                 <?php endforeach; ?>
             </div>
-            <label class="ge-digital-upload"><span>Archivo para imprimir</span><input type="file" data-ge-file accept=".pdf,.ai,.eps,.svg,.tif,.tiff,.jpg,.jpeg,.png"><small data-ge-file-name>PDF, AI, EPS, TIFF, JPG o PNG. En esta versión local se valida la selección; el envío se conectará al pedido.</small></label>
+            <label class="ge-digital-upload"><span>Archivo para imprimir</span><input type="file" data-ge-file accept=".pdf,.ai,.eps,.psd,.svg,.cdr,.tif,.tiff,.jpg,.jpeg,.png,.zip"><small data-ge-file-name>PDF, AI, EPS, PSD, SVG, CDR, TIFF, JPG, PNG o ZIP · capacidad prevista hasta 1 GB. El envío se conectará al almacenamiento externo del pedido.</small></label>
             <div class="ge-digital-total"><div><small data-ge-price-state>Referencia provisoria</small><strong data-ge-total>Calculando…</strong><span data-ge-unit></span></div><div><small>IVA 21%</small><strong data-ge-tax>—</strong></div></div>
             <p class="ge-digital-warning" data-ge-warning></p>
             <a class="ge-digital-submit" data-ge-submit target="_blank" rel="noopener" href="#">Enviar configuración por WhatsApp ↗</a>

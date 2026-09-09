@@ -193,7 +193,7 @@ function graphexpress_render_product_price_tables() {
     }
 
     echo '<div class="gx-price-guide">';
-    echo '<div class="gx-price-guide-intro"><span>Valores de referencia</span><h2>Elegí formato y cantidad</h2><p>Los importes corresponden a la lista vigente del proveedor y se muestran antes de IVA. Confirmamos el valor final al solicitar la cotización.</p></div>';
+    echo '<div class="gx-price-guide-intro"><span>Valores de referencia</span><h2>Elegí formato y cantidad</h2><p>Los importes publicados son valores Graph Express antes de IVA. Confirmamos disponibilidad y valor final al solicitar la cotización.</p></div>';
 
     foreach ($sections as $section) {
         if (empty($section['columns']) || empty($section['rows'])) {

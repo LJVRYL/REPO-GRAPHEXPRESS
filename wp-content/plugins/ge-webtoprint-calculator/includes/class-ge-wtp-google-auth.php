@@ -89,7 +89,7 @@ final class GE_WTP_Google_Auth {
         $account_page = function_exists( 'is_account_page' ) && is_account_page();
         $library_page = is_page( 'gestion' );
         $portal_page = is_page( 'cliente-markcom' );
-        if ( self::enabled() && self::library_available() && ( $account_page || $portal_page ) ) {
+        if ( self::enabled() && self::library_available() && ( $account_page || $portal_page || $library_page ) ) {
             wp_enqueue_script( 'google-identity-services', 'https://accounts.google.com/gsi/client', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
             wp_enqueue_style( 'ge-google-auth-front', GE_WTP_PLUGIN_URL . 'assets/css/google-auth.css', array(), GE_WTP_VERSION );
         }

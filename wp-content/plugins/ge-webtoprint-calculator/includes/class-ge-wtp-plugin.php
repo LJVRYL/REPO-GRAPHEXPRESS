@@ -31,6 +31,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Google_Auth::init();
         GE_WTP_Turnstile::init();
         GE_WTP_Canva::init();
+        GE_WTP_Product_Images::init();
         GE_WTP_Review_Requests::init();
         GE_WTP_Production::init();
         GE_WTP_Supplier_Dispatch::init();
@@ -87,11 +88,16 @@ final class GE_WTP_Plugin {
             GE_WTP_Artwork_Library::install();
             GE_WTP_Knowledge_Base::install();
             GE_WTP_Documents::ensure_private_directory();
+            update_option( 'ge_wtp_needs_product_sync', 'yes', false );
             update_option( 'ge_wtp_version', GE_WTP_VERSION, false );
         }
 
         if ( 'yes' === get_option( 'ge_wtp_needs_product_sync' ) && class_exists( 'WooCommerce' ) ) {
             GE_WTP_Catalog::sync_products();
+            GE_WTP_Public_Catalog::sync();
+            GE_WTP_Mardones_Catalog::sync();
+            GE_WTP_Digital_Catalog::sync();
+            GE_WTP_Windbanners_Catalog::sync();
             delete_option( 'ge_wtp_needs_product_sync' );
         }
     }

@@ -11,6 +11,20 @@ final class GE_WTP_Notifications {
         add_action( 'init', array( __CLASS__, 'register_log_type' ), 7 );
         add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'handle_order_status_changed' ), 30, 4 );
         add_action( 'woocommerce_email_sent', array( __CLASS__, 'log_woocommerce_email' ), 10, 3 );
+        add_filter( 'pre_wp_mail', array( __CLASS__, 'capture_local_mail' ), 99, 2 );
+    }
+
+    /**
+     * Localhost is an isolated test environment: report mail as accepted without
+     * contacting real customers or suppliers. WooCommerce and this class still
+     * record their normal delivery logs, so the complete workflow can be audited.
+     */
+    public static function capture_local_mail( $return, $atts ) {
+        $host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( preg_replace( '/:\d+$/', '', (string) $_SERVER['HTTP_HOST'] ) ) : '';
+        if ( in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true ) ) {
+            return true;
+        }
+        return $return;
     }
 
     public static function send_customer_welcome_verification( $user, $email, $verification_url, $welcome = false ) {
