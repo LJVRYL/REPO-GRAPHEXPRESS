@@ -116,6 +116,7 @@ final class GE_WTP_Plugin {
             GE_WTP_Mardones_Catalog::sync();
             GE_WTP_Digital_Catalog::sync();
             GE_WTP_Windbanners_Catalog::sync();
+            GE_WTP_MSBags_Catalog::sync();
             delete_option( 'ge_wtp_needs_product_sync' );
         } finally {
             delete_transient( 'ge_wtp_product_sync_lock' );

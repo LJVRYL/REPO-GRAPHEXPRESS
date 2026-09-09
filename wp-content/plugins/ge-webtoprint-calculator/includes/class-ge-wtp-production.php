@@ -27,6 +27,7 @@ final class GE_WTP_Production {
             'bandurria'           => array( 'name' => 'Bandurria', 'detail' => 'Gran formato. Banners y lonas: 2 días hábiles; otros trabajos: 5 días hábiles.' ),
             'elementi'            => array( 'name' => 'Elementi', 'detail' => 'Merchandising. Productos y tiempos a configurar.' ),
             'conquer'             => array( 'name' => 'Conquer', 'detail' => 'Merchandising. Productos y tiempos a configurar.' ),
+            'msbags'              => array( 'name' => 'MS Bags', 'detail' => 'Bolsas de friselina, lienzo y e-commerce. Producción estimada: 7 a 10 días hábiles.', 'email' => 'ventasmsbags@gmail.com', 'whatsapp' => '5491161835857' ),
             'merch-other'         => array( 'name' => 'Merchandising · tercer proveedor', 'detail' => 'Proveedor adicional de merchandising pendiente de identificar.' ),
             'sublimation-a'       => array( 'name' => 'Sublimación · proveedor 1', 'detail' => 'Banderas y productos sublimados. Nombre y tiempos a configurar.' ),
             'sublimation-b'       => array( 'name' => 'Sublimación · proveedor 2', 'detail' => 'Banderas y productos sublimados. Nombre y tiempos a configurar.' ),
@@ -99,6 +100,9 @@ final class GE_WTP_Production {
         $name = strtolower( remove_accents( $item->get_name() ) );
         $categories = $product_id ? wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'slugs' ) ) : array();
         $categories = is_wp_error( $categories ) ? array() : $categories;
+        if ( false !== strpos( $source, 'ms bags' ) || 0 === strpos( $catalog_key, 'msbags-' ) || in_array( 'bolsas', $categories, true ) ) {
+            return array( 'supplier' => 'msbags', 'date' => self::business_date( $created, 10 ), 'reason' => 'Producto de bolsas asignado a MS Bags con una previsión conservadora de 10 días hábiles.' );
+        }
         $is_sublimation = false !== strpos( $source, 'windbanner' )
             || false !== strpos( $source, 'sublim' )
             || 0 === strpos( $catalog_key, 'windbanner' )
@@ -139,7 +143,7 @@ final class GE_WTP_Production {
     }
 
     private static function default_processes( $supplier ) {
-        $production = 'bandurria' === $supplier ? array( 'Impresión gran formato', 180 ) : ( 'mardones' === $supplier ? array( 'Impresión offset', 480 ) : ( 'druck' === $supplier ? array( 'Impresión / producción Druck', 180 ) : array( 'Producción del trabajo', 240 ) ) );
+        $production = 'bandurria' === $supplier ? array( 'Impresión gran formato', 180 ) : ( 'mardones' === $supplier ? array( 'Impresión offset', 480 ) : ( 'druck' === $supplier ? array( 'Impresión / producción Druck', 180 ) : ( 'msbags' === $supplier ? array( 'Confección e impresión de bolsas', 600 ) : array( 'Producción del trabajo', 240 ) ) ) );
         return array(
             array( 'name' => 'Revisión y aprobación de archivo', 'estimated' => 30, 'actual' => '', 'status' => 'pending' ),
             array( 'name' => 'Preprensa / preparación', 'estimated' => 45, 'actual' => '', 'status' => 'pending' ),

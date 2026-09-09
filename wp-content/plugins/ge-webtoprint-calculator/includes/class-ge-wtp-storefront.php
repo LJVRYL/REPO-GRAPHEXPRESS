@@ -58,6 +58,8 @@ final class GE_WTP_Storefront {
         remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
         remove_action('woocommerce_single_product_summary', 'graphexpress_quote_only_product_cta', 31);
         $first = reset($config['options']);
+        $minimum_quantity = max(1, isset($config['min_qty']) ? (int) $config['min_qty'] : 1);
+        $quantity_step = max(1, isset($config['step']) ? (int) $config['step'] : 1);
         $mode = isset($config['mode']) ? $config['mode'] : '';
         $is_measure = !empty($mode);
         $saved_artworks = is_user_logged_in() && class_exists('GE_WTP_Artwork_Library')
@@ -86,8 +88,8 @@ final class GE_WTP_Storefront {
                 <div class="ge-storefront-measures"><label><span>Largo (cm)</span><input type="number" name="length" min="1" step="0.1" value="100" data-ge-length required></label></div>
             <?php endif; ?>
             <div class="ge-storefront-buy-row">
-                <label><span>Cantidad</span><input type="number" name="quantity" min="1" step="1" value="1" data-ge-quantity></label>
-                <div class="ge-storefront-price"><small>Total final con IVA</small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * 1.21, array('decimals' => 0))); ?></strong><span data-ge-base>Base sin IVA: <?php echo wp_kses_post(wc_price($first['price'], array('decimals' => 0))); ?></span></div>
+                <label><span>Cantidad</span><input type="number" name="quantity" min="<?php echo esc_attr($minimum_quantity); ?>" step="<?php echo esc_attr($quantity_step); ?>" value="<?php echo esc_attr($minimum_quantity); ?>" data-ge-quantity></label>
+                <div class="ge-storefront-price"><small>Total final con IVA</small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * 1.21, array('decimals' => 0))); ?></strong><span data-ge-base>Base sin IVA: <?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity, array('decimals' => 0))); ?></span></div>
             </div>
             <?php if ($saved_artworks) : ?>
                 <fieldset class="ge-storefront-artworks">
@@ -121,7 +123,14 @@ final class GE_WTP_Storefront {
             wp_safe_redirect(get_permalink($product_id));
             exit;
         }
-        $quantity = isset($_POST['quantity']) ? max(1, absint($_POST['quantity'])) : 1;
+        $minimum_quantity = max(1, isset($config['min_qty']) ? (int) $config['min_qty'] : 1);
+        $quantity_step = max(1, isset($config['step']) ? (int) $config['step'] : 1);
+        $quantity = isset($_POST['quantity']) ? absint($_POST['quantity']) : $minimum_quantity;
+        if ($quantity < $minimum_quantity || 0 !== (($quantity - $minimum_quantity) % $quantity_step)) {
+            wc_add_notice(sprintf('La cantidad debe comenzar en %1$d y avanzar de %2$d en %2$d unidades.', $minimum_quantity, $quantity_step), 'error');
+            wp_safe_redirect(get_permalink($product_id));
+            exit;
+        }
         $option = $config['options'][$key];
         $unit_price = (float) $option['price'];
         $configuration = $option['label'];
@@ -139,7 +148,9 @@ final class GE_WTP_Storefront {
         $cart_data = array(
             'ge_configuration_key' => $key,
             'ge_configuration'     => $configuration,
-            'ge_calculated_price'  => round($unit_price * 1.21),
+            // Preserve centavos at unit level so a large minimum quantity does
+            // not accumulate a rounding difference against the displayed total.
+            'ge_calculated_price'  => round($unit_price * 1.21, 4),
             'ge_base_price'        => $unit_price,
             'ge_unique'            => wp_generate_uuid4(),
         );
@@ -225,7 +236,12 @@ final class GE_WTP_Storefront {
         $sections = get_post_meta($product_id, '_ge_public_price_sections', true);
         if (is_array($sections) && $sections) {
             $options = self::section_options($sections);
-            return $options ? array('label' => 'Formato y cantidad', 'options' => $options) : array();
+            return $options ? array(
+                'label' => get_post_meta($product_id, '_ge_option_label', true) ?: 'Formato y cantidad',
+                'options' => $options,
+                'min_qty' => max(1, (int) get_post_meta($product_id, '_ge_minimum_quantity', true)),
+                'step' => max(1, (int) get_post_meta($product_id, '_ge_quantity_step', true)),
+            ) : array();
         }
 
         $costs = get_post_meta($product_id, '_ge_supplier_costs', true);

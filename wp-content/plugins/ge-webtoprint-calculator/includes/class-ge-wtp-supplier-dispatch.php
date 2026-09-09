@@ -17,7 +17,7 @@ final class GE_WTP_Supplier_Dispatch {
         foreach ( GE_WTP_Production::suppliers() as $key => $supplier ) {
             if ( in_array( $key, array( 'multiple', 'pending', 'merch-pending', 'sublimation-pending', 'internal' ), true ) ) { continue; }
             $current = isset( $saved[ $key ] ) && is_array( $saved[ $key ] ) ? $saved[ $key ] : array();
-            $profiles[ $key ] = wp_parse_args( $current, array( 'name' => $supplier['name'], 'email' => '', 'whatsapp' => '', 'channel' => 'manual', 'auto_email' => 'no', 'notes' => $supplier['detail'] ) );
+            $profiles[ $key ] = wp_parse_args( $current, array( 'name' => $supplier['name'], 'email' => $supplier['email'] ?? '', 'whatsapp' => $supplier['whatsapp'] ?? '', 'channel' => 'manual', 'auto_email' => 'no', 'notes' => $supplier['detail'] ) );
         }
         return $profiles;
     }
