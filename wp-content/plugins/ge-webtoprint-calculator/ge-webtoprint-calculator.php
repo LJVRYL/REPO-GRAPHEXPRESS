@@ -3,7 +3,7 @@
  * Plugin Name:       GE Web-to-Print Core
  * Plugin URI:        https://graphexpress.com.ar/
  * Description:       Portal privado, catálogo corporativo y gestión de pedidos de Graph Express.
- * Version:           2.9.1
+ * Version:           2.9.2
  * Author:            Graph Express
  * Author URI:        https://graphexpress.com.ar/
  * Requires at least: 6.5
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'GE_WTP_VERSION', '2.9.1' );
+define( 'GE_WTP_VERSION', '2.9.2' );
 define( 'GE_WTP_PLUGIN_FILE', __FILE__ );
 define( 'GE_WTP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GE_WTP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

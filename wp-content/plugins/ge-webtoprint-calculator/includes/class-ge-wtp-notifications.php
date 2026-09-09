@@ -11,6 +11,7 @@ final class GE_WTP_Notifications {
         add_action( 'init', array( __CLASS__, 'register_log_type' ), 7 );
         add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'handle_order_status_changed' ), 30, 4 );
         add_action( 'woocommerce_email_sent', array( __CLASS__, 'log_woocommerce_email' ), 10, 3 );
+        add_action( 'admin_post_ge_send_order_update', array( __CLASS__, 'handle_order_update_notice' ) );
         add_filter( 'pre_wp_mail', array( __CLASS__, 'capture_local_mail' ), 99, 2 );
     }
 
@@ -128,6 +129,42 @@ final class GE_WTP_Notifications {
         $order->update_meta_data( '_ge_last_status_email_from', sanitize_key( $old_status ) );
         $order->save();
         return $ok;
+    }
+
+    public static function send_order_updated( $order ) {
+        if ( ! $order instanceof WC_Order || ! is_email( $order->get_billing_email() ) ) {
+            return false;
+        }
+
+        $reference = class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : '#' . $order->get_id();
+        $name = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
+        $body = self::order_email_body(
+            $order,
+            'Actualizamos tu presupuesto',
+            'Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ', agregamos nueva información y productos a tu presupuesto <strong>' . esc_html( $reference ) . '</strong>. Podés revisar debajo el detalle actualizado.',
+            GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order->get_id() ) ),
+            'Ver presupuesto actualizado'
+        );
+        $ok = self::send( $order->get_billing_email(), 'Presupuesto actualizado · ' . $reference, $body, 'order_manual_update', $order->get_id() );
+        $order->update_meta_data( '_ge_last_manual_update_email', $ok ? 'sent' : 'failed' );
+        $order->update_meta_data( '_ge_last_manual_update_email_at', current_time( 'mysql' ) );
+        $order->save();
+        return $ok;
+    }
+
+    public static function handle_order_update_notice() {
+        if ( ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) {
+            wp_die( 'Acceso denegado.', 403 );
+        }
+        $order_id = absint( $_POST['order_id'] ?? 0 );
+        check_admin_referer( 'ge_send_order_update_' . $order_id );
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            wp_die( 'Pedido inválido.', 404 );
+        }
+        $result = self::send_order_updated( $order ) ? 'sent' : 'failed';
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order_id, 'customer_notified' => $result ) ) );
+        exit;
     }
 
     public static function send( $to, $subject, $html, $context = 'general', $object_id = 0 ) {
