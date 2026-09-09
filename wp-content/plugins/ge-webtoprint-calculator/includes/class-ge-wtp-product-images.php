@@ -8,12 +8,29 @@ final class GE_WTP_Product_Images {
     const META_ASSET = '_ge_product_reference_asset';
 
     public static function init() {
-        add_action( 'init', array( __CLASS__, 'maybe_sync' ), 80 );
+        add_action( 'init', array( __CLASS__, 'maybe_schedule' ), 80 );
+        add_action( 'ge_wtp_product_image_sync', array( __CLASS__, 'maybe_sync' ) );
+    }
+
+    public static function maybe_schedule() {
+        if ( self::VERSION === get_option( self::OPTION ) || ! function_exists( 'wc_get_product' ) ) { return; }
+        if ( ! wp_next_scheduled( 'ge_wtp_product_image_sync' ) ) {
+            wp_schedule_single_event( time() + 10, 'ge_wtp_product_image_sync' );
+        }
     }
 
     public static function maybe_sync() {
         if ( self::VERSION === get_option( self::OPTION ) || ! function_exists( 'wc_get_product' ) ) { return; }
-        if ( self::sync() ) { update_option( self::OPTION, self::VERSION, false ); }
+        if ( get_transient( 'ge_wtp_product_image_sync_lock' ) ) { return; }
+
+        set_transient( 'ge_wtp_product_image_sync_lock', 'yes', 30 * MINUTE_IN_SECONDS );
+
+        try {
+            if ( function_exists( 'set_time_limit' ) ) { @set_time_limit( 600 ); }
+            if ( self::sync() ) { update_option( self::OPTION, self::VERSION, false ); }
+        } finally {
+            delete_transient( 'ge_wtp_product_image_sync_lock' );
+        }
     }
 
     private static function products() {

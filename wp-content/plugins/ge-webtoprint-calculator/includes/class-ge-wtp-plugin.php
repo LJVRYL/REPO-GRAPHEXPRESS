@@ -21,6 +21,7 @@ final class GE_WTP_Plugin {
         add_action( 'init', array( $this, 'load_textdomain' ), 1 );
         add_action( 'init', array( $this, 'register_order_statuses' ), 5 );
         add_action( 'init', array( $this, 'maybe_upgrade' ), 20 );
+        add_action( 'ge_wtp_product_sync', array( $this, 'run_product_sync' ) );
         add_action( 'init', array( 'GE_WTP_Catalog', 'ensure_exchange_schedule' ), 30 );
         add_filter( 'wc_order_statuses', array( $this, 'add_order_statuses' ) );
 
@@ -92,13 +93,31 @@ final class GE_WTP_Plugin {
             update_option( 'ge_wtp_version', GE_WTP_VERSION, false );
         }
 
-        if ( 'yes' === get_option( 'ge_wtp_needs_product_sync' ) && class_exists( 'WooCommerce' ) ) {
+        if ( 'yes' === get_option( 'ge_wtp_needs_product_sync' ) && class_exists( 'WooCommerce' ) && ! wp_next_scheduled( 'ge_wtp_product_sync' ) ) {
+            wp_schedule_single_event( time() + 10, 'ge_wtp_product_sync' );
+        }
+    }
+
+    public function run_product_sync() {
+        if ( 'yes' !== get_option( 'ge_wtp_needs_product_sync' ) || ! class_exists( 'WooCommerce' ) ) {
+            return;
+        }
+
+        if ( get_transient( 'ge_wtp_product_sync_lock' ) ) {
+            return;
+        }
+
+        set_transient( 'ge_wtp_product_sync_lock', 'yes', 30 * MINUTE_IN_SECONDS );
+
+        try {
             GE_WTP_Catalog::sync_products();
             GE_WTP_Public_Catalog::sync();
             GE_WTP_Mardones_Catalog::sync();
             GE_WTP_Digital_Catalog::sync();
             GE_WTP_Windbanners_Catalog::sync();
             delete_option( 'ge_wtp_needs_product_sync' );
+        } finally {
+            delete_transient( 'ge_wtp_product_sync_lock' );
         }
     }
 
