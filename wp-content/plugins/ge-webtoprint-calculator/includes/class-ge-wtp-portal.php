@@ -443,6 +443,7 @@ final class GE_WTP_Portal {
                 <p><span>IVA 21%</span><strong>USD <?php echo esc_html( number_format_i18n( $totals['tax_usd'], 2 ) ); ?></strong></p>
                 <p class="ge-cart-total"><span>Total</span><strong>USD <?php echo esc_html( number_format_i18n( $totals['total_usd'], 2 ) ); ?></strong></p>
             </div>
+            <a class="ge-button ge-button-secondary ge-button-block" href="<?php echo esc_url( GE_WTP_Quotes::cart_url() ); ?>">Descargar presupuesto PDF</a>
             <?php GE_WTP_Reorders::current_cart_save_form(); ?>
             <?php $source_order_id = GE_WTP_Reorders::source_order_id(); if ( $source_order_id ) : ?><div class="ge-reorder-source"><strong>Pedido basado en #<?php echo esc_html( $source_order_id ); ?></strong><small>Los archivos anteriores quedan como referencia. Podés adjuntar versiones nuevas antes de generar la orden.</small></div><?php endif; ?>
             <form class="ge-checkout-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -512,6 +513,7 @@ final class GE_WTP_Portal {
                     <?php foreach ( $order->get_items() as $item ) : ?><div><span><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) . ' unidades' ); ?></small><?php echo wp_kses_post( wc_display_item_meta( $item, array( 'echo' => false, 'separator' => ' · ' ) ) ); ?></span><strong><?php echo wp_kses_post( $order->get_formatted_line_subtotal( $item ) ); ?></strong></div><?php endforeach; ?>
                     <?php foreach ( $order->get_items( 'fee' ) as $fee ) : ?><div class="ge-order-fee"><span><strong><?php echo esc_html( $fee->get_name() ); ?></strong><small>Cargo del pedido</small></span><strong><?php echo wp_kses_post( wc_price( $fee->get_total(), array( 'currency' => $order->get_currency() ) ) ); ?></strong></div><?php endforeach; ?>
                 </div>
+                <a class="ge-button ge-button-secondary" href="<?php echo esc_url( GE_WTP_Quotes::order_url( $order->get_id() ) ); ?>">Descargar presupuesto PDF</a>
                 <?php GE_WTP_Reorders::order_actions( $order, $markcom ? 'markcom-order' : 'customer-order' ); ?>
                 <?php GE_WTP_Artwork_Library::render_order_links( $order ); ?>
             </section>

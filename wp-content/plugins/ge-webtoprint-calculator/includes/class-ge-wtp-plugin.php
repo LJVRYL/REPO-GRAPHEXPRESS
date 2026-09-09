@@ -26,6 +26,7 @@ final class GE_WTP_Plugin {
         add_filter( 'wc_order_statuses', array( $this, 'add_order_statuses' ) );
 
         GE_WTP_Portal::init();
+        GE_WTP_Quotes::init();
         GE_WTP_Notifications::init();
         GE_WTP_Notification_Center::init();
         GE_WTP_Knowledge_Base::init();
