@@ -151,20 +151,29 @@ final class GE_WTP_Quotes {
     private static function layout_pages( $quote, $pdf ) {
         $pages = array(); $chunks = array_chunk( array_values( $quote['items'] ), 6 ); if ( ! $chunks ) { $chunks = array( array() ); } $page_count = count( $chunks );
         foreach ( $chunks as $page_index => $page_items ) {
-            $pdf->begin_page(); self::header( $pdf, $quote, $page_index + 1, $page_count ); $top = 204;
-            $pdf->fill_rect( 35, $top, 525, 26, 232, 232, 235 );
-            $pdf->text( 43, $top + 17, 9, 'DETALLE', true, 65, 65, 70 ); $pdf->text( 360, $top + 17, 9, 'CANT.', true, 65, 65, 70 ); $pdf->text( 405, $top + 17, 8.5, 'UNIT. (' . $quote['currency'] . ')', true, 65, 65, 70 ); $pdf->text( 493, $top + 17, 8.5, 'TOTAL (' . $quote['currency'] . ')', true, 65, 65, 70 ); $top += 28;
-            foreach ( $page_items as $item ) {
-                $description = $pdf->wrap( $item['description'], 54 ); $height = max( 39, 16 + count( $description ) * 11 ); $pdf->stroke_rect( 35, $top, 525, $height, 221, 221, 225 );
+            $pdf->begin_page(); self::header( $pdf, $quote, $page_index + 1, $page_count ); $top = 220;
+            $pdf->fill_rect( 35, $top, 525, 28, 249, 232, 242 );
+            $pdf->text( 43, $top + 18, 9, 'DETALLE', true, 65, 52, 61 ); $pdf->text( 360, $top + 18, 9, 'CANT.', true, 65, 52, 61 ); $pdf->text( 405, $top + 18, 8.5, 'UNIT. (' . $quote['currency'] . ')', true, 65, 52, 61 ); $pdf->text( 493, $top + 18, 8.5, 'TOTAL (' . $quote['currency'] . ')', true, 65, 52, 61 ); $top += 30;
+            foreach ( $page_items as $item_index => $item ) {
+                $description = $pdf->wrap( $item['description'], 52 ); $height = max( 42, 17 + count( $description ) * 11 );
+                if ( 1 === $item_index % 2 ) { $pdf->fill_rect( 35, $top, 525, $height, 251, 250, 252 ); }
+                $pdf->stroke_rect( 35, $top, 525, $height, 224, 221, 226 );
                 foreach ( $description as $line_number => $line ) { $pdf->text( 43, $top + 15 + $line_number * 11, 8.5, $line, 0 === $line_number, 45, 45, 50 ); }
                 $pdf->text_right( 390, $top + 18, 9, self::quantity( $item['quantity'] ), false, 45, 45, 50 ); $pdf->text_right( 466, $top + 18, 8.5, self::amount( $item['unit'] ), false, 45, 45, 50 ); $pdf->text_right( 552, $top + 18, 8.5, self::amount( $item['subtotal'] ), true, 45, 45, 50 ); $top += $height;
             }
             if ( $page_index + 1 === $page_count ) {
                 $top += 12;
                 foreach ( $quote['summary'] as $line ) { $pdf->text_right( 470, $top + 12, 9, $line['label'], false, 80, 80, 85 ); $pdf->text_right( 552, $top + 12, 9, self::money( $line['amount'], $quote['currency'] ), true, 45, 45, 50 ); $top += 18; }
-                $pdf->fill_rect( 330, $top + 2, 230, 35, 235, 235, 238 ); $pdf->text( 344, $top + 25, 15, 'TOTAL', true, 35, 35, 40 ); $pdf->text_right( 548, $top + 25, 15, self::money( $quote['total'], $quote['currency'] ), true, 35, 35, 40 ); $top += 53;
-                foreach ( $pdf->wrap( 'SON: ' . self::amount_in_words( $quote['total'], $quote['currency'] ), 92 ) as $i => $line ) { $pdf->text( 40, $top + 11 + $i * 10, 8.5, $line, true, 62, 62, 67 ); } $top += 34;
-                if ( ! empty( $quote['notes'] ) ) { $pdf->text( 40, $top + 10, 8.5, 'OBSERVACIONES', true, 216, 20, 113 ); foreach ( $pdf->wrap( $quote['notes'], 100 ) as $i => $line ) { $pdf->text( 40, $top + 24 + $i * 10, 8, $line, false, 70, 70, 75 ); } $top += 48; }
+                $pdf->fill_rect( 318, $top + 2, 242, 40, 249, 232, 242 ); $pdf->fill_rect( 318, $top + 2, 5, 40, 216, 20, 113 ); $pdf->text( 338, $top + 27, 15, 'TOTAL', true, 35, 35, 40 ); $pdf->text_right( 548, $top + 27, 15, self::money( $quote['total'], $quote['currency'] ), true, 35, 35, 40 ); $top += 56;
+                $word_lines = $pdf->wrap( 'SON: ' . self::amount_in_words( $quote['total'], $quote['currency'] ), 88 );
+                foreach ( $word_lines as $i => $line ) { $pdf->text( 40, $top + 11 + $i * 10, 8.5, $line, true, 62, 62, 67 ); }
+                $top += 20 + count( $word_lines ) * 10;
+                if ( ! empty( $quote['notes'] ) ) {
+                    $note_lines = $pdf->wrap( $quote['notes'], 96 );
+                    $pdf->text( 40, $top + 10, 8.5, 'OBSERVACIONES', true, 216, 20, 113 );
+                    foreach ( $note_lines as $i => $line ) { $pdf->text( 40, $top + 25 + $i * 10, 8, $line, false, 70, 70, 75 ); }
+                    $top += 30 + count( $note_lines ) * 10;
+                }
                 $pdf->text( 40, $top + 10, 8.5, 'CONDICIONES COMERCIALES', true, 216, 20, 113 );
                 foreach ( $quote['conditions'] as $condition ) { foreach ( $pdf->wrap( '• ' . $condition, 105 ) as $line ) { $top += 10; $pdf->text( 40, $top + 11, 7.8, $line, false, 70, 70, 75 ); } }
             }
@@ -174,10 +183,16 @@ final class GE_WTP_Quotes {
     }
 
     private static function header( $pdf, $quote, $page, $pages ) {
-        $pdf->text( 35, 48, 21, 'GRAPH', true, 27, 27, 32 ); $pdf->text( 111, 48, 21, 'EXPRESS', true, 216, 20, 113 ); $pdf->text( 36, 65, 8, 'SOLUCIONES GRÁFICAS', true, 44, 174, 207 ); $pdf->text( 376, 53, 24, 'PRESUPUESTO', true, 216, 20, 113 ); $pdf->line( 35, 77, 560, 77, 216, 20, 113, 2 );
+        $pdf->text( 35, 48, 21, 'GRAPH', true, 27, 27, 32 ); $pdf->text( 111, 48, 21, 'EXPRESS', true, 216, 20, 113 ); $pdf->text( 36, 65, 8, 'SOLUCIONES GRÁFICAS', true, 44, 174, 207 );
+        $pdf->fill_rect( 326, 24, 234, 43, 249, 232, 242 ); $pdf->fill_rect( 326, 24, 5, 43, 216, 20, 113 ); $pdf->text( 348, 52, 22, 'PRESUPUESTO', true, 216, 20, 113 );
+        $pdf->line( 35, 77, 560, 77, 216, 20, 113, 2 );
         $pdf->text( 36, 94, 9, 'Fecha: ' . $quote['date'], false, 95, 95, 100 ); $pdf->text( 240, 94, 9, 'N°: ' . $quote['number'], true, 65, 65, 70 ); if ( $pages > 1 ) { $pdf->text_right( 558, 94, 8, 'Página ' . $page . ' de ' . $pages, false, 95, 95, 100 ); }
-        $customer = $quote['customer']; $pdf->fill_rect( 35, 108, 525, 79, 247, 247, 248 ); $pdf->text( 44, 125, 8, 'CLIENTE', true, 216, 20, 113 ); $pdf->text( 44, 143, 12, $customer['name'] ?: 'Cliente', true, 45, 45, 50 );
-        $details = array_filter( array( $customer['contact'] ? 'Contacto: ' . $customer['contact'] : '', $customer['email'], $customer['phone'], $customer['cuit'] ? 'CUIT: ' . $customer['cuit'] : '' ) ); $pdf->text( 44, 159, 8, implode( ' · ', $details ), false, 80, 80, 85 ); if ( $customer['address'] ) { $pdf->text( 44, 175, 8, 'Dirección: ' . $customer['address'], false, 80, 80, 85 ); }
+        $customer = $quote['customer']; $pdf->fill_rect( 35, 108, 525, 96, 247, 247, 248 ); $pdf->fill_rect( 35, 108, 5, 96, 44, 174, 207 ); $pdf->text( 50, 125, 8, 'CLIENTE', true, 216, 20, 113 ); $pdf->text( 50, 145, 13, $customer['name'] ?: 'Cliente', true, 45, 45, 50 );
+        $contact = array_filter( array( $customer['contact'] ? 'Contacto: ' . $customer['contact'] : '', $customer['cuit'] ? 'CUIT: ' . $customer['cuit'] : '' ) );
+        $communication = array_filter( array( $customer['email'], $customer['phone'] ) );
+        if ( $contact ) { $pdf->text( 50, 163, 8, implode( ' · ', $contact ), false, 80, 80, 85 ); }
+        if ( $communication ) { $pdf->text( 50, 179, 8, implode( ' · ', $communication ), false, 80, 80, 85 ); }
+        if ( $customer['address'] ) { $pdf->text( 50, 195, 8, 'Dirección: ' . $customer['address'], false, 80, 80, 85 ); }
     }
 
     private static function money( $amount, $currency ) { return $currency . ' ' . number_format( (float) $amount, 2, ',', '.' ); }
