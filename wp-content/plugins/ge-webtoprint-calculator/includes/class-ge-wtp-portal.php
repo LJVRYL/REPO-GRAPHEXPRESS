@@ -339,7 +339,7 @@ final class GE_WTP_Portal {
             </div><?php else : ?><div class="ge-rate-card"><span class="ge-rate-label">Tu cuenta</span><strong><?php echo esc_html( wp_get_current_user()->display_name ); ?></strong><span><?php echo esc_html( wp_get_current_user()->user_email ); ?></span><small>Datos y trabajos visibles sólo para vos.</small></div><?php endif; ?>
         </section>
         <section class="ge-stats">
-            <article><span><?php echo esc_html( $markcom ? 'Productos disponibles' : 'Pedidos totales' ); ?></span><strong><?php echo esc_html( $markcom ? 9 : count( $orders ) ); ?></strong><small><?php echo esc_html( $markcom ? '10 presentaciones' : 'En tu historial' ); ?></small></article>
+            <article><span><?php echo esc_html( $markcom ? 'Productos disponibles' : 'Pedidos totales' ); ?></span><strong><?php echo esc_html( $markcom ? 9 : count( $orders ) ); ?></strong><small><?php echo esc_html( $markcom ? count( GE_WTP_Catalog::products() ) . ' presentaciones' : 'En tu historial' ); ?></small></article>
             <article><span>Pedidos activos</span><strong><?php echo esc_html( count( $active_orders ) ); ?></strong><small>En seguimiento</small></article>
             <article><span>Documentos</span><strong><?php echo esc_html( $documents ); ?></strong><small>Archivos centralizados</small></article>
         </section>
@@ -406,7 +406,7 @@ final class GE_WTP_Portal {
                     <label>Cantidad
                         <select name="tier" data-ge-tier>
                             <?php foreach ( $product['prices'] as $tier => $price ) : ?>
-                                <option value="<?php echo esc_attr( $tier ); ?>" data-ars="<?php echo esc_attr( $price ); ?>" data-usd="<?php echo esc_attr( GE_WTP_Catalog::ars_to_usd( $price, $rate ) ); ?>"><?php echo esc_html( number_format_i18n( $tier ) . ' unidades' ); ?></option>
+                                <option value="<?php echo esc_attr( $tier ); ?>" data-ars="<?php echo esc_attr( $price ); ?>" data-usd="<?php echo esc_attr( GE_WTP_Catalog::ars_to_usd( $price, $rate ) ); ?>"><?php echo esc_html( number_format_i18n( $tier ) . ( 1 === (int) $tier ? ' unidad' : ' unidades' ) ); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </label>
@@ -431,7 +431,7 @@ final class GE_WTP_Portal {
             <div class="ge-cart-lines">
                 <?php foreach ( $cart as $line ) : $product = GE_WTP_Catalog::get( $line['product_key'] ); if ( ! $product ) { continue; } $unit = $product['prices'][ $line['tier'] ]; ?>
                     <article>
-                        <div><strong><?php echo esc_html( $product['name'] ); ?></strong><small><?php echo esc_html( number_format_i18n( $line['tier'] ) . ' unidades' ); ?></small></div>
+                        <div><strong><?php echo esc_html( $product['name'] ); ?></strong><small><?php echo esc_html( number_format_i18n( $line['tier'] ) . ( 1 === (int) $line['tier'] ? ' unidad' : ' unidades' ) ); ?></small></div>
                         <div class="ge-cart-line-price"><strong>USD <?php echo esc_html( number_format_i18n( GE_WTP_Catalog::ars_to_usd( $unit * $line['tier'], $rate ), 2 ) ); ?></strong>
                             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_markcom_remove_cart"><input type="hidden" name="line_key" value="<?php echo esc_attr( $line['line_key'] ); ?>"><?php wp_nonce_field( 'ge_markcom_remove_cart' ); ?><button type="submit" aria-label="Quitar producto">×</button></form>
                         </div>
