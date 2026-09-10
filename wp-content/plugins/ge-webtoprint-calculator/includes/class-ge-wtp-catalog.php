@@ -60,7 +60,7 @@ final class GE_WTP_Catalog {
                 'name'        => 'Fachada 5 × 1 m — lona instalada',
                 'description' => 'Lona front brillo 13 oz para exterior, medida de producción 5,10 × 1,10 m e instalación estándar sobre una estructura existente apta. Sujeto a relevamiento; no incluye altura especial, andamio, hidroelevador, permisos ni reparación del soporte.',
                 'category'    => 'Fachada especial',
-                'prices'      => array( 1 => 221892 ),
+                'prices'      => array( 100 => 221892, 500 => 213015, 1000 => 208583, 5000 => 204139 ),
             ),
             'fachada-5x1-estructura-instalada' => array(
                 'number'      => '05D',
@@ -68,7 +68,7 @@ final class GE_WTP_Catalog {
                 'name'        => 'Fachada 5 × 1 m — lona, estructura e instalación',
                 'description' => 'Lona front brillo 13 oz, bastidor modular de caño estructural 20 × 20 mm, fabricación, tensado e instalación estándar en CABA. Sujeto a relevamiento; no incluye altura especial, andamio, hidroelevador, permisos ni trabajos de albañilería.',
                 'category'    => 'Fachada especial',
-                'prices'      => array( 1 => 509232 ),
+                'prices'      => array( 100 => 509232, 500 => 475615, 1000 => 452736, 5000 => 421518 ),
             ),
             'fachada-10x1-lona-instalada' => array(
                 'number'      => '05E',
@@ -76,7 +76,7 @@ final class GE_WTP_Catalog {
                 'name'        => 'Fachada 10 × 1 m — lona instalada',
                 'description' => 'Lona front brillo 13 oz para exterior, medida de producción 10,10 × 1,10 m e instalación estándar sobre una estructura existente apta. Sujeto a relevamiento; no incluye altura especial, andamio, hidroelevador, permisos ni reparación del soporte.',
                 'category'    => 'Fachada especial',
-                'prices'      => array( 1 => 391982 ),
+                'prices'      => array( 100 => 391982, 500 => 376301, 1000 => 368471, 5000 => 360620 ),
             ),
             'fachada-10x1-estructura-instalada' => array(
                 'number'      => '05F',
@@ -84,7 +84,7 @@ final class GE_WTP_Catalog {
                 'name'        => 'Fachada 10 × 1 m — lona, estructura e instalación',
                 'description' => 'Lona front brillo 13 oz, bastidor modular reforzado de caño estructural 20 × 20 mm, fabricación, tensado e instalación estándar en CABA. Sujeto a relevamiento; no incluye altura especial, andamio, hidroelevador, permisos ni trabajos de albañilería.',
                 'category'    => 'Fachada especial',
-                'prices'      => array( 1 => 927282 ),
+                'prices'      => array( 100 => 927282, 500 => 866067, 1000 => 824406, 5000 => 767560 ),
             ),
             'totem' => array(
                 'number'      => '06',
