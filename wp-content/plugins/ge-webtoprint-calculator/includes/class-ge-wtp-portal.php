@@ -513,6 +513,7 @@ final class GE_WTP_Portal {
                     <?php foreach ( $order->get_items() as $item ) : ?><div><span><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) . ' unidades' ); ?></small><?php echo wp_kses_post( wc_display_item_meta( $item, array( 'echo' => false, 'separator' => ' · ' ) ) ); ?></span><strong><?php echo wp_kses_post( $order->get_formatted_line_subtotal( $item ) ); ?></strong></div><?php endforeach; ?>
                     <?php foreach ( $order->get_items( 'fee' ) as $fee ) : ?><div class="ge-order-fee"><span><strong><?php echo esc_html( $fee->get_name() ); ?></strong><small>Cargo del pedido</small></span><strong><?php echo wp_kses_post( wc_price( $fee->get_total(), array( 'currency' => $order->get_currency() ) ) ); ?></strong></div><?php endforeach; ?>
                 </div>
+                <?php GE_WTP_Payments::render_portal_order_payment( $order ); ?>
                 <a class="ge-button ge-button-secondary" href="<?php echo esc_url( GE_WTP_Quotes::order_url( $order->get_id() ) ); ?>">Descargar presupuesto PDF</a>
                 <?php GE_WTP_Reorders::order_actions( $order, $markcom ? 'markcom-order' : 'customer-order' ); ?>
                 <?php GE_WTP_Artwork_Library::render_order_links( $order ); ?>
