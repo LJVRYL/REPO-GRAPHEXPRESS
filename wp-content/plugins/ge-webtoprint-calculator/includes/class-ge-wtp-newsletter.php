@@ -14,6 +14,8 @@ final class GE_WTP_Newsletter {
         add_action( 'admin_post_ge_newsletter_subscribe', array( __CLASS__, 'handle_subscribe' ) );
         add_action( 'admin_post_nopriv_ge_newsletter_unsubscribe', array( __CLASS__, 'handle_unsubscribe' ) );
         add_action( 'admin_post_ge_newsletter_unsubscribe', array( __CLASS__, 'handle_unsubscribe' ) );
+        add_action( 'admin_post_nopriv_ge_newsletter_one_click', array( __CLASS__, 'handle_one_click_unsubscribe' ) );
+        add_action( 'admin_post_ge_newsletter_one_click', array( __CLASS__, 'handle_one_click_unsubscribe' ) );
         add_action( 'admin_post_ge_newsletter_save_campaign', array( __CLASS__, 'handle_save_campaign' ) );
         add_action( 'admin_post_ge_newsletter_queue_campaign', array( __CLASS__, 'handle_queue_campaign' ) );
         add_action( 'admin_post_ge_newsletter_send_test', array( __CLASS__, 'handle_send_test' ) );
@@ -167,6 +169,15 @@ final class GE_WTP_Newsletter {
         global $wpdb; $token = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : ''; check_admin_referer( 'ge_newsletter_unsubscribe_' . $token ); $wpdb->update( self::contacts_table(), array( 'status' => 'unsubscribed', 'unsubscribed_at' => current_time( 'mysql' ), 'updated_at' => current_time( 'mysql' ) ), array( 'token' => $token ) ); $page = get_page_by_path( 'preferencias-email' ); $url = $page ? get_permalink( $page ) : home_url( '/preferencias-email/' ); wp_safe_redirect( add_query_arg( array( 'token' => $token, 'done' => 1 ), $url ) ); exit;
     }
 
+    public static function handle_one_click_unsubscribe() {
+        global $wpdb;
+        if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) { status_header( 405 ); exit; }
+        $token = isset( $_REQUEST['token'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['token'] ) ) : '';
+        if ( ! preg_match( '/^[a-f0-9]{64}$/', $token ) ) { status_header( 400 ); exit; }
+        $wpdb->update( self::contacts_table(), array( 'status' => 'unsubscribed', 'unsubscribed_at' => current_time( 'mysql' ), 'updated_at' => current_time( 'mysql' ) ), array( 'token' => $token ) );
+        status_header( 204 ); exit;
+    }
+
     public static function render_admin() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) { return; }
         $view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'campaigns';
@@ -222,7 +233,7 @@ final class GE_WTP_Newsletter {
     }
 
     public static function process_queue() {
-        global $wpdb; $campaign = $wpdb->get_row( "SELECT * FROM " . self::campaigns_table() . " WHERE status IN ('queued','sending') ORDER BY id ASC LIMIT 1" ); if ( ! $campaign ) { return; } $wpdb->update( self::campaigns_table(), array( 'status' => 'sending' ), array( 'id' => $campaign->id ) ); $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT d.id AS delivery_id,d.attempts,c.* FROM ' . self::deliveries_table() . ' d INNER JOIN ' . self::contacts_table() . " c ON c.id=d.contact_id WHERE d.campaign_id=%d AND d.status='pending' AND c.status='subscribed' ORDER BY d.id ASC LIMIT 20", $campaign->id ) ); foreach ( $rows as $contact ) { $unsubscribe = self::unsubscribe_url( $contact->token ); $html = self::campaign_html( $campaign, $unsubscribe, $contact->first_name ); $ok = GE_WTP_Notifications::send( $contact->email, $campaign->subject, $html, 'newsletter_campaign', $campaign->id ); $wpdb->update( self::deliveries_table(), array( 'status' => $ok ? 'sent' : 'failed', 'attempts' => (int) $contact->attempts + 1, 'last_error' => $ok ? '' : 'wp_mail devolvió error', 'sent_at' => $ok ? current_time( 'mysql' ) : null ), array( 'id' => $contact->delivery_id ) ); } $sent = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE campaign_id=%d AND status='sent'", $campaign->id ) ); $failed = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE campaign_id=%d AND status='failed'", $campaign->id ) ); $pending = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE campaign_id=%d AND status='pending'", $campaign->id ) ); $data = array( 'sent_count' => $sent, 'failed_count' => $failed ); if ( 0 === $pending ) { $data['status'] = 'sent'; $data['sent_at'] = current_time( 'mysql' ); } else { wp_schedule_single_event( time() + 60, self::CRON_HOOK ); } $wpdb->update( self::campaigns_table(), $data, array( 'id' => $campaign->id ) );
+        global $wpdb; $campaign = $wpdb->get_row( "SELECT * FROM " . self::campaigns_table() . " WHERE status IN ('queued','sending') ORDER BY id ASC LIMIT 1" ); if ( ! $campaign ) { return; } $wpdb->update( self::campaigns_table(), array( 'status' => 'sending' ), array( 'id' => $campaign->id ) ); $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT d.id AS delivery_id,d.attempts,c.* FROM ' . self::deliveries_table() . ' d INNER JOIN ' . self::contacts_table() . " c ON c.id=d.contact_id WHERE d.campaign_id=%d AND d.status='pending' AND c.status='subscribed' ORDER BY d.id ASC LIMIT 20", $campaign->id ) ); foreach ( $rows as $contact ) { $unsubscribe = self::unsubscribe_url( $contact->token ); $one_click = self::one_click_unsubscribe_url( $contact->token ); $html = self::campaign_html( $campaign, $unsubscribe, $contact->first_name ); $headers = array( 'List-Unsubscribe: <' . $one_click . '>', 'List-Unsubscribe-Post: List-Unsubscribe=One-Click' ); $ok = GE_WTP_Notifications::send( $contact->email, $campaign->subject, $html, 'newsletter_campaign', $campaign->id, $headers ); $attempts = (int) $contact->attempts + 1; $status = $ok ? 'sent' : ( $attempts < 3 ? 'pending' : 'failed' ); $wpdb->update( self::deliveries_table(), array( 'status' => $status, 'attempts' => $attempts, 'last_error' => $ok ? '' : 'El transporte de correo devolvió un error', 'sent_at' => $ok ? current_time( 'mysql' ) : null ), array( 'id' => $contact->delivery_id ) ); } $sent = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE campaign_id=%d AND status='sent'", $campaign->id ) ); $failed = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE campaign_id=%d AND status='failed'", $campaign->id ) ); $pending = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE campaign_id=%d AND status='pending'", $campaign->id ) ); $data = array( 'sent_count' => $sent, 'failed_count' => $failed ); if ( 0 === $pending ) { $data['status'] = 'sent'; $data['sent_at'] = current_time( 'mysql' ); } else { wp_schedule_single_event( time() + 60, self::CRON_HOOK ); } $wpdb->update( self::campaigns_table(), $data, array( 'id' => $campaign->id ) );
     }
 
     private static function campaign_html( $campaign, $unsubscribe_url, $first_name ) {
@@ -230,6 +241,7 @@ final class GE_WTP_Newsletter {
     }
 
     private static function unsubscribe_url( $token ) { $page = get_page_by_path( 'preferencias-email' ); $url = $page ? get_permalink( $page ) : home_url( '/preferencias-email/' ); return add_query_arg( 'token', rawurlencode( $token ), $url ); }
+    private static function one_click_unsubscribe_url( $token ) { return add_query_arg( array( 'action' => 'ge_newsletter_one_click', 'token' => rawurlencode( $token ) ), admin_url( 'admin-post.php' ) ); }
     private static function admin_guard() { if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_communications' ) ) { wp_die( 'Acceso denegado.', 403 ); } }
     private static function admin_redirect() { $staff = isset( $_POST['return_to'] ) && 'staff' === sanitize_key( wp_unslash( $_POST['return_to'] ) ); wp_safe_redirect( $staff && class_exists( 'GE_WTP_Staff_Portal' ) ? GE_WTP_Staff_Portal::portal_url( 'communications' ) : admin_url( 'admin.php?page=ge-backoffice-newsletter&ge_saved=1' ) ); exit; }
 }

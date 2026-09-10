@@ -6,13 +6,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class GE_WTP_Notifications {
     const LOG_POST_TYPE = 'ge_email_log';
+    private static $last_mail_error = '';
 
     public static function init() {
         add_action( 'init', array( __CLASS__, 'register_log_type' ), 7 );
         add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'handle_order_status_changed' ), 30, 4 );
         add_action( 'woocommerce_email_sent', array( __CLASS__, 'log_woocommerce_email' ), 10, 3 );
         add_action( 'admin_post_ge_send_order_update', array( __CLASS__, 'handle_order_update_notice' ) );
+        add_action( 'wp_mail_failed', array( __CLASS__, 'capture_mail_error' ) );
         add_filter( 'pre_wp_mail', array( __CLASS__, 'capture_local_mail' ), 99, 2 );
+    }
+
+    public static function is_local_environment() {
+        $host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( preg_replace( '/:\d+$/', '', (string) $_SERVER['HTTP_HOST'] ) ) : '';
+        $site_host = function_exists( 'home_url' ) ? strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) : '';
+        $local_hosts = array( 'localhost', '127.0.0.1', '::1' );
+        $is_local_domain = strlen( $site_host ) > 6 && '.local' === substr( $site_host, -6 );
+        return in_array( $host, $local_hosts, true ) || in_array( $site_host, $local_hosts, true ) || $is_local_domain;
     }
 
     /**
@@ -21,11 +31,16 @@ final class GE_WTP_Notifications {
      * record their normal delivery logs, so the complete workflow can be audited.
      */
     public static function capture_local_mail( $return, $atts ) {
-        $host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( preg_replace( '/:\d+$/', '', (string) $_SERVER['HTTP_HOST'] ) ) : '';
-        if ( in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true ) ) {
+        if ( self::is_local_environment() ) {
             return true;
         }
         return $return;
+    }
+
+    public static function capture_mail_error( $error ) {
+        if ( is_wp_error( $error ) ) {
+            self::$last_mail_error = sanitize_text_field( $error->get_error_message() );
+        }
     }
 
     public static function send_customer_welcome_verification( $user, $email, $verification_url, $welcome = false ) {
@@ -45,7 +60,10 @@ final class GE_WTP_Notifications {
     }
 
     public static function handle_order_status_changed( $order_id, $old_status, $new_status, $order ) {
-        if ( ! $order instanceof WC_Order || 'yes' !== $order->get_meta( '_ge_markcom_order' ) || ! $order->get_meta( '_ge_markcom_reference' ) || $old_status === $new_status ) { return; }
+        if ( ! $order instanceof WC_Order || $old_status === $new_status ) { return; }
+        $production_statuses = array( 'ge-confirmado', 'ge-produccion', 'ge-listo', 'ge-entregado' );
+        $is_portal_order = 'yes' === $order->get_meta( '_ge_markcom_order' ) && $order->get_meta( '_ge_markcom_reference' );
+        if ( ! $is_portal_order && ! in_array( $new_status, $production_statuses, true ) ) { return; }
         self::send_order_status_changed( $order, $old_status );
     }
 
@@ -57,7 +75,7 @@ final class GE_WTP_Notifications {
         $subject = method_exists( $email, 'get_subject' ) ? $email->get_subject() : 'Correo WooCommerce';
         $object_id = 0;
         if ( method_exists( $email, 'get_object' ) ) { $object = $email->get_object(); if ( is_object( $object ) && method_exists( $object, 'get_id' ) ) { $object_id = $object->get_id(); } }
-        self::log( $recipient, $subject, '<p>Correo transaccional generado por WooCommerce.</p>', 'woocommerce_' . sanitize_key( $email_id ), $object_id, (bool) $sent );
+        self::log( $recipient, $subject, '<p>Correo transaccional generado por WooCommerce.</p>', 'woocommerce_' . sanitize_key( $email_id ), $object_id, $sent ? 'sent' : 'failed' );
     }
 
     public static function register_log_type() {
@@ -167,18 +185,20 @@ final class GE_WTP_Notifications {
         exit;
     }
 
-    public static function send( $to, $subject, $html, $context = 'general', $object_id = 0 ) {
+    public static function send( $to, $subject, $html, $context = 'general', $object_id = 0, $extra_headers = array() ) {
         $to = sanitize_email( $to );
         if ( ! $to || ! is_email( $to ) ) {
             return false;
         }
-        $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+        self::$last_mail_error = '';
+        $headers = array_merge( array( 'Content-Type: text/html; charset=UTF-8' ), is_array( $extra_headers ) ? $extra_headers : array() );
         $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers );
-        self::log( $to, $subject, $html, $context, $object_id, $ok );
+        $result = self::is_local_environment() ? 'simulated' : ( $ok ? 'sent' : 'failed' );
+        self::log( $to, $subject, $html, $context, $object_id, $result, self::$last_mail_error );
         return $ok;
     }
 
-    private static function log( $to, $subject, $html, $context, $object_id, $ok ) {
+    private static function log( $to, $subject, $html, $context, $object_id, $result, $error = '' ) {
         $post_id = wp_insert_post(
             array(
                 'post_type'    => self::LOG_POST_TYPE,
@@ -191,7 +211,10 @@ final class GE_WTP_Notifications {
             update_post_meta( $post_id, '_ge_email_to', sanitize_email( $to ) );
             update_post_meta( $post_id, '_ge_email_context', sanitize_key( $context ) );
             update_post_meta( $post_id, '_ge_email_object_id', absint( $object_id ) );
-            update_post_meta( $post_id, '_ge_email_result', $ok ? 'sent' : 'failed' );
+            update_post_meta( $post_id, '_ge_email_result', in_array( $result, array( 'sent', 'failed', 'simulated' ), true ) ? $result : 'failed' );
+            if ( $error ) {
+                update_post_meta( $post_id, '_ge_email_error', mb_substr( sanitize_text_field( $error ), 0, 500 ) );
+            }
         }
     }
 

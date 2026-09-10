@@ -4,12 +4,14 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 final class GE_WTP_Supplier_Dispatch {
     const OPTION = 'ge_wtp_supplier_profiles';
+    const RETRY_HOOK = 'ge_wtp_supplier_email_retry';
 
     public static function init() {
         add_action( 'admin_post_ge_supplier_profiles_save', array( __CLASS__, 'handle_profiles' ) );
         add_action( 'admin_post_ge_supplier_add', array( __CLASS__, 'handle_add' ) );
         add_action( 'admin_post_ge_supplier_email', array( __CLASS__, 'handle_email' ) );
         add_action( 'admin_post_ge_supplier_whatsapp', array( __CLASS__, 'handle_whatsapp' ) );
+        add_action( self::RETRY_HOOK, array( __CLASS__, 'retry_auto_dispatch' ) );
     }
 
     public static function profiles() {
@@ -50,8 +52,34 @@ final class GE_WTP_Supplier_Dispatch {
         if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_supplier_auto_dispatch_at' ) ) { return; }
         $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) );
         if ( ! $profile || 'yes' !== $profile['auto_email'] || ! is_email( $profile['email'] ) ) { return; }
-        $sent = self::send_email( $order, $profile ); self::log( $order, 'auto-email', $sent ); if ( ! $sent ) { self::notify_failure( $order, $profile ); }
-        $order->update_meta_data( '_ge_supplier_auto_dispatch_at', current_time( 'mysql' ) ); $order->save();
+        $attempts = absint( $order->get_meta( '_ge_supplier_auto_dispatch_attempts' ) );
+        $last_attempt = absint( $order->get_meta( '_ge_supplier_auto_dispatch_last_attempt' ) );
+        if ( $attempts >= 3 || ( $last_attempt && time() - $last_attempt < 15 * MINUTE_IN_SECONDS ) ) { return; }
+        self::attempt_auto_dispatch( $order, $profile );
+    }
+
+    public static function retry_auto_dispatch( $order_id ) {
+        $order = wc_get_order( absint( $order_id ) );
+        if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_supplier_auto_dispatch_at' ) ) { return; }
+        $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) );
+        if ( ! $profile || 'yes' !== $profile['auto_email'] || ! is_email( $profile['email'] ) ) { return; }
+        self::attempt_auto_dispatch( $order, $profile );
+    }
+
+    private static function attempt_auto_dispatch( $order, $profile ) {
+        $sent = self::send_email( $order, $profile ); self::log( $order, 'auto-email', $sent );
+        $attempts = absint( $order->get_meta( '_ge_supplier_auto_dispatch_attempts' ) ) + 1;
+        $order->update_meta_data( '_ge_supplier_auto_dispatch_attempts', $attempts );
+        $order->update_meta_data( '_ge_supplier_auto_dispatch_last_attempt', time() );
+        if ( $sent ) {
+            $order->update_meta_data( '_ge_supplier_auto_dispatch_at', current_time( 'mysql' ) );
+        } elseif ( $attempts < 3 ) {
+            $args = array( $order->get_id() );
+            if ( ! wp_next_scheduled( self::RETRY_HOOK, $args ) ) { wp_schedule_single_event( time() + 15 * MINUTE_IN_SECONDS, self::RETRY_HOOK, $args ); }
+        } else {
+            self::notify_failure( $order, $profile );
+        }
+        $order->save();
     }
 
     public static function handle_profiles() {
@@ -70,7 +98,7 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     public static function handle_email() {
-        self::guard(); $order = self::order(); check_admin_referer( 'ge_supplier_email_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $sent = $profile && is_email( $profile['email'] ) ? self::send_email( $order, $profile ) : false; self::log( $order, 'email', $sent ); if ( ! $sent ) { self::notify_failure( $order, $profile ); } self::redirect_order( $order, $sent ? 'supplier-sent' : 'supplier-failed' );
+        self::guard(); $order = self::order(); check_admin_referer( 'ge_supplier_email_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $sent = $profile && is_email( $profile['email'] ) ? self::send_email( $order, $profile ) : false; self::log( $order, 'email', $sent ); if ( $sent ) { $order->update_meta_data( '_ge_supplier_auto_dispatch_at', current_time( 'mysql' ) ); wp_clear_scheduled_hook( self::RETRY_HOOK, array( $order->get_id() ) ); $order->save(); } else { self::notify_failure( $order, $profile ); } self::redirect_order( $order, $sent ? 'supplier-sent' : 'supplier-failed' );
     }
 
     public static function handle_whatsapp() {
