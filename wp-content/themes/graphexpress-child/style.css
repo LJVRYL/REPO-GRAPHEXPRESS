@@ -302,6 +302,7 @@ body.gx-home { margin: 0; color: var(--gx-ink); background: var(--gx-paper); fon
     .gx-nav { display: none; position: absolute; left: 24px; right: 24px; top: 76px; padding: 20px; flex-direction: column; gap: 14px; border: 1px solid var(--gx-line); border-radius: 18px; background: #fff; box-shadow: var(--gx-shadow); }
     .gx-nav.is-open { display: flex; }
     .gx-nav .gx-nav-mobile-action.is-portal { display: block; margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--gx-line); color: var(--gx-violet); }
+    .gx-nav .gx-nav-mobile-action.is-cart { display: block; color: var(--gx-ink); }
     .gx-menu-toggle { justify-self: end; display: block; }
     .gx-header-actions { grid-column: 3; grid-row: 1; }
     .gx-portal-link { display: none; }

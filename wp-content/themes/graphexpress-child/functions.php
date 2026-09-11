@@ -26,20 +26,68 @@ function graphexpress_child_enqueue_styles() {
         'graphexpress-child-style',
         get_stylesheet_uri(),
         array('graphexpress-parent-style'),
-        wp_get_theme()->get('Version')
+        (string) filemtime(get_stylesheet_directory() . '/style.css')
     );
 
-    if (is_front_page() || (function_exists('is_woocommerce') && is_woocommerce()) || is_search()) {
-        wp_enqueue_script(
-            'graphexpress-home',
-            get_stylesheet_directory_uri() . '/assets/js/home.js',
-            array(),
-            wp_get_theme()->get('Version'),
-            true
-        );
-    }
+    // El encabezado público se reutiliza también en carrito, checkout, guías
+    // y páginas provistas por el plugin. El controlador del menú debe estar
+    // disponible en todas ellas.
+    wp_enqueue_script(
+        'graphexpress-home',
+        get_stylesheet_directory_uri() . '/assets/js/home.js',
+        array(),
+        (string) filemtime(get_stylesheet_directory() . '/assets/js/home.js'),
+        true
+    );
 }
 add_action('wp_enqueue_scripts', 'graphexpress_child_enqueue_styles', 20);
+
+/**
+ * Encabezado único para todas las páginas públicas de Graph Express.
+ *
+ * @param array $args Opciones: active (shop|guides|careers), action_label e id.
+ */
+function graphexpress_render_site_header($args = array()) {
+    $args = wp_parse_args($args, array(
+        'active'       => '',
+        'action_label' => 'Consultar',
+        'id'           => '',
+    ));
+
+    $shop_url    = graphexpress_shop_url();
+    $guides_url  = class_exists('GE_WTP_Knowledge_Base') ? GE_WTP_Knowledge_Base::archive_url() : home_url('/guias/');
+    $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url('/trabaja-con-nosotros/');
+    $portal_url  = class_exists('GE_WTP_Portal') ? GE_WTP_Portal::portal_url() : home_url('/cliente-markcom/');
+    $cart_url    = function_exists('wc_get_cart_url') ? wc_get_cart_url() : home_url('/cart/');
+    $cart_count  = function_exists('WC') && WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
+    $whatsapp    = 'https://wa.me/5491151393899?text=' . rawurlencode('Hola Graph Express, quiero solicitar una cotización.');
+    $store_label = graphexpress_store_is_public() ? 'Tienda' : 'Tienda · Próximamente';
+    ?>
+    <header class="gx-header"<?php echo $args['id'] ? ' id="' . esc_attr($args['id']) . '"' : ''; ?>>
+        <div class="gx-wrap gx-header-inner">
+            <a class="gx-logo" href="<?php echo esc_url(home_url('/')); ?>" aria-label="Graph Express, inicio"><span class="gx-logo-mark">GE</span><span><strong>GRAPH EXPRESS</strong><small>Impresión que comunica</small></span></a>
+            <button class="gx-menu-toggle" type="button" aria-expanded="false" aria-controls="gx-navigation"><span></span><span></span><span></span><span class="screen-reader-text">Abrir menú</span></button>
+            <nav class="gx-nav" id="gx-navigation" aria-label="Navegación principal">
+                <a<?php echo 'shop' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($shop_url); ?>"><?php echo esc_html($store_label); ?></a>
+                <a<?php echo 'guides' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($guides_url); ?>">Guías</a>
+                <a href="<?php echo esc_url(home_url('/#servicios')); ?>">Servicios</a>
+                <a href="<?php echo esc_url(home_url('/#trabajos')); ?>">Trabajos</a>
+                <a href="<?php echo esc_url(home_url('/#proceso')); ?>">Cómo trabajamos</a>
+                <a<?php echo 'careers' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a>
+                <a href="<?php echo esc_url(home_url('/#contacto')); ?>">Contacto</a>
+                <a class="gx-nav-mobile-action is-portal" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a>
+                <a class="gx-nav-mobile-action is-cart" href="<?php echo esc_url($cart_url); ?>">Carrito<?php if ($cart_count) : ?> <b><?php echo esc_html($cart_count); ?></b><?php endif; ?></a>
+                <a class="gx-nav-mobile-action is-consult" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar por WhatsApp</a>
+            </nav>
+            <div class="gx-header-actions">
+                <a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a>
+                <a class="gx-portal-link gx-cart-link" href="<?php echo esc_url($cart_url); ?>">Carrito<?php if ($cart_count) : ?> <b><?php echo esc_html($cart_count); ?></b><?php endif; ?></a>
+                <a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener"><?php echo esc_html($args['action_label']); ?></a>
+            </div>
+        </div>
+    </header>
+    <?php
+}
 
 function graphexpress_child_body_class($classes) {
     if (is_front_page()) {

@@ -53,33 +53,7 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
     </div>
 </div>
 
-<header class="gx-header" id="inicio">
-    <div class="gx-wrap gx-header-inner">
-        <a class="gx-logo" href="<?php echo esc_url(home_url('/')); ?>" aria-label="Graph Express, inicio">
-            <span class="gx-logo-mark">GE</span>
-            <span><strong>GRAPH EXPRESS</strong><small>Impresión que comunica</small></span>
-        </a>
-
-        <button class="gx-menu-toggle" type="button" aria-expanded="false" aria-controls="gx-navigation">
-            <span></span><span></span><span></span><span class="screen-reader-text">Abrir menú</span>
-        </button>
-
-        <nav class="gx-nav" id="gx-navigation" aria-label="Navegación principal">
-            <a href="<?php echo esc_url($shop_url); ?>"><?php echo $store_is_public ? 'Tienda' : 'Tienda · Próximamente'; ?></a>
-            <a href="<?php echo esc_url(class_exists('GE_WTP_Knowledge_Base') ? GE_WTP_Knowledge_Base::archive_url() : home_url('/guias/')); ?>">Guías</a>
-            <a href="#servicios">Servicios</a>
-            <a href="#trabajos">Trabajos</a>
-            <a href="#proceso">Cómo trabajamos</a>
-            <a href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a>
-            <a href="#contacto">Contacto</a>
-        </nav>
-
-        <div class="gx-header-actions">
-            <a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a>
-            <a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Cotizar ahora</a>
-        </div>
-    </div>
-</header>
+<?php graphexpress_render_site_header(array('id' => 'inicio', 'action_label' => 'Cotizar ahora')); ?>
 
 <?php if (! $store_is_public) : ?>
     <section class="gx-store-coming" id="tienda-proximamente" aria-label="Próxima apertura de la tienda">

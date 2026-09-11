@@ -8,6 +8,7 @@
         toggle.addEventListener('click', function () {
             var open = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!open));
+            toggle.setAttribute('aria-label', open ? 'Abrir menú' : 'Cerrar menú');
             nav.classList.toggle('is-open', !open);
         });
 
@@ -16,6 +17,23 @@
                 toggle.setAttribute('aria-expanded', 'false');
                 nav.classList.remove('is-open');
             });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && nav.classList.contains('is-open')) {
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.setAttribute('aria-label', 'Abrir menú');
+                nav.classList.remove('is-open');
+                toggle.focus();
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (nav.classList.contains('is-open') && !nav.contains(event.target) && !toggle.contains(event.target)) {
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.setAttribute('aria-label', 'Abrir menú');
+                nav.classList.remove('is-open');
+            }
         });
     }
 
