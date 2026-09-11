@@ -97,9 +97,11 @@ final class GE_WTP_Google_Auth {
         }
         if ( self::drive_enabled() && ( $library_page || $portal_page || $account_page ) ) {
             $settings = self::settings();
+            $drive_script = GE_WTP_PLUGIN_DIR . 'assets/js/google-drive-picker.js';
+            $drive_version = file_exists( $drive_script ) ? (string) filemtime( $drive_script ) : GE_WTP_VERSION;
             wp_enqueue_script( 'google-api-loader', 'https://apis.google.com/js/api.js', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
             wp_enqueue_script( 'google-identity-services', 'https://accounts.google.com/gsi/client', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
-            wp_enqueue_script( 'ge-google-drive-picker', GE_WTP_PLUGIN_URL . 'assets/js/google-drive-picker.js', array(), GE_WTP_VERSION, true );
+            wp_enqueue_script( 'ge-google-drive-picker', GE_WTP_PLUGIN_URL . 'assets/js/google-drive-picker.js', array(), $drive_version, true );
             wp_localize_script( 'ge-google-drive-picker', 'geGoogleDrive', array( 'clientId' => $settings['client_id'], 'apiKey' => $settings['drive_api_key'], 'appId' => $settings['drive_app_id'], 'shareEmail' => $settings['drive_share_email'], 'scope' => 'https://www.googleapis.com/auth/drive.file' ) );
         }
     }

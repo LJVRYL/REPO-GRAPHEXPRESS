@@ -50,7 +50,9 @@ final class GE_WTP_Artwork_Library {
 
     public static function enqueue_assets() {
         if ( is_page( 'cliente-markcom' ) || is_page( 'gestion' ) || ( function_exists( 'is_account_page' ) && is_account_page() ) ) {
-            wp_enqueue_style( 'ge-artwork-library', GE_WTP_PLUGIN_URL . 'assets/css/artwork-library.css', array(), GE_WTP_VERSION );
+            $style_file = GE_WTP_PLUGIN_DIR . 'assets/css/artwork-library.css';
+            $style_version = file_exists( $style_file ) ? (string) filemtime( $style_file ) : GE_WTP_VERSION;
+            wp_enqueue_style( 'ge-artwork-library', GE_WTP_PLUGIN_URL . 'assets/css/artwork-library.css', array(), $style_version );
         }
     }
 
