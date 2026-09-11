@@ -91,6 +91,7 @@ body.ge-markcom-standalone { margin: 0; background: var(--ge-soft); }
 .ge-price-breakdown > span { display: block; }
 .ge-price-breakdown > span + span { padding-top: 8px; border-top: 1px dashed var(--ge-line); }
 .ge-price-breakdown small b { color: var(--ge-ink); }
+.ge-price-breakdown small i { font-style: normal; }
 .ge-price-breakdown > span + span strong { color: var(--ge-violet); font-size: 15px; }
 .ge-icon-button { width: 42px; height: 42px; border: 0; border-radius: 12px; color: #fff; background: var(--ge-violet); font-size: 24px; cursor: pointer; }
 .ge-cart-panel { padding: 26px; position: sticky; top: 112px; border-radius: var(--ge-radius); background: #fff; box-shadow: var(--ge-shadow); }

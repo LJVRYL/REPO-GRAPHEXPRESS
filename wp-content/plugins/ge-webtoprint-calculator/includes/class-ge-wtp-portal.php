@@ -419,7 +419,7 @@ final class GE_WTP_Portal {
                     <div class="ge-price-row">
                         <div class="ge-price-breakdown">
                             <span><small><?php echo esc_html( $unit_label ); ?></small><strong data-ge-price><?php echo $rate > 0 ? esc_html( 'USD ' . number_format_i18n( GE_WTP_Catalog::ars_to_usd( $first_price, $rate ), 2 ) ) : esc_html( '$ ' . number_format_i18n( $first_price ) . ' ARS' ); ?></strong></span>
-                            <span><small>Total para <b data-ge-total-quantity><?php echo esc_html( number_format_i18n( $first_tier ) ); ?></b> unidades</small><strong data-ge-total><?php echo $rate > 0 ? esc_html( 'USD ' . number_format_i18n( GE_WTP_Catalog::ars_to_usd( $first_price * $first_tier, $rate ), 2 ) ) : esc_html( '$ ' . number_format_i18n( $first_price * $first_tier ) . ' ARS' ); ?></strong></span>
+                            <span><small>Total para <b data-ge-total-quantity><?php echo esc_html( number_format_i18n( $first_tier ) ); ?></b> <i data-ge-total-unit><?php echo 1 === $first_tier ? 'unidad' : 'unidades'; ?></i></small><strong data-ge-total><?php echo $rate > 0 ? esc_html( 'USD ' . number_format_i18n( GE_WTP_Catalog::ars_to_usd( $first_price * $first_tier, $rate ), 2 ) ) : esc_html( '$ ' . number_format_i18n( $first_price * $first_tier ) . ' ARS' ); ?></strong></span>
                         </div>
                         <button type="submit" class="ge-icon-button" aria-label="Agregar <?php echo esc_attr( $product['name'] ); ?> al carrito">+</button>
                     </div>

@@ -6,6 +6,7 @@
         var price = card.querySelector('[data-ge-price]');
         var total = card.querySelector('[data-ge-total]');
         var totalQuantity = card.querySelector('[data-ge-total-quantity]');
+        var totalUnit = card.querySelector('[data-ge-total-unit]');
         if (!select || !price) return;
 
         function updatePrice() {
@@ -23,6 +24,9 @@
             }
             if (totalQuantity) {
                 totalQuantity.textContent = quantity.toLocaleString('es-AR');
+            }
+            if (totalUnit) {
+                totalUnit.textContent = quantity === 1 ? 'unidad' : 'unidades';
             }
         }
 
