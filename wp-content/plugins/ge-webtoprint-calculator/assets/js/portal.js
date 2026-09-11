@@ -4,15 +4,26 @@
     document.querySelectorAll('[data-ge-product]').forEach(function (card) {
         var select = card.querySelector('[data-ge-tier]');
         var price = card.querySelector('[data-ge-price]');
+        var total = card.querySelector('[data-ge-total]');
+        var totalQuantity = card.querySelector('[data-ge-total-quantity]');
         if (!select || !price) return;
 
         function updatePrice() {
             var option = select.options[select.selectedIndex];
             var usd = Number(option.dataset.usd || 0);
             var ars = Number(option.dataset.ars || 0);
+            var quantity = Number(option.value || 0);
             price.textContent = usd > 0
                 ? 'USD ' + usd.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 : '$ ' + ars.toLocaleString('es-AR') + ' ARS';
+            if (total) {
+                total.textContent = usd > 0
+                    ? 'USD ' + (usd * quantity).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : '$ ' + (ars * quantity).toLocaleString('es-AR') + ' ARS';
+            }
+            if (totalQuantity) {
+                totalQuantity.textContent = quantity.toLocaleString('es-AR');
+            }
         }
 
         select.addEventListener('change', updatePrice);

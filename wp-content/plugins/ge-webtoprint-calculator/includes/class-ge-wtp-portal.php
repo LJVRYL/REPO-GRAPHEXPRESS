@@ -37,8 +37,10 @@ final class GE_WTP_Portal {
             return;
         }
 
-        wp_enqueue_style( 'ge-markcom-portal', GE_WTP_PLUGIN_URL . 'assets/css/portal.css', array(), GE_WTP_VERSION );
-        wp_enqueue_script( 'ge-markcom-portal', GE_WTP_PLUGIN_URL . 'assets/js/portal.js', array(), GE_WTP_VERSION, true );
+        $css_path = GE_WTP_PLUGIN_DIR . 'assets/css/portal.css';
+        $js_path = GE_WTP_PLUGIN_DIR . 'assets/js/portal.js';
+        wp_enqueue_style( 'ge-markcom-portal', GE_WTP_PLUGIN_URL . 'assets/css/portal.css', array(), file_exists( $css_path ) ? (string) filemtime( $css_path ) : GE_WTP_VERSION );
+        wp_enqueue_script( 'ge-markcom-portal', GE_WTP_PLUGIN_URL . 'assets/js/portal.js', array(), file_exists( $js_path ) ? (string) filemtime( $js_path ) : GE_WTP_VERSION, true );
     }
 
     public static function is_staff_user( $user = null ) {
@@ -388,6 +390,9 @@ final class GE_WTP_Portal {
 
     private static function render_product_card( $key, $product, $rate ) {
         $first_price = reset( $product['prices'] );
+        $first_tier = (int) key( $product['prices'] );
+        $is_facade = isset( $product['group'] ) && 'fachada' === $product['group'];
+        $unit_label = $is_facade ? 'Valor unitario por fachada' : 'Precio unitario';
         ?>
         <article class="ge-product-card" data-ge-product>
             <?php echo GE_WTP_Reorders::markcom_favorite_form( $key ); ?>
@@ -412,7 +417,10 @@ final class GE_WTP_Portal {
                     </label>
                     <label>Observaciones <textarea name="notes" rows="2" placeholder="Versión, ubicación o indicación especial"></textarea></label>
                     <div class="ge-price-row">
-                        <div><small>Precio unitario</small><strong data-ge-price><?php echo $rate > 0 ? esc_html( 'USD ' . number_format_i18n( GE_WTP_Catalog::ars_to_usd( $first_price, $rate ), 2 ) ) : esc_html( '$ ' . number_format_i18n( $first_price ) . ' ARS' ); ?></strong></div>
+                        <div class="ge-price-breakdown">
+                            <span><small><?php echo esc_html( $unit_label ); ?></small><strong data-ge-price><?php echo $rate > 0 ? esc_html( 'USD ' . number_format_i18n( GE_WTP_Catalog::ars_to_usd( $first_price, $rate ), 2 ) ) : esc_html( '$ ' . number_format_i18n( $first_price ) . ' ARS' ); ?></strong></span>
+                            <span><small>Total para <b data-ge-total-quantity><?php echo esc_html( number_format_i18n( $first_tier ) ); ?></b> unidades</small><strong data-ge-total><?php echo $rate > 0 ? esc_html( 'USD ' . number_format_i18n( GE_WTP_Catalog::ars_to_usd( $first_price * $first_tier, $rate ), 2 ) ) : esc_html( '$ ' . number_format_i18n( $first_price * $first_tier ) . ' ARS' ); ?></strong></span>
+                        </div>
                         <button type="submit" class="ge-icon-button" aria-label="Agregar <?php echo esc_attr( $product['name'] ); ?> al carrito">+</button>
                     </div>
                 </form>
