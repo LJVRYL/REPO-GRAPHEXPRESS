@@ -18,10 +18,10 @@ final class GE_WTP_Google_Auth {
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ), 35 );
     }
 
-    public static function defaults() { return array( 'enabled' => 'no', 'client_id' => '', 'drive_enabled' => 'no', 'drive_api_key' => '', 'drive_app_id' => '' ); }
+    public static function defaults() { return array( 'enabled' => 'no', 'client_id' => '', 'drive_enabled' => 'no', 'drive_api_key' => '', 'drive_app_id' => '', 'drive_share_email' => 'imprentagraphexpress@gmail.com' ); }
     public static function settings() { return wp_parse_args( (array) get_option( self::OPTION, array() ), self::defaults() ); }
     public static function enabled() { $settings = self::settings(); return 'yes' === $settings['enabled'] && self::valid_client_id( $settings['client_id'] ); }
-    public static function drive_enabled() { $settings = self::settings(); return 'yes' === $settings['drive_enabled'] && self::valid_client_id( $settings['client_id'] ) && self::valid_api_key( $settings['drive_api_key'] ) && self::valid_app_id( $settings['drive_app_id'] ); }
+    public static function drive_enabled() { $settings = self::settings(); return 'yes' === $settings['drive_enabled'] && self::valid_client_id( $settings['client_id'] ) && self::valid_api_key( $settings['drive_api_key'] ) && self::valid_app_id( $settings['drive_app_id'] ) && is_email( $settings['drive_share_email'] ); }
 
     private static function valid_client_id( $client_id ) {
         return (bool) preg_match( '/^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/', (string) $client_id );
@@ -40,12 +40,14 @@ final class GE_WTP_Google_Auth {
         $drive_enabled = ! empty( $_POST['drive_enabled'] ) ? 'yes' : 'no';
         $drive_api_key = isset( $_POST['drive_api_key'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['drive_api_key'] ) ) ) : '';
         $drive_app_id = isset( $_POST['drive_app_id'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['drive_app_id'] ) ) ) : '';
+        $drive_share_email = isset( $_POST['drive_share_email'] ) ? sanitize_email( wp_unslash( $_POST['drive_share_email'] ) ) : '';
         if ( $client_id && ! self::valid_client_id( $client_id ) ) {
             self::settings_redirect( 'invalid' );
         }
         if ( ( $drive_api_key && ! self::valid_api_key( $drive_api_key ) ) || ( $drive_app_id && ! self::valid_app_id( $drive_app_id ) ) ) { self::settings_redirect( 'drive-invalid' ); }
-        update_option( self::OPTION, array( 'enabled' => $enabled, 'client_id' => $client_id, 'drive_enabled' => $drive_enabled, 'drive_api_key' => $drive_api_key, 'drive_app_id' => $drive_app_id ), false );
-        if ( 'yes' === $drive_enabled && ( ! $client_id || ! $drive_api_key || ! $drive_app_id ) ) { self::settings_redirect( 'drive-missing' ); }
+        if ( $drive_share_email && ! is_email( $drive_share_email ) ) { self::settings_redirect( 'drive-invalid' ); }
+        update_option( self::OPTION, array( 'enabled' => $enabled, 'client_id' => $client_id, 'drive_enabled' => $drive_enabled, 'drive_api_key' => $drive_api_key, 'drive_app_id' => $drive_app_id, 'drive_share_email' => $drive_share_email ), false );
+        if ( 'yes' === $drive_enabled && ( ! $client_id || ! $drive_api_key || ! $drive_app_id || ! $drive_share_email ) ) { self::settings_redirect( 'drive-missing' ); }
         self::settings_redirect( $enabled && ! $client_id ? 'missing' : 'saved' );
     }
 
@@ -72,7 +74,7 @@ final class GE_WTP_Google_Auth {
                 <div class="ge-drive-config">
                     <div class="ge-drive-config-head"><b>DR</b><span><strong>Google Drive</strong><small>Elegir originales pesados sin copiarlos al VPS.</small></span><em><?php echo self::drive_enabled() ? 'Listo para usar' : 'Pendiente'; ?></em></div>
                     <label class="ge-integration-toggle"><input type="checkbox" name="drive_enabled" value="1" <?php checked( $settings['drive_enabled'], 'yes' ); ?>><span><strong>Habilitar selector de Google Drive</strong><small>Aparecerá al registrar una ficha en la Biblioteca.</small></span></label>
-                    <div class="ge-drive-fields"><label class="ge-integration-field">API Key restringida<input type="text" name="drive_api_key" value="<?php echo esc_attr( $settings['drive_api_key'] ); ?>" placeholder="AIza..." autocomplete="off"><small>Restringila a Google Picker API, Drive API, tus dominios y https://docs.google.com/*.</small></label><label class="ge-integration-field">Número de proyecto / App ID<input type="text" name="drive_app_id" value="<?php echo esc_attr( $settings['drive_app_id'] ); ?>" placeholder="123456789012" inputmode="numeric" autocomplete="off"><small>Es el número del proyecto, no su nombre.</small></label></div>
+                    <div class="ge-drive-fields"><label class="ge-integration-field">API Key restringida<input type="text" name="drive_api_key" value="<?php echo esc_attr( $settings['drive_api_key'] ); ?>" placeholder="AIza..." autocomplete="off"><small>Restringila a Google Picker API, Drive API, tus dominios y https://docs.google.com/*.</small></label><label class="ge-integration-field">Número de proyecto / App ID<input type="text" name="drive_app_id" value="<?php echo esc_attr( $settings['drive_app_id'] ); ?>" placeholder="123456789012" inputmode="numeric" autocomplete="off"><small>Es el número del proyecto, no su nombre.</small></label><label class="ge-integration-field">Cuenta de Graph Express que recibe los archivos<input type="email" name="drive_share_email" value="<?php echo esc_attr( $settings['drive_share_email'] ); ?>" placeholder="imprentagraphexpress@gmail.com"><small>Drive compartirá sólo el archivo elegido, nunca el resto de la cuenta del cliente.</small></label></div>
                     <div class="ge-google-setup"><h4>APIs requeridas</h4><p>Activá Google Picker API y Google Drive API dentro del mismo proyecto. El selector solicitará acceso solamente cuando una persona pulse “Elegir desde Drive”.</p></div>
                 </div>
                 <?php if ( ! self::library_available() ) : ?><div class="ge-integration-warning">Este servidor no tiene disponible OpenSSL para validar la firma de Google. El botón permanecerá inactivo.</div><?php endif; ?>
@@ -93,12 +95,12 @@ final class GE_WTP_Google_Auth {
             wp_enqueue_script( 'google-identity-services', 'https://accounts.google.com/gsi/client', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
             wp_enqueue_style( 'ge-google-auth-front', GE_WTP_PLUGIN_URL . 'assets/css/google-auth.css', array(), GE_WTP_VERSION );
         }
-        if ( self::drive_enabled() && $library_page ) {
+        if ( self::drive_enabled() && ( $library_page || $portal_page || $account_page ) ) {
             $settings = self::settings();
             wp_enqueue_script( 'google-api-loader', 'https://apis.google.com/js/api.js', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
             wp_enqueue_script( 'google-identity-services', 'https://accounts.google.com/gsi/client', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
             wp_enqueue_script( 'ge-google-drive-picker', GE_WTP_PLUGIN_URL . 'assets/js/google-drive-picker.js', array(), GE_WTP_VERSION, true );
-            wp_localize_script( 'ge-google-drive-picker', 'geGoogleDrive', array( 'clientId' => $settings['client_id'], 'apiKey' => $settings['drive_api_key'], 'appId' => $settings['drive_app_id'], 'scope' => 'https://www.googleapis.com/auth/drive.file' ) );
+            wp_localize_script( 'ge-google-drive-picker', 'geGoogleDrive', array( 'clientId' => $settings['client_id'], 'apiKey' => $settings['drive_api_key'], 'appId' => $settings['drive_app_id'], 'shareEmail' => $settings['drive_share_email'], 'scope' => 'https://www.googleapis.com/auth/drive.file' ) );
         }
     }
 

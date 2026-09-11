@@ -22,6 +22,7 @@ final class GE_WTP_Artwork_Library {
         add_action( 'admin_post_ge_artwork_save', array( __CLASS__, 'handle_save' ) );
         add_action( 'admin_post_ge_artwork_preview', array( __CLASS__, 'handle_preview' ) );
         add_action( 'admin_post_ge_artwork_original', array( __CLASS__, 'handle_original_download' ) );
+        add_action( 'admin_post_ge_customer_drive_artwork', array( __CLASS__, 'handle_customer_drive_artwork' ) );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
     }
 
@@ -99,11 +100,63 @@ final class GE_WTP_Artwork_Library {
     }
 
     public static function render_customer_library( $user_id = 0, $markcom = false ) {
-        $items = self::get_items( $user_id ? $user_id : get_current_user_id() );
+        $user_id = $user_id ? absint( $user_id ) : get_current_user_id();
+        $items = self::get_items( $user_id );
+        $drive_notice = isset( $_GET['drive_notice'] ) ? sanitize_key( wp_unslash( $_GET['drive_notice'] ) ) : '';
         ?>
         <section class="ge-artwork-library <?php echo $markcom ? 'is-markcom' : ''; ?>"><div class="ge-artwork-heading"><div><span class="ge-eyebrow">Biblioteca de producción</span><h1>Mis archivos</h1><p>Fichas, versiones y previsualizaciones. Los originales se conservan fuera de este servidor.</p></div><span class="ge-artwork-count"><?php echo esc_html( count( $items ) ); ?></span></div>
+        <?php if ( 'saved' === $drive_notice ) : ?><div class="ge-drive-customer-notice">El archivo quedó vinculado a tu biblioteca y, si elegiste un pedido, también a ese trabajo.</div><?php elseif ( 'error' === $drive_notice ) : ?><div class="ge-drive-customer-notice is-error">No pudimos registrar el archivo. Volvé a seleccionarlo desde Drive.</div><?php endif; ?>
+        <?php if ( class_exists( 'GE_WTP_Google_Auth' ) && GE_WTP_Google_Auth::drive_enabled() ) { self::render_customer_drive_form( $user_id ); } ?>
         <?php if ( ! $items ) : ?><div class="ge-panel ge-artwork-empty"><strong>Todavía no hay archivos registrados.</strong><p>Graph Express creará una ficha cuando un arte quede aprobado para reutilizar.</p></div><?php else : ?><div class="ge-artwork-grid"><?php foreach ( $items as $item ) { self::render_card( $item ); } ?></div><?php endif; ?></section>
         <?php
+    }
+
+    private static function render_customer_drive_form( $user_id ) {
+        $orders = function_exists( 'wc_get_orders' ) ? wc_get_orders( array( 'customer_id' => absint( $user_id ), 'limit' => 50, 'orderby' => 'date', 'order' => 'DESC' ) ) : array();
+        $return_url = class_exists( 'GE_WTP_Portal' ) && is_page( 'cliente-markcom' ) ? GE_WTP_Portal::portal_url( 'documentos' ) : wc_get_account_endpoint_url( self::ENDPOINT );
+        ?>
+        <section class="ge-drive-customer-panel">
+            <div class="ge-drive-customer-head"><b>DR</b><div><span>Google Drive</span><h2>Compartir un original</h2><p>Elegí un archivo que ya está en Drive o subilo directamente desde tu computadora. El archivo no atraviesa el servidor de Graph Express.</p></div></div>
+            <form class="ge-customer-drive-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <input type="hidden" name="action" value="ge_customer_drive_artwork"><input type="hidden" name="return_url" value="<?php echo esc_url( $return_url ); ?>"><?php wp_nonce_field( 'ge_customer_drive_artwork' ); ?>
+                <div class="ge-drive-customer-fields"><label>Nombre del trabajo<input type="text" name="artwork_name" required maxlength="180" placeholder="Ej.: Tarjetas corporativas Violeta"></label><label>Vincular a un pedido<select name="order_id"><option value="0">Guardar solamente en Mis archivos</option><?php foreach ( $orders as $order ) : ?><option value="<?php echo esc_attr( $order->get_id() ); ?>"><?php echo esc_html( ( class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : '#' . $order->get_id() ) . ' · ' . wc_format_datetime( $order->get_date_created(), 'd/m/Y' ) ); ?></option><?php endforeach; ?></select></label></div>
+                <div class="ge-drive-customer-actions"><button type="button" data-ge-drive-picker>Elegir desde mi Drive</button><label><span>Subir desde mi computadora a Drive</span><input type="file" data-ge-drive-upload accept=".pdf,.ai,.eps,.psd,.tif,.tiff,.svg,.cdr,.zip,.jpg,.jpeg,.png"></label><button type="button" data-ge-drive-upload-button>Subir a mi Drive</button></div>
+                <p data-ge-drive-status>Google pedirá permiso solamente para el archivo que elijas o subas.</p><progress data-ge-drive-progress max="100" value="0" hidden></progress>
+                <input type="hidden" name="drive_file_id"><input type="hidden" name="drive_file_name"><input type="hidden" name="drive_mime_type"><input type="hidden" name="drive_file_url"><input type="hidden" name="drive_file_size"><input type="hidden" name="drive_file_source">
+                <button class="ge-drive-customer-save" type="submit" disabled data-ge-drive-save>Guardar archivo en mi portal</button>
+            </form>
+        </section>
+        <?php
+    }
+
+    public static function handle_customer_drive_artwork() {
+        if ( ! is_user_logged_in() ) { auth_redirect(); }
+        check_admin_referer( 'ge_customer_drive_artwork' );
+        if ( ! class_exists( 'GE_WTP_Google_Auth' ) || ! GE_WTP_Google_Auth::drive_enabled() ) { wp_die( esc_html__( 'La integración con Google Drive no está disponible.', 'ge-wtp' ), '', array( 'response' => 503 ) ); }
+        $user_id = get_current_user_id();
+        $name = sanitize_text_field( wp_unslash( $_POST['artwork_name'] ?? '' ) );
+        $file_id = sanitize_text_field( wp_unslash( $_POST['drive_file_id'] ?? '' ) );
+        $file_name = sanitize_file_name( wp_unslash( $_POST['drive_file_name'] ?? '' ) );
+        $return_url = wp_validate_redirect( esc_url_raw( wp_unslash( $_POST['return_url'] ?? '' ) ), class_exists( 'GE_WTP_Portal' ) ? GE_WTP_Portal::portal_url( 'documentos' ) : home_url( '/' ) );
+        if ( ! $name || ! preg_match( '/^[a-zA-Z0-9_-]{10,200}$/', $file_id ) ) { wp_safe_redirect( add_query_arg( 'drive_notice', 'error', $return_url ) ); exit; }
+        $existing = get_posts( array( 'post_type' => self::POST_TYPE, 'post_status' => 'publish', 'author' => $user_id, 'posts_per_page' => 1, 'fields' => 'ids', 'meta_key' => '_ge_artwork_drive_file_id', 'meta_value' => $file_id ) );
+        $id = $existing ? absint( $existing[0] ) : wp_insert_post( array( 'post_type' => self::POST_TYPE, 'post_status' => 'publish', 'post_title' => $name, 'post_author' => $user_id ), true );
+        if ( is_wp_error( $id ) ) { wp_safe_redirect( add_query_arg( 'drive_notice', 'error', $return_url ) ); exit; }
+        if ( $existing ) { wp_update_post( array( 'ID' => $id, 'post_title' => $name ) ); }
+        $url = 'https://drive.google.com/open?id=' . rawurlencode( $file_id );
+        update_post_meta( $id, '_ge_artwork_customer_id', $user_id );
+        update_post_meta( $id, '_ge_artwork_status', 'review' );
+        update_post_meta( $id, '_ge_artwork_version', '1' );
+        update_post_meta( $id, '_ge_artwork_code', sprintf( 'GE-ART-%s-%05d', current_time( 'Y' ), $id ) );
+        update_post_meta( $id, '_ge_artwork_original_name', $file_name ?: $name );
+        update_post_meta( $id, '_ge_artwork_storage_provider', 'drive' );
+        update_post_meta( $id, '_ge_artwork_drive_file_id', $file_id );
+        update_post_meta( $id, '_ge_artwork_external_reference', $url );
+        update_post_meta( $id, '_ge_artwork_original', array( 'provider' => 'drive', 'file_id' => $file_id, 'name' => $file_name ?: $name, 'mime' => sanitize_text_field( wp_unslash( $_POST['drive_mime_type'] ?? '' ) ), 'size' => absint( $_POST['drive_file_size'] ?? 0 ), 'url' => $url, 'source' => sanitize_key( wp_unslash( $_POST['drive_file_source'] ?? 'picker' ) ), 'linked_at' => current_time( 'mysql' ) ) );
+        $order_id = absint( $_POST['order_id'] ?? 0 );
+        $order = $order_id ? wc_get_order( $order_id ) : false;
+        if ( $order && (int) $order->get_customer_id() === $user_id ) { self::attach_to_order( $order, array_merge( self::get_order_ids( $order ), array( $id ) ) ); }
+        wp_safe_redirect( add_query_arg( 'drive_notice', 'saved', $return_url ) ); exit;
     }
 
     public static function account_content() { self::render_customer_library(); }
