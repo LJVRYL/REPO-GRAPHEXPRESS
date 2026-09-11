@@ -41,18 +41,18 @@ final class GE_WTP_Catalog {
             'fachada-lona' => array(
                 'number'      => '05A',
                 'group'       => 'fachada',
-                'name'        => 'Fachada — solo lona',
+                'name'        => 'Fachada 2 × 1 m — solo lona',
                 'description' => 'Lona impresa preparada para instalación. Instalación y flete se coordinan según ubicación.',
                 'category'    => 'Fachada',
-                'prices'      => array( 100 => 35946, 500 => 34508, 1000 => 33790, 5000 => 33070 ),
+                'prices'      => array( 1 => 46730, 100 => 35946, 500 => 34508, 1000 => 33790, 5000 => 33070 ),
             ),
             'fachada-bastidor' => array(
                 'number'      => '05B',
                 'group'       => 'fachada',
-                'name'        => 'Fachada — lona y bastidor',
+                'name'        => 'Fachada 2 × 1 m — lona y bastidor',
                 'description' => 'Lona, caño, fabricación, insumos y tensado. Instalación y flete se cotizan según ubicación.',
                 'category'    => 'Fachada',
-                'prices'      => array( 100 => 119926, 500 => 112009, 1000 => 106621, 5000 => 99269 ),
+                'prices'      => array( 1 => 155904, 100 => 119926, 500 => 112009, 1000 => 106621, 5000 => 99269 ),
             ),
             'fachada-5x1-lona-instalada' => array(
                 'number'      => '05C',
