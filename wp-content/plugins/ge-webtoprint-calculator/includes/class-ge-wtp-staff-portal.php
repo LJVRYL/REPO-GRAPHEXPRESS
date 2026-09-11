@@ -4,12 +4,15 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/class-ge-wtp-supplier-invoices.php';
+
 final class GE_WTP_Staff_Portal {
     const PAGE_SLUG = 'gestion';
     const ROLE = 'ge_staff_manager';
     const CAPABILITY = 'ge_manage_operations';
 
     public static function init() {
+        GE_WTP_Supplier_Invoices::init();
         add_filter( 'template_include', array( __CLASS__, 'template' ), 99 );
         add_filter( 'show_admin_bar', array( __CLASS__, 'show_admin_bar' ) );
         add_filter( 'login_redirect', array( __CLASS__, 'login_redirect' ), 20, 3 );
@@ -110,6 +113,8 @@ final class GE_WTP_Staff_Portal {
             GE_WTP_Customers::render_staff();
         } elseif ( 'library' === $section ) {
             GE_WTP_Artwork_Library::render_staff();
+        } elseif ( 'supplier-invoices' === $section ) {
+            GE_WTP_Supplier_Invoices::render();
         } elseif ( 'communications' === $section ) {
             GE_WTP_Newsletter::render_portal();
         } elseif ( in_array( $section, array( 'settings', 'notifications' ), true ) ) {
