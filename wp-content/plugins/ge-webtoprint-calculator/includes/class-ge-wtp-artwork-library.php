@@ -23,6 +23,14 @@ final class GE_WTP_Artwork_Library {
         add_action( 'admin_post_ge_artwork_preview', array( __CLASS__, 'handle_preview' ) );
         add_action( 'admin_post_ge_artwork_original', array( __CLASS__, 'handle_original_download' ) );
         add_action( 'admin_post_ge_customer_drive_artwork', array( __CLASS__, 'handle_customer_drive_artwork' ) );
+        add_action( 'admin_post_ge_artwork_control_save', array( __CLASS__, 'handle_artwork_control_save' ) );
+        add_action( 'admin_post_ge_customer_artwork_approval', array( __CLASS__, 'handle_customer_artwork_approval' ) );
+        add_action( 'admin_post_ge_artwork_release_sheet', array( __CLASS__, 'handle_release_sheet' ) );
+        add_action( 'admin_post_ge_production_save', array( __CLASS__, 'guard_production_transition' ), 1 );
+        add_action( 'admin_post_ge_supplier_email', array( __CLASS__, 'guard_supplier_dispatch' ), 1 );
+        add_action( 'admin_post_ge_supplier_whatsapp', array( __CLASS__, 'guard_supplier_dispatch' ), 1 );
+        add_action( 'admin_post_ge_production_sheet', array( __CLASS__, 'guard_supplier_dispatch' ), 1 );
+        add_action( 'wp_footer', array( __CLASS__, 'render_staff_artwork_control' ), 40 );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
     }
 
@@ -53,6 +61,10 @@ final class GE_WTP_Artwork_Library {
             $style_file = GE_WTP_PLUGIN_DIR . 'assets/css/artwork-library.css';
             $style_version = file_exists( $style_file ) ? (string) filemtime( $style_file ) : GE_WTP_VERSION;
             wp_enqueue_style( 'ge-artwork-library', GE_WTP_PLUGIN_URL . 'assets/css/artwork-library.css', array(), $style_version );
+            if ( is_page( 'gestion' ) ) {
+                $control_script = GE_WTP_PLUGIN_DIR . 'assets/js/artwork-control.js';
+                wp_enqueue_script( 'ge-artwork-control', GE_WTP_PLUGIN_URL . 'assets/js/artwork-control.js', array(), file_exists( $control_script ) ? (string) filemtime( $control_script ) : GE_WTP_VERSION, true );
+            }
         }
     }
 
@@ -94,6 +106,7 @@ final class GE_WTP_Artwork_Library {
     }
 
     public static function render_order_links( $order, $context = 'customer' ) {
+        if ( 'customer' === $context ) { self::render_customer_approval_panel( $order ); }
         $ids = self::get_order_ids( $order );
         if ( ! $ids ) { return; }
         echo '<section class="ge-artwork-order-links"><span class="ge-eyebrow">Artes vinculados</span><div class="ge-artwork-mini-grid">';
@@ -180,6 +193,260 @@ final class GE_WTP_Artwork_Library {
 
     public static function woo_order_links( $order ) {
         if ( 'yes' !== $order->get_meta( '_ge_markcom_order' ) ) { self::render_order_links( $order ); }
+    }
+
+    /**
+     * Returns every production file that can be assigned to an individual order item.
+     * Tokens are deliberately namespaced because library records and uploaded documents
+     * use different identifiers.
+     */
+    public static function order_sources( $order ) {
+        if ( ! $order instanceof WC_Order ) { return array(); }
+        $sources = array();
+        foreach ( self::get_order_ids( $order ) as $id ) {
+            $artwork = get_post( $id );
+            if ( ! $artwork || self::POST_TYPE !== $artwork->post_type ) { continue; }
+            $original = get_post_meta( $id, '_ge_artwork_original', true );
+            $original = is_array( $original ) ? $original : array();
+            $analysis = isset( $original['analysis'] ) && is_array( $original['analysis'] ) ? $original['analysis'] : array();
+            $sources[ 'artwork:' . $id ] = array(
+                'token' => 'artwork:' . $id,
+                'name' => $original['name'] ?? ( get_post_meta( $id, '_ge_artwork_original_name', true ) ?: $artwork->post_title ),
+                'code' => self::code( $id ),
+                'url' => get_post_meta( $id, '_ge_artwork_external_reference', true ) ?: self::original_url( $id ),
+                'analysis' => $analysis,
+                'hash' => $analysis['sha256'] ?? ( $original['file_id'] ?? (string) $id ),
+                'kind' => 'library',
+            );
+        }
+        if ( class_exists( 'GE_WTP_Documents' ) ) {
+            foreach ( GE_WTP_Documents::get_documents_with_analysis( $order->get_id() ) as $document ) {
+                if ( ! empty( $document['category'] ) && 'arte' !== $document['category'] ) { continue; }
+                $id = sanitize_text_field( $document['id'] ?? '' );
+                if ( ! $id ) { continue; }
+                $analysis = isset( $document['analysis'] ) && is_array( $document['analysis'] ) ? $document['analysis'] : array();
+                $sources[ 'document:' . $id ] = array(
+                    'token' => 'document:' . $id,
+                    'name' => $document['name'] ?? 'Archivo del pedido',
+                    'code' => 'DOC-' . strtoupper( substr( preg_replace( '/[^a-zA-Z0-9]/', '', $id ), -8 ) ),
+                    'url' => GE_WTP_Documents::download_url( $order->get_id(), $id ),
+                    'analysis' => $analysis,
+                    'hash' => $analysis['sha256'] ?? $id,
+                    'kind' => 'document',
+                );
+            }
+        }
+        return $sources;
+    }
+
+    private static function item_release_data( $item ) {
+        $sources = $item->get_meta( '_ge_item_artwork_sources', true );
+        $expected = $item->get_meta( '_ge_item_artwork_expected', true );
+        return array(
+            'sources' => is_array( $sources ) ? array_values( array_unique( array_filter( array_map( 'sanitize_text_field', $sources ) ) ) ) : array(),
+            'version' => (string) $item->get_meta( '_ge_item_artwork_version', true ),
+            'expected' => is_array( $expected ) ? $expected : array(),
+            'customer' => (array) $item->get_meta( '_ge_item_artwork_customer_approval', true ),
+            'staff' => (array) $item->get_meta( '_ge_item_artwork_staff_approval', true ),
+            'release_hash' => (string) $item->get_meta( '_ge_item_artwork_release_hash', true ),
+            'released_at' => absint( $item->get_meta( '_ge_item_artwork_released_at', true ) ),
+        );
+    }
+
+    private static function release_fingerprint( $item, $tokens, $version, $expected, $available ) {
+        $files = array();
+        foreach ( (array) $tokens as $token ) {
+            if ( isset( $available[ $token ] ) ) { $files[] = $token . ':' . ( $available[ $token ]['hash'] ?? '' ); }
+        }
+        sort( $files ); ksort( $expected );
+        return hash( 'sha256', wp_json_encode( array( 'item' => $item->get_id(), 'files' => $files, 'version' => $version, 'expected' => $expected ) ) );
+    }
+
+    public static function item_ready_for_production( $item, $order = false ) {
+        $order = $order instanceof WC_Order ? $order : wc_get_order( $item->get_order_id() );
+        if ( ! $order ) { return false; }
+        $data = self::item_release_data( $item ); $available = self::order_sources( $order );
+        foreach ( $data['sources'] as $token ) { if ( ! isset( $available[ $token ] ) ) { return false; } }
+        if ( ! $data['sources'] || empty( $data['customer']['approved'] ) || empty( $data['staff']['approved'] ) ) { return false; }
+        return $data['release_hash'] && hash_equals( $data['release_hash'], self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) );
+    }
+
+    public static function blocked_item_names( $order ) {
+        $blocked = array();
+        $items = self::production_items( $order );
+        foreach ( $items as $item ) { if ( ! self::item_ready_for_production( $item, $order ) ) { $blocked[] = $item->get_name(); } }
+        return $blocked;
+    }
+
+    public static function order_ready_for_dispatch( $order ) {
+        if ( ! $order instanceof WC_Order ) { return false; }
+        $items = self::production_items( $order );
+        return ! empty( $items ) && ! self::blocked_item_names( $order );
+    }
+
+    private static function production_items( $order ) {
+        if ( class_exists( 'GE_WTP_Production' ) && method_exists( 'GE_WTP_Production', 'actionable_items' ) ) { return GE_WTP_Production::actionable_items( $order, false ); }
+        $items = array();
+        foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+            $status = class_exists( 'GE_WTP_Production' ) && method_exists( 'GE_WTP_Production', 'item_status' ) ? GE_WTP_Production::item_status( $item, $order ) : 'approved';
+            if ( in_array( $status, array( 'approved', 'production', 'ready' ), true ) ) { $items[ $item_id ] = $item; }
+        }
+        return $items;
+    }
+
+    public static function guard_production_transition() {
+        if ( ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
+        $order = wc_get_order( absint( $_POST['order_id'] ?? 0 ) );
+        if ( ! $order ) { return; }
+        foreach ( (array) ( $_POST['item_statuses'] ?? array() ) as $item_id => $posted ) {
+            $item = $order->get_item( absint( $item_id ) ); $next = sanitize_key( wp_unslash( $posted ) );
+            if ( ! $item || ! in_array( $next, array( 'production', 'ready' ), true ) ) { continue; }
+            $current = class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::item_status( $item, $order ) : 'pending';
+            if ( in_array( $current, array( 'production', 'ready' ), true ) ) { continue; }
+            if ( ! self::item_ready_for_production( $item, $order ) ) { self::blocked_page( $order, array( $item->get_name() ), 'No se puede pasar este trabajo a producción' ); }
+        }
+    }
+
+    public static function guard_supplier_dispatch() {
+        if ( ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
+        $order = wc_get_order( absint( $_REQUEST['order_id'] ?? 0 ) );
+        if ( $order && ! self::order_ready_for_dispatch( $order ) ) { self::blocked_page( $order, self::blocked_item_names( $order ), 'Orden bloqueada por control de archivos' ); }
+    }
+
+    private static function blocked_page( $order, $items, $title ) {
+        $back = GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) );
+        $message = '<p>Falta vincular y aprobar el archivo exacto de: <strong>' . esc_html( implode( ', ', $items ) ) . '</strong>.</p><p>El precio aprobado y el arte aprobado son controles independientes. Completá la liberación de archivos antes de continuar.</p><p><a href="' . esc_url( $back ) . '">Volver al pedido</a></p>';
+        wp_die( wp_kses_post( $message ), esc_html( $title ), array( 'response' => 409 ) );
+    }
+
+    public static function handle_artwork_control_save() {
+        if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', 403 ); }
+        $order = wc_get_order( absint( $_POST['order_id'] ?? 0 ) );
+        if ( ! $order ) { wp_die( 'Pedido inválido.', 404 ); }
+        check_admin_referer( 'ge_artwork_control_' . $order->get_id() );
+        $available = self::order_sources( $order ); $rows = (array) ( $_POST['artwork_items'] ?? array() );
+        foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+            $row = isset( $rows[ $item_id ] ) ? (array) $rows[ $item_id ] : array(); $tokens = array();
+            foreach ( (array) ( $row['sources'] ?? array() ) as $token ) { $token = sanitize_text_field( wp_unslash( $token ) ); if ( isset( $available[ $token ] ) ) { $tokens[] = $token; } }
+            $tokens = array_values( array_unique( $tokens ) );
+            $version = sanitize_text_field( wp_unslash( $row['version'] ?? '' ) );
+            $expected = array(
+                'dimensions' => sanitize_text_field( wp_unslash( $row['dimensions'] ?? '' ) ),
+                'pages' => sanitize_text_field( wp_unslash( $row['pages'] ?? '' ) ),
+                'orientation' => sanitize_text_field( wp_unslash( $row['orientation'] ?? '' ) ),
+                'notes' => sanitize_textarea_field( wp_unslash( $row['notes'] ?? '' ) ),
+            );
+            $old = self::item_release_data( $item );
+            $new_hash = self::release_fingerprint( $item, $tokens, $version, $expected, $available );
+            $old_hash = self::release_fingerprint( $item, $old['sources'], $old['version'], $old['expected'], $available );
+            $changed = ! hash_equals( $old_hash, $new_hash );
+            $customer = $changed ? array() : $old['customer']; $staff = $changed ? array() : $old['staff'];
+            if ( ! empty( $row['customer_approved'] ) && $tokens ) { $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => sanitize_key( $row['customer_method'] ?? 'staff-recorded' ) ); }
+            elseif ( empty( $row['customer_approved'] ) ) { $customer = array(); }
+            if ( ! empty( $row['staff_approved'] ) && $tokens ) { $staff = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'staff-control' ); }
+            elseif ( empty( $row['staff_approved'] ) ) { $staff = array(); }
+            $item->update_meta_data( '_ge_item_artwork_sources', $tokens );
+            $item->update_meta_data( '_ge_item_artwork_version', $version );
+            $item->update_meta_data( '_ge_item_artwork_expected', $expected );
+            $item->update_meta_data( '_ge_item_artwork_customer_approval', $customer );
+            $item->update_meta_data( '_ge_item_artwork_staff_approval', $staff );
+            if ( $tokens && ! empty( $customer['approved'] ) && ! empty( $staff['approved'] ) ) {
+                $item->update_meta_data( '_ge_item_artwork_release_hash', $new_hash ); $item->update_meta_data( '_ge_item_artwork_released_at', time() ); $item->update_meta_data( '_ge_item_artwork_released_by', get_current_user_id() );
+            } else { $item->delete_meta_data( '_ge_item_artwork_release_hash' ); $item->delete_meta_data( '_ge_item_artwork_released_at' ); $item->delete_meta_data( '_ge_item_artwork_released_by' ); }
+            $item->save();
+        }
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'artwork_saved' => 1 ) ) ); exit;
+    }
+
+    public static function handle_customer_artwork_approval() {
+        if ( ! is_user_logged_in() ) { auth_redirect(); }
+        $order = wc_get_order( absint( $_POST['order_id'] ?? 0 ) );
+        if ( ! $order || ! GE_WTP_Documents::can_access_order( $order ) ) { wp_die( 'Acceso denegado.', 403 ); }
+        check_admin_referer( 'ge_customer_artwork_approval_' . $order->get_id() );
+        $selected = array_map( 'absint', (array) ( $_POST['approve_items'] ?? array() ) ); $available = self::order_sources( $order );
+        foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+            if ( ! in_array( (int) $item_id, $selected, true ) ) { continue; }
+            $data = self::item_release_data( $item ); if ( ! $data['sources'] ) { continue; }
+            $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'customer-portal' );
+            $item->update_meta_data( '_ge_item_artwork_customer_approval', $customer );
+            if ( ! empty( $data['staff']['approved'] ) ) { $item->update_meta_data( '_ge_item_artwork_release_hash', self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) ); $item->update_meta_data( '_ge_item_artwork_released_at', time() ); }
+            $item->save();
+        }
+        wp_safe_redirect( GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order->get_id(), 'ge_notice' => 'artwork-approved' ) ) ); exit;
+    }
+
+    private static function render_customer_approval_panel( $order ) {
+        if ( ! $order instanceof WC_Order || ! GE_WTP_Documents::can_access_order( $order ) ) { return; }
+        $available = self::order_sources( $order ); $has_mapped = false;
+        echo '<section class="ge-artwork-approval ge-panel"><span class="ge-eyebrow">Archivos para producir</span><h2>Confirmá cada archivo</h2><p>La aprobación del presupuesto no aprueba automáticamente el diseño. Revisá nombre, versión y medidas antes de confirmar.</p><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_artwork_approval"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">'; wp_nonce_field( 'ge_customer_artwork_approval_' . $order->get_id() );
+        foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+            $data = self::item_release_data( $item ); $ready = self::item_ready_for_production( $item, $order );
+            echo '<article class="ge-artwork-approval-item ' . ( $ready ? 'is-ready' : '' ) . '"><div><strong>' . esc_html( $item->get_name() ) . '</strong><small>' . esc_html( number_format_i18n( $item->get_quantity() ) ) . ' unidades · versión ' . esc_html( $data['version'] ?: 'sin definir' ) . '</small></div>';
+            if ( ! $data['sources'] ) { echo '<p class="ge-artwork-waiting">Graph Express todavía debe asignar el archivo exacto a este producto.</p>'; }
+            else { $has_mapped = true; echo '<ul>'; foreach ( $data['sources'] as $token ) { if ( isset( $available[ $token ] ) ) { echo '<li><a target="_blank" rel="noopener" href="' . esc_url( $available[ $token ]['url'] ) . '">' . esc_html( $available[ $token ]['name'] ) . '</a><small>' . esc_html( $available[ $token ]['code'] . self::analysis_summary( $available[ $token ]['analysis'] ) ) . '</small></li>'; } } echo '</ul>'; self::render_expected( $data['expected'] ); if ( ! empty( $data['customer']['approved'] ) ) { echo '<b class="ge-release-state">✓ Confirmado por vos</b>'; } else { echo '<label class="ge-approval-check"><input type="checkbox" name="approve_items[]" value="' . esc_attr( $item_id ) . '"><span>Confirmo que estos son los archivos correctos para imprimir</span></label>'; } }
+            echo '</article>';
+        }
+        if ( $has_mapped ) { echo '<button class="ge-artwork-approve-button" type="submit">Confirmar archivos seleccionados</button>'; }
+        echo '</form></section>';
+    }
+
+    public static function render_staff_artwork_control() {
+        if ( ! is_page( 'gestion' ) || ! GE_WTP_Staff_Portal::can_access() || 'production' !== sanitize_key( $_GET['section'] ?? '' ) ) { return; }
+        $order = wc_get_order( absint( $_GET['order_id'] ?? 0 ) ); if ( ! $order ) { return; }
+        $available = self::order_sources( $order );
+        ?>
+        <section class="ge-production-card ge-artwork-control" data-ge-artwork-control><div class="ge-production-section-head"><div><span>Control obligatorio</span><h2>Archivos por producto</h2></div><b><?php echo self::order_ready_for_dispatch( $order ) ? 'Listo para producir' : 'Producción bloqueada'; ?></b></div>
+        <?php if ( ! empty( $_GET['artwork_saved'] ) ) : ?><div class="ge-production-notice">El control de archivos quedó guardado.</div><?php endif; ?>
+        <p>Asigná el archivo exacto a cada ítem. Si cambia un archivo, una versión o una medida, las aprobaciones anteriores se invalidan.</p>
+        <?php self::render_duplicate_warning( $available ); ?>
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_artwork_control_save"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_artwork_control_' . $order->get_id() ); ?>
+        <div class="ge-artwork-control-list"><?php foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) : $data = self::item_release_data( $item ); ?>
+        <article><header><div><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) ); ?> unidades</small></div><b class="<?php echo self::item_ready_for_production( $item, $order ) ? 'is-ready' : 'is-blocked'; ?>"><?php echo self::item_ready_for_production( $item, $order ) ? 'LIBERADO' : 'PENDIENTE'; ?></b></header>
+        <fieldset><legend>Archivo(s) exacto(s) para este producto</legend><?php if ( ! $available ) : ?><p>No hay archivos vinculados al pedido. Cargalos en “Documentos del pedido” como Arte o vinculalos desde la Biblioteca.</p><?php else : foreach ( $available as $token => $source ) : ?><label class="ge-artwork-source"><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][sources][]" value="<?php echo esc_attr( $token ); ?>" <?php checked( in_array( $token, $data['sources'], true ) ); ?>><span><strong><?php echo esc_html( $source['name'] ); ?></strong><small><?php echo esc_html( $source['code'] . self::analysis_summary( $source['analysis'] ) ); ?></small></span><a target="_blank" rel="noopener" href="<?php echo esc_url( $source['url'] ); ?>">Ver</a></label><?php endforeach; endif; ?></fieldset>
+        <div class="ge-artwork-spec-grid"><label>Versión<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][version]" value="<?php echo esc_attr( $data['version'] ); ?>" placeholder="v1 final"></label><label>Medida esperada<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][dimensions]" value="<?php echo esc_attr( $data['expected']['dimensions'] ?? '' ); ?>" placeholder="21 × 14,5 cm"></label><label>Páginas/diseños esperados<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][pages]" value="<?php echo esc_attr( $data['expected']['pages'] ?? '' ); ?>" placeholder="5 archivos / 200 números"></label><label>Orientación<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][orientation]" value="<?php echo esc_attr( $data['expected']['orientation'] ?? '' ); ?>" placeholder="Horizontal"></label><label class="is-wide">Observaciones<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][notes]" value="<?php echo esc_attr( $data['expected']['notes'] ?? '' ); ?>" placeholder="Sponsors alternados, numeración, frente..."></label></div>
+        <div class="ge-artwork-confirm-grid"><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_approved]" value="1" <?php checked( ! empty( $data['customer']['approved'] ) ); ?>><span><strong>Cliente confirmó este archivo</strong><small>Marcá sólo con evidencia en portal, email, WhatsApp o presencial.</small></span></label><label>Método<select name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_method]"><option value="staff-recorded">Registrado manualmente</option><option value="whatsapp" <?php selected( $data['customer']['method'] ?? '', 'whatsapp' ); ?>>WhatsApp</option><option value="email" <?php selected( $data['customer']['method'] ?? '', 'email' ); ?>>Email</option><option value="in-person" <?php selected( $data['customer']['method'] ?? '', 'in-person' ); ?>>Presencial</option><option value="customer-portal" <?php selected( $data['customer']['method'] ?? '', 'customer-portal' ); ?>>Portal del cliente</option></select></label><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][staff_approved]" value="1" <?php checked( ! empty( $data['staff']['approved'] ) ); ?>><span><strong>Control técnico Graph Express</strong><small>Nombre, medida, páginas, orientación y versión revisados.</small></span></label></div>
+        </article><?php endforeach; ?></div><div class="ge-artwork-control-actions"><button class="ge-staff-button" type="submit">Guardar control de archivos</button><?php if ( self::order_ready_for_dispatch( $order ) ) : ?><a target="_blank" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=ge_artwork_release_sheet&order_id=' . $order->get_id() ), 'ge_artwork_release_sheet_' . $order->get_id() ) ); ?>">Abrir ficha “Archivos a producir” ↗</a><?php endif; ?></div></form></section>
+        <?php
+    }
+
+    private static function render_duplicate_warning( $sources ) {
+        $seen = array(); $duplicates = array();
+        foreach ( $sources as $source ) { $key = ! empty( $source['hash'] ) ? $source['hash'] : strtolower( $source['name'] ); if ( isset( $seen[ $key ] ) ) { $duplicates[] = $source['name']; } $seen[ $key ] = true; }
+        if ( $duplicates ) { echo '<div class="ge-artwork-duplicate"><strong>Atención: posibles archivos duplicados</strong><span>' . esc_html( implode( ', ', array_unique( $duplicates ) ) ) . '. Verificá cuál corresponde antes de liberar.</span></div>'; }
+    }
+
+    private static function analysis_summary( $analysis ) {
+        if ( ! is_array( $analysis ) || ! $analysis ) { return ' · análisis técnico pendiente'; }
+        $parts = array(); if ( ! empty( $analysis['pages'] ) ) { $parts[] = $analysis['pages'] . ' pág.'; }
+        if ( ! empty( $analysis['width'] ) && ! empty( $analysis['height'] ) ) { $parts[] = $analysis['width'] . ' × ' . $analysis['height'] . ' ' . ( $analysis['unit'] ?? '' ); }
+        if ( ! empty( $analysis['orientation'] ) ) { $parts[] = $analysis['orientation']; }
+        return $parts ? ' · ' . implode( ' · ', $parts ) : ' · análisis técnico pendiente';
+    }
+
+    private static function render_expected( $expected ) {
+        $parts = array_filter( array( $expected['dimensions'] ?? '', $expected['pages'] ?? '', $expected['orientation'] ?? '', $expected['notes'] ?? '' ) );
+        if ( $parts ) { echo '<p class="ge-artwork-expected"><strong>Debe coincidir con:</strong> ' . esc_html( implode( ' · ', $parts ) ) . '</p>'; }
+    }
+
+    public static function supplier_artwork_html( $order ) {
+        $available = self::order_sources( $order ); $html = '<h3>Archivos liberados para producir</h3><ul>';
+        foreach ( $order->get_items( 'line_item' ) as $item ) { if ( class_exists( 'GE_WTP_Production' ) && ! in_array( GE_WTP_Production::item_status( $item, $order ), array( 'approved', 'production', 'ready' ), true ) ) { continue; } $data = self::item_release_data( $item ); foreach ( $data['sources'] as $token ) { if ( isset( $available[ $token ] ) ) { $html .= '<li><strong>' . esc_html( $item->get_name() ) . ':</strong> <a href="' . esc_url( $available[ $token ]['url'] ) . '">' . esc_html( $available[ $token ]['name'] ) . '</a> · ' . esc_html( $available[ $token ]['code'] . ' · versión ' . ( $data['version'] ?: '-' ) . self::analysis_summary( $available[ $token ]['analysis'] ) ) . '</li>'; } } }
+        return $html . '</ul><p><strong>Producir únicamente los archivos enumerados arriba.</strong></p>';
+    }
+
+    public static function supplier_artwork_text( $order ) {
+        $available = self::order_sources( $order ); $lines = array( 'Archivos liberados para producir:' );
+        foreach ( $order->get_items( 'line_item' ) as $item ) { if ( class_exists( 'GE_WTP_Production' ) && ! in_array( GE_WTP_Production::item_status( $item, $order ), array( 'approved', 'production', 'ready' ), true ) ) { continue; } $data = self::item_release_data( $item ); foreach ( $data['sources'] as $token ) { if ( isset( $available[ $token ] ) ) { $lines[] = '- ' . $item->get_name() . ': ' . $available[ $token ]['name'] . ' (' . $available[ $token ]['code'] . ', versión ' . ( $data['version'] ?: '-' ) . ') ' . $available[ $token ]['url']; } } }
+        $lines[] = 'Producir únicamente estos archivos.'; return implode( "\n", $lines );
+    }
+
+    public static function handle_release_sheet() {
+        if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', 403 ); }
+        $order = wc_get_order( absint( $_GET['order_id'] ?? 0 ) ); if ( ! $order ) { wp_die( 'Pedido inválido.', 404 ); }
+        check_admin_referer( 'ge_artwork_release_sheet_' . $order->get_id() );
+        if ( ! self::order_ready_for_dispatch( $order ) ) { self::blocked_page( $order, self::blocked_item_names( $order ), 'Ficha no disponible' ); }
+        $reference = class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : '#' . $order->get_id(); $available = self::order_sources( $order );
+        ?><!doctype html><html><head><meta charset="utf-8"><title>Archivos a producir <?php echo esc_html( $reference ); ?></title><style>body{font:14px Arial;color:#17152a;margin:28px}.head{border-bottom:4px solid #ed1f7a;padding-bottom:14px;margin-bottom:20px}.head b{color:#ed1f7a}article{border:1px solid #bbb;border-radius:10px;padding:16px;margin:14px 0}h1,h2{margin:4px 0}ul{padding-left:20px}.ok{background:#e9f8ef;padding:10px;border-radius:6px;font-weight:bold}@media print{button{display:none}}</style></head><body><div class="head"><b>GRAPH EXPRESS · ARCHIVOS A PRODUCIR</b><h1><?php echo esc_html( $reference ); ?></h1><p>Emitida <?php echo esc_html( current_time( 'd/m/Y H:i' ) ); ?> · Cliente: <?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_email() ); ?></p></div><?php foreach ( $order->get_items( 'line_item' ) as $item ) : if ( class_exists( 'GE_WTP_Production' ) && ! in_array( GE_WTP_Production::item_status( $item, $order ), array( 'approved', 'production', 'ready' ), true ) ) { continue; } $data = self::item_release_data( $item ); ?><article><h2><?php echo esc_html( $item->get_name() ); ?></h2><p>Cantidad: <strong><?php echo esc_html( $item->get_quantity() ); ?></strong> · Versión: <strong><?php echo esc_html( $data['version'] ?: '-' ); ?></strong></p><?php self::render_expected( $data['expected'] ); ?><ul><?php foreach ( $data['sources'] as $token ) : $source = $available[ $token ]; ?><li><strong><?php echo esc_html( $source['name'] ); ?></strong><br><?php echo esc_html( $source['code'] . self::analysis_summary( $source['analysis'] ) ); ?><br><?php echo esc_html( $source['url'] ); ?></li><?php endforeach; ?></ul><p class="ok">✓ Cliente confirmado · ✓ Control Graph Express · Liberado <?php echo esc_html( wp_date( 'd/m/Y H:i', $data['released_at'] ) ); ?></p></article><?php endforeach; ?><button onclick="window.print()">Imprimir ficha</button></body></html><?php exit;
     }
 
     public static function render_staff() {
@@ -292,7 +559,9 @@ final class GE_WTP_Artwork_Library {
         $stored = wp_generate_uuid4() . '.' . $extension; $path = trailingslashit( self::original_directory() ) . $stored;
         if ( ! move_uploaded_file( $file['tmp_name'], $path ) ) { return new WP_Error( 'original_move', 'No se pudo guardar el original.' ); }
         $old = get_post_meta( $id, '_ge_artwork_original', true );
-        update_post_meta( $id, '_ge_artwork_original', array( 'provider' => 'local', 'stored_name' => $stored, 'name' => sanitize_file_name( $file['name'] ), 'size' => (int) $file['size'], 'mime' => function_exists( 'mime_content_type' ) ? mime_content_type( $path ) : 'application/octet-stream', 'uploaded_at' => current_time( 'mysql' ) ) );
+        $mime = function_exists( 'mime_content_type' ) ? mime_content_type( $path ) : 'application/octet-stream';
+        $analysis = class_exists( 'GE_WTP_Documents' ) ? GE_WTP_Documents::analyze_file( $path, $mime ) : array();
+        update_post_meta( $id, '_ge_artwork_original', array( 'provider' => 'local', 'stored_name' => $stored, 'name' => sanitize_file_name( $file['name'] ), 'size' => (int) $file['size'], 'mime' => $mime, 'analysis' => $analysis, 'uploaded_at' => current_time( 'mysql' ) ) );
         update_post_meta( $id, '_ge_artwork_original_name', sanitize_file_name( $file['name'] ) ); update_post_meta( $id, '_ge_artwork_storage_provider', 'local' );
         if ( is_array( $old ) && 'local' === ( isset( $old['provider'] ) ? $old['provider'] : '' ) && ! empty( $old['stored_name'] ) ) { $old_path = trailingslashit( self::original_directory() ) . wp_basename( $old['stored_name'] ); if ( is_file( $old_path ) ) { wp_delete_file( $old_path ); } }
         return true;

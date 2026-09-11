@@ -93,6 +93,7 @@ final class GE_WTP_Documents {
                 'category'    => isset( self::categories()[ $category ] ) ? $category : 'otro',
                 'uploaded_by' => get_current_user_id(),
                 'uploaded_at' => current_time( 'mysql' ),
+                'analysis'    => self::analyze_file( $destination, $allowed[ $extension ] ),
             );
         }
 
@@ -131,6 +132,75 @@ final class GE_WTP_Documents {
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : false;
         $documents = $order ? $order->get_meta( self::META_KEY, true ) : array();
         return is_array( $documents ) ? $documents : array();
+    }
+
+    public static function get_documents_with_analysis( $order_id ) {
+        $order = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : false;
+        if ( ! $order ) { return array(); }
+        $documents = self::get_documents( $order_id );
+        $changed = false;
+        foreach ( $documents as $index => $document ) {
+            if ( ! empty( $document['analysis'] ) || empty( $document['stored_name'] ) ) { continue; }
+            $path = trailingslashit( self::private_directory() ) . wp_basename( $document['stored_name'] );
+            if ( ! is_file( $path ) ) { continue; }
+            $documents[ $index ]['analysis'] = self::analyze_file( $path, $document['mime'] ?? '' );
+            $changed = true;
+        }
+        if ( $changed ) {
+            $order->update_meta_data( self::META_KEY, $documents );
+            $order->save();
+        }
+        return $documents;
+    }
+
+    public static function analyze_file( $path, $mime ) {
+        $analysis = array(
+            'sha256'      => is_file( $path ) ? hash_file( 'sha256', $path ) : '',
+            'pages'       => 0,
+            'width'       => 0,
+            'height'      => 0,
+            'unit'        => '',
+            'orientation' => '',
+            'confidence'  => 'basic',
+            'warning'     => '',
+        );
+        if ( 0 === strpos( (string) $mime, 'image/' ) ) {
+            $size = @getimagesize( $path );
+            if ( $size ) {
+                $analysis['pages'] = 1;
+                $analysis['width'] = absint( $size[0] );
+                $analysis['height'] = absint( $size[1] );
+                $analysis['unit'] = 'px';
+                $analysis['orientation'] = $size[0] === $size[1] ? 'cuadrado' : ( $size[0] > $size[1] ? 'horizontal' : 'vertical' );
+                $analysis['confidence'] = 'high';
+            }
+            return $analysis;
+        }
+        if ( 'application/pdf' !== $mime ) { $analysis['warning'] = 'Formato sin análisis interno automático.'; return $analysis; }
+        $handle = @fopen( $path, 'rb' );
+        if ( ! $handle ) { $analysis['warning'] = 'No se pudo leer el PDF.'; return $analysis; }
+        $carry = ''; $read = 0; $limit = 256 * MB_IN_BYTES; $media_box = array();
+        while ( ! feof( $handle ) && $read < $limit ) {
+            $chunk = fread( $handle, min( MB_IN_BYTES, $limit - $read ) );
+            if ( false === $chunk || '' === $chunk ) { break; }
+            $read += strlen( $chunk ); $carry_length = strlen( $carry ); $scan = $carry . $chunk;
+            if ( preg_match_all( '/\/Type\s*\/Page\b/', $scan, $matches, PREG_OFFSET_CAPTURE ) ) {
+                foreach ( $matches[0] as $match ) { if ( $match[1] + strlen( $match[0] ) > $carry_length ) { $analysis['pages']++; } }
+            }
+            if ( ! $media_box && preg_match( '/\/MediaBox\s*\[\s*[-0-9.]+\s+[-0-9.]+\s+([-0-9.]+)\s+([-0-9.]+)\s*\]/', $scan, $box ) ) { $media_box = array( (float) $box[1], (float) $box[2] ); }
+            $carry = substr( $scan, -256 );
+        }
+        $truncated = ! feof( $handle ); fclose( $handle );
+        if ( $media_box ) {
+            $analysis['width'] = round( $media_box[0] * 25.4 / 72, 1 );
+            $analysis['height'] = round( $media_box[1] * 25.4 / 72, 1 );
+            $analysis['unit'] = 'mm';
+            $analysis['orientation'] = abs( $media_box[0] - $media_box[1] ) < 0.1 ? 'cuadrado' : ( $media_box[0] > $media_box[1] ? 'horizontal' : 'vertical' );
+        }
+        $analysis['confidence'] = $analysis['pages'] && $media_box && ! $truncated ? 'medium' : 'basic';
+        if ( ! $analysis['pages'] || ! $media_box ) { $analysis['warning'] = 'El PDF necesita control visual: parte de sus datos internos no pudo verificarse.'; }
+        elseif ( $truncated ) { $analysis['warning'] = 'PDF muy pesado: el análisis se limitó a los primeros 256 MB.'; }
+        return $analysis;
     }
 
     public static function can_access_order( $order ) {
