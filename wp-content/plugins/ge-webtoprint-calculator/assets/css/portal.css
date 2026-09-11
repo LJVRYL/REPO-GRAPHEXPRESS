@@ -237,3 +237,5 @@ body.ge-markcom-standalone { margin: 0; background: var(--ge-soft); }
     .ge-login-card { padding: 28px 22px; }
     .ge-payment-head { flex-direction: column; }
 }
+
+.ge-item-status{display:inline-flex;width:max-content;margin:7px 0;padding:4px 9px;border-radius:999px;background:#fff3ce;color:#805b00;font-size:11px;font-style:normal;font-weight:800}.ge-item-status.is-approved{background:#e9efff;color:#315bb7}.ge-item-status.is-production{background:#e7f1ff;color:#1764a5}.ge-item-status.is-ready{background:#dff7ec;color:#086644}.ge-item-status.is-cancelled{background:#f7e7ea;color:#a12c42}

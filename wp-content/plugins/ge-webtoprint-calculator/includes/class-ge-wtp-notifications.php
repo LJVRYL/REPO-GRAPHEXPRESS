@@ -237,7 +237,8 @@ final class GE_WTP_Notifications {
     private static function order_email_body( $order, $heading, $intro, $button_url = '', $button_label = '' ) {
         $items = '';
         foreach ( $order->get_items() as $item ) {
-            $items .= '<tr><td style="padding:12px 0;border-bottom:1px solid #eceaf0"><strong>' . esc_html( $item->get_name() ) . '</strong><br><span style="color:#777382;font-size:13px">' . esc_html( number_format_i18n( $item->get_quantity() ) ) . ' unidades</span></td><td style="padding:12px 0;border-bottom:1px solid #eceaf0;text-align:right"><strong>' . wp_kses_post( $order->get_formatted_line_subtotal( $item ) ) . '</strong></td></tr>';
+            $item_status = class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::item_status_label( $item, $order ) : 'Pendiente de aprobación';
+            $items .= '<tr><td style="padding:12px 0;border-bottom:1px solid #eceaf0"><strong>' . esc_html( $item->get_name() ) . '</strong><br><span style="color:#777382;font-size:13px">' . esc_html( number_format_i18n( $item->get_quantity() ) ) . ' unidades · ' . esc_html( $item_status ) . '</span></td><td style="padding:12px 0;border-bottom:1px solid #eceaf0;text-align:right"><strong>' . wp_kses_post( $order->get_formatted_line_subtotal( $item ) ) . '</strong></td></tr>';
         }
         $button = $button_url ? '<p style="margin:28px 0 6px"><a href="' . esc_url( $button_url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">' . esc_html( $button_label ) . '</a></p>' : '';
         $estimated = $order->get_meta( '_ge_estimated_date' );

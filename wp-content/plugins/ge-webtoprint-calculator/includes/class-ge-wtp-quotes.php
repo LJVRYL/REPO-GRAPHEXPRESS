@@ -95,6 +95,7 @@ final class GE_WTP_Quotes {
         $items = array();
         foreach ( $order->get_items() as $item ) {
             $quantity = max( 1, (float) $item->get_quantity() ); $details = array();
+            if ( class_exists( 'GE_WTP_Production' ) ) { $details[] = 'Estado: ' . GE_WTP_Production::item_status_label( $item, $order ); }
             foreach ( $item->get_formatted_meta_data( '' ) as $meta ) {
                 $label = wp_strip_all_tags( $meta->display_key );
                 if ( in_array( $label, array( 'Precio unitario ARS', 'Tipo de cambio' ), true ) ) { continue; }
