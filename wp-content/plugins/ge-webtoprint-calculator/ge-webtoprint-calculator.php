@@ -3,7 +3,7 @@
  * Plugin Name:       GE Web-to-Print Core
  * Plugin URI:        https://graphexpress.com.ar/
  * Description:       Portal privado, catálogo corporativo y gestión de pedidos de Graph Express.
- * Version:           2.14.0
+ * Version:           2.15.0
  * Author:            Graph Express
  * Author URI:        https://graphexpress.com.ar/
  * Requires at least: 6.5
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'GE_WTP_VERSION', '2.14.0' );
+define( 'GE_WTP_VERSION', '2.15.0' );
 define( 'GE_WTP_PLUGIN_FILE', __FILE__ );
 define( 'GE_WTP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GE_WTP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -27,6 +27,8 @@ require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-mardones-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-digital-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-windbanners-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-msbags-catalog.php';
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-marketing-catalog.php';
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-promotional-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-documents.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-orders.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-quotes.php';

@@ -58,8 +58,8 @@ final class GE_WTP_Storefront {
         remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
         remove_action('woocommerce_single_product_summary', 'graphexpress_quote_only_product_cta', 31);
         $first = reset($config['options']);
-        $minimum_quantity = max(1, isset($config['min_qty']) ? (int) $config['min_qty'] : 1);
-        $quantity_step = max(1, isset($config['step']) ? (int) $config['step'] : 1);
+        $minimum_quantity = max(1, isset($first['min_qty']) ? (int) $first['min_qty'] : (isset($config['min_qty']) ? (int) $config['min_qty'] : 1));
+        $quantity_step = max(1, isset($first['step']) ? (int) $first['step'] : (isset($config['step']) ? (int) $config['step'] : 1));
         $mode = isset($config['mode']) ? $config['mode'] : '';
         $is_measure = !empty($mode);
         $saved_artworks = is_user_logged_in() && class_exists('GE_WTP_Artwork_Library')
@@ -75,7 +75,7 @@ final class GE_WTP_Storefront {
                 <span><?php echo esc_html($config['label']); ?></span>
                 <select name="option_key" data-ge-option required>
                     <?php foreach ($config['options'] as $key => $option) : ?>
-                        <option value="<?php echo esc_attr($key); ?>" data-price="<?php echo esc_attr($option['price']); ?>"><?php echo esc_html($option['label']); ?></option>
+                        <option value="<?php echo esc_attr($key); ?>" data-price="<?php echo esc_attr($option['price']); ?>" data-min="<?php echo esc_attr($option['min_qty'] ?? $minimum_quantity); ?>" data-step="<?php echo esc_attr($option['step'] ?? $quantity_step); ?>"><?php echo esc_html($option['label']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
@@ -123,15 +123,16 @@ final class GE_WTP_Storefront {
             wp_safe_redirect(get_permalink($product_id));
             exit;
         }
-        $minimum_quantity = max(1, isset($config['min_qty']) ? (int) $config['min_qty'] : 1);
-        $quantity_step = max(1, isset($config['step']) ? (int) $config['step'] : 1);
+        $selected_option = $config['options'][$key];
+        $minimum_quantity = max(1, isset($selected_option['min_qty']) ? (int) $selected_option['min_qty'] : (isset($config['min_qty']) ? (int) $config['min_qty'] : 1));
+        $quantity_step = max(1, isset($selected_option['step']) ? (int) $selected_option['step'] : (isset($config['step']) ? (int) $config['step'] : 1));
         $quantity = isset($_POST['quantity']) ? absint($_POST['quantity']) : $minimum_quantity;
         if ($quantity < $minimum_quantity || 0 !== (($quantity - $minimum_quantity) % $quantity_step)) {
             wc_add_notice(sprintf('La cantidad debe comenzar en %1$d y avanzar de %2$d en %2$d unidades.', $minimum_quantity, $quantity_step), 'error');
             wp_safe_redirect(get_permalink($product_id));
             exit;
         }
-        $option = $config['options'][$key];
+        $option = $selected_option;
         $unit_price = (float) $option['price'];
         $configuration = $option['label'];
         $mode = isset($config['mode']) ? $config['mode'] : '';
@@ -236,6 +237,18 @@ final class GE_WTP_Storefront {
         $sections = get_post_meta($product_id, '_ge_public_price_sections', true);
         if (is_array($sections) && $sections) {
             $options = self::section_options($sections);
+            $rules = get_post_meta($product_id, '_ge_option_rules', true);
+            if (is_array($rules)) {
+                foreach ($options as $key => &$option) {
+                    if (!empty($rules[$key]['min_qty'])) {
+                        $option['min_qty'] = max(1, (int) $rules[$key]['min_qty']);
+                    }
+                    if (!empty($rules[$key]['step'])) {
+                        $option['step'] = max(1, (int) $rules[$key]['step']);
+                    }
+                }
+                unset($option);
+            }
             return $options ? array(
                 'label' => get_post_meta($product_id, '_ge_option_label', true) ?: 'Formato y cantidad',
                 'options' => $options,

@@ -20,7 +20,7 @@ $child_terms = $current_term ? get_terms(array(
 )) : array();
 $page_title = $is_store_home ? '¿Qué necesitás producir?' : woocommerce_page_title(false);
 $page_description = $is_store_home
-    ? 'Buscá un producto o empezá por una de nuestras cinco familias. Dentro de cada categoría vas a encontrar formatos, opciones y cantidades.'
+    ? 'Buscá un producto o empezá por una de nuestras familias. Dentro de cada categoría vas a encontrar formatos, opciones y cantidades.'
     : ($current_term ? term_description($current_term) : 'Encontrá productos, formatos y soluciones de producción gráfica.');
 ?>
 <!doctype html>
@@ -63,7 +63,7 @@ $page_description = $is_store_home
     <?php if ($is_store_home) : ?>
         <section class="gx-store-categories">
             <div class="gx-wrap">
-                <div class="gx-store-section-title"><h2>Elegí una categoría</h2><span>05 familias de productos</span></div>
+                <div class="gx-store-section-title"><h2>Elegí una categoría</h2><span><?php echo esc_html(str_pad((string) count($families), 2, '0', STR_PAD_LEFT)); ?> familias de productos</span></div>
                 <div class="gx-category-grid">
                     <?php foreach ($families as $slug => $family) :
                         $term = get_term_by('slug', $slug, 'product_cat');

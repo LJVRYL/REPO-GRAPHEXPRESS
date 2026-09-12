@@ -10,7 +10,7 @@ defined('ABSPATH') || exit;
  */
 final class GE_WTP_Digital_Catalog {
     const SOURCE_NAME = 'Druck';
-    const SOURCE_DATE = '2026-09-04';
+    const SOURCE_DATE = '2026-09-10';
 
     public static function init() {
         add_action('wp_enqueue_scripts', array(__CLASS__, 'enqueue_assets'));
@@ -90,15 +90,146 @@ final class GE_WTP_Digital_Catalog {
                 'fields' => array(
                     self::field('tamano', 'Tamaño', 'select', array(self::option('a3-plus', 'A3+ · 32 × 47 cm'), self::option('a4-plus', 'A4+ · 22 × 31 cm'))),
                     self::field('cantidad', 'Cantidad de pliegos', 'number', array(), array('min' => 1, 'max' => 10000, 'step' => 1, 'default' => 1)),
-                    self::field('papel', 'Tipo de papel', 'select', array(self::option('ilustracion-brillante', 'Ilustración brillante'), self::option('ilustracion-mate', 'Ilustración mate'), self::option('autoadhesivo', 'Autoadhesivo'), self::option('obra', 'Obra'))),
-                    self::field('gramaje', 'Gramaje', 'select', array(self::option('115', '115 g'), self::option('150', '150 g'), self::option('200', '200 g'), self::option('250', '250 g'), self::option('300', '300 g')), array('default' => '150')),
-                    self::field('impresion', 'Impresión', 'select', array(self::option('frente', 'Frente solo'), self::option('frente-dorso', 'Frente y dorso'))),
-                    self::field('laminado', 'Laminado', 'select', array(self::option('sin-laminar', 'Sin laminar'), self::option('mate', 'Mate'), self::option('brillante', 'Brillante'))),
+                    self::field('papel', 'Papel', 'select', array(
+                        self::option('ilustracion-115', 'Ilustración 115 g'),
+                        self::option('ilustracion-150', 'Ilustración 150 g'),
+                        self::option('ilustracion-300', 'Ilustración 300 g'),
+                        self::option('obra-80', 'Obra 80 g'),
+                        self::option('autoadhesivo', 'Autoadhesivo'),
+                    ), array('default' => 'ilustracion-150')),
+                    self::field('impresion', 'Impresión', 'select', array(
+                        self::option('frente', 'Frente'),
+                        self::option('frente-dorso', 'Frente y dorso', array('papel' => array('ilustracion-115', 'ilustracion-150', 'ilustracion-300', 'obra-80'))),
+                    )),
+                    self::field('laminado', 'Laminado', 'select', array(
+                        self::option('sin-laminar', 'Sin laminado'),
+                        self::option('frente', 'Frente', array('papel' => array('ilustracion-150', 'ilustracion-300', 'autoadhesivo'))),
+                        self::option('frente-dorso', 'Frente y dorso', array('papel' => array('ilustracion-150', 'ilustracion-300'))),
+                    )),
                     self::field('pleno', 'Archivo con pleno', 'checkbox', array(), array('surcharge' => 0.30, 'help' => 'Suma 30% al valor de la combinación.')),
                 ),
-                'prices' => array('tamano=a3-plus|cantidad=1|papel=ilustracion-brillante|gramaje=150|impresion=frente|laminado=sin-laminar' => 1470),
-                'notes' => array('Valores de referencia sin IVA.', 'La referencia disponible corresponde a una lista antigua; debe actualizarse antes de publicar.'),
+                'pricing_model' => array(
+                    'type' => 'tiered-unit',
+                    'quantity_key' => 'cantidad',
+                    'dimension_keys' => array('tamano', 'papel', 'impresion'),
+                    'breaks' => array(1, 2, 26, 51, 101, 301, 501, 1001),
+                    'supplier_unit_rates' => self::digital_color_rates(),
+                    'commercial_markups' => array(
+                        array('min' => 1, 'max' => 50, 'rate' => 0.40),
+                        array('min' => 51, 'max' => 300, 'rate' => 0.30),
+                        array('min' => 301, 'max' => 10000, 'rate' => 0.20),
+                    ),
+                    'lamination' => array(
+                        'field' => 'laminado',
+                        'papers' => array('ilustracion-150', 'ilustracion-300', 'autoadhesivo'),
+                        'supplier_unit_per_side' => array('a3-plus' => 240, 'a4-plus' => 120),
+                        'markup' => 0.50,
+                        'sides' => array('sin-laminar' => 0, 'frente' => 1, 'frente-dorso' => 2),
+                    ),
+                ),
+                'notes' => array(
+                    'Precios finales de Graph Express sin IVA.',
+                    'Escala comercial: +40% hasta 50 pliegos, +30% de 51 a 300 y +20% desde 301 pliegos.',
+                    'Laminado disponible en Ilustración 150 g, Ilustración 300 g y Autoadhesivo; no disponible en Obra 80 g ni Ilustración 115 g.',
+                    'Archivos con pleno: 30% adicional sobre la impresión.',
+                ),
             ),
+            'bajadas-digitales-blanco-negro' => array(
+                'sku' => 'ID-BAJ-002', 'name' => 'Bajadas digitales blanco y negro', 'group' => 'impresion-por-pliego',
+                'description' => 'Impresión digital blanco y negro por pliego para interiores, formularios, apuntes, tapas y pequeñas producciones.',
+                'fields' => array(
+                    self::field('tamano', 'Tamaño', 'select', array(self::option('a3-plus', 'A3+ · 32 × 47 cm'), self::option('a4-plus', 'A4+ · 22 × 31 cm'))),
+                    self::field('cantidad', 'Cantidad de pliegos', 'number', array(), array('min' => 1, 'max' => 10000, 'step' => 1, 'default' => 1)),
+                    self::field('papel', 'Papel', 'select', array(
+                        self::option('ilustracion-115', 'Ilustración 115 g'),
+                        self::option('ilustracion-150', 'Ilustración 150 g'),
+                        self::option('ilustracion-300', 'Ilustración 300 g'),
+                        self::option('obra-80', 'Obra 80 g'),
+                        self::option('autoadhesivo', 'Autoadhesivo'),
+                    ), array('default' => 'obra-80')),
+                    self::field('impresion', 'Impresión', 'select', array(
+                        self::option('frente', 'Frente'),
+                        self::option('frente-dorso', 'Frente y dorso', array('papel' => array('ilustracion-115', 'ilustracion-150', 'ilustracion-300', 'obra-80'))),
+                    )),
+                    self::field('laminado', 'Laminado', 'select', array(
+                        self::option('sin-laminar', 'Sin laminado'),
+                        self::option('frente', 'Frente', array('papel' => array('ilustracion-150', 'ilustracion-300', 'autoadhesivo'))),
+                        self::option('frente-dorso', 'Frente y dorso', array('papel' => array('ilustracion-150', 'ilustracion-300'))),
+                    )),
+                    self::field('pleno', 'Archivo con pleno', 'checkbox', array(), array('surcharge' => 0.20, 'help' => 'Suma 20% al valor de la impresión.')),
+                ),
+                'pricing_model' => array(
+                    'type' => 'tiered-unit',
+                    'quantity_key' => 'cantidad',
+                    'dimension_keys' => array('tamano', 'papel', 'impresion'),
+                    'breaks' => array(1, 2, 26, 51, 101, 301, 501, 1001),
+                    'supplier_unit_rates' => self::digital_bw_rates(),
+                    'commercial_markups' => array(
+                        array('min' => 1, 'max' => 50, 'rate' => 0.40),
+                        array('min' => 51, 'max' => 300, 'rate' => 0.30),
+                        array('min' => 301, 'max' => 10000, 'rate' => 0.20),
+                    ),
+                    'lamination' => array(
+                        'field' => 'laminado',
+                        'papers' => array('ilustracion-150', 'ilustracion-300', 'autoadhesivo'),
+                        'supplier_unit_per_side' => array('a3-plus' => 240, 'a4-plus' => 120),
+                        'markup' => 0.50,
+                        'sides' => array('sin-laminar' => 0, 'frente' => 1, 'frente-dorso' => 2),
+                    ),
+                ),
+                'notes' => array(
+                    'Precios finales de Graph Express sin IVA.',
+                    'Escala comercial: +40% hasta 50 pliegos, +30% de 51 a 300 y +20% desde 301 pliegos.',
+                    'Laminado disponible en Ilustración 150 g, Ilustración 300 g y Autoadhesivo; no disponible en Obra 80 g ni Ilustración 115 g.',
+                    'Archivos con pleno: 20% adicional sobre la impresión.',
+                ),
+            ),
+        );
+    }
+
+    private static function digital_color_rates() {
+        return array(
+            'a3-plus|ilustracion-115|frente'       => array(1430, 720, 680, 630, 590, 530, 490, 470),
+            'a3-plus|ilustracion-115|frente-dorso' => array(2420, 1230, 1060, 1000, 950, 870, 820, 790),
+            'a4-plus|ilustracion-115|frente'       => array(790, 400, 370, 350, 330, 290, 270, 260),
+            'a4-plus|ilustracion-115|frente-dorso' => array(1340, 680, 590, 550, 520, 480, 450, 440),
+            'a3-plus|ilustracion-150|frente'       => array(1470, 750, 700, 660, 620, 560, 510, 490),
+            'a3-plus|ilustracion-150|frente-dorso' => array(2500, 1250, 1090, 1030, 970, 900, 840, 810),
+            'a4-plus|ilustracion-150|frente'       => array(810, 410, 390, 370, 340, 310, 280, 270),
+            'a4-plus|ilustracion-150|frente-dorso' => array(1370, 690, 600, 570, 540, 500, 470, 450),
+            'a3-plus|ilustracion-300|frente'       => array(1700, 850, 810, 770, 730, 670, 620, 600),
+            'a3-plus|ilustracion-300|frente-dorso' => array(2710, 1360, 1200, 1140, 1080, 1010, 950, 920),
+            'a4-plus|ilustracion-300|frente'       => array(940, 470, 450, 430, 400, 370, 350, 330),
+            'a4-plus|ilustracion-300|frente-dorso' => array(1490, 750, 660, 630, 600, 560, 530, 510),
+            'a3-plus|obra-80|frente'               => array(1390, 700, 660, 620, 580, 510, 470, 450),
+            'a3-plus|obra-80|frente-dorso'         => array(2400, 1210, 1040, 990, 930, 850, 800, 770),
+            'a4-plus|obra-80|frente'               => array(760, 390, 370, 340, 320, 280, 260, 250),
+            'a4-plus|obra-80|frente-dorso'         => array(1320, 670, 580, 540, 510, 470, 440, 420),
+            'a3-plus|autoadhesivo|frente'           => array(2401, 1200, 1160, 1120, 1080, 1010, 970, 950),
+            'a4-plus|autoadhesivo|frente'           => array(1321, 660, 640, 620, 590, 560, 540, 520),
+        );
+    }
+
+    private static function digital_bw_rates() {
+        return array(
+            'a3-plus|ilustracion-115|frente'       => array(320, 190, 180, 160, 160, 160, 160, 160),
+            'a3-plus|ilustracion-115|frente-dorso' => array(520, 300, 270, 250, 250, 250, 250, 240),
+            'a4-plus|ilustracion-115|frente'       => array(180, 110, 100, 90, 90, 90, 90, 90),
+            'a4-plus|ilustracion-115|frente-dorso' => array(290, 170, 160, 150, 140, 140, 140, 140),
+            'a3-plus|ilustracion-150|frente'       => array(340, 210, 200, 180, 180, 180, 180, 180),
+            'a3-plus|ilustracion-150|frente-dorso' => array(550, 330, 290, 270, 270, 270, 270, 260),
+            'a4-plus|ilustracion-150|frente'       => array(190, 120, 110, 110, 110, 100, 100, 100),
+            'a4-plus|ilustracion-150|frente-dorso' => array(300, 180, 170, 160, 160, 150, 150, 150),
+            'a3-plus|ilustracion-300|frente'       => array(470, 330, 320, 300, 300, 300, 290, 290),
+            'a3-plus|ilustracion-300|frente-dorso' => array(700, 450, 430, 400, 400, 400, 400, 400),
+            'a4-plus|ilustracion-300|frente'       => array(260, 190, 180, 170, 170, 170, 170, 170),
+            'a4-plus|ilustracion-300|frente-dorso' => array(390, 260, 240, 230, 230, 220, 220, 220),
+            'a3-plus|obra-80|frente'               => array(290, 170, 160, 150, 150, 150, 150, 150),
+            'a3-plus|obra-80|frente-dorso'         => array(500, 280, 260, 240, 240, 230, 230, 230),
+            'a4-plus|obra-80|frente'               => array(170, 100, 90, 90, 90, 80, 80, 80),
+            'a4-plus|obra-80|frente-dorso'         => array(280, 160, 150, 140, 140, 130, 130, 130),
+            'a3-plus|autoadhesivo|frente'           => array(790, 650, 630, 620, 620, 620, 620, 620),
+            'a4-plus|autoadhesivo|frente'           => array(440, 360, 350, 350, 350, 350, 340, 340),
         );
     }
 
@@ -134,9 +265,26 @@ final class GE_WTP_Digital_Catalog {
             update_post_meta($product_id, '_ge_digital_config', $data);
             update_post_meta($product_id, '_ge_supplier_source', self::SOURCE_NAME);
             update_post_meta($product_id, '_ge_supplier_source_date', self::SOURCE_DATE);
+            if ('bajadas-digitales-blanco-negro' === $key) { self::assign_existing_reference_image($product_id, 'volantes-blanco-negro.png'); }
             $is_new ? $created++ : $updated++;
         }
         return array('created' => $created, 'updated' => $updated, 'total' => $created + $updated);
+    }
+
+    private static function assign_existing_reference_image($product_id, $asset) {
+        $image_id = (int) get_post_thumbnail_id($product_id);
+        $gallery = (string) get_post_meta($product_id, '_product_image_gallery', true);
+        if ($image_id && $gallery) { return; }
+        if (! $image_id) {
+            $images = get_posts(array(
+                'post_type' => 'attachment', 'post_status' => 'inherit', 'posts_per_page' => 1, 'fields' => 'ids',
+                'meta_key' => '_ge_product_reference_asset', 'meta_value' => $asset,
+            ));
+            $image_id = $images ? (int) $images[0] : 0;
+        }
+        if (! $image_id) { return; }
+        if (! get_post_thumbnail_id($product_id)) { set_post_thumbnail($product_id, $image_id); }
+        if (! $gallery) { update_post_meta($product_id, '_product_image_gallery', (string) $image_id); }
     }
 
     private static function sync_categories() {
@@ -177,9 +325,10 @@ final class GE_WTP_Digital_Catalog {
         if (class_exists('GE_WTP_Storefront') && GE_WTP_Storefront::config($product->get_id())) { return; }
         $config = $product->get_meta('_ge_digital_config');
         if (! is_array($config) || empty($config['fields'])) { return; }
+        $has_final_pricing = ! empty($config['pricing_model']);
         ?>
         <section class="ge-digital-calculator" data-ge-digital-calculator data-config="<?php echo esc_attr(wp_json_encode($config)); ?>">
-            <div class="ge-digital-heading"><span>Configurador digital</span><h2>Armá tu producto</h2><p>Elegí cada variable. Los valores cargados son provisorios hasta actualizar la lista comercial.</p></div>
+            <div class="ge-digital-heading"><span>Configurador digital</span><h2>Armá tu producto</h2><p><?php echo esc_html($has_final_pricing ? 'Elegí cada variable y conocé el precio final sin IVA.' : 'Elegí cada variable. Los valores cargados son provisorios hasta actualizar la lista comercial.'); ?></p></div>
             <div class="ge-digital-fields">
                 <?php foreach ($config['fields'] as $field) : $default = isset($field['default']) ? $field['default'] : ''; ?>
                     <label class="ge-digital-field ge-field-<?php echo esc_attr($field['type']); ?>">
@@ -199,7 +348,7 @@ final class GE_WTP_Digital_Catalog {
                 <?php endforeach; ?>
             </div>
             <label class="ge-digital-upload"><span>Archivo para imprimir</span><input type="file" data-ge-file accept=".pdf,.ai,.eps,.psd,.svg,.cdr,.tif,.tiff,.jpg,.jpeg,.png,.zip"><small data-ge-file-name>PDF, AI, EPS, PSD, SVG, CDR, TIFF, JPG, PNG o ZIP · capacidad prevista hasta 1 GB. El envío se conectará al almacenamiento externo del pedido.</small></label>
-            <div class="ge-digital-total"><div><small data-ge-price-state>Referencia provisoria</small><strong data-ge-total>Calculando…</strong><span data-ge-unit></span></div><div><small>IVA 21%</small><strong data-ge-tax>—</strong></div></div>
+            <div class="ge-digital-total"><div><small data-ge-price-state><?php echo esc_html($has_final_pricing ? 'Precio final sin IVA' : 'Referencia provisoria'); ?></small><strong data-ge-total>Calculando…</strong><span data-ge-unit></span></div><div><small>IVA 21%</small><strong data-ge-tax>—</strong></div></div>
             <p class="ge-digital-warning" data-ge-warning></p>
             <a class="ge-digital-submit" data-ge-submit target="_blank" rel="noopener" href="#">Enviar configuración por WhatsApp ↗</a>
             <?php if (! empty($config['notes'])) : ?><ul class="ge-digital-notes"><?php foreach ($config['notes'] as $note) : ?><li><?php echo esc_html($note); ?></li><?php endforeach; ?></ul><?php endif; ?>

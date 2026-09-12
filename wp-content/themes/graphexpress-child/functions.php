@@ -140,7 +140,7 @@ function graphexpress_hide_storefront_until_launch() {
 add_action('template_redirect', 'graphexpress_hide_storefront_until_launch', 5);
 
 /**
- * Datos visuales de las cinco familias principales del catálogo.
+ * Datos visuales de las familias principales del catálogo.
  */
 function graphexpress_store_families() {
     return array(
@@ -152,8 +152,16 @@ function graphexpress_store_families() {
             'class'       => 'violet',
             'symbol'      => '↗',
         ),
-        'imprenta-digital' => array(
+        'windbanners' => array(
             'number'      => '02',
+            'name'        => 'Windbanners',
+            'description' => 'Sistemas textiles y exhibidores para eventos, puntos de venta y comunicación exterior.',
+            'examples'    => array('Fly banners', 'Banderas', 'Bases', 'Carpas', 'Displays'),
+            'class'       => 'blue',
+            'symbol'      => '⚑',
+        ),
+        'imprenta-digital' => array(
+            'number'      => '03',
             'name'        => 'Imprenta digital',
             'description' => 'Producción rápida y flexible para tiradas cortas y personalizadas.',
             'examples'    => array('Tarjetas', 'Carpetas', 'Folletos', 'Talonarios', 'Papelería'),
@@ -161,7 +169,7 @@ function graphexpress_store_families() {
             'symbol'      => '▤',
         ),
         'imprenta-offset' => array(
-            'number'      => '03',
+            'number'      => '04',
             'name'        => 'Imprenta offset',
             'description' => 'Calidad y eficiencia para grandes cantidades y proyectos especiales.',
             'examples'    => array('Anotadores', 'Afiches', 'Folletos', 'Carpetas', 'Packaging'),
@@ -169,15 +177,31 @@ function graphexpress_store_families() {
             'symbol'      => '◎',
         ),
         'merchandising' => array(
-            'number'      => '04',
+            'number'      => '05',
             'name'        => 'Merchandising',
             'description' => 'Objetos personalizados para campañas, equipos y regalos corporativos.',
-            'examples'    => array('Bolsas', 'Lapiceras', 'Botellas', 'Textil', 'Regalos'),
+            'examples'    => array('Lanyards', 'Lapiceras', 'Botellas', 'Libretas', 'Regalos'),
             'class'       => 'green',
             'symbol'      => '✦',
         ),
+        'bolsas' => array(
+            'number'      => '06',
+            'name'        => 'Bolsas',
+            'description' => 'Bolsas reutilizables y packaging para comercios, marcas y envíos.',
+            'examples'    => array('Friselina', 'Lienzo', 'E-commerce', 'Personalizadas'),
+            'class'       => 'coral',
+            'symbol'      => '▱',
+        ),
+        'linea-ecologica' => array(
+            'number'      => '07',
+            'name'        => 'Línea ecológica',
+            'description' => 'Alternativas reutilizables y materiales seleccionados para comunicar con menor impacto.',
+            'examples'    => array('Bambú', 'Corcho', 'Algodón', 'Reutilizables', 'Reciclados'),
+            'class'       => 'eco',
+            'symbol'      => '♻',
+        ),
         'editorial' => array(
-            'number'      => '05',
+            'number'      => '08',
             'name'        => 'Editorial',
             'description' => 'Publicaciones cuidadas en cada detalle, desde el archivo a la encuadernación.',
             'examples'    => array('Libros', 'Catálogos', 'Revistas', 'Balances', 'Memorias'),

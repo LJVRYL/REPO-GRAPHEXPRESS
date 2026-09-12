@@ -12,6 +12,7 @@ final class GE_WTP_Windbanners_Catalog {
     const SOURCE_NAME = 'Grupo Wind Banners';
     const SOURCE_URL = 'https://grupowindbanners.com.ar/';
     const SOURCE_DATE = '2026-09-08';
+    const IMAGE_VERSION = '2026-09-09-clean-v1';
 
     public static function groups() {
         return array(
@@ -172,7 +173,7 @@ final class GE_WTP_Windbanners_Catalog {
             if ($product->get_sku() !== $data['sku']) { $product->set_sku($data['sku']); }
             $product->set_regular_price('');
             $product->set_sale_price('');
-            $product->set_category_ids(array($category_ids['gran-formato'], $category_ids[$data['group']]));
+            $product->set_category_ids(array($category_ids['gran-formato'], $category_ids['windbanners'], $category_ids[$data['group']]));
             $product->set_menu_order($position++);
             $product->set_reviews_allowed(false);
             $product->set_attributes(self::build_attributes(array('Modelos y medidas' => array_column($data['rows'], 0))));
@@ -189,10 +190,51 @@ final class GE_WTP_Windbanners_Catalog {
             update_post_meta($product_id, '_ge_supplier_source_url', self::SOURCE_URL);
             update_post_meta($product_id, '_ge_supplier_source_date', self::SOURCE_DATE);
             update_post_meta($product_id, '_ge_supplier_item_ids', $data['source_ids']);
+            if (self::IMAGE_VERSION !== get_post_meta($product_id, '_ge_wind_catalog_image_version', true)) {
+                if (self::attach_catalog_image($key . '.png', $product_id, $data['name'])) {
+                    update_post_meta($product_id, '_ge_wind_catalog_image_version', self::IMAGE_VERSION);
+                }
+            }
             $is_new ? $created++ : $updated++;
         }
         clean_term_cache(array_values($category_ids), 'product_cat');
         return array('created' => $created, 'updated' => $updated, 'total' => $created + $updated, 'source_items' => count(self::source_rows()));
+    }
+
+    /**
+     * Copia al Media Library la versión editorial limpia incluida en el plugin.
+     * Nunca enlaza archivos del proveedor ni expone su identidad en el frente.
+     */
+    private static function attach_catalog_image($filename, $product_id, $title) {
+        $source = GE_WTP_PLUGIN_DIR . 'assets/images/windbanners/clean/' . basename($filename);
+        if (!is_readable($source)) {
+            return false;
+        }
+        $contents = file_get_contents($source);
+        if (false === $contents) {
+            return false;
+        }
+        $upload = wp_upload_bits('ge-wind-' . basename($filename), null, $contents);
+        if (!empty($upload['error'])) {
+            return false;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        $mime = wp_check_filetype($upload['file']);
+        $attachment_id = wp_insert_attachment(array(
+            'post_mime_type' => $mime['type'],
+            'post_title' => sanitize_text_field($title),
+            'post_status' => 'inherit',
+        ), $upload['file'], $product_id);
+        if (is_wp_error($attachment_id)) {
+            return false;
+        }
+        wp_update_attachment_metadata($attachment_id, wp_generate_attachment_metadata($attachment_id, $upload['file']));
+        update_post_meta($attachment_id, '_wp_attachment_image_alt', sanitize_text_field($title));
+        update_post_meta($attachment_id, '_ge_catalog_asset', 'windbanners/clean/' . basename($filename));
+        set_post_thumbnail($product_id, $attachment_id);
+        update_post_meta($product_id, '_product_image_gallery', '');
+        return true;
     }
 
     private static function sync_categories() {
@@ -203,7 +245,22 @@ final class GE_WTP_Windbanners_Catalog {
             $parent_id = (int) $inserted['term_id'];
         }
         $parent_id = isset($parent_id) ? $parent_id : (int) $parent->term_id;
-        $ids = array('gran-formato' => $parent_id);
+        $windbanners = get_term_by('slug', 'windbanners', 'product_cat');
+        if (!$windbanners) {
+            $inserted = wp_insert_term('Windbanners', 'product_cat', array(
+                'slug' => 'windbanners',
+                'description' => 'Windbanners, banderas, bases, carpas, exhibidores y promocionales textiles.',
+            ));
+            if (is_wp_error($inserted)) { return $inserted; }
+            $windbanners_id = (int) $inserted['term_id'];
+        } else {
+            $windbanners_id = (int) $windbanners->term_id;
+            wp_update_term($windbanners_id, 'product_cat', array(
+                'parent' => 0,
+                'description' => 'Windbanners, banderas, bases, carpas, exhibidores y promocionales textiles.',
+            ));
+        }
+        $ids = array('gran-formato' => $parent_id, 'windbanners' => $windbanners_id);
         foreach (self::groups() as $slug => $group) {
             $term = get_term_by('slug', $slug, 'product_cat');
             $args = array('slug' => $slug, 'parent' => $parent_id, 'description' => $group['description']);

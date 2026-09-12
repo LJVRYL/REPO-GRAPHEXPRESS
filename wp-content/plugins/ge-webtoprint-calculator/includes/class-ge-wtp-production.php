@@ -10,6 +10,7 @@ final class GE_WTP_Production {
         add_action( 'woocommerce_checkout_order_processed', array( __CLASS__, 'checkout_order' ), 40, 3 );
         add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'store_api_order' ), 40, 1 );
         add_action( 'admin_post_ge_production_save', array( __CLASS__, 'handle_save' ) );
+        add_action( 'admin_post_ge_production_quick_status', array( __CLASS__, 'handle_quick_status' ) );
         add_action( 'admin_post_ge_production_event', array( __CLASS__, 'handle_event' ) );
         add_action( 'admin_post_ge_production_event_status', array( __CLASS__, 'handle_event_status' ) );
         add_action( 'admin_post_ge_production_sheet', array( __CLASS__, 'handle_sheet' ) );
@@ -25,9 +26,10 @@ final class GE_WTP_Production {
             'druck'               => array( 'name' => 'Druck', 'detail' => 'Digital Express y ventana offset de viernes 12:00 a martes 21:00.' ),
             'mardones'            => array( 'name' => 'Mardones / Sur Colors', 'detail' => 'Offset de martes 21:00 a viernes 12:00. Entrega del proveedor: martes por la noche.' ),
             'bandurria'           => array( 'name' => 'Bandurria', 'detail' => 'Gran formato. Banners y lonas: 2 días hábiles; otros trabajos: 5 días hábiles.' ),
-            'elementi'            => array( 'name' => 'Elementi', 'detail' => 'Merchandising. Productos y tiempos a configurar.' ),
+            'elementi'            => array( 'name' => 'Elementi', 'detail' => 'Marketing, regalos empresariales y línea ecológica. Plazo inicial: 7 días hábiles.' ),
             'conquer'             => array( 'name' => 'Conquer', 'detail' => 'Merchandising. Productos y tiempos a configurar.' ),
             'msbags'              => array( 'name' => 'MS Bags', 'detail' => 'Bolsas de friselina, lienzo y e-commerce. Producción estimada: 7 a 10 días hábiles.', 'email' => 'ventasmsbags@gmail.com', 'whatsapp' => '5491161835857' ),
+            'tienda-cintas'       => array( 'name' => 'La Tienda de Cintas', 'detail' => 'Lanyards y cintas personalizadas. Producción estimada: 7 a 15 días hábiles.' ),
             'merch-other'         => array( 'name' => 'Merchandising · tercer proveedor', 'detail' => 'Proveedor adicional de merchandising pendiente de identificar.' ),
             'sublimation-a'       => array( 'name' => 'Sublimación · proveedor 1', 'detail' => 'Banderas y productos sublimados. Nombre y tiempos a configurar.' ),
             'sublimation-b'       => array( 'name' => 'Sublimación · proveedor 2', 'detail' => 'Banderas y productos sublimados. Nombre y tiempos a configurar.' ),
@@ -137,6 +139,12 @@ final class GE_WTP_Production {
         $name = strtolower( remove_accents( $item->get_name() ) );
         $categories = $product_id ? wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'slugs' ) ) : array();
         $categories = is_wp_error( $categories ) ? array() : $categories;
+        if ( false !== strpos( $source, 'elementi' ) || 0 === strpos( $catalog_key, 'marketing-promotional-' ) ) {
+            return array( 'supplier' => 'elementi', 'date' => self::business_date( $created, 7 ), 'reason' => 'Producto promocional asignado a Elementi con una previsión inicial de 7 días hábiles.' );
+        }
+        if ( false !== strpos( $source, 'tienda de cintas' ) || 0 === strpos( $catalog_key, 'marketing-lanyards-' ) ) {
+            return array( 'supplier' => 'tienda-cintas', 'date' => self::business_date( $created, 15 ), 'reason' => 'Lanyard asignado a La Tienda de Cintas con una previsión conservadora de 15 días hábiles.' );
+        }
         if ( false !== strpos( $source, 'ms bags' ) || 0 === strpos( $catalog_key, 'msbags-' ) || in_array( 'bolsas', $categories, true ) ) {
             return array( 'supplier' => 'msbags', 'date' => self::business_date( $created, 10 ), 'reason' => 'Producto de bolsas asignado a MS Bags con una previsión conservadora de 10 días hábiles.' );
         }
@@ -180,7 +188,7 @@ final class GE_WTP_Production {
     }
 
     private static function default_processes( $supplier ) {
-        $production = 'bandurria' === $supplier ? array( 'Impresión gran formato', 180 ) : ( 'mardones' === $supplier ? array( 'Impresión offset', 480 ) : ( 'druck' === $supplier ? array( 'Impresión / producción Druck', 180 ) : ( 'msbags' === $supplier ? array( 'Confección e impresión de bolsas', 600 ) : array( 'Producción del trabajo', 240 ) ) ) );
+        $production = 'bandurria' === $supplier ? array( 'Impresión gran formato', 180 ) : ( 'mardones' === $supplier ? array( 'Impresión offset', 480 ) : ( 'druck' === $supplier ? array( 'Impresión / producción Druck', 180 ) : ( 'msbags' === $supplier ? array( 'Confección e impresión de bolsas', 600 ) : ( 'tienda-cintas' === $supplier ? array( 'Impresión y confección de lanyards', 900 ) : ( 'elementi' === $supplier ? array( 'Personalización de merchandising', 420 ) : array( 'Producción del trabajo', 240 ) ) ) ) ) );
         return array(
             array( 'name' => 'Revisión y aprobación de archivo', 'estimated' => 30, 'actual' => '', 'status' => 'pending' ),
             array( 'name' => 'Preprensa / preparación', 'estimated' => 45, 'actual' => '', 'status' => 'pending' ),
@@ -222,6 +230,7 @@ final class GE_WTP_Production {
         usort( $active, function( $a, $b ) { return strcmp( (string) $a->get_meta( '_ge_production_promised_date' ), (string) $b->get_meta( '_ge_production_promised_date' ) ); } );
         ?>
         <div class="ge-staff-heading"><div><span>Operación</span><h1>Producción</h1><p>Cola de trabajos, proveedores, tiempos y alertas.</p></div></div>
+        <?php self::render_notice(); ?>
         <div class="ge-production-metrics"><article><span>En cola</span><strong><?php echo esc_html( count( $active ) ); ?></strong></article><article class="is-danger"><span>Demorados</span><strong><?php echo esc_html( $delayed ); ?></strong></article><article class="is-warning"><span>Vencen hoy</span><strong><?php echo esc_html( $today ); ?></strong></article><article class="is-ready"><span>Listos</span><strong><?php echo esc_html( $ready ); ?></strong></article></div>
         <section class="ge-production-board"><div class="ge-production-section-head"><div><span>Cola diaria</span><h2>Trabajos activos</h2></div><b><?php echo esc_html( wp_date( 'd/m/Y' ) ); ?></b></div><?php if ( ! $active ) : ?><div class="ge-admin-empty">No hay trabajos activos.</div><?php else : ?><div class="ge-production-list"><?php foreach ( $active as $order ) : self::queue_row( $order ); endforeach; ?></div><?php endif; ?></section>
         <?php
@@ -233,7 +242,7 @@ final class GE_WTP_Production {
         $priority = self::priorities()[ $order->get_meta( '_ge_production_priority' ) ] ?? 'Normal';
         $alert = self::alert( $order ); $reference = self::order_reference( $order );
         $active_items = self::actionable_items( $order );
-        ?><article class="ge-production-row is-<?php echo esc_attr( $alert['key'] ); ?>"><div class="ge-production-main"><small><?php echo esc_html( $reference ); ?></small><strong><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></strong><span><?php echo esc_html( implode( ' · ', array_map( function( $item ) { return $item->get_name(); }, $active_items ) ) ); ?></span></div><div><small>Proveedor</small><strong><?php echo esc_html( $supplier ); ?></strong></div><div><small>Prometido</small><strong><?php echo esc_html( self::date_label( $order->get_meta( '_ge_production_promised_date' ) ) ); ?></strong><em><?php echo esc_html( $alert['label'] ); ?></em></div><div><small>Estado</small><strong><?php echo esc_html( $status ); ?></strong><span><?php echo esc_html( $priority ); ?></span></div><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>">Abrir →</a></article><?php
+        ?><article class="ge-production-row is-<?php echo esc_attr( $alert['key'] ); ?>"><div class="ge-production-main"><small><?php echo esc_html( $reference ); ?></small><strong><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></strong><span><?php echo esc_html( implode( ' · ', array_map( function( $item ) { return $item->get_name(); }, $active_items ) ) ); ?></span></div><div><small>Proveedor</small><strong><?php echo esc_html( $supplier ); ?></strong></div><div><small>Prometido</small><strong><?php echo esc_html( self::date_label( $order->get_meta( '_ge_production_promised_date' ) ) ); ?></strong><em><?php echo esc_html( $alert['label'] ); ?></em></div><details class="ge-production-quick-status"><summary><small>Estado</small><strong><?php echo esc_html( $status ); ?></strong><span><?php echo esc_html( $priority ); ?> · Cambiar ▾</span></summary><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_production_quick_status"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_quick_status_' . $order->get_id() ); ?><div><?php foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) : ?><label><span><?php echo esc_html( $item->get_name() ); ?></span><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) ); ?> unidades</small><select name="item_statuses[<?php echo esc_attr( $item_id ); ?>]" aria-label="Estado de <?php echo esc_attr( $item->get_name() ); ?>"><?php foreach ( self::item_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( self::item_status( $item, $order ), $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php endforeach; ?></div><button type="submit">Guardar estados</button></form></details><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>">Abrir →</a></article><?php
     }
 
     private static function render_order( $order ) {
@@ -270,21 +279,51 @@ final class GE_WTP_Production {
             $order->delete_meta_data( '_ge_supplier_auto_dispatch_last_attempt' );
             if ( class_exists( 'GE_WTP_Supplier_Dispatch' ) ) { wp_clear_scheduled_hook( GE_WTP_Supplier_Dispatch::RETRY_HOOK, array( $order->get_id() ) ); }
         }
-        foreach ( (array) ( $_POST['item_statuses'] ?? array() ) as $item_id => $posted_status ) { $item = $order->get_item( absint( $item_id ) ); $item_status = sanitize_key( wp_unslash( $posted_status ) ); if ( ! $item || ! isset( self::item_statuses()[ $item_status ] ) ) { continue; } $previous = self::item_status( $item, $order ); $item->update_meta_data( '_ge_item_status', $item_status ); if ( $previous !== $item_status ) { $history = (array) $item->get_meta( '_ge_item_status_history', true ); $history[] = array( 'time' => time(), 'from' => $previous, 'to' => $item_status, 'user_id' => get_current_user_id() ); $item->update_meta_data( '_ge_item_status_history', array_slice( $history, -50 ) ); } $item->save(); }
+        self::save_item_statuses( $order, (array) ( $_POST['item_statuses'] ?? array() ) );
         $order->update_meta_data( '_ge_production_priority', isset( $priorities[ $priority ] ) ? $priority : 'normal' );
         $order->update_meta_data( '_ge_production_promised_date', $date ); $order->update_meta_data( '_ge_estimated_date', $date );
         $order->update_meta_data( '_ge_production_technical_notes', sanitize_textarea_field( wp_unslash( $_POST['technical_notes'] ?? '' ) ) );
         $order->update_meta_data( '_ge_production_processes', $processes ); $order->save();
         $status = self::sync_order_status_from_items( $order );
-        if ( $status !== $old_status ) {
-            $history = (array) $order->get_meta( '_ge_production_status_history' );
-            $history[] = array( 'time' => time(), 'from' => $old_status, 'to' => $status, 'user_id' => get_current_user_id() );
-            $order->update_meta_data( '_ge_production_status_history', array_slice( $history, -100 ) );
-            if ( 'production' === $status && ! $order->get_meta( '_ge_production_started_at' ) ) { $order->update_meta_data( '_ge_production_started_at', time() ); }
-            if ( 'ready' === $status && ! $order->get_meta( '_ge_production_ready_at' ) ) { $order->update_meta_data( '_ge_production_ready_at', time() ); }
-            $order->save();
-        }
+        self::record_status_change( $order, $old_status, $status );
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'saved' => 1 ) ) ); exit;
+    }
+
+    public static function handle_quick_status() {
+        self::guard();
+        $order = self::requested_order();
+        check_admin_referer( 'ge_production_quick_status_' . $order->get_id() );
+        $old_status = (string) $order->get_meta( '_ge_production_status' );
+        self::save_item_statuses( $order, (array) ( $_POST['item_statuses'] ?? array() ) );
+        $status = self::sync_order_status_from_items( $order );
+        self::record_status_change( $order, $old_status, $status );
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'saved' => 1 ) ) );
+        exit;
+    }
+
+    private static function save_item_statuses( $order, $posted_statuses ) {
+        foreach ( $posted_statuses as $item_id => $posted_status ) {
+            $item = $order->get_item( absint( $item_id ) );
+            $item_status = sanitize_key( wp_unslash( $posted_status ) );
+            if ( ! $item instanceof WC_Order_Item_Product || ! isset( self::item_statuses()[ $item_status ] ) ) { continue; }
+            $previous = self::item_status( $item, $order );
+            if ( $previous === $item_status ) { continue; }
+            $item->update_meta_data( '_ge_item_status', $item_status );
+            $history = (array) $item->get_meta( '_ge_item_status_history', true );
+            $history[] = array( 'time' => time(), 'from' => $previous, 'to' => $item_status, 'user_id' => get_current_user_id() );
+            $item->update_meta_data( '_ge_item_status_history', array_slice( $history, -50 ) );
+            $item->save();
+        }
+    }
+
+    private static function record_status_change( $order, $old_status, $status ) {
+        if ( $status === $old_status ) { return; }
+        $history = (array) $order->get_meta( '_ge_production_status_history' );
+        $history[] = array( 'time' => time(), 'from' => $old_status, 'to' => $status, 'user_id' => get_current_user_id() );
+        $order->update_meta_data( '_ge_production_status_history', array_slice( $history, -100 ) );
+        if ( 'production' === $status && ! $order->get_meta( '_ge_production_started_at' ) ) { $order->update_meta_data( '_ge_production_started_at', time() ); }
+        if ( 'ready' === $status && ! $order->get_meta( '_ge_production_ready_at' ) ) { $order->update_meta_data( '_ge_production_ready_at', time() ); }
+        $order->save();
     }
 
     public static function handle_sheet() {

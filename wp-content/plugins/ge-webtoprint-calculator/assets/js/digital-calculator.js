@@ -26,11 +26,41 @@
         function applyDependencies(current) {
             calculator.querySelectorAll('option[data-when]').forEach(function (option) {
                 var rule = JSON.parse(option.dataset.when || '{}');
-                var available = Object.keys(rule).every(function (key) { return String(current[key]) === String(rule[key]); });
+                var available = Object.keys(rule).every(function (key) {
+                    var expected = rule[key];
+                    return Array.isArray(expected) ? expected.map(String).indexOf(String(current[key])) !== -1 : String(current[key]) === String(expected);
+                });
                 option.hidden = !available;
                 option.disabled = !available;
                 if (!available && option.selected) { option.parentElement.value = option.parentElement.querySelector('option:not([disabled])').value; }
             });
+        }
+
+        function tieredPrice(current, quantity) {
+            var model = config.pricing_model || {};
+            if (model.type !== 'tiered-unit') { return null; }
+            var key = (model.dimension_keys || []).map(function (dimension) { return current[dimension]; }).join('|');
+            var rates = (model.supplier_unit_rates || {})[key];
+            if (!Array.isArray(rates) || !rates.length) { return 0; }
+            var tier = 0;
+            (model.breaks || []).forEach(function (minimum, index) { if (quantity >= Number(minimum)) { tier = index; } });
+            var supplierPrint = Number(rates[Math.min(tier, rates.length - 1)] || 0) * quantity;
+            var commercialRate = 0;
+            (model.commercial_markups || []).some(function (range) {
+                if (quantity >= Number(range.min) && quantity <= Number(range.max)) { commercialRate = Number(range.rate || 0); return true; }
+                return false;
+            });
+            var printTotal = supplierPrint * (1 + commercialRate);
+            var laminationTotal = 0;
+            var lamination = model.lamination || {};
+            var selectedLamination = current[lamination.field || 'laminado'];
+            var laminablePapers = Array.isArray(lamination.papers) ? lamination.papers : [lamination.paper];
+            if (laminablePapers.indexOf(current.papel) !== -1 && selectedLamination && selectedLamination !== 'sin-laminar') {
+                var sides = Number((lamination.sides || {})[selectedLamination] || 0);
+                var supplierUnit = Number((lamination.supplier_unit_per_side || {})[current.tamano] || 0);
+                laminationTotal = supplierUnit * sides * quantity * (1 + Number(lamination.markup || 0));
+            }
+            return { print: printTotal, lamination: laminationTotal, total: printTotal + laminationTotal, commercialRate: commercialRate };
         }
 
         function priceKey(current) {
@@ -44,6 +74,7 @@
             var base = Number((config.prices || {})[priceKey(current)] || 0);
             var surcharge = controls.reduce(function (sum, control) { return sum + (control.type === 'checkbox' && control.checked ? Number(control.dataset.surcharge || 0) : 0); }, 0);
             var quantity = Math.max(1, Number(current.cantidad || 1));
+            var tiered = tieredPrice(current, quantity);
             var labels = controls.filter(function (control) { return control.type !== 'checkbox' || control.checked; }).map(function (control) {
                 var labelNode = control.type === 'checkbox' ? control.closest('label').querySelector('strong') : control.closest('label').querySelector('span');
                 var label = labelNode.textContent.trim();
@@ -51,7 +82,14 @@
                 return label + ': ' + selected;
             });
 
-            if (base > 0) {
+            if (tiered && tiered.total > 0) {
+                var calculated = Math.round(tiered.print * (1 + surcharge) + tiered.lamination);
+                total.textContent = money(calculated) + ' + IVA';
+                unit.textContent = 'Precio por pliego: ' + money(calculated / quantity);
+                tax.textContent = money(calculated * 0.21);
+                state.textContent = 'Precio final sin IVA';
+                warning.textContent = 'Incluye el margen comercial por cantidad' + (tiered.lamination > 0 ? ' y el laminado seleccionado.' : '.');
+            } else if (base > 0) {
                 var calculated = Math.round(base * (1 + surcharge));
                 total.textContent = money(calculated) + ' + IVA';
                 unit.textContent = 'Precio unitario: ' + money(calculated / quantity);

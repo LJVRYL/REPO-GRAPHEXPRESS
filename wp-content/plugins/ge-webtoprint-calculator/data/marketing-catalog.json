@@ -1,0 +1,4454 @@
+[
+  {
+    "key": "tote-bag-algodon-300gr",
+    "sku": "TBML300G-IIN-DF-3471",
+    "name": "Tote Bag Algodón 100% 300gr",
+    "description": "Tote Bag Algodón 100% 300gr (35 x 42 cm, asas de 60 cm x 2.5 cm). Resistente, ecológica y personalizable con impresión DTF. Ideal para destacar tu marca con estilo. Área de Impresión: 20×10 cm.",
+    "categories": [
+      "bolsas",
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-tote-bag-algodon-300gr-01.webp",
+      "ge-marketing-tote-bag-algodon-300gr-02.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "natural",
+          "attribute_pa_medidas": "35x42",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6782.58,
+        "min": 50,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "natural",
+          "attribute_pa_medidas": "35x42",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3250,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "bolsa-string",
+    "sku": "BSSTBL-IIN-DF-I080201",
+    "name": "Bolsa String",
+    "description": "Bolsa String en poliéster 210D, ligera y lavable, con cierre y tirantes de cordón negro. Disponible en una amplia gama de colores —ideal para eventos, ferias y campañas promocionales.\n\nSe imprime en ambos lados hasta un área de 20 cm x 10 cm.",
+    "categories": [
+      "bolsas",
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-bolsa-string-01.jpg",
+      "ge-marketing-bolsa-string-02.jpg",
+      "ge-marketing-bolsa-string-03.jpg",
+      "ge-marketing-bolsa-string-04.jpg",
+      "ge-marketing-bolsa-string-05.jpg",
+      "ge-marketing-bolsa-string-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "celeste",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rosa",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "celeste",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rosa",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3570.33,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2856.27,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "bolsa-friselina",
+    "sku": "BSFR4030BL-IIN-DF-3386",
+    "name": "Bolsa de Friselina",
+    "description": "Esta bolsa de Friselina es una opción ligera y práctica para tus necesidades diarias. Fabricada con tela no tejida de alta resistencia, es ideal para quienes buscan una alternativa reutilizable y económica. Su material de Friselina la hace perfecta para transportar todo tipo de objetos, desde documentos y libros hasta productos de supermercado.\n\nDisponibles en dos tamaños: 40×30 y 45×40\n\nSe imprime en ambos lados hasta un área de 20 cm x 10 cm.",
+    "categories": [
+      "bolsas",
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-bolsa-friselina-01.webp",
+      "ge-marketing-bolsa-friselina-02.jpg",
+      "ge-marketing-bolsa-friselina-03.jpg",
+      "ge-marketing-bolsa-friselina-04.webp",
+      "ge-marketing-bolsa-friselina-05.webp",
+      "ge-marketing-bolsa-friselina-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "40x30",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 4269.01,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "45x40",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 4598.56,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "bolsa-de-lienzo-totebag",
+    "sku": "TB3740-IIN-DF-3291",
+    "name": "Bolsas de Lienzo Tote Bag",
+    "description": "Nuestras Bolsas de Lienzo 100% Algodón son perfectas para cualquier ocasión. Confeccionadas en algodón resistente y en diversos tamaños. Ideales para personalizar con tu logo o diseño, son una opción ecológica y duradera, perfecta para promociones, eventos y uso diario.\n\nSe imprime en ambos lados hasta un área de 20 cm x 10 cm.",
+    "categories": [
+      "bolsas",
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-bolsa-de-lienzo-totebag-01.webp",
+      "ge-marketing-bolsa-de-lienzo-totebag-02.jpg",
+      "ge-marketing-bolsa-de-lienzo-totebag-03.webp",
+      "ge-marketing-bolsa-de-lienzo-totebag-04.webp",
+      "ge-marketing-bolsa-de-lienzo-totebag-05.webp",
+      "ge-marketing-bolsa-de-lienzo-totebag-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "natural",
+          "attribute_pa_medidas": "28x40",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6662.03,
+        "min": 50,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "natural",
+          "attribute_pa_medidas": "32x35",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6541.56,
+        "min": 50,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "natural",
+          "attribute_pa_medidas": "37x40",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7143.88,
+        "min": 50,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "natural",
+          "attribute_pa_medidas": "40x40",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7465.12,
+        "min": 50,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "natural",
+          "attribute_pa_medidas": "50x40",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7906.81,
+        "min": 50,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "vaso-americano",
+    "sku": "VAAMAN-IIN-UD-I070302",
+    "name": "Vaso Americano",
+    "description": "Vaso reutilizable 300 ml en polipropileno, con tapa rígida y grip siliconado. Ideal para café, té y mate cocido. Personalizable por Impresión UV DTF.",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-vaso-americano-01.webp",
+      "ge-marketing-vaso-americano-02.jpg",
+      "ge-marketing-vaso-americano-03.jpg",
+      "ge-marketing-vaso-americano-04.jpg",
+      "ge-marketing-vaso-americano-05.jpg",
+      "ge-marketing-vaso-americano-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rosa",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rosa",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde-ingles",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde-ingles",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde-manzana",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde-manzana",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-francia",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6188.57,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-francia",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4950.86,
+        "min": 20,
+        "step": 1
+      }
+    ]
+  },
+  {
+    "key": "vaso-termico-elite-350ml",
+    "sku": "VTELNE-IIM-DU-3474",
+    "name": "Vaso Térmico «Elite» 350ml",
+    "description": "Vaso Térmico Elite 350 ml en colores negro y blanco, con acero doble capa para mantener bebidas calientes o frías por más tiempo. Personalizable en full color con impresión UV DTF. Elegante, compacto y funcional.",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-vaso-termico-elite-350ml-01.jpg",
+      "ge-marketing-vaso-termico-elite-350ml-02.jpg",
+      "ge-marketing-vaso-termico-elite-350ml-03.jpg",
+      "ge-marketing-vaso-termico-elite-350ml-04.jpg",
+      "ge-marketing-vaso-termico-elite-350ml-05.jpg",
+      "ge-marketing-vaso-termico-elite-350ml-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 12740,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 12740,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 18334,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 18334,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "botella-termica-expedition",
+    "sku": "TM50NE-IIM-UV-3420",
+    "name": "Botella Térmica Expedition",
+    "description": "Botella Térmica Expedition, Acero Inoxidable 500 ml en blanco y negro, con diseño moderno y tapa a prueba de derrames. Personalizable en full color con impresión UV y UV DTF. Ideal para mantener tus bebidas a la temperatura perfecta en todo momento.\n\nÁrea de Impresión: 2 x 12 cm (vertical)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-botella-termica-expedition-01.jpg",
+      "ge-marketing-botella-termica-expedition-02.jpg",
+      "ge-marketing-botella-termica-expedition-03.jpg",
+      "ge-marketing-botella-termica-expedition-04.jpg",
+      "ge-marketing-botella-termica-expedition-05.jpg",
+      "ge-marketing-botella-termica-expedition-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 15860,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 15860,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 20326.92,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 20326.92,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "botella-flow",
+    "sku": "BSMETRECPLA-IIM-UV-2850",
+    "name": "Botella Flow",
+    "description": "Botellas Flow\n\nBotella de Acero Inoxidable (no es aluminio) Premium. Personalizada y Sin Impresión de Logo. Confeccionada en acero inoxidable, permite conservar los líquidos de una manera segura.\n\nPosee una capacidad 750 ml y tapa metálica a rosca y resulta ideal para actividades al aire libre. Se imprime full color con tintas UV y DTF UV.\n\nÁrea de Impresión: 2 x 12 cm (vertical)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-botella-flow-01.webp",
+      "ge-marketing-botella-flow-02.jpg",
+      "ge-marketing-botella-flow-03.jpg",
+      "ge-marketing-botella-flow-04.jpg",
+      "ge-marketing-botella-flow-05.jpg",
+      "ge-marketing-botella-flow-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 8580,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 8580,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 8580,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 8580,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 11113.71,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 11113.71,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 11113.71,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 11113.71,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "vaso-termico-smash-doble-capa-acero",
+    "sku": "COMUNE-IIM-UV-3168",
+    "name": "Vaso Térmico «Smash» 500ml",
+    "description": "Descubre el equilibrio perfecto entre elegancia y rendimiento con nuestro Vaso Térmico «Smash». Confeccionado en acero inoxidable de doble capa y disponible en cinco colores vibrantes, este vaso de 500 ml es tu compañero ideal para mantener tus bebidas calientes o frías mientras te desplazas. ¡Estilo funcional que te acompaña a donde vayas!\n\nPuede mantener las bebidas calientes durante unas 4 a 6 horas y las bebidas frías durante unas 12 horas. Estos tiempos pueden variar dependiendo de factores como la temperatura inicial de la bebida y las condiciones ambientales.\n\nSe imprime full color con UV DTF.\nÁrea de Impresión: 6 x 9 cm (ancho x alto)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-vaso-termico-smash-doble-capa-acero-01.webp",
+      "ge-marketing-vaso-termico-smash-doble-capa-acero-02.jpg",
+      "ge-marketing-vaso-termico-smash-doble-capa-acero-03.jpg",
+      "ge-marketing-vaso-termico-smash-doble-capa-acero-04.jpg",
+      "ge-marketing-vaso-termico-smash-doble-capa-acero-05.jpg",
+      "ge-marketing-vaso-termico-smash-doble-capa-acero-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 13390,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 13390,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 13390,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 13390,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 13390,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 19130.19,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 19130.19,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 19130.19,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 19130.19,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 19130.19,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "termo-nordek",
+    "sku": "TRNK50PL-IIN-UD-L281706",
+    "name": "Termo Nordek",
+    "description": "Termo Nordek 500 ml y 1 L — termo de acero inoxidable 304, 1.000 ml, con pico para mate; disponible en Plata, Negro y Blanco. Certificado INAL y libre de BPA.\n\nÁrea de Impresión: 2 x 8 cm para 500ml y 2×12 para 750ml (vertical)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-termo-nordek-01.webp",
+      "ge-marketing-termo-nordek-02.webp",
+      "ge-marketing-termo-nordek-03.webp",
+      "ge-marketing-termo-nordek-04.webp",
+      "ge-marketing-termo-nordek-05.webp",
+      "ge-marketing-termo-nordek-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "plata",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 26325,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plata",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 21060,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plata",
+          "attribute_pa_medidas": "1000-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 30712.5,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plata",
+          "attribute_pa_medidas": "1000-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 24570,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 21060,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 21060,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 26325,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 26325,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "1000-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 24570,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "1000-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 30712.5,
+        "min": 20,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "tazas-de-ceramica-color-tres-tonos",
+    "sku": "CEMUG3TCE-IIM-SU-3149",
+    "name": "Tazas de Cerámica Sublimable Interior y Asa de Color",
+    "description": "Disfruta de tus bebidas favoritas con estilo con nuestras tazas de cerámica con interior y asa en colores. Estas tazas cuentan con un frente blanco para sublimar, lo que te permite personalizarlas con diseños únicos. Fabricadas con cerámica duradera, mantienen la temperatura de tus bebidas por más tiempo. Disponibles en una variedad de colores vibrantes, nuestras tazas son aptas para microondas. Añade un toque de originalidad a tus momentos de café o té con estas elegantes y versátiles tazas. No utilizar productos abrasivos para lavado de las tazas ni lavavajillas.\n\nCapacidad: 325 ml.\nDimensiones: Alto 9,5 cm. Ancho 8 cm, con Asa 11,5 cm. Diámetro interno 7,5 cm.\n\nSublimás? Podés pedirlas «Sin Personalización». Nuestras tazas son sublimables.",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-tazas-de-ceramica-color-tres-tonos-01.webp",
+      "ge-marketing-tazas-de-ceramica-color-tres-tonos-02.jpg",
+      "ge-marketing-tazas-de-ceramica-color-tres-tonos-03.jpg",
+      "ge-marketing-tazas-de-ceramica-color-tres-tonos-04.jpg",
+      "ge-marketing-tazas-de-ceramica-color-tres-tonos-05.jpg",
+      "ge-marketing-tazas-de-ceramica-color-tres-tonos-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 4976.44,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2990,
+        "min": 36,
+        "step": 36
+      }
+    ]
+  },
+  {
+    "key": "matego-autocebante",
+    "sku": "MTGO50BL-IIN-UD-L290702",
+    "name": "MateGo Autocebante",
+    "description": "MateGo autocebante: termo + mate con bombilla metálica y tapa térmica multifunción. Sistema autocebante integrado, acero inoxidable 304, presentación en caja blanca. Disponible en Negro y Blanco. Personalizable por Impresión UV DTF.\n\nÁrea de Impresión: 2 x 8 cm para 500ml y 2×12 para 750ml (vertical)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-matego-autocebante-01.webp",
+      "ge-marketing-matego-autocebante-02.webp",
+      "ge-marketing-matego-autocebante-03.webp",
+      "ge-marketing-matego-autocebante-04.webp",
+      "ge-marketing-matego-autocebante-05.webp",
+      "ge-marketing-matego-autocebante-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 29770,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 29770,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 37212.5,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 37212.5,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 32370,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 32370,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 40462.5,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 40462.5,
+        "min": 20,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "botellas-aluminio",
+    "sku": "BSAL50BL-IIM-UV-3120",
+    "name": "Botellas de Aluminio",
+    "description": "Botella de Aluminio Personalizada y Sin Impresión de Logo. Confeccionada en aluminio permite conservar los líquidos de una manera segura.\n\nPosee una capacidad de 500cc o 750 cc y tapa plástica a rosca y resulta ideal para actividades al aire libre. Se imprime full color con tintas UV / UV DTF.\n\nÁrea de Impresión: 2 x 8 cm para 500ml y 2×12 para 750ml (vertical)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-botellas-aluminio-01.jpg",
+      "ge-marketing-botellas-aluminio-02.jpg",
+      "ge-marketing-botellas-aluminio-03.jpg",
+      "ge-marketing-botellas-aluminio-04.jpg",
+      "ge-marketing-botellas-aluminio-05.jpg",
+      "ge-marketing-botellas-aluminio-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion-sublimable"
+        },
+        "price": 6890,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "sin-personalizacion-sublimable"
+        },
+        "price": 7800,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 6240,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 8553.16,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 8553.16,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_medidas": "500-ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 6240,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7150,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7150,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 9653.96,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7150,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 9653.96,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_medidas": "750ml",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 9653.96,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "mate-acero-jet",
+    "sku": "MATENE-IIM-UD-3479",
+    "name": "Mate Acero «JET»",
+    "description": "Mate Acero «JET» disponible en blanco, rojo, azul y negro. Resistente, térmico y personalizable con impresión UV DTF. Elegancia y practicidad para tus momentos de mate.",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-mate-acero-jet-01.webp",
+      "ge-marketing-mate-acero-jet-02.jpg",
+      "ge-marketing-mate-acero-jet-03.jpg",
+      "ge-marketing-mate-acero-jet-04.jpg",
+      "ge-marketing-mate-acero-jet-05.jpg",
+      "ge-marketing-mate-acero-jet-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 12350,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 12350,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 12350,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 12350,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 18070.36,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 18070.36,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 18070.36,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 18070.36,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "botella-bplim-translucida",
+    "sku": "BPLIMECBLA-IIM-UV-2144",
+    "name": "Botella BPLIM! Translúcida",
+    "description": "Botellas Plásticas Personalizadas o Sin Impresión de Logo. Botella Plástica de cuerpo translúcido y tapa metálica color plata. Disponible en cuatro colores (transparente, negro, azul y rosa) con forma recta ideal para realizar actividades al aire libre, llevar al gimnasio o andar en bicicleta.\n\nÁrea de Impresión: 2 x 12 cm (vertical)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-botella-bplim-translucida-01.jpg",
+      "ge-marketing-botella-bplim-translucida-02.jpg",
+      "ge-marketing-botella-bplim-translucida-03.jpg",
+      "ge-marketing-botella-bplim-translucida-04.jpg",
+      "ge-marketing-botella-bplim-translucida-05.jpg",
+      "ge-marketing-botella-bplim-translucida-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3900,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3900,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "transparente",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3900,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5729.37,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5729.37,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "transparente",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5729.37,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "botella-bplim-solida",
+    "sku": "BPSONE-IIM-UV-2144",
+    "name": "Botella BPLIM! Sólida",
+    "description": "Botellas Plásticas Personalizadas o Sin Impresión de Logo. Botella Plástica de cuerpo sólido y tapa metálica color plata. Disponible en cuatro colores (blanco, negro, azul francia y azul marino) con forma recta ideal para realizar actividades al aire libre, llevar al gimnasio o andar en bicicleta.\n\nÁrea de Impresión: 2 x 12 cm (vertical)",
+    "categories": [
+      "marketing-drinkware"
+    ],
+    "images": [
+      "ge-marketing-botella-bplim-solida-01.webp",
+      "ge-marketing-botella-bplim-solida-02.jpg",
+      "ge-marketing-botella-bplim-solida-03.jpg",
+      "ge-marketing-botella-bplim-solida-04.jpg",
+      "ge-marketing-botella-bplim-solida-05.jpg",
+      "ge-marketing-botella-bplim-solida-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3900,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3900,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-francia",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3900,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5729.37,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5729.37,
+        "min": 20,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-francia",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5729.37,
+        "min": 20,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "soporte-celular-ecofold-acero",
+    "sku": "EFSOCE-IIM-DF-3537",
+    "name": "Soporte Celular EcoFold Acero",
+    "description": "Soporte compacto y resistente para celular. Ideal para escritorios, eventos o branding diario. Se entrega en sobre y se arma sin necesidad de ninguna herramienta.",
+    "categories": [
+      "linea-ecologica"
+    ],
+    "images": [
+      "ge-marketing-soporte-celular-ecofold-acero-01.webp",
+      "ge-marketing-soporte-celular-ecofold-acero-02.jpg",
+      "ge-marketing-soporte-celular-ecofold-acero-03.jpg",
+      "ge-marketing-soporte-celular-ecofold-acero-04.jpg",
+      "ge-marketing-soporte-celular-ecofold-acero-05.jpg",
+      "ge-marketing-soporte-celular-ecofold-acero-06.png"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 18795.6,
+        "min": 10,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 15600,
+        "min": 10,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "kit-soporte-notebook-celular-ecofold-acero",
+    "sku": "EFKITDES-IIM-DF-3519",
+    "name": "Kit Soporte Notebook y Celular Ecofold Acero",
+    "description": "Set ergonómico para notebook y celular en acero pintado. Plegable y personalizable. Se entrega en sobre y se arma sin necesidad de ninguna herramienta.",
+    "categories": [
+      "linea-ecologica"
+    ],
+    "images": [
+      "ge-marketing-kit-soporte-notebook-celular-ecofold-acero-01.jpg",
+      "ge-marketing-kit-soporte-notebook-celular-ecofold-acero-02.jpg",
+      "ge-marketing-kit-soporte-notebook-celular-ecofold-acero-03.jpg",
+      "ge-marketing-kit-soporte-notebook-celular-ecofold-acero-04.jpg",
+      "ge-marketing-kit-soporte-notebook-celular-ecofold-acero-05.jpg",
+      "ge-marketing-kit-soporte-notebook-celular-ecofold-acero-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 45838.98,
+        "min": 10,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 39000,
+        "min": 10,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "bodega-ecofold-acero",
+    "sku": "EFBODE-IIM-DF-3513",
+    "name": "Bodega EcoFold Acero",
+    "description": "Soporte de acero para 3 botellas, elegante y resistente. Ideal para regalos premium o branding gourmet. Se entrega en sobre y se arma sin necesidad de ninguna herramienta.",
+    "categories": [
+      "linea-ecologica"
+    ],
+    "images": [
+      "ge-marketing-bodega-ecofold-acero-01.webp",
+      "ge-marketing-bodega-ecofold-acero-02.png",
+      "ge-marketing-bodega-ecofold-acero-03.png",
+      "ge-marketing-bodega-ecofold-acero-04.webp",
+      "ge-marketing-bodega-ecofold-acero-05.webp",
+      "ge-marketing-bodega-ecofold-acero-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 78486.93,
+        "min": 10,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 65000,
+        "min": 10,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "lapicero-ecofold-acero",
+    "sku": "EFLAPI-IIM-DF-3525",
+    "name": "Lapicero EcoFold Acero",
+    "description": "Lapicero compacto y resistente con terminación premium y sistema EcoFold. Ideal para escritorio o eventos. Se entrega en sobre y se arma sin necesidad de ninguna herramienta.",
+    "categories": [
+      "linea-ecologica"
+    ],
+    "images": [
+      "ge-marketing-lapicero-ecofold-acero-01.webp",
+      "ge-marketing-lapicero-ecofold-acero-02.jpg",
+      "ge-marketing-lapicero-ecofold-acero-03.png",
+      "ge-marketing-lapicero-ecofold-acero-04.png",
+      "ge-marketing-lapicero-ecofold-acero-05.webp",
+      "ge-marketing-lapicero-ecofold-acero-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 14536.8,
+        "min": 10,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 11960,
+        "min": 10,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "papelero-ecofold",
+    "sku": "EFPAPE-IIM-DF-3530",
+    "name": "Papelero EcoFold Acero",
+    "description": "Papelero moderno, resistente y personalizable. Fabricado en acero con pintura epoxi y sistema EcoFold. Se entrega en sobre y se arma sin necesidad de ninguna herramienta.",
+    "categories": [
+      "linea-ecologica"
+    ],
+    "images": [
+      "ge-marketing-papelero-ecofold-01.webp",
+      "ge-marketing-papelero-ecofold-02.png",
+      "ge-marketing-papelero-ecofold-03.png",
+      "ge-marketing-papelero-ecofold-04.webp",
+      "ge-marketing-papelero-ecofold-05.webp",
+      "ge-marketing-papelero-ecofold-06.png"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 63406.53,
+        "min": 10,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 52000,
+        "min": 10,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-ecologico",
+    "sku": "BOECORED-IIM-UV-2065",
+    "name": "Bolígrafo Ecológico",
+    "description": "Bolígrafo Ecológico de plástico y cuerpo de cartón reciclado color madera. El color standard de escritura de este bolígrafo es negro. Bolígrafo económico y muy novedoso.\n\nAdicional segunda impresión",
+    "categories": [
+      "linea-ecologica",
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-ecologico-01.webp",
+      "ge-marketing-boligrafo-ecologico-02.jpg",
+      "ge-marketing-boligrafo-ecologico-03.jpg",
+      "ge-marketing-boligrafo-ecologico-04.jpg",
+      "ge-marketing-boligrafo-ecologico-05.webp",
+      "ge-marketing-boligrafo-ecologico-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 642.21,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 642.21,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 377,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 377,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "libreta-eco-bambu-a5",
+    "sku": "LAEBA5NE-IIN-UV-3311",
+    "name": "Libreta Eco Bambú A5",
+    "description": "La Libreta Eco Bambú A5 es una opción ideal para quienes buscan una alternativa ecológica y sostenible para tomar notas. Contiene 80 hojas rayadas de 70 gramos.\n\nMedidas: A5 14,8 x 21 cm\nÁrea de impresión: 7 x 12 cm\nColores: Azul Marino, Negro, Rojo y Verde",
+    "categories": [
+      "linea-ecologica",
+      "marketing-escritorio",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-eco-bambu-a5-01.jpg",
+      "ge-marketing-libreta-eco-bambu-a5-02.jpg",
+      "ge-marketing-libreta-eco-bambu-a5-03.jpg",
+      "ge-marketing-libreta-eco-bambu-a5-04.jpg",
+      "ge-marketing-libreta-eco-bambu-a5-05.jpg",
+      "ge-marketing-libreta-eco-bambu-a5-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 11002.77,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 11002.77,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 11002.77,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7995,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7995,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7995,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-eco-tierra-a5",
+    "sku": "LAETA5NE-IIN-UV-3336",
+    "name": "Libreta Eco Tierra A5",
+    "description": "El diseño de la libreta «Eco Tierra» es sencillo pero elegante, con una apariencia que refleja su origen ecológico.\n\nContiene 96 hojas rayadas de 70 gramos.\n\nMedidas: A5 14.6 x 21 cm\nÁrea de impresión: 7 x 12 cm\nColores: Azul Marino, Negro, y Rojo",
+    "categories": [
+      "linea-ecologica",
+      "marketing-escritorio",
+      "marketing-expo-congreso",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-eco-tierra-a5-01.jpg",
+      "ge-marketing-libreta-eco-tierra-a5-02.jpg",
+      "ge-marketing-libreta-eco-tierra-a5-03.jpg",
+      "ge-marketing-libreta-eco-tierra-a5-04.jpg",
+      "ge-marketing-libreta-eco-tierra-a5-05.jpg",
+      "ge-marketing-libreta-eco-tierra-a5-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7098.88,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7098.88,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7098.88,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 5070,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 5070,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 5070,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-lira-a5",
+    "sku": "LATMBL-IIN-UV-3143",
+    "name": "Libreta Lira A5",
+    "description": "Libreta de tapa dura en diferentes colores. Contiene 96 hojas rayadas de 70 gramos. Posee cierre con banda elástica y separador en tela del mismo color que la tapa.\nMedidas: A5 21 x 14,5 x 1,5 cm\nÁrea de impresión: 18 x 11 cm\nColores: Blanco, negro, azul, verde, rojo, gris y violeta.",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-lira-a5-01.webp",
+      "ge-marketing-libreta-lira-a5-02.jpg",
+      "ge-marketing-libreta-lira-a5-03.jpg",
+      "ge-marketing-libreta-lira-a5-04.jpg",
+      "ge-marketing-libreta-lira-a5-05.jpg",
+      "ge-marketing-libreta-lira-a5-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5983.48,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plata",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5983.48,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5983.48,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5983.48,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5983.48,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5983.48,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5983.48,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plata",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-lira-a6",
+    "sku": "LATM6ANE-IIN-UV-3341",
+    "name": "Libreta Lira A6",
+    "description": "La libreta «Lira» A6 combina elegancia y practicidad en un formato compacto. Con unas medidas de 9 x 14, esta libreta es ideal para quienes necesitan un cuaderno manejable y versátil para el día a día. Contiene 96 hojas rayadas de 70 gramos.\n\nMedidas: A6 9 x 14\nÁrea de impresión: 7 x 12 cm\nColores: Azul Marino, Blanco y Negro",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-lira-a6-01.webp",
+      "ge-marketing-libreta-lira-a6-02.jpg",
+      "ge-marketing-libreta-lira-a6-03.jpg",
+      "ge-marketing-libreta-lira-a6-04.jpg",
+      "ge-marketing-libreta-lira-a6-05.webp",
+      "ge-marketing-libreta-lira-a6-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3808.44,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3808.44,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 3808.44,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2600,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2600,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 2600,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-lira-b5",
+    "sku": "LATM5BNE-IIN-UV-3346",
+    "name": "Libreta Lira B5",
+    "description": "La libreta modelo «Lira» en tamaño B5 ofrece una combinación perfecta de funcionalidad y elegancia en un formato más amplio. Con sus dimensiones de 17,6 x 25 cm, es ideal para quienes buscan un cuaderno con suficiente espacio para notas extensas, bocetos o planificación detallada. Contiene 96 hojas rayadas de 70 gramos.\n\nMedidas: B5 17.8 x 25.5 cm\nÁrea de impresión: 15×21\nColores: Azul Marino, Negro, y Blanco",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-lira-b5-01.webp",
+      "ge-marketing-libreta-lira-b5-02.jpg",
+      "ge-marketing-libreta-lira-b5-03.jpg",
+      "ge-marketing-libreta-lira-b5-04.jpg",
+      "ge-marketing-libreta-lira-b5-05.webp",
+      "ge-marketing-libreta-lira-b5-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 9887.37,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 9887.37,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 9887.37,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7150,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7150,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7150,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "caja-regalo-empresarial-premium",
+    "sku": "LBEBA5NE-IIN-UV-3351",
+    "name": "Caja de Regalo Empresarial Premium con Libreta A5 y Bolígrafo",
+    "description": "La libreta «Box Eco Bambú» A5 es una opción ecológica y elegante. Con tapa de bambú natural y hojas de papel reciclado, combina sostenibilidad con estilo. Su tamaño A5 la hace ideal para llevar a todas partes, y el acabado en bambú le da un toque sofisticado y respetuoso con el medio ambiente. Perfecta para tus notas, bocetos y organización diaria. Contiene 96 hojas rayadas de 70 gramos.\n\nMedidas: A5 14,6cm X 21cm\nColores: Negro",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-caja-regalo-empresarial-premium-01.jpg",
+      "ge-marketing-caja-regalo-empresarial-premium-02.jpg",
+      "ge-marketing-caja-regalo-empresarial-premium-03.jpg",
+      "ge-marketing-caja-regalo-empresarial-premium-04.jpg",
+      "ge-marketing-caja-regalo-empresarial-premium-05.jpg",
+      "ge-marketing-caja-regalo-empresarial-premium-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 15464.37,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 11310,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-borges-a5",
+    "sku": "LABOA5NE-IIN-UV-3306",
+    "name": "Libreta Borges A5",
+    "description": "Libreta Borges A5 con tapa de special PU y normal PU, 96 hojas rayadas con borde a juego y cierre elástico. Incluye soporte para birome, Elegante y funcional, ideal para organizar tus ideas con estilo.\n\nMedidas: A5 14,8 x 21 cm\nÁrea de impresión: 7 x 12 cm\nColores: Azul marino y Negro",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-borges-a5-01.jpg",
+      "ge-marketing-libreta-borges-a5-02.jpg",
+      "ge-marketing-libreta-borges-a5-03.jpg",
+      "ge-marketing-libreta-borges-a5-04.jpg",
+      "ge-marketing-libreta-borges-a5-05.jpg",
+      "ge-marketing-libreta-borges-a5-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7656.57,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 7656.57,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 5460,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 5460,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-espiral-saga-a5",
+    "sku": "LAESA5NE-IIN-UV-3326",
+    "name": "Libreta Espiral Saga A5",
+    "description": "La libreta «Saga de Espiral» A5 es extremadamente versátil y puede ser utilizada para una variedad de propósitos. Es ideal para tomar notas en clases o reuniones, llevar un diario personal, planificar proyectos o simplemente organizar tareas diarias. Contiene 70 hojas rayadas de 70 gramos.\n\nMedidas: A5 14.6 x 21 cm\nÁrea de impresión: 7 x 12 cm\nColores: Azul Marino, Negro, y Rojo",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-expo-congreso",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-espiral-saga-a5-01.jpg",
+      "ge-marketing-libreta-espiral-saga-a5-02.jpg",
+      "ge-marketing-libreta-espiral-saga-a5-03.jpg",
+      "ge-marketing-libreta-espiral-saga-a5-04.jpg",
+      "ge-marketing-libreta-espiral-saga-a5-05.jpg",
+      "ge-marketing-libreta-espiral-saga-a5-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6429.64,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6429.64,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6429.64,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4550,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4550,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4550,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-espiral-saga-a6",
+    "sku": "LAESA6NE-IIN-UV-3331",
+    "name": "Libreta Espiral Saga A6",
+    "description": "La libreta «Espiral Saga» A6 es una opción excelente para estudiantes, profesionales y cualquier persona que necesite un cuaderno pequeño, resistente y fácil de transportar. Con su diseño robusto y su funcionalidad, es una herramienta indispensable para el uso diario. Contiene 70 hojas rayadas de 70 gramos.\n\nMedidas: A6 9 x 14 cm\nÁrea de impresión: 7 x 12 cm\nColores: Azul Marino, Negro, y Rojo",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-expo-congreso",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-espiral-saga-a6-01.jpg",
+      "ge-marketing-libreta-espiral-saga-a6-02.jpg",
+      "ge-marketing-libreta-espiral-saga-a6-03.jpg",
+      "ge-marketing-libreta-espiral-saga-a6-04.jpg",
+      "ge-marketing-libreta-espiral-saga-a6-05.jpg",
+      "ge-marketing-libreta-espiral-saga-a6-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 4589.23,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 4589.23,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 4589.23,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3120,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3120,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3120,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-espiral-eco-tierra-con-boligrafo-a5",
+    "sku": "LAEEA5NE-IIN-UV-3316",
+    "name": "Libreta Espiral Eco Tierra con Bolígrafo A5",
+    "description": "La libreta «Espiral Eco Tierra con Bolígrafo» A5 es perfecta para quienes desean llevar su compromiso con el medio ambiente al siguiente nivel. Este conjunto práctico, que incluye una libreta ecológica y un bolígrafo a juego, es ideal para tomar notas en cualquier lugar, ya sea en la oficina, en clases, o en tu día a día.\n\nMedidas: A5 16,4 x 21 cm\nÁrea de impresión: 7 x 12 cm\nColores: Azul Marino, Negro, y Verde",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-expo-congreso",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-a5-01.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-a5-02.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-a5-03.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-a5-04.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-a5-05.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-a5-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6646.54,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6646.54,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 6646.54,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul-marino",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 4290,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "libreta-espiral-eco-tierra-con-boligrafo-b6",
+    "sku": "LAEEB6NE-IIN-UV-3321",
+    "name": "Libreta Espiral Eco Tierra con Bolígrafo B6",
+    "description": "la libreta «Espiral Eco Tierra con Bolígrafo» en formato B6 es ideal para llevar a todas partes. Puede ser utilizada para tomar notas rápidas, hacer listas, esbozar ideas o llevar un diario personal. Viene con un bolígrafo fabricado con materiales reciclados, colocado convenientemente en un soporte en la cubierta, para que siempre tengas un instrumento de escritura a mano.\n\nMedidas: B6 13 x 18 cm\nÁrea de impresión: 7 x 12 cm\nColores: Azul Marino, Negro, y Verde",
+    "categories": [
+      "marketing-escritorio",
+      "marketing-expo-congreso",
+      "marketing-libretas"
+    ],
+    "images": [
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-b6-01.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-b6-02.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-b6-03.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-b6-04.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-b6-05.jpg",
+      "ge-marketing-libreta-espiral-eco-tierra-con-boligrafo-b6-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5642.68,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 3510,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "lupas-promocionales",
+    "sku": "LUPA3X-IIM-UV-2910",
+    "name": "Lupas Promocionales",
+    "description": "",
+    "categories": [
+      "marketing-escritorio"
+    ],
+    "images": [
+      "ge-marketing-lupas-promocionales-01.webp",
+      "ge-marketing-lupas-promocionales-02.jpg",
+      "ge-marketing-lupas-promocionales-03.jpg",
+      "ge-marketing-lupas-promocionales-04.jpg",
+      "ge-marketing-lupas-promocionales-05.webp",
+      "ge-marketing-lupas-promocionales-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 936.78,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 260,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-topaz-silver",
+    "sku": "BOTZSIGR-IIN-UV-3410",
+    "name": "Bolígrafo Topaz Silver",
+    "description": "El Topaz Silver combina elegancia y funcionalidad en un diseño que destaca por sus acabados en tono plateado. Con un cuerpo de aluminio y un peso ideal gracias a su núcleo de plomada interna, este bolígrafo ofrece una experiencia de escritura sólida y equilibrada.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-topaz-silver-01.jpg",
+      "ge-marketing-boligrafo-topaz-silver-02.jpg",
+      "ge-marketing-boligrafo-topaz-silver-03.jpg",
+      "ge-marketing-boligrafo-topaz-silver-04.jpg",
+      "ge-marketing-boligrafo-topaz-silver-05.webp",
+      "ge-marketing-boligrafo-topaz-silver-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 1667.58,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 1667.58,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 1430,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 1430,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "estuche-de-pana-para-boligrafos",
+    "sku": "ESPANA-SIM-SP-3456",
+    "name": "Estuche De Pana Para Bolígrafos",
+    "description": "Nuestros Estuches para Bolígrafos de Pana resultan el complemento ideal para su regalo empresario.\n\nTamaño del estuche: 45mm.  x 145mm.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-estuche-de-pana-para-boligrafos-01.webp",
+      "ge-marketing-estuche-de-pana-para-boligrafos-02.jpg",
+      "ge-marketing-estuche-de-pana-para-boligrafos-03.jpg",
+      "ge-marketing-estuche-de-pana-para-boligrafos-04.webp",
+      "ge-marketing-estuche-de-pana-para-boligrafos-05.webp",
+      "ge-marketing-estuche-de-pana-para-boligrafos-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 390,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-topaz-gold",
+    "sku": "BOTZGOBE-IIM-UV-3404",
+    "name": "Bolígrafo Topaz Gold",
+    "description": "El Topaz Gold es un bolígrafo diseñado para quienes aprecian la calidad y el estilo en cada detalle. Fabricado en aluminio y con un peso ideal gracias a su núcleo de plomada interna, ofrece una sensación de solidez y confort al escribir.\n\nMaterial: Cuerpo de aluminio que garantiza durabilidad y resistencia.\nDetalles Dorados: Clip y punta dorados que le dan un toque de distinción y lujo.\nPeso y Balance: Con una plomada interna, su peso adicional proporciona un equilibrio perfecto en cada trazo.\nTinta: Negra, fluida y de excelente calidad para una escritura suave y continua.\nPersonalización: Este modelo puede ser personalizado con impresión UV, logrando acabados de alta definición para destacar tu marca o mensaje.\n\nDisponible en color BEIGE y VERDE, el Topaz Gold es la opción perfecta para quienes buscan un bolígrafo de categoría superior, ideal tanto para el uso personal como para regalos empresariales.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-topaz-gold-01.jpg",
+      "ge-marketing-boligrafo-topaz-gold-02.jpg",
+      "ge-marketing-boligrafo-topaz-gold-03.jpg",
+      "ge-marketing-boligrafo-topaz-gold-04.jpg",
+      "ge-marketing-boligrafo-topaz-gold-05.jpg",
+      "ge-marketing-boligrafo-topaz-gold-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "beige",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 1856.04,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 1856.04,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "beige",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 1625,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 1625,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-fox",
+    "sku": "BOFXNE-IIM-UV-2075",
+    "name": "Bolígrafo Fox",
+    "description": "El cuerpo es de plástico de color blanco con grip y clip de color. Posee botón y puntera metalizados en color plateado. Se imprimen full color. Nuestros Bolígrafos Fox tienen tanque de tinta tipo “Parker” y color de escritura negro.\n\nComprá Biromes Fox personalizadas con logo full color o sin personalización.\n\nContamos con tecnología de impresión UV (cama plana) full color y tampografía de hasta tres colores de las biromes / bolígrafos personalizadas modelo Fox.\n\nAdicional impresión en dos caras:",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-fox-01.webp",
+      "ge-marketing-boligrafo-fox-02.jpg",
+      "ge-marketing-boligrafo-fox-03.jpg",
+      "ge-marketing-boligrafo-fox-04.webp",
+      "ge-marketing-boligrafo-fox-05.webp",
+      "ge-marketing-boligrafo-fox-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 377,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 377,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 377,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 377,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 638.39,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 638.39,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 638.39,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 638.39,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafos-personalizados-jade-win",
+    "sku": "BOJWNE-IIM-UV-2060",
+    "name": "Bolígrafo Jade Win",
+    "description": "Bolígrafos Personalizados con Logo Full Color. El Bolígrafo Jade Win es plástico de alta gama. El botón y la puntera son metalizados en color plateado. El grip de estos bolígrafos es de plástico color, efecto frost. El clip es de metal plateado. Se imprimen por proceso tampográfico o impresión UV. El bolígrafo Jade Win tiene tanque de tinta tipo “Parker” y color de escritura negro.,\n\nContamos con tecnología de impresión UV (cama plana) full color y tampografía de hasta tres colores de las biromes / bolígrafos personalizadas modelo Jade Win.\n\nAdicional impresión en dos caras:",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafos-personalizados-jade-win-01.webp",
+      "ge-marketing-boligrafos-personalizados-jade-win-02.jpg",
+      "ge-marketing-boligrafos-personalizados-jade-win-03.jpg",
+      "ge-marketing-boligrafos-personalizados-jade-win-04.jpg",
+      "ge-marketing-boligrafos-personalizados-jade-win-05.webp",
+      "ge-marketing-boligrafos-personalizados-jade-win-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-jade-plata",
+    "sku": "BOJPAZ-IIM-UV-2060",
+    "name": "Bolígrafo Jade Plata",
+    "description": "El Bolígrafo Jade Plata es plástico de alta gama. El botón y la puntera son metalizados en color plateado. El cuerpo es de plástico metalizado plateado. El grip de estos bolígrafos es de plástico color efecto frost. El clip es de metal plateado. Se imprimen por proceso tampográfico o impresión UV. El bolígrafo Jade Plata tiene tanque de tinta tipo “Parker” y color de escritura negra.\n\nAdicional impresión en dos caras:",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-jade-plata-01.webp",
+      "ge-marketing-boligrafo-jade-plata-02.jpg",
+      "ge-marketing-boligrafo-jade-plata-03.jpg",
+      "ge-marketing-boligrafo-jade-plata-04.jpg",
+      "ge-marketing-boligrafo-jade-plata-05.jpg",
+      "ge-marketing-boligrafo-jade-plata-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-jade-color",
+    "sku": "BOJCNE-IIM-UV-2060",
+    "name": "Bolígrafo Jade Color",
+    "description": "El Bolígrafo Jade Color es plástico de alta gama. El botón y la puntera son metalizados en color plateado. El cuerpo es de plástico translúcido. El grip de estos bolígrafos es de plástico color, efecto frost. El clip es de metal plateado. Se imprime por proceso tampográfico o impresión full color con tintas UV y tiene tanque de tinta tipo “Parker”.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-jade-color-01.webp",
+      "ge-marketing-boligrafo-jade-color-02.jpg",
+      "ge-marketing-boligrafo-jade-color-03.jpg",
+      "ge-marketing-boligrafo-jade-color-04.jpg",
+      "ge-marketing-boligrafo-jade-color-05.webp",
+      "ge-marketing-boligrafo-jade-color-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 623.08,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 364,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-cuarzo-win",
+    "sku": "BOCUWINNEG-IIM-UV-2050",
+    "name": "Bolígrafo Cuarzo Win",
+    "description": "Bolígrafo retráctil de cuerpo color Blanco con sofisticados detalles de color. Posee clip metalizado brillante y botón metalizado brillante también con detalle de color. Se imprimen por proceso tampográfico o impresion full color con tintas UV.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-cuarzo-win-01.webp",
+      "ge-marketing-boligrafo-cuarzo-win-02.jpg",
+      "ge-marketing-boligrafo-cuarzo-win-03.jpg",
+      "ge-marketing-boligrafo-cuarzo-win-04.jpg",
+      "ge-marketing-boligrafo-cuarzo-win-05.webp",
+      "ge-marketing-boligrafo-cuarzo-win-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "violeta",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-metalizado-cuarzo-plata",
+    "sku": "BOCUPLAZ-IIM-UV-2050",
+    "name": "Bolígrafo Metalizado Cuarzo Plata",
+    "description": "De delicadas líneas, este bolígrafo tiene dos aros metalizados brillantes cerca del grip, que lo hacen un bolígrafo ideal para obsequios de promoción elegantes. La impresión se realiza por proceso tampográfico o impresión full color con tintas UV. El área máxima de impresión de este bolígrafo (o birome) es de 7 mm. de alto x 60 mm. de largo.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-metalizado-cuarzo-plata-01.webp",
+      "ge-marketing-boligrafo-metalizado-cuarzo-plata-02.jpg",
+      "ge-marketing-boligrafo-metalizado-cuarzo-plata-03.jpg",
+      "ge-marketing-boligrafo-metalizado-cuarzo-plata-04.jpg",
+      "ge-marketing-boligrafo-metalizado-cuarzo-plata-05.jpg",
+      "ge-marketing-boligrafo-metalizado-cuarzo-plata-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-cuarzo-color",
+    "sku": "BOCUCOVE-IIM-UV-2050",
+    "name": "Bolígrafo Cuarzo Color",
+    "description": "De delicadas líneas, este bolígrafo tiene dos aros metalizados brillantes cerca del grip, que lo hacen un bolígrafo ideal para obsequios de promoción elegantes. La impresión se realiza por proceso tampográfico o full color con tintas UV . El área máxima de impresión de este bolígrafo (o birome) es de 7 mm. de alto x 60 mm. de largo.\n\nColor de tinta de escritura: negro.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-cuarzo-color-01.webp",
+      "ge-marketing-boligrafo-cuarzo-color-02.jpg",
+      "ge-marketing-boligrafo-cuarzo-color-03.jpg",
+      "ge-marketing-boligrafo-cuarzo-color-04.jpg",
+      "ge-marketing-boligrafo-cuarzo-color-05.jpg",
+      "ge-marketing-boligrafo-cuarzo-color-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 814.52,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 559,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "caja-regalo-boligrafos-premium",
+    "sku": "ESCAJAIMPO-IIN-UV-2134",
+    "name": "Caja de Regalo para Bolígrafo Premium",
+    "description": "Caja rígida negra forrada, ideal para convertir cualquier bolígrafo en un regalo elegante. Personalizable con impresión UV.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-caja-regalo-boligrafos-premium-01.webp",
+      "ge-marketing-caja-regalo-boligrafos-premium-02.jpg",
+      "ge-marketing-caja-regalo-boligrafos-premium-03.jpg",
+      "ge-marketing-caja-regalo-boligrafos-premium-04.webp",
+      "ge-marketing-caja-regalo-boligrafos-premium-05.webp",
+      "ge-marketing-caja-regalo-boligrafos-premium-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 4684.43,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 1820,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-alvear-punta-touch",
+    "sku": "BOALVBL-IIM-UV-2112",
+    "name": "Bolígrafo Alvear – Bolígrafos Punta Touch",
+    "description": "Bolígrafo muy utilizado por los hoteles del mundo. Es un bolígrafo muy fino y de alta calidad.\nTinta de escritura negra. Punta de goma «touch» para pantalla táctil, ideal para celular y tablet.\n\nContamos con tecnología de impresión UV (cama plana) full color y tampografía de hasta tres colores de las biromes / bolígrafos personalizadas modelo Alvear con punta tipo «touch»",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-alvear-punta-touch-01.webp",
+      "ge-marketing-boligrafo-alvear-punta-touch-02.jpg",
+      "ge-marketing-boligrafo-alvear-punta-touch-03.jpg",
+      "ge-marketing-boligrafo-alvear-punta-touch-04.jpg",
+      "ge-marketing-boligrafo-alvear-punta-touch-05.jpg",
+      "ge-marketing-boligrafo-alvear-punta-touch-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 1204.29,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 936,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 1204.29,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 936,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 1204.29,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 936,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "estuche-de-cartulina-para-boligrafos",
+    "sku": "ESCART-IIM-UV-2142",
+    "name": "Estuche De Cartulina Para Bolígrafos",
+    "description": "Nuestros Estuches para Bolígrafos de Cartulina Metalizada de 250 g  pueden imprimirse con el logo de su empresa y resultan el complemento ideal para su regalo empresario.\n\nTamaño del estuche: 45mm.  x 145mm.\n\nÁrea máxima de impresión: 29mm x 15 mm.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-estuche-de-cartulina-para-boligrafos-01.webp",
+      "ge-marketing-estuche-de-cartulina-para-boligrafos-02.jpeg",
+      "ge-marketing-estuche-de-cartulina-para-boligrafos-03.webp",
+      "ge-marketing-estuche-de-cartulina-para-boligrafos-04.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 915.38,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 455,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-metalico-modelo-mb",
+    "sku": "BOMBSILVER-IIM-UV-2124",
+    "name": "Bolígrafo Metálico Modelo MB",
+    "description": "El Bolígrafo Modelo MB es un Bolígrafo metálico de alta gama, “tipo pesado” . Posee tanque de tinta negra estilo“Parker”. Su botón y puntera son de metal plateado y el cuerpo es de metal con laca bicapa. Se imprimen por proceso tampográfico en color plateado.\n\nConsulte por nuestras Fundas de Pana y Cajas de Regalo adicionales.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-metalico-modelo-mb-01.webp",
+      "ge-marketing-boligrafo-metalico-modelo-mb-02.jpg",
+      "ge-marketing-boligrafo-metalico-modelo-mb-03.jpg",
+      "ge-marketing-boligrafo-metalico-modelo-mb-04.jpg",
+      "ge-marketing-boligrafo-metalico-modelo-mb-05.jpg",
+      "ge-marketing-boligrafo-metalico-modelo-mb-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 5939.3,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 5850,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "pluma-parker-jotter-original",
+    "sku": "PLPJVE-IIN-UV-I050302",
+    "name": "Pluma Parker Jotter Original",
+    "description": "Pluma Parker Jotter Original: diseño inspirado en los colores de los ’90. Reutilizable (compatible con recargas Parker) y tinta negra. Materiales: metal y plástico. Colores disponibles: Blanco, Verde, Amarillo y Negro.\n\nAdicional segunda impresión",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-pluma-parker-jotter-original-01.webp",
+      "ge-marketing-pluma-parker-jotter-original-02.jpg",
+      "ge-marketing-pluma-parker-jotter-original-03.jpg",
+      "ge-marketing-pluma-parker-jotter-original-04.jpg",
+      "ge-marketing-pluma-parker-jotter-original-05.jpg",
+      "ge-marketing-pluma-parker-jotter-original-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 32447.14,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 32447.14,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 32447.14,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 32447.14,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 27039.29,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 27039.29,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 27039.29,
+        "min": 20,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 27039.29,
+        "min": 20,
+        "step": 1
+      }
+    ]
+  },
+  {
+    "key": "resaltadores",
+    "sku": "REPLBL-IIM-UV-2885",
+    "name": "Resaltadores Cuerpo Blanco",
+    "description": "Resaltador Blanco con tinta fluorescente amarilla y personalización en full color mediante impresión UV. Diseño elegante y garantía de 2 años, perfecto para destacar tu marca con estilo.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-resaltadores-01.jpg",
+      "ge-marketing-resaltadores-02.jpg",
+      "ge-marketing-resaltadores-03.jpg",
+      "ge-marketing-resaltadores-04.jpg",
+      "ge-marketing-resaltadores-05.jpg",
+      "ge-marketing-resaltadores-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "sin-personalizacion",
+          "attribute_pa_selecciona-el-cuerpo": "plano"
+        },
+        "price": 715,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "blanco",
+          "attribute_pa_personalizacion": "personalizacion-full-color",
+          "attribute_pa_selecciona-el-cuerpo": "plano"
+        },
+        "price": 1200.02,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-plastico-rock",
+    "sku": "BOROCKNE-IIM-UV-3063",
+    "name": "Bolígrafo Plástico Rock",
+    "description": "Bolígrafo plástico económico de cuerpo plástico de color blanco con detalle de color.\nDisponible en azul y negro.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-plastico-rock-01.webp",
+      "ge-marketing-boligrafo-plastico-rock-02.jpg",
+      "ge-marketing-boligrafo-plastico-rock-03.jpg",
+      "ge-marketing-boligrafo-plastico-rock-04.jpg",
+      "ge-marketing-boligrafo-plastico-rock-05.jpg",
+      "ge-marketing-boligrafo-plastico-rock-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 519.7,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 247,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 519.7,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 247,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "portaminas-modelo-silver",
+    "sku": "PORTMINAC-IIM-UV-2176",
+    "name": "Portaminas Modelo Silver",
+    "description": "Nuestro Portaminas Silver es un portaminas plástico plateado mate de alta gama. Utiliza minas HB de 0,5 mm y viene con dos minas de repuesto en el tubo. El botón y la puntera son metalizados en color plateado. Su grip es de plástico negro con efecto frost y el clip es de metal plateado. Se puede imprimir por proceso tampográfico hasta tres colores.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-portaminas-modelo-silver-01.webp",
+      "ge-marketing-portaminas-modelo-silver-02.jpg",
+      "ge-marketing-portaminas-modelo-silver-03.jpg",
+      "ge-marketing-portaminas-modelo-silver-04.webp",
+      "ge-marketing-portaminas-modelo-silver-05.webp",
+      "ge-marketing-portaminas-modelo-silver-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 851.58,
+        "min": 500,
+        "step": 500
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 325,
+        "min": 500,
+        "step": 500
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-zafiro-win",
+    "sku": "BOZAWIGRI-IIM-UV-2898",
+    "name": "Bolígrafo Zafiro Win",
+    "description": "Los Bolígrafos Zafiro tienen cuerpo blanco y son los bolígrafos plásticos de más alta gama. El botón y puntera de este bolígrafo (o birome) es de plástico plateado mate. Tinta standard de escritura negra. Se imprime o bien por sistema tampografico, o por impresión full color con tintas UV",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-zafiro-win-01.webp",
+      "ge-marketing-boligrafo-zafiro-win-02.jpg",
+      "ge-marketing-boligrafo-zafiro-win-03.jpg",
+      "ge-marketing-boligrafo-zafiro-win-04.jpg",
+      "ge-marketing-boligrafo-zafiro-win-05.jpg",
+      "ge-marketing-boligrafo-zafiro-win-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 852.8,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 852.8,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 852.8,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 852.8,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 852.8,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "plateado",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 598,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 598,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 598,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 598,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 598,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafos-con-logo-focus",
+    "sku": "BOFORO-IIM-UV-2070",
+    "name": "Bolígrafos con Logo – Modelo Focus",
+    "description": "Bolígrafos con logo full color Modelo Focus: Bolígrafo retráctil de cuerpo redondo de color blanco. El Botón y el Clip de estos bolígrafos (o biromes) son plásticos y su color combina con el grip de goma translúcida. Se imprime por proceso tampografico o full color con tintas UV.\n\nMuy práctico y económico, es un bolígrafo ideal para grandes campañas publicitarias.\n\nContamos con tecnología de impresión UV (cama plana) full color y tampografía de hasta tres colores de los bolígrafos con logo modelo Focus.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafos-con-logo-focus-01.webp",
+      "ge-marketing-boligrafos-con-logo-focus-02.jpg",
+      "ge-marketing-boligrafos-con-logo-focus-03.jpg",
+      "ge-marketing-boligrafos-con-logo-focus-04.jpg",
+      "ge-marketing-boligrafos-con-logo-focus-05.jpg",
+      "ge-marketing-boligrafos-con-logo-focus-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 569.47,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 312,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 569.47,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 312,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 569.47,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 312,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 569.47,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 312,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "boligrafo-modelo-gordo",
+    "sku": "BOGOAZ-IIN-UV-2093",
+    "name": "Bolígrafo Modelo Gordo",
+    "description": "Bolígrafo retráctil de cuerpo redondo de color blanco. El Botón y el Clip de estos bolígrafos (o biromes) son plásticos de color y combinan con el grip. Muy práctico y económico, es un bolígrafo ideal para grandes campañas publicitarias. Tinta: azul.",
+    "categories": [
+      "marketing-escritura"
+    ],
+    "images": [
+      "ge-marketing-boligrafo-modelo-gordo-01.webp",
+      "ge-marketing-boligrafo-modelo-gordo-02.jpg",
+      "ge-marketing-boligrafo-modelo-gordo-03.jpg",
+      "ge-marketing-boligrafo-modelo-gordo-04.jpg",
+      "ge-marketing-boligrafo-modelo-gordo-05.jpg",
+      "ge-marketing-boligrafo-modelo-gordo-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 312,
+        "min": 100,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 312,
+        "min": 100,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 312,
+        "min": 100,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 569.47,
+        "min": 100,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 569.47,
+        "min": 100,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 569.47,
+        "min": 100,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "cintas-colgantes-lanyards",
+    "sku": "CINTCOLGIMP-IIM-SU-2268",
+    "name": "Cintas Colgantes Lanyards",
+    "description": "Cintas Colgantes o Lanyards están hechas en Tela Doble Raso Reforzada de 2 cm de ancho por 0,8 mm. de espesor y 45 cm de largo (por tira, 90 cm. total), por lo que ofrecen una calidad de impresión óptima. Son originalmente blancas y pueden imprimirse full color de uno o ambos lados.\n\nLas Cintas Colgantes son el accesorio ideal para las empresas que quieren promocionar su marca en múltiples escenarios corporativos y promocionales (exposiciones, conferencias, ferias, congresos, punto de venta y planta) ya que pueden usarse para portar gran variedad de objetos: credenciales, llaves, pendrives, etc.\n\nMosquetón tipo «Gatillo» incluido en el precio. Otros adicionales a continuación:",
+    "categories": [
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-cintas-colgantes-lanyards-01.jpg",
+      "ge-marketing-cintas-colgantes-lanyards-02.jpg",
+      "ge-marketing-cintas-colgantes-lanyards-03.jpg",
+      "ge-marketing-cintas-colgantes-lanyards-04.jpg",
+      "ge-marketing-cintas-colgantes-lanyards-05.jpg",
+      "ge-marketing-cintas-colgantes-lanyards-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "impresion-de-1-cara"
+        },
+        "price": 1123.2,
+        "min": 200,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "impresion-de-2-caras"
+        },
+        "price": 1304.81,
+        "min": 200,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "porta-credencial-pvc",
+    "sku": "POCR115-SIM-SP-3452",
+    "name": "Porta-credencial de PVC",
+    "description": "Resistente y flexible. Ideal para ferias, eventos y uso corporativo.\nDisponible en dos tamaños: 115×170 mm y 80×125 mm.",
+    "categories": [
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-porta-credencial-pvc-01.jpg",
+      "ge-marketing-porta-credencial-pvc-02.jpg",
+      "ge-marketing-porta-credencial-pvc-03.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_medidas": "80125mm",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 221,
+        "min": 50,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_medidas": "115170mm",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 338,
+        "min": 50,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "pulseras-para-eventos-personalizadas",
+    "sku": "PUNYAZ-IIN-OT-3159",
+    "name": "Pulseras para Eventos Personalizadas",
+    "description": "Pulseras para Eventos Personalizadas. Impresas Full Color en Láser.\nPulseras tipo Tyvek de Nylon resistentes al agua.\nProducto importado.\nDisponibles en: Amarillo, Azul, Celeste, Fucsia, Naranja, Rojo, Verde, Gris y Blanco",
+    "categories": [
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-pulseras-para-eventos-personalizadas-01.webp",
+      "ge-marketing-pulseras-para-eventos-personalizadas-02.jpg",
+      "ge-marketing-pulseras-para-eventos-personalizadas-03.jpg",
+      "ge-marketing-pulseras-para-eventos-personalizadas-04.webp",
+      "ge-marketing-pulseras-para-eventos-personalizadas-05.webp",
+      "ge-marketing-pulseras-para-eventos-personalizadas-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "naranja",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "azul",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 130,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "celeste",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "celeste",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 130,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "amarillo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 130,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "gris",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 130,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 130,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde-benetton",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 277.19,
+        "min": 100,
+        "step": 100
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "verde-benetton",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 130,
+        "min": 100,
+        "step": 100
+      }
+    ]
+  },
+  {
+    "key": "pines",
+    "sku": "PINS20-IIM-DO-2656",
+    "name": "Pines",
+    "description": "Chicos: Pines Rectos (25cmx10cm) / Cuadrados (17cmx17cm) / redondos (20mm)\nMedianos: Pines Redondos de 25 y Rectos 30x15mm.",
+    "categories": [
+      "marketing-expo-congreso"
+    ],
+    "images": [
+      "ge-marketing-pines-01.webp",
+      "ge-marketing-pines-02.jpg",
+      "ge-marketing-pines-03.webp",
+      "ge-marketing-pines-04.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_selecciona-tamano": "cuadrados-17x17"
+        },
+        "price": 3090.04,
+        "min": 100,
+        "step": 50
+      },
+      {
+        "attributes": {
+          "attribute_pa_selecciona-tamano": "rectos-30x15mm"
+        },
+        "price": 3527.94,
+        "min": 100,
+        "step": 50
+      }
+    ]
+  },
+  {
+    "key": "sacacorchos-electrico",
+    "sku": "WINEOP-IIM-UD-3549",
+    "name": "Sacacorchos Eléctrico",
+    "description": "Abrí tus vinos sin esfuerzo. Diseño elegante, personalizable con logo.\nPresentación en caja. No incluye pilas (requiere 4 pilas AA).",
+    "categories": [
+      "marketing-tecnologia"
+    ],
+    "images": [
+      "ge-marketing-sacacorchos-electrico-01.jpg",
+      "ge-marketing-sacacorchos-electrico-02.jpg",
+      "ge-marketing-sacacorchos-electrico-03.jpg",
+      "ge-marketing-sacacorchos-electrico-04.jpg",
+      "ge-marketing-sacacorchos-electrico-05.jpg",
+      "ge-marketing-sacacorchos-electrico-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 15478.61,
+        "min": 10,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 11050,
+        "min": 10,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "humidificador",
+    "sku": "HUMIWO-IIM-UV-3445",
+    "name": "Humidificador",
+    "description": "Humidificador Esférico con diseño moderno en textura de madera, luz LED y función de aromaterapia. Personalizable en full color con impresión UV DTF. Elegancia y bienestar para cualquier espacio.",
+    "categories": [
+      "marketing-tecnologia"
+    ],
+    "images": [
+      "ge-marketing-humidificador-01.jpg",
+      "ge-marketing-humidificador-02.jpg",
+      "ge-marketing-humidificador-03.jpg",
+      "ge-marketing-humidificador-04.jpg",
+      "ge-marketing-humidificador-05.jpg",
+      "ge-marketing-humidificador-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "madera",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 10297.29,
+        "min": 10,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "madera",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7800,
+        "min": 25,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "parlante-portatil-bluetooth-cubo",
+    "sku": "PBCUNE-IIM-UV-3111",
+    "name": "Parlante Portátil Bluetooth Cubo",
+    "description": "Parlante Portátil Bluetooth de 3W ofrece un sonido natural, con una gran claridad y precisión, que se dispersa de manera uniforme. Un parlante que asegura potencia y calidad por igual en la reproducción de contenidos multimedia.\n\nLo que tenés que saber de este producto\n\nEs manos libres.\nApto para uso en exteriores.\nCon conectividad bluetooth.\nBatería recargable y cable USB / Micro USB incluido.\nPotencia de 3W.\nConector de entrada: Auxiliar, USB.\nDimensiones: 5cm de ancho, 5cm de alto y 5cm de profundidad.\n\nColores disponibles: rojo y negro.",
+    "categories": [
+      "marketing-tecnologia"
+    ],
+    "images": [
+      "ge-marketing-parlante-portatil-bluetooth-cubo-01.jpg",
+      "ge-marketing-parlante-portatil-bluetooth-cubo-02.jpg",
+      "ge-marketing-parlante-portatil-bluetooth-cubo-03.jpg",
+      "ge-marketing-parlante-portatil-bluetooth-cubo-04.jpg",
+      "ge-marketing-parlante-portatil-bluetooth-cubo-05.jpg",
+      "ge-marketing-parlante-portatil-bluetooth-cubo-06.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 14040,
+        "min": 10,
+        "step": 10
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "rojo",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 17841.6,
+        "min": 10,
+        "step": 10
+      }
+    ]
+  },
+  {
+    "key": "cargador-inalambrico-qi-para-celular",
+    "sku": "CAINBL-IIN-UV-3058",
+    "name": "Cargador Inalámbrico Qi para Celular",
+    "description": "El plato cargador tiene una salida micro USB el cual tiene que estar conectado a cualquier USB de una computadora o a un enchufe a 220V. (Incluye el cable USB para conectarlo pero no incluye enchufe a 220V, podes usar el de tu celular).\n* Compatible con celulares con tecnología Qi de fábrica.\n* Se apoya directamente en el plato (Funciona apoyado a una distancia hasta 4-10mm)\n* Impresión Full Color con tintas UV",
+    "categories": [
+      "marketing-tecnologia"
+    ],
+    "images": [
+      "ge-marketing-cargador-inalambrico-qi-para-celular-01.jpg",
+      "ge-marketing-cargador-inalambrico-qi-para-celular-02.jpg",
+      "ge-marketing-cargador-inalambrico-qi-para-celular-03.jpg",
+      "ge-marketing-cargador-inalambrico-qi-para-celular-04.jpg",
+      "ge-marketing-cargador-inalambrico-qi-para-celular-05.jpg",
+      "ge-marketing-cargador-inalambrico-qi-para-celular-06.jpg"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 9465.3,
+        "min": 20,
+        "step": 5
+      },
+      {
+        "attributes": {
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 7020,
+        "min": 20,
+        "step": 5
+      }
+    ]
+  },
+  {
+    "key": "pendrives-twister-8-gb",
+    "sku": "PENTWISBLA8-IIM-DO-2624",
+    "name": "Pendrives Twister 8 GB",
+    "description": "Los Pendrive Twister son los Pendrive más vendidos del mercado. Vienen de 8GB en color blanco o negro con detalle en metal. Se pueden entregar impresos full color o sino con la aplicación de etiqueta UV DTF full color.\n\nIncluyen una caja metálica con ventana transparente, también personalizada con el logo de su empresa.",
+    "categories": [
+      "marketing-tecnologia"
+    ],
+    "images": [
+      "ge-marketing-pendrives-twister-8-gb-01.webp",
+      "ge-marketing-pendrives-twister-8-gb-02.jpg",
+      "ge-marketing-pendrives-twister-8-gb-03.webp",
+      "ge-marketing-pendrives-twister-8-gb-04.webp",
+      "ge-marketing-pendrives-twister-8-gb-05.webp"
+    ],
+    "options": [
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "con-dome"
+        },
+        "price": 19448.18,
+        "min": 1,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "personalizacion-full-color"
+        },
+        "price": 19979.41,
+        "min": 1,
+        "step": 1
+      },
+      {
+        "attributes": {
+          "attribute_pa_color": "negro",
+          "attribute_pa_personalizacion": "sin-personalizacion"
+        },
+        "price": 15600,
+        "min": 1,
+        "step": 1
+      }
+    ]
+  }
+]
