@@ -91,6 +91,7 @@ final class GE_WTP_Portal {
 
     private static function portal_orders( $limit = 50 ) {
         $orders = GE_WTP_Orders::get_customer_orders( self::portal_customer_id(), $limit );
+        $orders = array_values( array_filter( $orders, function ( $order ) { return 'yes' !== $order->get_meta( '_ge_work_order' ); } ) );
         if ( self::portal_is_markcom() ) {
             $orders = array_values( array_filter( $orders, function ( $order ) { return 'yes' === $order->get_meta( '_ge_markcom_order' ); } ) );
         }

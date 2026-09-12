@@ -61,6 +61,7 @@ final class GE_WTP_Notifications {
 
     public static function handle_order_status_changed( $order_id, $old_status, $new_status, $order ) {
         if ( ! $order instanceof WC_Order || $old_status === $new_status ) { return; }
+        if ( 'yes' === $order->get_meta( '_ge_work_order' ) ) { return; }
         $production_statuses = array( 'ge-confirmado', 'ge-produccion', 'ge-listo', 'ge-entregado' );
         $is_portal_order = 'yes' === $order->get_meta( '_ge_markcom_order' ) && $order->get_meta( '_ge_markcom_reference' );
         if ( ! $is_portal_order && ! in_array( $new_status, $production_statuses, true ) ) { return; }

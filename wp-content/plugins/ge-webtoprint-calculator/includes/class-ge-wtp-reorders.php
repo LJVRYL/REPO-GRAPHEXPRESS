@@ -348,7 +348,7 @@ final class GE_WTP_Reorders {
         if ( ! function_exists( 'wc_get_orders' ) ) { return array(); }
         $counts = array(); $names = array();
         $orders = wc_get_orders( array( 'customer_id' => get_current_user_id(), 'limit' => 100, 'orderby' => 'date', 'order' => 'DESC' ) );
-        foreach ( $orders as $order ) { $is_markcom = 'yes' === $order->get_meta( '_ge_markcom_order' ); if ( ( 'markcom' === $source ) !== $is_markcom ) { continue; } foreach ( self::order_lines( $order, $source ) as $line ) { $key = 'markcom' === $source ? $line['product_key'] : $line['product_id']; $counts[ $key ] = isset( $counts[ $key ] ) ? $counts[ $key ] + 1 : 1; $names[ $key ] = $line['name']; } }
+        foreach ( $orders as $order ) { if ( 'yes' === $order->get_meta( '_ge_work_order' ) ) { continue; } $is_markcom = 'yes' === $order->get_meta( '_ge_markcom_order' ); if ( ( 'markcom' === $source ) !== $is_markcom ) { continue; } foreach ( self::order_lines( $order, $source ) as $line ) { $key = 'markcom' === $source ? $line['product_key'] : $line['product_id']; $counts[ $key ] = isset( $counts[ $key ] ) ? $counts[ $key ] + 1 : 1; $names[ $key ] = $line['name']; } }
         arsort( $counts ); $result = array(); foreach ( $counts as $key => $count ) { $result[] = array( 'type' => $source, 'key' => $key, 'name' => $names[ $key ], 'count' => $count ); } return $result;
     }
 
