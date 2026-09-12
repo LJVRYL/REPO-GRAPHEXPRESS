@@ -155,8 +155,10 @@ final class GE_WTP_Production {
         if ( $is_sublimation ) {
             return array( 'supplier' => 'sublimation-pending', 'date' => self::business_date( $created, 5 ), 'reason' => 'Banderas o sublimación detectadas; proveedor pendiente.' );
         }
-        $is_offset = false !== strpos( $source, 'mardones' ) || 0 === strpos( $catalog_key, 'mardones-' ) || in_array( 'imprenta-offset', $categories, true );
-        if ( $is_offset ) { return self::offset_assignment( $created ); }
+        $is_mardones = false !== strpos( $source, 'mardones' ) || 0 === strpos( $catalog_key, 'mardones-' );
+        if ( $is_mardones ) { return self::mardones_assignment( $created ); }
+        $is_custom_offset = in_array( 'imprenta-offset', $categories, true ) || preg_match( '/\boffset\b/', $name );
+        if ( $is_custom_offset ) { return self::druck_offset_assignment( $created ); }
         if ( false !== strpos( $source, 'druck' ) || in_array( 'imprenta-digital', $categories, true ) ) { return array( 'supplier' => 'druck', 'date' => self::business_date( $created, 2 ), 'reason' => 'Producto digital asignado a Druck con 2 días hábiles.' ); }
         if ( false !== strpos( $source, 'bandurria' ) || in_array( 'gran-formato', $categories, true ) ) {
             $fast = preg_match( '/banner|lona/', $name );
@@ -171,13 +173,18 @@ final class GE_WTP_Production {
         return array( 'supplier' => 'pending', 'date' => self::business_date( $created, 5 ), 'reason' => 'Producto sin regla automática.' );
     }
 
-    private static function offset_assignment( $created ) {
+    private static function mardones_assignment( $created ) {
         $day = (int) wp_date( 'N', $created, wp_timezone() );
         $time = (int) wp_date( 'Gi', $created, wp_timezone() );
         $mardones = ( 2 === $day && $time >= 2100 ) || in_array( $day, array( 3, 4 ), true ) || ( 5 === $day && $time < 1200 );
         $date = ( new DateTimeImmutable( '@' . $created ) )->setTimezone( wp_timezone() );
-        if ( $mardones ) { return array( 'supplier' => 'mardones', 'date' => $date->modify( 'next tuesday' )->modify( '+1 day' )->format( 'Y-m-d' ), 'reason' => 'Ventana offset martes 21:00 a viernes 12:00: Mardones, disponible el miércoles posterior.' ); }
-        return array( 'supplier' => 'druck', 'date' => $date->modify( 'next friday' )->modify( '+3 days' )->format( 'Y-m-d' ), 'reason' => 'Ventana offset viernes 12:00 a martes 21:00: Druck, disponible el lunes posterior.' );
+        if ( $mardones ) { return array( 'supplier' => 'mardones', 'date' => $date->modify( 'next tuesday' )->modify( '+1 day' )->format( 'Y-m-d' ), 'reason' => 'Producto del catálogo Mardones: entrega prevista para el miércoles posterior.' ); }
+        return array( 'supplier' => 'mardones', 'date' => $date->modify( 'next friday' )->modify( '+3 days' )->format( 'Y-m-d' ), 'reason' => 'Producto del catálogo Mardones: entrega prevista para el lunes posterior.' );
+    }
+
+    private static function druck_offset_assignment( $created ) {
+        $date = ( new DateTimeImmutable( '@' . $created ) )->setTimezone( wp_timezone() );
+        return array( 'supplier' => 'druck', 'date' => $date->modify( 'next friday' )->modify( '+3 days' )->format( 'Y-m-d' ), 'reason' => 'Trabajo offset genérico o personalizado asignado a Druck; Graph Express puede proporcionar el papel y Druck realiza impresión y corte.' );
     }
 
     private static function business_date( $timestamp, $days ) {
