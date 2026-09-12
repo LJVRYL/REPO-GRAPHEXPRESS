@@ -44,7 +44,7 @@ final class GE_WTP_Documents {
         );
     }
 
-    public static function handle_uploaded_files( $order_id, $field = 'ge_documents', $category = 'arte' ) {
+    public static function handle_uploaded_files( $order_id, $field = 'ge_documents', $category = 'arte', $context = array() ) {
         if ( empty( $_FILES[ $field ] ) || empty( $_FILES[ $field ]['name'] ) ) {
             return array();
         }
@@ -62,6 +62,12 @@ final class GE_WTP_Documents {
             'png'  => 'image/png',
             'zip'  => 'application/zip',
         );
+        if ( ! empty( $context['allowed_extensions'] ) && is_array( $context['allowed_extensions'] ) ) {
+            $allowed = array_intersect_key( $allowed, array_fill_keys( array_map( 'sanitize_key', $context['allowed_extensions'] ), true ) );
+        }
+        if ( ! empty( $context['allowed_extensions'] ) && is_array( $context['allowed_extensions'] ) ) {
+            $allowed = array_intersect_key( $allowed, array_fill_keys( array_map( 'sanitize_key', $context['allowed_extensions'] ), true ) );
+        }
 
         foreach ( $files as $file ) {
             if ( UPLOAD_ERR_NO_FILE === (int) $file['error'] ) {
@@ -84,7 +90,7 @@ final class GE_WTP_Documents {
                 continue;
             }
 
-            $saved[] = array(
+            $record = array(
                 'id'          => wp_generate_uuid4(),
                 'stored_name' => $stored_name,
                 'name'        => $original,
@@ -95,6 +101,13 @@ final class GE_WTP_Documents {
                 'uploaded_at' => current_time( 'mysql' ),
                 'analysis'    => self::analyze_file( $destination, $allowed[ $extension ] ),
             );
+            if ( ! empty( $context['order_item_id'] ) ) {
+                $record['order_item_id'] = absint( $context['order_item_id'] );
+            }
+            if ( ! empty( $context['artwork_side'] ) ) {
+                $record['artwork_side'] = sanitize_key( $context['artwork_side'] );
+            }
+            $saved[] = $record;
         }
 
         if ( $saved ) {
@@ -219,11 +232,12 @@ final class GE_WTP_Documents {
             && 0 === strcasecmp( $order->get_billing_email(), $user->user_email );
     }
 
-    public static function download_url( $order_id, $document_id ) {
-        return wp_nonce_url(
+    public static function download_url( $order_id, $document_id, $inline = false ) {
+        $url = wp_nonce_url(
             admin_url( 'admin-post.php?action=ge_markcom_download_document&order_id=' . absint( $order_id ) . '&document_id=' . rawurlencode( $document_id ) ),
             'ge_markcom_download_' . absint( $order_id ) . '_' . $document_id
         );
+        return $inline ? add_query_arg( 'inline', '1', $url ) : $url;
     }
 
     public static function handle_download() {
@@ -244,9 +258,11 @@ final class GE_WTP_Documents {
                 }
 
                 nocache_headers();
+                $inline = ! empty( $_GET['inline'] ) && ( 'application/pdf' === $document['mime'] || 0 === strpos( (string) $document['mime'], 'image/' ) );
                 header( 'Content-Type: ' . $document['mime'] );
+                header( 'X-Content-Type-Options: nosniff' );
                 header( 'Content-Length: ' . filesize( $path ) );
-                header( 'Content-Disposition: attachment; filename="' . rawurlencode( $document['name'] ) . '"' );
+                header( 'Content-Disposition: ' . ( $inline ? 'inline' : 'attachment' ) . '; filename="' . rawurlencode( $document['name'] ) . '"' );
                 readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
                 exit;
             }

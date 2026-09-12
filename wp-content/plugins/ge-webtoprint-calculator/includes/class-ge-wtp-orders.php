@@ -7,8 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class GE_WTP_Orders {
     const CART_META = '_ge_markcom_cart';
 
-    public static function cart() {
-        $cart = get_user_meta( get_current_user_id(), self::CART_META, true );
+    public static function cart( $user_id = 0 ) {
+        $cart = get_user_meta( $user_id ? absint( $user_id ) : get_current_user_id(), self::CART_META, true );
         return is_array( $cart ) ? $cart : array();
     }
 

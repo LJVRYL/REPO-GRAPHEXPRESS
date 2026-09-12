@@ -262,6 +262,36 @@ final class GE_WTP_Artwork_Library {
         return hash( 'sha256', wp_json_encode( array( 'item' => $item->get_id(), 'files' => $files, 'version' => $version, 'expected' => $expected ) ) );
     }
 
+    public static function attach_customer_uploads_to_item( $order, $item, $documents, $side = 'general' ) {
+        if ( ! ( $order instanceof WC_Order ) || ! ( $item instanceof WC_Order_Item_Product ) || (int) $item->get_order_id() !== (int) $order->get_id() ) { return false; }
+        $tokens = $item->get_meta( '_ge_item_artwork_sources', true );
+        $tokens = is_array( $tokens ) ? $tokens : array();
+        $new_ids = array_values( array_filter( array_map( static function ( $document ) { return sanitize_text_field( $document['id'] ?? '' ); }, (array) $documents ) ) );
+        $superseded = array();
+        foreach ( GE_WTP_Documents::get_documents( $order->get_id() ) as $document ) {
+            $document_id = sanitize_text_field( $document['id'] ?? '' );
+            if ( $document_id && ! in_array( $document_id, $new_ids, true ) && (int) ( $document['order_item_id'] ?? 0 ) === (int) $item->get_id() && sanitize_key( $document['artwork_side'] ?? 'general' ) === sanitize_key( $side ) ) {
+                $superseded[] = 'document:' . $document_id;
+            }
+        }
+        $tokens = array_values( array_diff( $tokens, $superseded ) );
+        foreach ( (array) $documents as $document ) {
+            $document_id = sanitize_text_field( $document['id'] ?? '' );
+            if ( $document_id ) { $tokens[] = 'document:' . $document_id; }
+        }
+        $tokens = array_values( array_unique( array_filter( $tokens ) ) );
+        $item->update_meta_data( '_ge_item_artwork_sources', $tokens );
+        $item->update_meta_data( '_ge_item_artwork_version', 'Cliente · ' . current_time( 'd/m/Y H:i' ) );
+        $item->delete_meta_data( '_ge_item_artwork_customer_approval' );
+        $item->delete_meta_data( '_ge_item_artwork_staff_approval' );
+        $item->delete_meta_data( '_ge_item_artwork_release_hash' );
+        $item->delete_meta_data( '_ge_item_artwork_released_at' );
+        $item->delete_meta_data( '_ge_item_artwork_released_by' );
+        $item->update_meta_data( '_ge_item_artwork_last_side', sanitize_key( $side ) );
+        $item->save();
+        return true;
+    }
+
     public static function item_ready_for_production( $item, $order = false ) {
         $order = $order instanceof WC_Order ? $order : wc_get_order( $item->get_order_id() );
         if ( ! $order ) { return false; }
