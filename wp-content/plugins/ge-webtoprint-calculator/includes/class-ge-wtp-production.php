@@ -11,6 +11,7 @@ final class GE_WTP_Production {
         add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'store_api_order' ), 40, 1 );
         add_action( 'admin_post_ge_production_save', array( __CLASS__, 'handle_save' ) );
         add_action( 'admin_post_ge_production_quick_status', array( __CLASS__, 'handle_quick_status' ) );
+        add_action( 'admin_post_ge_production_create_item_order', array( __CLASS__, 'handle_create_item_order' ) );
         add_action( 'admin_post_ge_production_event', array( __CLASS__, 'handle_event' ) );
         add_action( 'admin_post_ge_production_event_status', array( __CLASS__, 'handle_event_status' ) );
         add_action( 'admin_post_ge_production_sheet', array( __CLASS__, 'handle_sheet' ) );
@@ -71,6 +72,131 @@ final class GE_WTP_Production {
     public static function item_status_label( $item, $order = false ) {
         $status = self::item_status( $item, $order );
         return self::item_statuses()[ $status ] ?? self::item_statuses()['pending'];
+    }
+
+    public static function item_work_order_id( $item ) {
+        if ( ! $item instanceof WC_Order_Item_Product ) { return 0; }
+        $work_order_id = absint( $item->get_meta( '_ge_work_order_id', true ) );
+        return $work_order_id && wc_get_order( $work_order_id ) ? $work_order_id : 0;
+    }
+
+    public static function render_item_work_order_control( $order, $item ) {
+        if ( ! $order instanceof WC_Order || ! $item instanceof WC_Order_Item_Product ) { return; }
+        if ( 'yes' === $order->get_meta( '_ge_work_order' ) ) { return; }
+        if ( ! self::allows_item_work_orders( $order ) ) { return; }
+        $work_order_id = self::item_work_order_id( $item );
+        if ( $work_order_id ) {
+            echo '<a class="ge-item-work-order is-created" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $work_order_id ) ) ) . '">Abrir orden de trabajo #' . esc_html( $work_order_id ) . ' →</a>';
+            return;
+        }
+        if ( 'cancelled' === self::item_status( $item, $order ) ) { return; }
+        ?><form class="ge-item-work-order-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_production_create_item_order"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="item_id" value="<?php echo esc_attr( $item->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_create_item_order_' . $order->get_id() . '_' . $item->get_id() ); ?><button class="ge-item-work-order" type="submit">Confirmar ítem y generar orden →</button></form><?php
+    }
+
+    public static function handle_create_item_order() {
+        self::guard();
+        $source_order = self::requested_order();
+        $item_id = absint( $_POST['item_id'] ?? 0 );
+        check_admin_referer( 'ge_production_create_item_order_' . $source_order->get_id() . '_' . $item_id );
+        $source_item = $source_order->get_item( $item_id );
+        if ( ! $source_item instanceof WC_Order_Item_Product ) { wp_die( 'El ítem solicitado no existe.', 404 ); }
+        if ( ! self::allows_item_work_orders( $source_order ) ) { wp_die( 'Este pedido no es un presupuesto divisible.', 400 ); }
+
+        $existing_id = self::item_work_order_id( $source_item );
+        if ( $existing_id ) {
+            wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $existing_id ) ) );
+            exit;
+        }
+
+        $lock_key = 'ge_wtp_item_order_lock_' . $source_order->get_id() . '_' . $item_id;
+        if ( ! add_option( $lock_key, time(), '', 'no' ) ) { wp_die( 'La orden de este ítem se está generando. Volvé a abrir el pedido.', 409 ); }
+
+        $work_order = false;
+        try {
+            $work_order = wc_create_order( array( 'customer_id' => $source_order->get_customer_id() ) );
+            if ( is_wp_error( $work_order ) ) { throw new RuntimeException( $work_order->get_error_message() ); }
+            $work_order->set_currency( $source_order->get_currency() );
+            $work_order->set_address( $source_order->get_address( 'billing' ), 'billing' );
+            $work_order->set_address( $source_order->get_address( 'shipping' ), 'shipping' );
+            if ( $source_order->get_payment_method() ) { $work_order->set_payment_method( $source_order->get_payment_method() ); }
+            $work_order->set_payment_method_title( $source_order->get_payment_method_title() );
+            $work_order->set_customer_note( $source_order->get_customer_note() );
+
+            $new_item = new WC_Order_Item_Product();
+            $product = $source_item->get_product();
+            if ( $product ) { $new_item->set_product( $product ); }
+            $new_item->set_name( $source_item->get_name() );
+            $new_item->set_quantity( $source_item->get_quantity() );
+            $new_item->set_subtotal( $source_item->get_subtotal() );
+            $new_item->set_total( $source_item->get_total() );
+            $new_item->set_subtotal_tax( $source_item->get_subtotal_tax() );
+            $new_item->set_total_tax( $source_item->get_total_tax() );
+            $new_item->set_taxes( $source_item->get_taxes() );
+            foreach ( $source_item->get_meta_data() as $meta ) {
+                $key = (string) $meta->key;
+                if ( in_array( $key, array( '_ge_item_status', '_ge_item_status_history', '_ge_work_order_id' ), true ) ) { continue; }
+                $new_item->add_meta_data( $key, $meta->value, false );
+            }
+            $new_item->update_meta_data( '_ge_item_status', 'approved' );
+            $work_order->add_item( $new_item );
+            $work_order->update_meta_data( '_ge_work_order', 'yes' );
+            $work_order->update_meta_data( '_ge_manual_source', 'approved-quote-item' );
+            $work_order->update_meta_data( '_ge_source_quote_order_id', $source_order->get_id() );
+            $work_order->update_meta_data( '_ge_source_quote_item_id', $item_id );
+            $work_order->update_meta_data( '_ge_manual_delivery_method', $source_order->get_meta( '_ge_manual_delivery_method' ) ?: 'coordinate' );
+            $work_order->update_meta_data( '_ge_internal_order_note', $source_order->get_meta( '_ge_internal_order_note' ) );
+            $work_order->calculate_totals( false );
+            $work_order->set_status( 'ge-confirmado', 'Orden de trabajo generada desde un ítem aprobado del presupuesto #' . $source_order->get_id() . '.' );
+            $work_order->save();
+
+            $work_order->update_meta_data( '_ge_manual_reference', sprintf( 'GE-OT-%s-%05d', current_time( 'Y' ), $work_order->get_id() ) );
+            self::copy_item_documents( $source_order, $source_item, $work_order, $new_item );
+            $work_order->save();
+            self::ensure_order( $work_order );
+
+            $previous = self::item_status( $source_item, $source_order );
+            $source_item->update_meta_data( '_ge_item_status', 'pending' === $previous ? 'approved' : $previous );
+            $source_item->update_meta_data( '_ge_work_order_id', $work_order->get_id() );
+            $history = (array) $source_item->get_meta( '_ge_item_status_history', true );
+            if ( 'pending' === $previous ) { $history[] = array( 'time' => time(), 'from' => 'pending', 'to' => 'approved', 'user_id' => get_current_user_id() ); }
+            $source_item->update_meta_data( '_ge_item_status_history', array_slice( $history, -50 ) );
+            $source_item->save();
+            $source_order->update_meta_data( '_ge_quote', 'yes' );
+            self::sync_order_status_from_items( $source_order );
+            $source_order->add_order_note( 'Se generó la orden de trabajo ' . $work_order->get_meta( '_ge_manual_reference' ) . ' únicamente para el ítem “' . $source_item->get_name() . '”.' );
+            $source_order->save();
+            $work_order->add_order_note( 'Origen: presupuesto #' . $source_order->get_id() . ', ítem #' . $item_id . '.' );
+            $work_order->save();
+        } catch ( Throwable $error ) {
+            if ( $work_order instanceof WC_Order ) { $work_order->delete( true ); }
+            delete_option( $lock_key );
+            wp_die( 'No se pudo generar la orden de trabajo: ' . esc_html( $error->getMessage() ), 500 );
+        }
+        delete_option( $lock_key );
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $work_order->get_id(), 'item_order_created' => 1 ) ) );
+        exit;
+    }
+
+    private static function allows_item_work_orders( $order ) {
+        if ( ! $order instanceof WC_Order || 'yes' === $order->get_meta( '_ge_work_order' ) ) { return false; }
+        if ( 'yes' === $order->get_meta( '_ge_quote' ) || 'yes' === $order->get_meta( '_ge_markcom_order' ) ) { return true; }
+        if ( 'yes' !== $order->get_meta( '_ge_manual_order' ) ) { return false; }
+        foreach ( $order->get_items( 'line_item' ) as $item ) {
+            if ( 'pending' === self::item_status( $item, $order ) ) { return true; }
+        }
+        return false;
+    }
+
+    private static function copy_item_documents( $source_order, $source_item, $work_order, $new_item ) {
+        if ( ! class_exists( 'GE_WTP_Documents' ) ) { return; }
+        $documents = array();
+        foreach ( GE_WTP_Documents::get_documents( $source_order->get_id() ) as $document ) {
+            if ( absint( $document['order_item_id'] ?? 0 ) !== $source_item->get_id() ) { continue; }
+            $document['order_item_id'] = $new_item->get_id();
+            $document['source_order_id'] = $source_order->get_id();
+            $documents[] = $document;
+        }
+        if ( $documents ) { $work_order->update_meta_data( GE_WTP_Documents::META_KEY, $documents ); }
     }
 
     public static function actionable_items( $order, $include_ready = true ) {
@@ -320,7 +446,23 @@ final class GE_WTP_Production {
             $history[] = array( 'time' => time(), 'from' => $previous, 'to' => $item_status, 'user_id' => get_current_user_id() );
             $item->update_meta_data( '_ge_item_status_history', array_slice( $history, -50 ) );
             $item->save();
+            self::sync_source_item_status( $order, $item_status );
         }
+    }
+
+    private static function sync_source_item_status( $work_order, $status ) {
+        if ( ! $work_order instanceof WC_Order || 'yes' !== $work_order->get_meta( '_ge_work_order' ) ) { return; }
+        $source_order = wc_get_order( absint( $work_order->get_meta( '_ge_source_quote_order_id' ) ) );
+        $source_item = $source_order ? $source_order->get_item( absint( $work_order->get_meta( '_ge_source_quote_item_id' ) ) ) : false;
+        if ( ! $source_item instanceof WC_Order_Item_Product || self::item_work_order_id( $source_item ) !== $work_order->get_id() ) { return; }
+        $previous = self::item_status( $source_item, $source_order );
+        if ( $previous === $status ) { return; }
+        $source_item->update_meta_data( '_ge_item_status', $status );
+        $history = (array) $source_item->get_meta( '_ge_item_status_history', true );
+        $history[] = array( 'time' => time(), 'from' => $previous, 'to' => $status, 'user_id' => get_current_user_id(), 'source' => 'work-order', 'work_order_id' => $work_order->get_id() );
+        $source_item->update_meta_data( '_ge_item_status_history', array_slice( $history, -50 ) );
+        $source_item->save();
+        self::sync_order_status_from_items( $source_order );
     }
 
     private static function record_status_change( $order, $old_status, $status ) {
@@ -374,6 +516,7 @@ final class GE_WTP_Production {
         if ( 'supplier-failed' === $status ) { echo '<div class="ge-production-notice is-error">No se pudo enviar. Revisá el contacto del proveedor y la configuración de correo.</div>'; }
         if ( ! empty( $_GET['saved'] ) ) { echo '<div class="ge-production-notice">La producción quedó actualizada.</div>'; }
         if ( ! empty( $_GET['manual_created'] ) ) { echo '<div class="ge-production-notice">El trabajo de mostrador fue creado y ya está en la cola de producción.</div>'; }
+        if ( ! empty( $_GET['item_order_created'] ) ) { echo '<div class="ge-production-notice">Orden de trabajo creada únicamente con el ítem confirmado. El resto del presupuesto continúa pendiente.</div>'; }
         $invite = sanitize_key( wp_unslash( $_GET['manual_invite'] ?? '' ) );
         if ( 'sent' === $invite ) { echo '<div class="ge-production-notice">La invitación para registrarse fue enviada por email.</div>'; }
         if ( 'failed' === $invite ) { echo '<div class="ge-production-notice is-error">No se pudo enviar la invitación por email.</div>'; }
