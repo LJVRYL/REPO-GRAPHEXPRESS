@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * El original queda en una bóveda privada y nunca se publica. La copia
  * derivada requiere dos aprobaciones humanas independientes antes de poder
  * adjuntarse al pedido del cliente. Las notificaciones sólo se preparan como
- * borrador: esta clase no llama a wp_mail().
+ * borrador: esta clase no ejecuta envíos de correo.
  */
 final class GE_WTP_Supplier_Invoices {
     const POST_TYPE = 'ge_supplier_invoice';
