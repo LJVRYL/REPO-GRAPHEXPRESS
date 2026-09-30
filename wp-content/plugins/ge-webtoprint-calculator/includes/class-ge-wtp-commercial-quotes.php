@@ -96,6 +96,9 @@ final class GE_WTP_Commercial_Quotes {
         }
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( isset( $args['expected_version'] ) && (int) $args['expected_version'] !== $quote['version'] ) {
+            return new WP_Error( 'ge_quote_version_changed', 'El presupuesto cambió mientras lo editabas. Volvé a abrirlo.' );
+        }
         if ( in_array( $quote['status'], array( 'accepted', 'converted', 'cancelled' ), true ) ) {
             return new WP_Error( 'ge_quote_locked', 'Este presupuesto ya no admite cambios.' );
         }
