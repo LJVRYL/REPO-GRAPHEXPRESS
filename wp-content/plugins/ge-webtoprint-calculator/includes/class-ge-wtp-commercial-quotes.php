@@ -96,7 +96,7 @@ final class GE_WTP_Commercial_Quotes {
         }
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
-        if ( in_array( $quote['status'], array( 'converted', 'cancelled' ), true ) ) {
+        if ( in_array( $quote['status'], array( 'accepted', 'converted', 'cancelled' ), true ) ) {
             return new WP_Error( 'ge_quote_locked', 'Este presupuesto ya no admite cambios.' );
         }
         $snapshot = self::build_snapshot( $lines, $args );
@@ -149,8 +149,8 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! empty( $quote['snapshot']['valid_until'] ) && $quote['snapshot']['valid_until'] < wp_date( 'Y-m-d' ) ) {
             return new WP_Error( 'ge_quote_expired', 'El presupuesto venció. Solicitá una actualización.' );
         }
-        try { GE_WTP_Billing::assert_can_accept_or_pay( $quote['snapshot']['billing'] ?? array(), GE_WTP_Billing::entity() ); }
-        catch ( DomainException $error ) { return new WP_Error( 'ge_quote_billing_changed', 'Los datos fiscales del presupuesto requieren revisión antes de aceptarlo.' ); }
+        $billing = self::check_billing_snapshot( $quote );
+        if ( is_wp_error( $billing ) ) { return $billing; }
         $lock = 'ge_commercial_quote_accept_' . $quote_id;
         if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'Estamos procesando el presupuesto. Volvé a intentar.' ); }
         try {
@@ -238,6 +238,19 @@ final class GE_WTP_Commercial_Quotes {
         $snapshot['total_cents'] = (int) $resolution['total_cents'];
         $snapshot['snapshot_hash'] = hash( 'sha256', wp_json_encode( $snapshot ) );
         return $snapshot;
+    }
+
+    public static function check_billing_snapshot( $quote ) {
+        $billing = $quote['snapshot']['billing'] ?? array();
+        try { GE_WTP_Billing::assert_can_accept_or_pay( $billing, GE_WTP_Billing::entity() ); }
+        catch ( DomainException $error ) { return new WP_Error( 'ge_quote_billing_changed', 'Los datos fiscales requieren una nueva versión del presupuesto.' ); }
+        $current = GE_WTP_Billing::profile( $quote['customer_id'] );
+        foreach ( array( 'billing_mode', 'cuit', 'legal_name', 'vat_status', 'billing_email', 'fiscal_address' ) as $field ) {
+            if ( ( $billing['profile'][ $field ] ?? null ) !== ( $current[ $field ] ?? null ) ) {
+                return new WP_Error( 'ge_quote_billing_changed', 'El perfil fiscal del cliente cambió; hace falta una nueva versión.' );
+            }
+        }
+        return true;
     }
 
     private static function event( $quote_id, $version, $name, $actor_id ) {
