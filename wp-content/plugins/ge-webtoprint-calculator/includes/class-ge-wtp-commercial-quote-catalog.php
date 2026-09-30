@@ -29,7 +29,7 @@ final class GE_WTP_Commercial_Quote_Catalog {
             foreach ( $config['options'] as $key => $option ) {
                 $options[ $key ] = array( 'label' => sanitize_text_field( $option['label'] ?? $key ), 'price' => (float) ( $option['price'] ?? 0 ), 'fixed_qty' => absint( $option['fixed_qty'] ?? 0 ), 'min_qty' => max( 1, absint( $option['min_qty'] ?? $config['min_qty'] ?? 1 ) ), 'step' => max( 1, absint( $option['step'] ?? $config['step'] ?? 1 ) ) );
             }
-            return array( 'mode' => 'option', 'label' => sanitize_text_field( $config['label'] ?? 'Configuración' ), 'options' => $options, 'measure' => in_array( $config['mode'] ?? '', array( 'm2', 'ml' ), true ) ? $config['mode'] : '' );
+            return array( 'mode' => 'option', 'label' => sanitize_text_field( $config['label'] ?? 'Configuración' ), 'options' => $options, 'measure' => in_array( $config['mode'] ?? '', array( 'm2', 'ml' ), true ) ? $config['mode'] : '', 'roll_widths_cm' => $config['roll_widths_cm'] ?? array() );
         }
         if ( $product->is_type( 'variable' ) ) {
             $options = array();
@@ -74,9 +74,16 @@ final class GE_WTP_Commercial_Quote_Catalog {
                 if ( $value <= 0 || $value > 100000 ) { return new WP_Error( 'ge_quote_measure', 'Revisá las medidas del producto.' ); }
                 $selected[ $dimension ] = $value;
             }
-            $factor = 'm2' === $config['measure'] ? $selected['width'] * $selected['height'] / 10000 : $selected['length'] / 100;
+            $billable_width = $selected['width'] ?? 0;
+            if ( 'm2' === $config['measure'] && ! empty( $config['roll_widths_cm'] ) ) {
+                $billable_width = GE_WTP_Roll_Pricing::billable_width( $selected['width'], $config['roll_widths_cm'] );
+                if ( ! $billable_width ) { return new WP_Error( 'ge_quote_roll_width', 'El ancho excede los rollos disponibles. Cotizá este trabajo en paños.' ); }
+                $selected['roll_width_cm'] = $billable_width;
+            }
+            $factor = 'm2' === $config['measure'] ? $billable_width * $selected['height'] / 10000 : $selected['length'] / 100;
             $price = round( $price * $factor );
             $description = 'm2' === $config['measure'] ? $selected['width'] . ' × ' . $selected['height'] . ' cm · ' . $description : $selected['length'] . ' cm de largo · ' . $description;
+            if ( isset( $selected['roll_width_cm'] ) ) { $description .= ' · cálculo: rollo ' . $billable_width . ' cm × ' . $selected['height'] . ' cm'; }
         }
         return array( 'manual' => $price <= 0, 'price' => $price, 'quantity' => $qty, 'configuration' => $selected, 'description' => $description );
     }

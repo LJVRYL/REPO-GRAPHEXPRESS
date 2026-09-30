@@ -123,6 +123,7 @@ final class GE_WTP_Commercial_Quotes {
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
         if ( 'draft' !== $quote['status'] ) { return new WP_Error( 'ge_quote_state', 'Sólo puede enviarse un borrador.' ); }
+        if ( self::needs_roll_reprice( $quote['snapshot'] ) ) { return new WP_Error( 'ge_quote_roll_reprice', 'Editá y guardá este borrador para recalcular el vinilo según el ancho del rollo antes de enviarlo.' ); }
         $snapshot = self::resolve_billing( $quote['customer_id'], $quote['snapshot'] );
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
         $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
@@ -140,6 +141,21 @@ final class GE_WTP_Commercial_Quotes {
         update_post_meta( $quote_id, self::STATUS_META, 'sent' );
         self::event( $quote_id, $quote['version'], 'sent', $actor_id );
         return self::get( $quote_id, $actor_id );
+    }
+
+    /** Older drafts must be reviewed before their previous area price is sent. */
+    public static function needs_roll_reprice( $snapshot ) {
+        foreach ( (array) ( $snapshot['items'] ?? array() ) as $item ) {
+            $product_id = absint( $item['product_id'] ?? 0 );
+            $configuration = $item['configuration'] ?? array();
+            if ( ! $product_id || ! is_array( $configuration ) || ! isset( $configuration['width'], $configuration['height'] ) ) { continue; }
+            $key = (string) get_post_meta( $product_id, '_ge_public_catalog_key', true );
+            if ( ! GE_WTP_Roll_Pricing::widths_for_catalog_key( $key ) ) { continue; }
+            if ( ! isset( $configuration['roll_width_cm'] ) ) { return true; }
+            $priced = GE_WTP_Commercial_Quote_Catalog::price( $product_id, $configuration, absint( $item['quantity'] ?? 1 ) );
+            if ( is_wp_error( $priced ) || (int) ( $item['unit_net_cents'] ?? 0 ) !== (int) round( (float) $priced['price'] * 100 ) ) { return true; }
+        }
+        return false;
     }
 
     public static function accept( $quote_id, $version, $actor_id = 0 ) {

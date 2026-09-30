@@ -23,6 +23,7 @@ define( 'GE_WTP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-public-catalog.php';
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-roll-pricing.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-mardones-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-digital-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-quote-api.php';

@@ -13,6 +13,8 @@
         var width = form.querySelector('[data-ge-width]');
         var height = form.querySelector('[data-ge-height]');
         var length = form.querySelector('[data-ge-length]');
+        var rollWidths = JSON.parse(form.dataset.rollWidths || '[]');
+        var rollHint = form.querySelector('[data-ge-roll-hint]');
         var r2Files = form.querySelector('[data-ge-r2-files]');
         var r2Claims = form.querySelector('[data-ge-r2-claims]');
         var r2Button = form.querySelector('[data-ge-r2-upload-button]');
@@ -62,7 +64,18 @@
         function update() {
             var option = select.options[select.selectedIndex];
             var factor = 1;
-            if (width && height) { factor = Math.max(0.01, Number(width.value || 0) / 100) * Math.max(0.01, Number(height.value || 0) / 100); }
+            if (width && height) {
+                var requestedWidth = Math.max(0.01, Number(width.value || 0));
+                var billedWidth = rollWidths.length ? rollWidths.find(function (candidate) { return Number(candidate) >= requestedWidth; }) : requestedWidth;
+                if (rollWidths.length && !billedWidth) {
+                    if (rollHint) rollHint.textContent = 'El ancho supera los rollos disponibles. Consultanos por una cotización en paños.';
+                    price.textContent = 'Consultar';
+                    if (base) base.textContent = '';
+                    return;
+                }
+                factor = (billedWidth / 100) * Math.max(0.01, Number(height.value || 0) / 100);
+                if (rollHint) rollHint.textContent = 'Medida final: ' + requestedWidth + ' × ' + height.value + ' cm. Se cobra el ancho completo del rollo de ' + billedWidth + ' cm por ' + height.value + ' cm de largo.';
+            }
             if (length) { factor = Math.max(0.01, Number(length.value || 0) / 100); }
             var total = Number(option.dataset.price || 0) * factor * Math.max(1, Number(quantity.value || 1));
             price.textContent = money.format(Math.round(total * 1.21));

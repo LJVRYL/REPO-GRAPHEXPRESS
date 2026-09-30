@@ -71,9 +71,11 @@ final class GE_WTP_Commercial_Quote_UI {
         self::render_snapshot( $quote['snapshot'] );
         if ( in_array( $quote['status'], array( 'draft', 'sent' ), true ) ) { echo '<p><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote['id'], 'edit' => 1 ) ) ) . '">Editar ' . esc_html( 'sent' === $quote['status'] ? 'y crear nueva versión' : 'borrador' ) . '</a></p>'; }
         if ( 'draft' === $quote['status'] ) {
+            $needs_roll_reprice = GE_WTP_Commercial_Quotes::needs_roll_reprice( $quote['snapshot'] );
+            if ( $needs_roll_reprice ) { echo '<p>Este borrador usa un precio anterior de vinilo. Editalo y guardalo para recalcular el ancho de rollo antes de enviarlo.</p>'; }
             echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_quote_send"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '">';
             wp_nonce_field( 'ge_commercial_quote_send_' . $quote['id'] );
-            echo '<button class="ge-staff-button" type="submit">Enviar al portal y avisar</button></form>';
+            echo '<button class="ge-staff-button" type="submit"' . disabled( $needs_roll_reprice, true, false ) . '>Enviar al portal y avisar</button></form>';
         }
         echo '</section>';
         if ( class_exists( 'GE_WTP_Commercial_Checkout' ) ) { GE_WTP_Commercial_Checkout::render_staff_payment( $quote ); }

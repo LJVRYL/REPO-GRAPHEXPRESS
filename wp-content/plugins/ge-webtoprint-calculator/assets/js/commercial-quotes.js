@@ -82,7 +82,7 @@
         if (!result.success) { price.value = ''; hint.textContent = typeof result.data === 'string' ? result.data : 'Revisá la configuración.'; return; }
         if (result.data.quantity) quantity.value = result.data.quantity;
         if (result.data.manual) { price.readOnly = false; hint.textContent = 'Esta combinación requiere precio manual antes de IVA.'; }
-        else { price.value = Number(result.data.price).toFixed(2); price.readOnly = true; hint.textContent = 'Precio calculado desde el catálogo.'; }
+        else { price.value = Number(result.data.price).toFixed(2); price.readOnly = true; hint.textContent = result.data.configuration && result.data.configuration.roll_width_cm ? 'Precio calculado con rollo de ' + result.data.configuration.roll_width_cm + ' cm de ancho.' : 'Precio calculado desde el catálogo.'; }
       }).catch(function () {
         if (current === ticket) { price.value = ''; price.readOnly = true; hint.textContent = 'No se pudo consultar la tarifa. Reintentá al cambiar una opción.'; }
       });
@@ -107,10 +107,15 @@
         choice.input.value = selected.option_key || '';
         panel.appendChild(choice.wrapper);
         if (item.measure === 'm2' || item.measure === 'ml') {
-          (item.measure === 'm2' ? [['width', 'Ancho (cm)'], ['height', 'Alto (cm)']] : [['length', 'Largo (cm)']]).forEach(function (dimension) {
+          (item.measure === 'm2' ? [['width', item.roll_widths_cm && item.roll_widths_cm.length ? 'Ancho final (cm)' : 'Ancho (cm)'], ['height', item.roll_widths_cm && item.roll_widths_cm.length ? 'Largo final (cm)' : 'Alto (cm)']] : [['length', 'Largo (cm)']]).forEach(function (dimension) {
             var measure = field('input', 'lines[' + index + '][configuration][' + dimension[0] + ']', dimension[1], 'number');
             measure.input.min = '1'; measure.input.step = '0.1'; measure.input.value = selected[dimension[0]] || '100'; panel.appendChild(measure.wrapper);
           });
+          if (item.roll_widths_cm && item.roll_widths_cm.length) {
+            var rollNote = document.createElement('p');
+            rollNote.textContent = 'Medida final libre; el precio se calcula por el ancho completo del rollo disponible (desde ' + item.roll_widths_cm[0] + ' cm) y el largo solicitado.';
+            panel.appendChild(rollNote);
+          }
         }
       } else if (item.mode === 'digital') {
         item.fields.forEach(function (config) {
