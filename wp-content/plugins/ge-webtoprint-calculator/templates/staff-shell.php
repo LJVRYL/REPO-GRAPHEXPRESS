@@ -3,7 +3,8 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 $logged_in = is_user_logged_in();
 $section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : 'dashboard';
 wp_enqueue_style( 'ge-staff-admin-components', GE_WTP_PLUGIN_URL . 'assets/css/admin.css', array(), GE_WTP_VERSION );
-wp_enqueue_style( 'ge-staff-portal', GE_WTP_PLUGIN_URL . 'assets/css/staff.css', array( 'ge-staff-admin-components' ), GE_WTP_VERSION );
+$staff_css = GE_WTP_PLUGIN_DIR . 'assets/css/staff.css';
+wp_enqueue_style( 'ge-staff-portal', GE_WTP_PLUGIN_URL . 'assets/css/staff.css', array( 'ge-staff-admin-components' ), is_file( $staff_css ) ? (string) filemtime( $staff_css ) : GE_WTP_VERSION );
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head><meta charset="<?php bloginfo( 'charset' ); ?>"><meta name="viewport" content="width=device-width, initial-scale=1"><?php wp_head(); ?></head>

@@ -7,6 +7,67 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class GE_WTP_Documents {
     const META_KEY = '_ge_markcom_documents';
 
+    public static function init() {
+        add_action( 'woocommerce_order_details_after_order_table', array( __CLASS__, 'render_customer_order_files' ), 25 );
+        add_action( 'admin_post_ge_customer_order_upload', array( __CLASS__, 'handle_customer_order_upload' ) );
+    }
+
+    public static function render_customer_order_files( $order ) {
+        if ( ! self::can_access_order( $order ) ) { return; }
+        $documents = self::get_documents( $order->get_id() );
+        echo '<section class="ge-customer-order-files"><h2>Archivos del pedido</h2>';
+        if ( ! $documents ) { echo '<p>Todavía no hay archivos vinculados a este pedido.</p>'; }
+        else {
+            echo '<ul>';
+            foreach ( $documents as $document ) {
+                if ( empty( $document['id'] ) || empty( $document['name'] ) ) { continue; }
+                echo '<li><a href="' . esc_url( self::download_url( $order->get_id(), $document['id'] ) ) . '">' . esc_html( $document['name'] ) . '</a> · ' . esc_html( size_format( (int) ( $document['size'] ?? 0 ) ) ) . '</li>';
+            }
+            echo '</ul>';
+        }
+        if ( 'entregado' !== GE_WTP_Order_Lifecycle::stage( $order ) && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed', 'checkout-draft' ), true ) ) {
+            $vps_ready = class_exists( 'GE_WTP_VPS_Storage' ) && GE_WTP_VPS_Storage::ready();
+            if ( $vps_ready ) {
+                wp_enqueue_script( 'ge-order-files', GE_WTP_PLUGIN_URL . 'assets/js/order-files.js', array(), GE_WTP_VERSION, true );
+                wp_localize_script( 'ge-order-files', 'geOrderUpload', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'action' => GE_WTP_VPS_Storage::AJAX_ACTION, 'nonce' => wp_create_nonce( GE_WTP_VPS_Storage::AJAX_ACTION ), 'maxFileBytes' => (int) GE_WTP_VPS_Storage::limits()['max_file_bytes'] ) );
+            }
+            echo '<form method="post" enctype="multipart/form-data" data-ge-order-upload="' . esc_attr( $vps_ready ? '1' : '0' ) . '" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_order_upload"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '"><input type="hidden" name="ge_vps_uploads" value="[]">';
+            wp_nonce_field( 'ge_customer_order_upload_' . $order->get_id() );
+            echo '<label>Adjuntar original al pedido <input type="file" name="ge_documents[]" accept=".pdf,.ai,.eps,.psd,.tif,.tiff,.svg,.cdr,.zip,.jpg,.jpeg,.png" required></label><button type="submit">Subir archivo</button><progress max="100" value="0" hidden aria-label="Progreso de carga"></progress><p role="status" aria-live="polite"></p></form>';
+            echo '<p>Máximo 250 MB por archivo. Para archivos más grandes, vinculá un enlace compartido desde <a href="' . esc_url( wc_get_account_endpoint_url( GE_WTP_Artwork_Library::ENDPOINT ) ) . '">Mis archivos</a>.</p>';
+        }
+        echo '</section>';
+    }
+
+    public static function handle_customer_order_upload() {
+        $order_id = isset( $_POST['order_id'] ) ? absint( $_POST['order_id'] ) : 0;
+        check_admin_referer( 'ge_customer_order_upload_' . $order_id );
+        $order = wc_get_order( $order_id );
+        if ( ! self::can_access_order( $order ) || 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed', 'checkout-draft' ), true ) ) { wp_die( 'No podés adjuntar archivos a este pedido.', 403 ); }
+        $claims = isset( $_POST['ge_vps_uploads'] ) ? json_decode( wp_unslash( $_POST['ge_vps_uploads'] ), true ) : array();
+        $saved = array();
+        if ( is_array( $claims ) && $claims && class_exists( 'GE_WTP_VPS_Storage' ) ) {
+            $tokens = wp_list_pluck( $claims, 'token' );
+            $uploads = GE_WTP_VPS_Storage::validate_uploaded_claims( $tokens, get_current_user_id() );
+            if ( ! is_wp_error( $uploads ) ) {
+                $documents = self::get_documents( $order_id );
+                foreach ( $uploads as $upload ) {
+                    $final = GE_WTP_VPS_Storage::finalize_descriptor( $upload, $order_id, 0 );
+                    if ( is_wp_error( $final ) ) { continue; }
+                    $documents[] = array( 'id' => wp_generate_uuid4(), 'provider' => 'vps', 'relative_path' => $final['relative_path'], 'name' => $final['name'], 'size' => $final['size'], 'mime' => $final['mime'], 'category' => 'arte', 'uploaded_by' => get_current_user_id(), 'uploaded_at' => current_time( 'mysql' ), 'analysis' => array( 'confidence' => 'pending', 'warning' => 'Pendiente de control de preprensa.' ) );
+                    $saved[] = $final;
+                }
+                if ( $saved ) { $order->update_meta_data( self::META_KEY, $documents ); $order->save(); }
+            }
+        } else {
+            $saved = self::handle_uploaded_files( $order_id, 'ge_documents', 'arte' );
+        }
+        $ok = is_array( $saved ) && ! empty( $saved );
+        wc_add_notice( $ok ? 'Archivo vinculado al pedido.' : 'No se pudo cargar el archivo. Revisá el formato y el tamaño.', $ok ? 'success' : 'error' );
+        wp_safe_redirect( $order->get_view_order_url() );
+        exit;
+    }
+
     public static function private_directory() {
         return WP_CONTENT_DIR . '/ge-private/markcom';
     }
@@ -49,7 +110,8 @@ final class GE_WTP_Documents {
             return array();
         }
 
-        if ( ! self::ensure_private_directory() ) {
+        $vps_storage = class_exists( 'GE_WTP_VPS_Storage' ) && GE_WTP_VPS_Storage::configured();
+        if ( ! $vps_storage && ! self::ensure_private_directory() ) {
             return new WP_Error( 'ge_storage_unavailable', 'No fue posible preparar el almacenamiento privado.' );
         }
 
@@ -62,18 +124,17 @@ final class GE_WTP_Documents {
             'png'  => 'image/png',
             'zip'  => 'application/zip',
         );
-        if ( ! empty( $context['allowed_extensions'] ) && is_array( $context['allowed_extensions'] ) ) {
-            $allowed = array_intersect_key( $allowed, array_fill_keys( array_map( 'sanitize_key', $context['allowed_extensions'] ), true ) );
+        if ( 'arte' === $category ) {
+            $allowed += array( 'ai' => 'application/postscript', 'eps' => 'application/postscript', 'psd' => 'image/vnd.adobe.photoshop', 'tif' => 'image/tiff', 'tiff' => 'image/tiff', 'svg' => 'image/svg+xml', 'cdr' => 'application/octet-stream' );
         }
         if ( ! empty( $context['allowed_extensions'] ) && is_array( $context['allowed_extensions'] ) ) {
             $allowed = array_intersect_key( $allowed, array_fill_keys( array_map( 'sanitize_key', $context['allowed_extensions'] ), true ) );
         }
-
         foreach ( $files as $file ) {
             if ( UPLOAD_ERR_NO_FILE === (int) $file['error'] ) {
                 continue;
             }
-            if ( UPLOAD_ERR_OK !== (int) $file['error'] || (int) $file['size'] > 1024 * MB_IN_BYTES ) {
+            if ( UPLOAD_ERR_OK !== (int) $file['error'] || (int) $file['size'] > ( $vps_storage ? GE_WTP_VPS_Storage::limits()['max_file_bytes'] : 1024 * MB_IN_BYTES ) ) {
                 continue;
             }
 
@@ -84,23 +145,28 @@ final class GE_WTP_Documents {
                 continue;
             }
 
-            $stored_name = wp_generate_uuid4() . '.' . $extension;
-            $destination = trailingslashit( self::private_directory() ) . $stored_name;
-            if ( ! move_uploaded_file( $file['tmp_name'], $destination ) ) {
-                continue;
+            if ( $vps_storage ) {
+                $stored = GE_WTP_VPS_Storage::store_order_upload( $file, $order_id, $context['order_item_id'] ?? 0 );
+                if ( is_wp_error( $stored ) ) { continue; }
+                $analysis = array( 'confidence' => 'pending', 'warning' => 'Pendiente de control de preprensa.' );
+            } else {
+                $stored_name = wp_generate_uuid4() . '.' . $extension;
+                $destination = trailingslashit( self::private_directory() ) . $stored_name;
+                if ( ! move_uploaded_file( $file['tmp_name'], $destination ) ) { continue; }
+                $analysis = self::analyze_file( $destination, $allowed[ $extension ] );
             }
-
             $record = array(
                 'id'          => wp_generate_uuid4(),
-                'stored_name' => $stored_name,
+                'stored_name' => $vps_storage ? '' : $stored_name,
                 'name'        => $original,
                 'mime'        => $allowed[ $extension ],
                 'size'        => (int) $file['size'],
                 'category'    => isset( self::categories()[ $category ] ) ? $category : 'otro',
                 'uploaded_by' => get_current_user_id(),
                 'uploaded_at' => current_time( 'mysql' ),
-                'analysis'    => self::analyze_file( $destination, $allowed[ $extension ] ),
+                'analysis'    => $analysis,
             );
+            if ( $vps_storage ) { $record['provider'] = 'vps'; $record['relative_path'] = $stored['relative_path']; }
             if ( ! empty( $context['order_item_id'] ) ) {
                 $record['order_item_id'] = absint( $context['order_item_id'] );
             }
@@ -252,22 +318,38 @@ final class GE_WTP_Documents {
 
         foreach ( self::get_documents( $order_id ) as $document ) {
             if ( isset( $document['id'] ) && hash_equals( (string) $document['id'], $document_id ) ) {
-                $path = trailingslashit( self::private_directory() ) . wp_basename( $document['stored_name'] );
-                if ( ! is_file( $path ) ) {
-                    break;
-                }
-
-                nocache_headers();
-                $inline = ! empty( $_GET['inline'] ) && ( 'application/pdf' === $document['mime'] || 0 === strpos( (string) $document['mime'], 'image/' ) );
-                header( 'Content-Type: ' . $document['mime'] );
-                header( 'X-Content-Type-Options: nosniff' );
-                header( 'Content-Length: ' . filesize( $path ) );
-                header( 'Content-Disposition: ' . ( $inline ? 'inline' : 'attachment' ) . '; filename="' . rawurlencode( $document['name'] ) . '"' );
-                readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-                exit;
+                self::stream_record( $document, ! empty( $_GET['inline'] ) );
             }
         }
 
         wp_die( 'El documento solicitado no existe.', 404 );
+    }
+
+    /** Streams one already-authorized document. Callers must enforce access first. */
+    public static function stream_record( $document, $inline = false ) {
+        $provider = $document['provider'] ?? 'local';
+        if ( 'vps' === $provider ) {
+            if ( empty( $document['relative_path'] ) || ! class_exists( 'GE_WTP_VPS_Storage' ) ) { wp_die( 'El almacenamiento privado no está disponible.', 503 ); }
+            $path = GE_WTP_VPS_Storage::download_path( $document['relative_path'] );
+        } elseif ( 'r2' === $provider ) {
+            if ( empty( $document['object_key'] ) || ! class_exists( 'GE_WTP_R2_Storage' ) || ! GE_WTP_R2_Storage::configured() ) { wp_die( 'El almacenamiento privado no está disponible.', 503 ); }
+            $url = GE_WTP_R2_Storage::download_url( $document['object_key'], $document['name'] ?? 'archivo', $document['mime'] ?? 'application/octet-stream', 300 );
+            nocache_headers();
+            wp_redirect( esc_url_raw( $url ), 302, 'Graph Express' ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+            exit;
+        } else {
+            $path = trailingslashit( self::private_directory() ) . wp_basename( $document['stored_name'] ?? '' );
+        }
+        if ( ! $path || ! is_file( $path ) ) { wp_die( 'El documento solicitado no existe.', 404 ); }
+        $mime = sanitize_text_field( $document['mime'] ?? 'application/octet-stream' );
+        $name = sanitize_file_name( $document['name'] ?? 'archivo' );
+        $inline = $inline && ( 'application/pdf' === $mime || 0 === strpos( $mime, 'image/' ) );
+        nocache_headers();
+        header( 'Content-Type: ' . $mime );
+        header( 'X-Content-Type-Options: nosniff' );
+        header( 'Content-Length: ' . filesize( $path ) );
+        header( 'Content-Disposition: ' . ( $inline ? 'inline' : 'attachment' ) . '; filename="' . rawurlencode( $name ) . '"' );
+        readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+        exit;
     }
 }

@@ -226,6 +226,7 @@ final class GE_WTP_Orders {
             'limit'   => absint( $limit ),
             'orderby' => 'date',
             'order'   => 'DESC',
+            'status'  => array_values( array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) ) ),
         );
         $orders = wc_get_orders( array_merge( $query, array( 'customer_id' => $user_id ) ) );
 
@@ -268,6 +269,7 @@ final class GE_WTP_Orders {
                 'limit'   => absint( $limit ),
                 'orderby' => 'date',
                 'order'   => 'DESC',
+                'status'  => array_values( array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) ) ),
             )
         );
         return array_values( array_filter( $orders, function ( $order ) { return 'yes' !== $order->get_meta( '_ge_commercial_payment_order', true ); } ) );

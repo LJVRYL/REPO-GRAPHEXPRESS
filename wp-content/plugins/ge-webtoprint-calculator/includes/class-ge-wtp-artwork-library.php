@@ -356,6 +356,7 @@ final class GE_WTP_Artwork_Library {
         check_admin_referer( 'ge_artwork_control_' . $order->get_id() );
         $available = self::order_sources( $order ); $rows = (array) ( $_POST['artwork_items'] ?? array() );
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+            if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && 'production' === GE_WTP_Production::item_status( $item, $order ) ) { continue; }
             $row = isset( $rows[ $item_id ] ) ? (array) $rows[ $item_id ] : array(); $tokens = array();
             foreach ( (array) ( $row['sources'] ?? array() ) as $token ) { $token = sanitize_text_field( wp_unslash( $token ) ); if ( isset( $available[ $token ] ) ) { $tokens[] = $token; } }
             $tokens = array_values( array_unique( $tokens ) );
@@ -371,7 +372,16 @@ final class GE_WTP_Artwork_Library {
             $old_hash = self::release_fingerprint( $item, $old['sources'], $old['version'], $old['expected'], $available );
             $changed = ! hash_equals( $old_hash, $new_hash );
             $customer = $changed ? array() : $old['customer']; $staff = $changed ? array() : $old['staff'];
-            if ( ! empty( $row['customer_approved'] ) && $tokens ) { $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => sanitize_key( $row['customer_method'] ?? 'staff-recorded' ) ); }
+            if ( $changed && class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { $customer = array(); }
+            elseif ( ! empty( $row['customer_approved'] ) && $tokens ) {
+                $method = sanitize_key( $row['customer_method'] ?? 'staff-recorded' );
+                $evidence = sanitize_text_field( wp_unslash( $row['customer_evidence'] ?? '' ) );
+                if ( ! $changed && 'customer-portal' === ( $old['customer']['method'] ?? '' ) ) { $customer = $old['customer']; }
+                else {
+                    if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( ! $evidence || 'customer-portal' === $method ) ) { wp_die( 'Indicá la evidencia de aprobación del cliente. La aprobación por portal sólo puede hacerla el cliente.', 400 ); }
+                    $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => $method, 'evidence' => $evidence );
+                }
+            }
             elseif ( empty( $row['customer_approved'] ) ) { $customer = array(); }
             if ( ! empty( $row['staff_approved'] ) && $tokens ) { $staff = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'staff-control' ); }
             elseif ( empty( $row['staff_approved'] ) ) { $staff = array(); }
@@ -397,6 +407,7 @@ final class GE_WTP_Artwork_Library {
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
             if ( ! in_array( (int) $item_id, $selected, true ) ) { continue; }
             $data = self::item_release_data( $item ); if ( ! $data['sources'] ) { continue; }
+            if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( 'production' === GE_WTP_Production::item_status( $item, $order ) || 'ready' !== $item->get_meta( GE_WTP_Workflow::ITEM_STATE_META, true ) || empty( $data['staff']['approved'] ) ) ) { continue; }
             $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'customer-portal' );
             $item->update_meta_data( '_ge_item_artwork_customer_approval', $customer );
             if ( ! empty( $data['staff']['approved'] ) ) { $item->update_meta_data( '_ge_item_artwork_release_hash', self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) ); $item->update_meta_data( '_ge_item_artwork_released_at', time() ); }
@@ -411,30 +422,44 @@ final class GE_WTP_Artwork_Library {
         echo '<section class="ge-artwork-approval ge-panel"><span class="ge-eyebrow">Archivos para producir</span><h2>Confirmá cada archivo</h2><p>La aprobación del presupuesto no aprueba automáticamente el diseño. Revisá nombre, versión y medidas antes de confirmar.</p><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_artwork_approval"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">'; wp_nonce_field( 'ge_customer_artwork_approval_' . $order->get_id() );
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
             $data = self::item_release_data( $item ); $ready = self::item_ready_for_production( $item, $order );
+            if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( 'production' === GE_WTP_Production::item_status( $item, $order ) || 'ready' !== $item->get_meta( GE_WTP_Workflow::ITEM_STATE_META, true ) || empty( $data['staff']['approved'] ) ) ) { continue; }
             echo '<article class="ge-artwork-approval-item ' . ( $ready ? 'is-ready' : '' ) . '"><div><strong>' . esc_html( $item->get_name() ) . '</strong><small>' . esc_html( number_format_i18n( $item->get_quantity() ) ) . ' unidades · versión ' . esc_html( $data['version'] ?: 'sin definir' ) . '</small></div>';
             if ( ! $data['sources'] ) { echo '<p class="ge-artwork-waiting">Graph Express todavía debe asignar el archivo exacto a este producto.</p>'; }
             else { $has_mapped = true; echo '<ul>'; foreach ( $data['sources'] as $token ) { if ( isset( $available[ $token ] ) ) { echo '<li><a target="_blank" rel="noopener" href="' . esc_url( $available[ $token ]['url'] ) . '">' . esc_html( $available[ $token ]['name'] ) . '</a><small>' . esc_html( $available[ $token ]['code'] . self::analysis_summary( $available[ $token ]['analysis'] ) ) . '</small></li>'; } } echo '</ul>'; self::render_expected( $data['expected'] ); if ( ! empty( $data['customer']['approved'] ) ) { echo '<b class="ge-release-state">✓ Confirmado por vos</b>'; } else { echo '<label class="ge-approval-check"><input type="checkbox" name="approve_items[]" value="' . esc_attr( $item_id ) . '"><span>Confirmo que estos son los archivos correctos para imprimir</span></label>'; } }
             echo '</article>';
         }
         if ( $has_mapped ) { echo '<button class="ge-artwork-approve-button" type="submit">Confirmar archivos seleccionados</button>'; }
-        echo '</form></section>';
+        echo '</form>';
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) {
+            foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+                $data = self::item_release_data( $item );
+                if ( 'ready' !== $item->get_meta( GE_WTP_Workflow::ITEM_STATE_META, true ) || 'production' === GE_WTP_Production::item_status( $item, $order ) || empty( $data['staff']['approved'] ) || empty( $data['sources'] ) || ! empty( $data['customer']['approved'] ) ) { continue; }
+                echo '<form class="ge-workflow-change-request" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_customer_changes"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '"><input type="hidden" name="item_id" value="' . esc_attr( $item_id ) . '">';
+                wp_nonce_field( 'ge_workflow_customer_changes_' . $order->get_id() );
+                echo '<label>¿Necesitás cambios en ' . esc_html( $item->get_name() ) . '?<textarea name="message" required maxlength="2000" rows="3" placeholder="Describí la corrección necesaria"></textarea></label><button type="submit">Solicitar cambios</button></form>';
+            }
+        }
+        echo '</section>';
     }
 
     public static function render_staff_artwork_control() {
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::artwork_already_rendered() ) { return; }
         if ( ! is_page( 'gestion' ) || ! GE_WTP_Staff_Portal::can_access() || 'production' !== sanitize_key( $_GET['section'] ?? '' ) ) { return; }
         $order = wc_get_order( absint( $_GET['order_id'] ?? 0 ) ); if ( ! $order ) { return; }
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && 'review' !== GE_WTP_Workflow::step( $order ) ) { return; }
         $available = self::order_sources( $order );
         ?>
-        <section class="ge-production-card ge-artwork-control" data-ge-artwork-control><div class="ge-production-section-head"><div><span>Control obligatorio</span><h2>Archivos por producto</h2></div><b><?php echo self::order_ready_for_dispatch( $order ) ? 'Listo para producir' : 'Producción bloqueada'; ?></b></div>
+        <section class="ge-production-card ge-artwork-control" data-ge-artwork-control><div class="ge-production-section-head"><div><span>Control obligatorio</span><h2>Archivos por producto</h2></div><b><?php echo GE_WTP_Customer_Quotes::is_quote_order( $order ) ? ( GE_WTP_Customer_Quotes::can_staff_release( $order ) ? 'Listo para generar orden' : 'Pendiente de control' ) : ( self::order_ready_for_dispatch( $order ) ? 'Listo para producir' : 'Producción bloqueada' ); ?></b></div>
         <?php if ( ! empty( $_GET['artwork_saved'] ) ) : ?><div class="ge-production-notice">El control de archivos quedó guardado.</div><?php endif; ?>
         <p>Asigná el archivo exacto a cada ítem. Si cambia un archivo, una versión o una medida, las aprobaciones anteriores se invalidan.</p>
         <?php self::render_duplicate_warning( $available ); ?>
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_artwork_control_save"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_artwork_control_' . $order->get_id() ); ?>
-        <div class="ge-artwork-control-list"><?php foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) : $data = self::item_release_data( $item ); ?>
+        <div class="ge-artwork-control-list"><?php foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) : if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && 'production' === GE_WTP_Production::item_status( $item, $order ) ) { continue; } $data = self::item_release_data( $item ); ?>
         <article><header><div><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) ); ?> unidades</small></div><b class="<?php echo self::item_ready_for_production( $item, $order ) ? 'is-ready' : 'is-blocked'; ?>"><?php echo self::item_ready_for_production( $item, $order ) ? 'LIBERADO' : 'PENDIENTE'; ?></b></header>
         <fieldset><legend>Archivo(s) exacto(s) para este producto</legend><?php if ( ! $available ) : ?><p>No hay archivos vinculados al pedido. Cargalos en “Documentos del pedido” como Arte o vinculalos desde la Biblioteca.</p><?php else : foreach ( $available as $token => $source ) : ?><label class="ge-artwork-source"><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][sources][]" value="<?php echo esc_attr( $token ); ?>" <?php checked( in_array( $token, $data['sources'], true ) ); ?>><span><strong><?php echo esc_html( $source['name'] ); ?></strong><small><?php echo esc_html( $source['code'] . self::analysis_summary( $source['analysis'] ) ); ?></small></span><a target="_blank" rel="noopener" href="<?php echo esc_url( $source['url'] ); ?>">Ver</a></label><?php endforeach; endif; ?></fieldset>
         <div class="ge-artwork-spec-grid"><label>Versión<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][version]" value="<?php echo esc_attr( $data['version'] ); ?>" placeholder="v1 final"></label><label>Medida esperada<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][dimensions]" value="<?php echo esc_attr( $data['expected']['dimensions'] ?? '' ); ?>" placeholder="21 × 14,5 cm"></label><label>Páginas/diseños esperados<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][pages]" value="<?php echo esc_attr( $data['expected']['pages'] ?? '' ); ?>" placeholder="5 archivos / 200 números"></label><label>Orientación<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][orientation]" value="<?php echo esc_attr( $data['expected']['orientation'] ?? '' ); ?>" placeholder="Horizontal"></label><label class="is-wide">Observaciones<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][notes]" value="<?php echo esc_attr( $data['expected']['notes'] ?? '' ); ?>" placeholder="Sponsors alternados, numeración, frente..."></label></div>
         <div class="ge-artwork-confirm-grid"><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_approved]" value="1" <?php checked( ! empty( $data['customer']['approved'] ) ); ?>><span><strong>Cliente confirmó este archivo</strong><small>Marcá sólo con evidencia en portal, email, WhatsApp o presencial.</small></span></label><label>Método<select name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_method]"><option value="staff-recorded">Registrado manualmente</option><option value="whatsapp" <?php selected( $data['customer']['method'] ?? '', 'whatsapp' ); ?>>WhatsApp</option><option value="email" <?php selected( $data['customer']['method'] ?? '', 'email' ); ?>>Email</option><option value="in-person" <?php selected( $data['customer']['method'] ?? '', 'in-person' ); ?>>Presencial</option><option value="customer-portal" <?php selected( $data['customer']['method'] ?? '', 'customer-portal' ); ?>>Portal del cliente</option></select></label><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][staff_approved]" value="1" <?php checked( ! empty( $data['staff']['approved'] ) ); ?>><span><strong>Control técnico Graph Express</strong><small>Nombre, medida, páginas, orientación y versión revisados.</small></span></label></div>
+        <?php if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) : ?><label>Referencia de la aprobación externa del cliente<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_evidence]" maxlength="240" value="<?php echo esc_attr( $data['customer']['evidence'] ?? '' ); ?>" placeholder="Fecha y enlace o mensaje de WhatsApp, email o aprobación presencial"></label><?php endif; ?>
         </article><?php endforeach; ?></div><div class="ge-artwork-control-actions"><button class="ge-staff-button" type="submit">Guardar control de archivos</button><?php if ( self::order_ready_for_dispatch( $order ) ) : ?><a target="_blank" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=ge_artwork_release_sheet&order_id=' . $order->get_id() ), 'ge_artwork_release_sheet_' . $order->get_id() ) ); ?>">Abrir ficha “Archivos a producir” ↗</a><?php endif; ?></div></form></section>
         <?php
     }
@@ -624,7 +649,7 @@ final class GE_WTP_Artwork_Library {
         $stored = wp_generate_uuid4() . '.pdf'; $path = trailingslashit( self::original_directory() ) . $stored; if ( ! rename( $temp, $path ) ) { wp_delete_file( $temp ); return new WP_Error( 'canva_move', 'No se pudo conservar el PDF.' ); }
         update_post_meta( $id, '_ge_artwork_original', array( 'provider' => 'local', 'source' => 'canva', 'stored_name' => $stored, 'name' => 'canva-' . $id . '.pdf', 'size' => filesize( $path ), 'mime' => 'application/pdf', 'uploaded_at' => current_time( 'mysql' ) ) ); update_post_meta( $id, '_ge_artwork_original_name', 'canva-' . $id . '.pdf' ); update_post_meta( $id, '_ge_artwork_storage_provider', 'local' ); update_post_meta( $id, '_ge_artwork_status', 'review' ); return true;
     }
-    private static function provider_label( $provider ) { $labels = array( 'pending' => 'Ubicación a configurar', 'local' => 'Almacenamiento privado local', 'graph-pc' => 'PC Graph Express', 'drive' => 'Google Drive', 'canva' => 'Canva', 'dropbox' => 'Dropbox', 's3' => 'Almacenamiento externo', 'other' => 'Ubicación externa' ); return isset( $labels[ $provider ] ) ? $labels[ $provider ] : 'Ubicación a configurar'; }
+    private static function provider_label( $provider ) { $labels = array( 'pending' => 'Ubicación a configurar', 'local' => 'Almacenamiento privado local', 'r2' => 'Cloudflare R2 privado', 'graph-pc' => 'PC Graph Express', 'drive' => 'Google Drive', 'canva' => 'Canva', 'dropbox' => 'Dropbox', 's3' => 'Almacenamiento externo', 'other' => 'Ubicación externa' ); return isset( $labels[ $provider ] ) ? $labels[ $provider ] : 'Ubicación a configurar'; }
     private static function posted_text( $key ) { return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : ''; }
     private static function posted_choice( $key, $allowed, $default ) { $value = self::posted_text( $key ); return in_array( $value, $allowed, true ) ? $value : $default; }
     private static function staff_redirect( $notice, $id = 0 ) { $args = array( 'library_notice' => $notice ); if ( $id ) { $args['artwork_id'] = $id; } wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'library', $args ) ); exit; }

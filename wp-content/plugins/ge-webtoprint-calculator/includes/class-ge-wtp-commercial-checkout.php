@@ -161,7 +161,8 @@ final class GE_WTP_Commercial_Checkout {
             if ( $order->get_meta( '_ge_commercial_balance_payment_order', true ) ) { throw new DomainException( 'Hay un cobro de saldo en curso; concilialo antes de registrar efectivo.' ); }
             $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
             if ( $due <= 0 ) { throw new DomainException( 'El saldo ya está abonado.' ); }
-            $attempts = (array) $order->get_meta( '_ge_commercial_credited_attempts', true );
+            $attempts = $order->get_meta( '_ge_commercial_credited_attempts', true );
+            $attempts = is_array( $attempts ) ? $attempts : array();
             $attempts[] = array( 'key' => 'cash:order:' . $id, 'amount_cents' => $due );
             $state = GE_WTP_Quote_Balance::reconcile( (int) $order->get_meta( '_ge_final_total_cents', true ), $attempts );
             $order->update_meta_data( '_ge_commercial_credited_attempts', $attempts );
@@ -373,8 +374,9 @@ final class GE_WTP_Commercial_Checkout {
                 update_post_meta( $quote_id, GE_WTP_Commercial_Quotes::ORDER_META, $order->get_id() );
                 update_post_meta( $quote_id, GE_WTP_Commercial_Quotes::STATUS_META, 'converted' );
             }
-            $credited = (array) $order->get_meta( '_ge_commercial_credited_attempts', true );
-            $credited[] = array( 'key' => 'wc:' . $payment->get_id(), 'amount_cents' => $received );
+            $credited = $order->get_meta( '_ge_commercial_credited_attempts', true );
+            $credited = is_array( $credited ) ? $credited : array();
+            $credited[] = array( 'key' => 'wc:payment:' . $payment->get_id(), 'amount_cents' => $received );
             $total = (int) $order->get_meta( '_ge_final_total_cents', true );
             $state = GE_WTP_Quote_Balance::reconcile( $total, $credited );
             $order->update_meta_data( '_ge_commercial_credited_attempts', $credited );
@@ -459,6 +461,19 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( '_ge_final_total_cents', $final );
         $order->update_meta_data( '_ge_deposit_percent', $snapshot['deposit_percent'] );
         $order->calculate_totals( false );
+        $constructed_net = 0;
+        foreach ( $order->get_items( 'line_item' ) as $line_item ) {
+            $constructed_net += GE_WTP_Quote_Balance::cents( wc_format_decimal( $line_item->get_total(), 2 ) );
+        }
+        if ( $constructed_net + $tax_total + $adjustment !== $final ) {
+            $order->add_order_note( 'Los ítems construidos no coinciden con el presupuesto aceptado; no liberar producción.' );
+            $order->save();
+            return new WP_Error( 'ge_quote_total_mismatch', 'Los ítems de la orden no coinciden con el presupuesto.' );
+        }
+        // WooCommerce may have global tax calculation disabled. The accepted
+        // snapshot remains authoritative for this order's tax and final total.
+        $order->set_cart_tax( GE_WTP_Quote_Balance::decimal( $tax_total ) );
+        $order->set_total( GE_WTP_Quote_Balance::decimal( $final ) );
         $calculated = GE_WTP_Quote_Balance::cents( wc_format_decimal( $order->get_total(), 2 ) );
         if ( $calculated !== $final ) { $order->add_order_note( 'Total inconsistente con presupuesto aceptado; no liberar producción.' ); $order->save(); return new WP_Error( 'ge_quote_total_mismatch', 'El total de la orden no coincide con el presupuesto.' ); }
         $order->set_status( 'ge-confirmado', 'Pedido creado tras acreditarse el primer cobro del presupuesto.' );

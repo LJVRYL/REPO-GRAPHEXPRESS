@@ -61,7 +61,7 @@ final class GE_WTP_Public_Catalog {
             'esmerilado-impreso' => self::item('GF-VIN-005', 'Vinilo esmerilado impreso', 'vinilos', 'Vinilo traslúcido impreso para privacidad y ambientación de vidrios. Incluye corte, despuntillado y transfer.', array('Unidad de cálculo' => array('Metro cuadrado'), 'Anchos disponibles' => array('60 cm', '120 cm'), 'Incluye' => array('Impresión', 'Corte', 'Despuntillado', 'Transfer')), array('m2' => 30000), 'm²'),
             'vinilo-de-corte' => self::item('GF-VIN-006', 'Vinilo de corte', 'vinilos', 'Gráfica calada sin fondo para vidrieras, cartelería, vehículos y señalización.', array('Anchos disponibles' => array('60 cm', '120 cm'), 'Colores' => array('Blanco', 'Negro', 'Gris oscuro'), 'Incluye' => array('Despuntillado', 'Transfer')), array('60 cm' => 19000, '120 cm' => 38000), 'metro lineal'),
             'vinilo-esmerilado-corte' => self::item('GF-VIN-007', 'Vinilo esmerilado de corte', 'vinilos', 'Vinilo esmerilado calado para privacidad, señalética y decoración de superficies vidriadas.', array('Anchos disponibles' => array('60 cm', '120 cm'), 'Incluye' => array('Despuntillado', 'Transfer')), array('60 cm' => 14500, '120 cm' => 28000), 'metro lineal'),
-            'vinilo-impreso-troquelado' => self::item('GF-VIN-008', 'Vinilo impreso y troquelado', 'vinilos', 'Plancha de etiquetas, formas y piezas autoadhesivas impresas con corte electrónico.', array('Medidas disponibles' => array('100 × 60 cm', '100 × 100 cm'), 'Material' => array('Vinilo base blanca', 'Vinilo cristal'), 'Adicional' => array('Transfer opcional')), array('100 × 60 cm' => 14500, '100 × 100 cm' => 19000), 'plancha'),
+            'stickers-en-vinilo' => self::item('GF-VIN-008', 'Stickers en vinilo', 'vinilos', 'Stickers resistentes al agua sobre vinilo blanco o clear, disponibles en plancha con medio corte o como piezas individuales con corte completo.', array('Tamaño' => array('100 × 60 cm', '100 × 100 cm'), 'Base' => array('Blanca', 'Clear'), 'Corte' => array('Medio corte', 'Corte completo'), 'Adicional' => array('Transfer opcional')), array('100x60-base-blanca-medio-corte' => 14500, '100x60-base-blanca-corte-completo' => 14500, '100x60-base-clear-medio-corte' => 14500, '100x60-base-clear-corte-completo' => 14500, '100x100-base-blanca-medio-corte' => 19000, '100x100-base-blanca-corte-completo' => 19000, '100x100-base-clear-medio-corte' => 19000, '100x100-base-clear-corte-completo' => 19000), 'plancha'),
 
             'papel-fotografico-260' => self::item('GF-ESP-001', 'Papel fotográfico 260 g', 'soportes-especiales', 'Impresión de alta definición sobre papel fotográfico para láminas, exhibiciones y presentaciones.', array('Unidad de cálculo' => array('Metro cuadrado'), 'Ancho imprimible' => array('104 cm'), 'Gramaje' => array('260 g')), array('m2' => 14700), 'm²'),
             'papel-blueback-150' => self::item('GF-ESP-002', 'Papel blueback 150 g', 'soportes-especiales', 'Papel con dorso azul para cartelería y pegado sobre superficies, con buena opacidad.', array('Unidad de cálculo' => array('Metro lineal'), 'Ancho' => array('148 cm'), 'Gramaje' => array('150 g')), array('ml' => 15700), 'metro lineal'),
@@ -128,7 +128,15 @@ final class GE_WTP_Public_Catalog {
             $product->set_sku($data['sku']);
             $product->set_regular_price('');
             $product->set_sale_price('');
-            $product->set_category_ids(array($category_ids['gran-formato'], $category_ids[$data['group']]));
+            if ('stickers-en-vinilo' === $key) {
+                $digital_parent = get_term_by('slug', 'imprenta-digital', 'product_cat');
+                $stickers_category = get_term_by('slug', 'stickers-autoadhesivos', 'product_cat');
+                $product->set_category_ids($digital_parent && $stickers_category
+                    ? array((int) $digital_parent->term_id, (int) $stickers_category->term_id)
+                    : array($category_ids['gran-formato'], $category_ids[$data['group']]));
+            } else {
+                $product->set_category_ids(array($category_ids['gran-formato'], $category_ids[$data['group']]));
+            }
             $product->set_menu_order($position++);
             $product->set_reviews_allowed(false);
             $product->set_attributes(self::build_attributes($data['attributes']));

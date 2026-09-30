@@ -39,7 +39,9 @@ final class GE_WTP_Commercial_Quote_UI {
         wp_nonce_field( 'ge_commercial_quote_save' );
         if ( $editing ) { echo '<input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="expected_version" value="' . esc_attr( $quote['version'] ) . '">'; }
         echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>01 · Cliente</span><h2>Datos de contacto</h2></div></div><div class="ge-manual-contact-grid"><label>Nombre o razón social<input name="customer_name" required maxlength="160" value="' . esc_attr( $customer ? $customer->display_name : '' ) . '"' . ( $editing ? ' readonly' : '' ) . '></label><label>Email<input type="email" name="customer_email" required maxlength="190" value="' . esc_attr( $customer ? $customer->user_email : '' ) . '"' . ( $editing ? ' readonly' : '' ) . '></label></div><p class="ge-manual-help">' . esc_html( $editing ? 'Para cambiar de cliente, creá otro presupuesto.' : 'Si el email ya existe, se usa su ficha. Si es nuevo, se crea una ficha y se prepara el acceso al portal.' ) . '</p></section>';
-        echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>02 · Ítems</span><h2>Productos y servicios</h2></div><button class="ge-manual-add-line" type="button" data-ge-add-line>＋ Agregar ítem</button></div><p>Precios unitarios antes de IVA.</p><div class="ge-manual-lines" data-ge-lines>';
+        $issuer = GE_WTP_Billing::entity();
+        $is_invoice_c = 'monotributo' === ( $issuer['vat_status'] ?? '' );
+        echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>02 · Ítems</span><h2>Productos y servicios</h2></div><button class="ge-manual-add-line" type="button" data-ge-add-line>＋ Agregar ítem</button></div><p>' . esc_html( $is_invoice_c ? 'Ingresá el precio final de cada ítem. La Factura C no discrimina IVA.' : 'Ingresá precios unitarios antes de IVA.' ) . '</p><div class="ge-manual-lines" data-ge-lines>';
         if ( $editing && ! empty( $snapshot['items'] ) ) { foreach ( $snapshot['items'] as $index => $line ) { self::line_markup( $index, $line ); } }
         else { self::line_markup( 0 ); }
         echo '</div><datalist id="ge-manual-products">';
@@ -55,7 +57,8 @@ final class GE_WTP_Commercial_Quote_UI {
         $product_id = absint( $line['product_id'] ?? 0 );
         $label = (string) ( $line['name'] ?? '' ) . ( $product_id ? ' (#' . $product_id . ')' : '' );
         $price = isset( $line['unit_net_cents'] ) ? GE_WTP_Quote_Balance::decimal( (int) $line['unit_net_cents'] ) : '0';
-        echo '<div class="ge-manual-line" data-ge-line><label class="is-product">Producto o servicio<input type="search" name="lines[' . esc_attr( $index ) . '][label]" list="ge-manual-products" required maxlength="200" value="' . esc_attr( $label ) . '"><input type="hidden" name="lines[' . esc_attr( $index ) . '][product_id]" value="' . esc_attr( $product_id ) . '"></label><label>Cantidad<input type="number" name="lines[' . esc_attr( $index ) . '][quantity]" required min="1" step="1" value="' . esc_attr( $line['quantity'] ?? 1 ) . '"></label><label>Precio unitario neto ARS<input type="number" name="lines[' . esc_attr( $index ) . '][unit_price]" min="0.01" step="0.01" value="' . esc_attr( $price ) . '"></label><label class="is-detail">Medidas, configuración y descripción<input type="text" name="lines[' . esc_attr( $index ) . '][details]" maxlength="500" value="' . esc_attr( $line['details'] ?? '' ) . '"></label><button type="button" data-ge-remove-line aria-label="Quitar ítem">×</button></div>';
+        $price_label = 'monotributo' === ( GE_WTP_Billing::entity()['vat_status'] ?? '' ) ? 'Precio unitario final ARS' : 'Precio unitario neto ARS';
+        echo '<div class="ge-manual-line" data-ge-line><label class="is-product">Producto o servicio<input type="search" name="lines[' . esc_attr( $index ) . '][label]" list="ge-manual-products" required maxlength="200" value="' . esc_attr( $label ) . '"><input type="hidden" name="lines[' . esc_attr( $index ) . '][product_id]" value="' . esc_attr( $product_id ) . '"></label><label>Cantidad<input type="number" name="lines[' . esc_attr( $index ) . '][quantity]" required min="1" step="1" value="' . esc_attr( $line['quantity'] ?? 1 ) . '"></label><label>' . esc_html( $price_label ) . '<input type="number" name="lines[' . esc_attr( $index ) . '][unit_price]" min="0.01" step="0.01" value="' . esc_attr( $price ) . '"></label><label class="is-detail">Medidas, configuración y descripción<input type="text" name="lines[' . esc_attr( $index ) . '][details]" maxlength="500" value="' . esc_attr( $line['details'] ?? '' ) . '"></label><button type="button" data-ge-remove-line aria-label="Quitar ítem">×</button></div>';
     }
 
     private static function render_staff_detail( $quote ) {
@@ -108,13 +111,14 @@ final class GE_WTP_Commercial_Quote_UI {
 
     private static function render_snapshot( $snapshot, $customer = false ) {
         if ( empty( $snapshot['items'] ) ) { return; }
+        $is_invoice_c = 'C' === ( $snapshot['billing']['resolution']['document_type'] ?? '' );
         echo '<ul class="ge-customer-quote-options">';
         foreach ( $snapshot['items'] as $line ) {
-            echo '<li><span><strong>' . esc_html( $line['name'] ) . '</strong><br>' . esc_html( $line['quantity'] . ' × ' . GE_WTP_Quote_Balance::decimal( $line['unit_net_cents'] ) . ' ARS' ) . '<br>' . esc_html( $line['details'] ) . '</span><strong>' . esc_html( GE_WTP_Quote_Balance::decimal( $line['net_cents'] ) . ' ARS netos' ) . '</strong></li>';
+            echo '<li><span><strong>' . esc_html( $line['name'] ) . '</strong><br>' . esc_html( $line['quantity'] . ' × ' . GE_WTP_Quote_Balance::decimal( $line['unit_net_cents'] ) . ' ARS' ) . '<br>' . esc_html( $line['details'] ) . '</span><strong>' . esc_html( GE_WTP_Quote_Balance::decimal( $line['net_cents'] ) . ( $is_invoice_c ? ' ARS' : ' ARS netos' ) ) . '</strong></li>';
         }
-        echo '</ul><p>Subtotal neto: <strong>' . esc_html( GE_WTP_Quote_Balance::decimal( $snapshot['net_cents'] ) . ' ARS' ) . '</strong></p>';
+        echo '</ul><p>' . esc_html( $is_invoice_c ? 'Subtotal' : 'Subtotal neto' ) . ': <strong>' . esc_html( GE_WTP_Quote_Balance::decimal( $snapshot['net_cents'] ) . ' ARS' ) . '</strong></p>';
         if ( isset( $snapshot['total_cents'] ) ) {
-            echo '<p>Impuestos: ' . esc_html( GE_WTP_Quote_Balance::decimal( $snapshot['tax_cents'] ) . ' ARS' ) . ' · Total: <strong>' . esc_html( GE_WTP_Quote_Balance::decimal( $snapshot['total_cents'] ) . ' ARS' ) . '</strong></p>';
+            echo '<p>' . ( $is_invoice_c ? 'Factura C · IVA no discriminado · ' : 'Impuestos: ' . esc_html( GE_WTP_Quote_Balance::decimal( $snapshot['tax_cents'] ) . ' ARS' ) . ' · ' ) . 'Total: <strong>' . esc_html( GE_WTP_Quote_Balance::decimal( $snapshot['total_cents'] ) . ' ARS' ) . '</strong></p>';
         } elseif ( ! $customer ) { echo '<p>Impuestos y total final pendientes de resolver al enviar.</p>'; }
         if ( ! empty( $snapshot['valid_until'] ) ) { echo '<p>Válido hasta: ' . esc_html( $snapshot['valid_until'] ) . '</p>'; }
         if ( ! empty( $snapshot['notes_customer'] ) ) { echo '<p>' . nl2br( esc_html( $snapshot['notes_customer'] ) ) . '</p>'; }

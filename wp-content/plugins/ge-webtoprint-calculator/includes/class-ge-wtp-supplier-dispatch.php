@@ -50,6 +50,7 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     public static function maybe_auto_dispatch( $order ) {
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { return; }
         if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_supplier_auto_dispatch_at' ) ) { return; }
         if ( class_exists( 'GE_WTP_Production' ) && ! GE_WTP_Production::actionable_items( $order, false ) ) { return; }
         if ( class_exists( 'GE_WTP_Artwork_Library' ) && ! GE_WTP_Artwork_Library::order_ready_for_dispatch( $order ) ) { return; }
@@ -63,6 +64,7 @@ final class GE_WTP_Supplier_Dispatch {
 
     public static function retry_auto_dispatch( $order_id ) {
         $order = wc_get_order( absint( $order_id ) );
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { return; }
         if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_supplier_auto_dispatch_at' ) ) { return; }
         if ( class_exists( 'GE_WTP_Artwork_Library' ) && ! GE_WTP_Artwork_Library::order_ready_for_dispatch( $order ) ) { return; }
         $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) );
@@ -102,11 +104,11 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     public static function handle_email() {
-        self::guard(); $order = self::order(); check_admin_referer( 'ge_supplier_email_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $sent = $profile && is_email( $profile['email'] ) ? self::send_email( $order, $profile ) : false; self::log( $order, 'email', $sent ); if ( $sent ) { $order->update_meta_data( '_ge_supplier_auto_dispatch_at', current_time( 'mysql' ) ); wp_clear_scheduled_hook( self::RETRY_HOOK, array( $order->get_id() ) ); $order->save(); } else { self::notify_failure( $order, $profile ); } self::redirect_order( $order, $sent ? 'supplier-sent' : 'supplier-failed' );
+        self::guard(); $order = self::order(); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { wp_die( 'Usá la salida a proveedor del nuevo circuito.', 403 ); } check_admin_referer( 'ge_supplier_email_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $sent = $profile && is_email( $profile['email'] ) ? self::send_email( $order, $profile ) : false; self::log( $order, 'email', $sent ); if ( $sent ) { $order->update_meta_data( '_ge_supplier_auto_dispatch_at', current_time( 'mysql' ) ); wp_clear_scheduled_hook( self::RETRY_HOOK, array( $order->get_id() ) ); $order->save(); } else { self::notify_failure( $order, $profile ); } self::redirect_order( $order, $sent ? 'supplier-sent' : 'supplier-failed' );
     }
 
     public static function handle_whatsapp() {
-        self::guard(); $order = self::order(); check_admin_referer( 'ge_supplier_whatsapp_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $phone = $profile ? self::normalize_phone( $profile['whatsapp'] ) : ''; if ( ! $phone ) { self::redirect_order( $order, 'supplier-failed' ); }
+        self::guard(); $order = self::order(); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { wp_die( 'Usá la salida a proveedor del nuevo circuito.', 403 ); } check_admin_referer( 'ge_supplier_whatsapp_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $phone = $profile ? self::normalize_phone( $profile['whatsapp'] ) : ''; if ( ! $phone ) { self::redirect_order( $order, 'supplier-failed' ); }
         self::log( $order, 'whatsapp', true ); wp_redirect( 'https://wa.me/' . rawurlencode( $phone ) . '?text=' . rawurlencode( self::whatsapp_message( $order ) ) ); exit;
     }
 

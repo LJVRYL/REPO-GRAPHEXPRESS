@@ -11,6 +11,8 @@ final class GE_WTP_Production {
         add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'store_api_order' ), 40, 1 );
         add_action( 'admin_post_ge_production_save', array( __CLASS__, 'handle_save' ) );
         add_action( 'admin_post_ge_production_document', array( __CLASS__, 'handle_document' ) );
+        add_action( 'admin_post_ge_production_document_trash', array( __CLASS__, 'handle_document_trash' ) );
+        add_action( 'admin_post_ge_production_document_restore', array( __CLASS__, 'handle_document_restore' ) );
         add_action( 'admin_post_ge_production_quick_status', array( __CLASS__, 'handle_quick_status' ) );
         add_action( 'admin_post_ge_production_create_item_order', array( __CLASS__, 'handle_create_item_order' ) );
         add_action( 'admin_post_ge_production_event', array( __CLASS__, 'handle_event' ) );
@@ -57,7 +59,7 @@ final class GE_WTP_Production {
     }
 
     public static function item_statuses() {
-        return array( 'pending' => 'Pendiente de aprobación', 'approved' => 'Aprobado', 'production' => 'En producción', 'ready' => 'Listo para entrega', 'cancelled' => 'Cancelado' );
+        return array( 'pending' => 'Recibido', 'approved' => 'Aprobado', 'production' => 'En producción', 'ready' => 'Listo para entrega', 'cancelled' => 'Cancelado' );
     }
 
     public static function item_status( $item, $order = false ) {
@@ -72,6 +74,8 @@ final class GE_WTP_Production {
 
     public static function item_status_label( $item, $order = false ) {
         $status = self::item_status( $item, $order );
+        $order = $order instanceof WC_Order ? $order : ( $item instanceof WC_Order_Item_Product ? wc_get_order( $item->get_order_id() ) : false );
+        if ( 'cancelled' !== $status && $order && 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) ) { return 'Entregado'; }
         return self::item_statuses()[ $status ] ?? self::item_statuses()['pending'];
     }
 
@@ -84,12 +88,12 @@ final class GE_WTP_Production {
     public static function render_item_work_order_control( $order, $item ) {
         if ( ! $order instanceof WC_Order || ! $item instanceof WC_Order_Item_Product ) { return; }
         if ( 'yes' === $order->get_meta( '_ge_work_order' ) ) { return; }
-        if ( ! self::allows_item_work_orders( $order ) ) { return; }
         $work_order_id = self::item_work_order_id( $item );
         if ( $work_order_id ) {
             echo '<a class="ge-item-work-order is-created" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $work_order_id ) ) ) . '">Abrir orden de trabajo #' . esc_html( $work_order_id ) . ' →</a>';
             return;
         }
+        if ( ! self::allows_item_work_orders( $order ) ) { return; }
         if ( 'cancelled' === self::item_status( $item, $order ) ) { return; }
         ?><form class="ge-item-work-order-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_production_create_item_order"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="item_id" value="<?php echo esc_attr( $item->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_create_item_order_' . $order->get_id() . '_' . $item->get_id() ); ?><button class="ge-item-work-order" type="submit">Confirmar ítem y generar orden →</button></form><?php
     }
@@ -166,6 +170,7 @@ final class GE_WTP_Production {
             self::sync_order_status_from_items( $source_order );
             $source_order->add_order_note( 'Se generó la orden de trabajo ' . $work_order->get_meta( '_ge_manual_reference' ) . ' únicamente para el ítem “' . $source_item->get_name() . '”.' );
             $source_order->save();
+            if ( class_exists( 'GE_WTP_Customer_Quotes' ) ) { GE_WTP_Customer_Quotes::mark_production_approved( $source_order, $work_order ); }
             $work_order->add_order_note( 'Origen: presupuesto #' . $source_order->get_id() . ', ítem #' . $item_id . '.' );
             $work_order->save();
         } catch ( Throwable $error ) {
@@ -180,6 +185,7 @@ final class GE_WTP_Production {
 
     private static function allows_item_work_orders( $order ) {
         if ( ! $order instanceof WC_Order || 'yes' === $order->get_meta( '_ge_work_order' ) ) { return false; }
+        if ( class_exists( 'GE_WTP_Customer_Quotes' ) && GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { return GE_WTP_Customer_Quotes::can_staff_release( $order ); }
         if ( 'yes' === $order->get_meta( '_ge_quote' ) || 'yes' === $order->get_meta( '_ge_markcom_order' ) ) { return true; }
         if ( 'yes' !== $order->get_meta( '_ge_manual_order' ) ) { return false; }
         foreach ( $order->get_items( 'line_item' ) as $item ) {
@@ -224,11 +230,11 @@ final class GE_WTP_Production {
 
     public static function checkout_order( $order_id, $posted_data, $order ) {
         if ( ! $order instanceof WC_Order ) { $order = wc_get_order( $order_id ); }
-        if ( $order ) { self::ensure_order( $order ); }
+        if ( $order ) { if ( class_exists( 'GE_WTP_Workflow' ) ) { GE_WTP_Workflow::enable( $order ); } self::ensure_order( $order ); }
     }
 
     public static function store_api_order( $order ) {
-        if ( $order instanceof WC_Order ) { self::ensure_order( $order ); }
+        if ( $order instanceof WC_Order ) { if ( class_exists( 'GE_WTP_Workflow' ) ) { GE_WTP_Workflow::enable( $order ); } self::ensure_order( $order ); }
     }
 
     public static function ensure_order( $order ) {
@@ -250,13 +256,14 @@ final class GE_WTP_Production {
         $order->update_meta_data( '_ge_production_supplier', $supplier );
         $order->update_meta_data( '_ge_production_promised_date', $date );
         $order->update_meta_data( '_ge_estimated_date', $order->get_meta( '_ge_estimated_date' ) ?: $date );
-        $order->update_meta_data( '_ge_production_status', 'approved' );
+        $workflow = class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order );
+        $order->update_meta_data( '_ge_production_status', $workflow ? 'pending' : 'approved' );
         $order->update_meta_data( '_ge_production_priority', 'normal' );
         $order->update_meta_data( '_ge_production_assignment_reason', implode( ' ', array_unique( wp_list_pluck( $assignments, 'reason' ) ) ) );
-        $order->update_meta_data( '_ge_production_processes', self::default_processes( $supplier ) );
+        $order->update_meta_data( '_ge_production_processes', $workflow ? array() : self::default_processes( $supplier ) );
         $order->update_meta_data( '_ge_production_initialized', current_time( 'mysql' ) );
         $order->save();
-        if ( class_exists( 'GE_WTP_Supplier_Dispatch' ) ) { GE_WTP_Supplier_Dispatch::maybe_auto_dispatch( $order ); }
+        if ( ! $workflow && class_exists( 'GE_WTP_Supplier_Dispatch' ) ) { GE_WTP_Supplier_Dispatch::maybe_auto_dispatch( $order ); }
     }
 
     private static function assignment_for_item( $item, $created ) {
@@ -336,7 +343,7 @@ final class GE_WTP_Production {
         $production_css = GE_WTP_PLUGIN_DIR . 'assets/css/production.css';
         wp_enqueue_style( 'ge-production', GE_WTP_PLUGIN_URL . 'assets/css/production.css', array( 'ge-staff-portal' ), is_file( $production_css ) ? (string) filemtime( $production_css ) : GE_WTP_VERSION );
         $order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
-        if ( $order_id ) { $order = wc_get_order( $order_id ); if ( $order ) { self::ensure_order( $order ); self::render_order( $order ); return; } }
+        if ( $order_id ) { $order = wc_get_order( $order_id ); if ( $order ) { self::ensure_order( $order ); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { GE_WTP_Workflow::render( $order ); } else { self::render_order( $order ); } return; } }
         $view = sanitize_key( wp_unslash( $_GET['view'] ?? 'queue' ) );
         self::render_tabs( $view );
         if ( 'new' === $view && class_exists( 'GE_WTP_Manual_Orders' ) ) { GE_WTP_Manual_Orders::render(); return; }
@@ -355,7 +362,7 @@ final class GE_WTP_Production {
         $active = array(); $delayed = 0; $today = 0; $ready = 0;
         foreach ( $orders as $order ) {
             self::ensure_order( $order );
-            if ( in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed', 'completed', 'ge-entregado', 'ge-facturado', 'ge-cobrado' ), true ) ) { continue; }
+            if ( 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { continue; }
             if ( ! self::actionable_items( $order ) ) { continue; }
             $status = $order->get_meta( '_ge_production_status' );
             if ( 'ready' === $status ) { $ready++; continue; }
@@ -388,6 +395,7 @@ final class GE_WTP_Production {
         <?php self::render_notice(); ?>
         <?php if ( class_exists( 'GE_WTP_Manual_Orders' ) ) { GE_WTP_Manual_Orders::render_order_contact( $order ); } ?>
         <div class="ge-production-hero"><div><span>Orden de trabajo</span><h1><?php echo esc_html( $reference ); ?></h1><p><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></p></div><b class="is-<?php echo esc_attr( $alert['key'] ); ?>"><?php echo esc_html( $alert['label'] ); ?></b></div>
+        <?php if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::can_adopt( $order ) ) : ?><section class="ge-production-card"><h2>Nuevo circuito de revisión</h2><p>Este pedido manual puede pasar a revisión, preproducción opcional y aprobación final del cliente antes de producirse. Se conservan los archivos y datos ya cargados.</p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_workflow_adopt"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_workflow_adopt_' . $order->get_id() ); ?><button class="ge-staff-button" type="submit">Pasar este pedido al nuevo circuito</button></form></section><?php endif; ?>
         <form class="ge-production-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_production_save"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_save_' . $order->get_id() ); ?>
             <section class="ge-production-card"><div class="ge-production-section-head"><div><span>Planificación</span><h2>Proveedor y tiempos</h2></div></div><div class="ge-production-fields"><label>Proveedor designado<select name="supplier"><?php foreach ( self::suppliers() as $key => $supplier ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $order->get_meta( '_ge_production_supplier' ), $key ); ?>><?php echo esc_html( $supplier['name'] ); ?></option><?php endforeach; ?></select></label><label>Fecha prometida<input type="date" required name="promised_date" value="<?php echo esc_attr( $order->get_meta( '_ge_production_promised_date' ) ); ?>"></label><label>Prioridad<select name="priority"><?php foreach ( self::priorities() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $order->get_meta( '_ge_production_priority' ), $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><label class="is-wide">Criterio automático<textarea rows="2" readonly><?php echo esc_textarea( $order->get_meta( '_ge_production_assignment_reason' ) ); ?></textarea></label><label class="is-wide">Notas técnicas y terminaciones<textarea name="technical_notes" rows="4" maxlength="3000" placeholder="Material, medidas, tintas, laminado, troquel, empaquetado..."><?php echo esc_textarea( $order->get_meta( '_ge_production_technical_notes' ) ); ?></textarea></label></div></section>
             <section class="ge-production-card"><div class="ge-production-section-head"><div><span>Aprobación individual</span><h2>Estado de cada trabajo</h2></div><p>Solamente los ítems aprobados o en producción integran la orden al proveedor.</p></div><div class="ge-production-item-statuses"><?php foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) : ?><label><span><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) ); ?> unidades</small></span><select name="item_statuses[<?php echo esc_attr( $item_id ); ?>]"><?php foreach ( self::item_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( self::item_status( $item, $order ), $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php endforeach; ?></div></section>
@@ -401,13 +409,18 @@ final class GE_WTP_Production {
         <?php
     }
 
-    private static function render_documents( $order ) {
+    public static function render_documents( $order ) {
         if ( ! class_exists( 'GE_WTP_Documents' ) || ! $order instanceof WC_Order ) { return; }
         $documents = GE_WTP_Documents::get_documents_with_analysis( $order->get_id() );
         $items = $order->get_items( 'line_item' );
         ?>
         <section class="ge-production-card ge-production-files">
             <div class="ge-production-section-head"><div><span>Archivos de producción</span><h2>Originales por trabajo</h2></div><p>Asociá cada archivo con el ítem correcto antes de enviarlo al proveedor.</p></div>
+            <?php
+            $document_result = sanitize_key( wp_unslash( $_GET['document_result'] ?? '' ) );
+            $document_messages = array( 'trashed' => 'Archivo eliminado del pedido. Podés restaurarlo desde la papelera.', 'restored' => 'Archivo restaurado al pedido.', 'in_use' => 'No se puede eliminar: este archivo está asignado a un producto.', 'missing' => 'El archivo ya no figura en este pedido.' );
+            if ( isset( $document_messages[ $document_result ] ) ) { echo '<p class="ge-production-document-notice" role="status">' . esc_html( $document_messages[ $document_result ] ) . '</p>'; }
+            ?>
             <div class="ge-production-file-items">
                 <?php foreach ( $items as $item_id => $item ) :
                     $item_documents = array_values( array_filter( $documents, function( $document ) use ( $item_id ) { return absint( $document['order_item_id'] ?? 0 ) === absint( $item_id ); } ) );
@@ -431,16 +444,23 @@ final class GE_WTP_Production {
                 $analysis = is_array( $document['analysis'] ?? null ) ? $document['analysis'] : array();
                 $details = array( $side_labels[ $side ] ?? 'Archivo', size_format( absint( $document['size'] ?? 0 ) ) );
                 if ( ! empty( $analysis['pages'] ) ) { $details[] = absint( $analysis['pages'] ) . ' pág.'; }
-                ?><a href="<?php echo esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ); ?>" target="_blank" rel="noopener"><b>↓</b><span><strong><?php echo esc_html( $document['name'] ?? 'Archivo' ); ?></strong><small><?php echo esc_html( implode( ' · ', $details ) ); ?></small></span></a><?php endforeach; ?></div><?php else : ?><p class="ge-production-file-empty">Todavía no hay archivos asociados a este trabajo.</p><?php endif; ?>
+                ?><div class="ge-production-file-entry"><a href="<?php echo esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ); ?>" target="_blank" rel="noopener"><b>↓</b><span><strong><?php echo esc_html( $document['name'] ?? 'Archivo' ); ?></strong><small><?php echo esc_html( implode( ' · ', $details ) ); ?></small></span></a><?php if ( ! $item_id ) : ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('¿Eliminar este archivo del pedido? Podrás restaurarlo desde la papelera.');"><input type="hidden" name="action" value="ge_production_document_trash"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="document_id" value="<?php echo esc_attr( $document['id'] ); ?>"><?php wp_nonce_field( 'ge_production_document_trash_' . $order->get_id() . '_' . $document['id'] ); ?><button type="submit">Eliminar</button></form><?php endif; ?></div><?php endforeach; ?></div><?php else : ?><p class="ge-production-file-empty">Todavía no hay archivos asociados a este trabajo.</p><?php endif; ?>
+            <?php if ( ! $item_id ) : $trashed = self::trashed_documents( $order ); if ( $trashed ) : ?><details class="ge-production-file-trash"><summary>Papelera (<?php echo esc_html( count( $trashed ) ); ?>)</summary><?php foreach ( $trashed as $document ) : if ( empty( $document['id'] ) ) { continue; } ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><span><?php echo esc_html( $document['name'] ?? 'Archivo' ); ?></span><input type="hidden" name="action" value="ge_production_document_restore"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="document_id" value="<?php echo esc_attr( $document['id'] ); ?>"><?php wp_nonce_field( 'ge_production_document_restore_' . $order->get_id() . '_' . $document['id'] ); ?><button type="submit">Restaurar</button></form><?php endforeach; ?></details><?php endif; endif; ?>
             <form class="ge-production-upload" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-                <input type="hidden" name="action" value="ge_production_document"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="order_item_id" value="<?php echo esc_attr( $item_id ); ?>"><?php wp_nonce_field( $nonce_action ); ?>
+                <input type="hidden" name="action" value="ge_production_document"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="order_item_id" value="<?php echo esc_attr( $item_id ); ?>"><input type="hidden" name="return_step" value="<?php echo esc_attr( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ? GE_WTP_Workflow::step( $order ) : '' ); ?>"><?php wp_nonce_field( $nonce_action ); ?>
                 <label>Contenido<select name="artwork_side"><option value="front">Frente</option><option value="back">Dorso</option><option value="both">Frente y dorso</option><option value="reference">Referencia / instrucciones</option></select></label>
                 <label>Tipo<select name="category"><option value="arte">Arte / original</option><option value="produccion">Producción / entrega</option><option value="otro">Otro documento</option></select></label>
-                <label class="is-file">Seleccionar archivos<input type="file" name="ge_documents[]" accept=".pdf,.jpg,.jpeg,.png,.zip" multiple required><small>PDF, JPG, PNG o ZIP · hasta <?php echo esc_html( size_format( wp_max_upload_size() ) ); ?> por carga.</small></label>
+                <label class="is-file">Seleccionar archivos<input type="file" name="ge_documents[]" accept=".pdf,.jpg,.jpeg,.png,.zip,.ai,.eps,.psd,.tif,.tiff,.svg,.cdr" multiple required><small>PDF, JPG, PNG, ZIP o archivo de diseño · hasta <?php echo esc_html( size_format( wp_max_upload_size() ) ); ?> por carga.</small></label>
                 <button class="ge-staff-button" type="submit">Cargar archivos</button>
             </form>
         </article>
         <?php
+    }
+
+    private static function trashed_documents( $order ) {
+        $documents = $order->get_meta( '_ge_markcom_documents_trash', true );
+        if ( ! is_array( $documents ) ) { return array(); }
+        return array_values( array_filter( $documents, function ( $document ) { return is_array( $document ) && ! empty( $document['id'] ); } ) );
     }
 
     public static function handle_document() {
@@ -450,6 +470,7 @@ final class GE_WTP_Production {
         check_admin_referer( 'ge_production_document_' . $order->get_id() . '_' . $item_id );
         $item = $item_id ? $order->get_item( $item_id ) : null;
         if ( $item_id && ! ( $item instanceof WC_Order_Item_Product ) ) { wp_die( 'El trabajo indicado no pertenece a esta orden.', 400 ); }
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && $item && 'production' === self::item_status( $item, $order ) ) { wp_die( 'Este producto ya fue liberado. No se pueden agregar originales desde producción.', 403 ); }
         if ( ! class_exists( 'GE_WTP_Documents' ) ) { wp_die( 'El módulo de documentos no está disponible.', 500 ); }
         $categories = GE_WTP_Documents::categories();
         $category = sanitize_key( wp_unslash( $_POST['category'] ?? 'arte' ) );
@@ -463,12 +484,57 @@ final class GE_WTP_Production {
             $order->add_order_note( sprintf( '%d archivo(s) cargado(s) desde Producción%s.', count( $saved ), $item_id ? ' para el ítem #' . $item_id : '' ) );
             $order->save();
         }
-        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'document_upload' => $ok ? 'saved' : 'error' ) ) );
+        $step = sanitize_key( wp_unslash( $_POST['return_step'] ?? '' ) );
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'step' => in_array( $step, array( 'review', 'prepress' ), true ) ? $step : '', 'document_upload' => $ok ? 'saved' : 'error' ) ) );
+        exit;
+    }
+
+    public static function handle_document_trash() {
+        self::handle_document_state_change( false );
+    }
+
+    public static function handle_document_restore() {
+        self::handle_document_state_change( true );
+    }
+
+    private static function handle_document_state_change( $restore ) {
+        self::guard();
+        $order = self::requested_order();
+        $document_id = sanitize_text_field( wp_unslash( $_POST['document_id'] ?? '' ) );
+        $action = $restore ? 'restore' : 'trash';
+        check_admin_referer( 'ge_production_document_' . $action . '_' . $order->get_id() . '_' . $document_id );
+        $active = GE_WTP_Documents::get_documents( $order->get_id() );
+        $trash = self::trashed_documents( $order );
+        $source = $restore ? $trash : $active;
+        $destination = $restore ? $active : $trash;
+        $result = 'missing';
+        foreach ( $source as $index => $document ) {
+            if ( ! isset( $document['id'] ) || ! hash_equals( (string) $document['id'], $document_id ) || absint( $document['order_item_id'] ?? 0 ) ) { continue; }
+            if ( ! $restore ) {
+                $token = 'document:' . $document_id;
+                foreach ( $order->get_items( 'line_item' ) as $item ) {
+                    if ( in_array( $token, (array) $item->get_meta( '_ge_item_artwork_sources', true ), true ) ) { $result = 'in_use'; break 2; }
+                }
+                $document['trashed_at'] = current_time( 'mysql' );
+                $document['trashed_by'] = get_current_user_id();
+            } else {
+                unset( $document['trashed_at'], $document['trashed_by'] );
+            }
+            unset( $source[ $index ] );
+            $destination[] = $document;
+            $order->update_meta_data( GE_WTP_Documents::META_KEY, array_values( $restore ? $destination : $source ) );
+            $order->update_meta_data( '_ge_markcom_documents_trash', array_values( $restore ? $source : $destination ) );
+            $order->save();
+            $result = $restore ? 'restored' : 'trashed';
+            break;
+        }
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'document_result' => $result ) ) );
         exit;
     }
 
     public static function handle_save() {
         self::guard(); $order = self::requested_order(); check_admin_referer( 'ge_production_save_' . $order->get_id() );
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { wp_die( 'Usá los pasos del nuevo circuito.', 403 ); }
         $suppliers = self::suppliers(); $statuses = self::statuses(); $priorities = self::priorities();
         $old_supplier = (string) $order->get_meta( '_ge_production_supplier' ); $old_status = (string) $order->get_meta( '_ge_production_status' ); $old_processes = (array) $order->get_meta( '_ge_production_processes' ); $supplier = sanitize_key( wp_unslash( $_POST['supplier'] ?? '' ) ); $priority = sanitize_key( wp_unslash( $_POST['priority'] ?? '' ) );
         $date = sanitize_text_field( wp_unslash( $_POST['promised_date'] ?? '' ) ); if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) { $date = ''; }
@@ -495,6 +561,7 @@ final class GE_WTP_Production {
         self::guard();
         $order = self::requested_order();
         check_admin_referer( 'ge_production_quick_status_' . $order->get_id() );
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { wp_die( 'Usá los pasos del nuevo circuito.', 403 ); }
         $old_status = (string) $order->get_meta( '_ge_production_status' );
         self::save_item_statuses( $order, (array) ( $_POST['item_statuses'] ?? array() ) );
         $status = self::sync_order_status_from_items( $order );
@@ -504,6 +571,7 @@ final class GE_WTP_Production {
     }
 
     private static function save_item_statuses( $order, $posted_statuses ) {
+        if ( class_exists( 'GE_WTP_Customer_Quotes' ) && GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { return; }
         foreach ( $posted_statuses as $item_id => $posted_status ) {
             $item = $order->get_item( absint( $item_id ) );
             $item_status = sanitize_key( wp_unslash( $posted_status ) );
@@ -546,6 +614,7 @@ final class GE_WTP_Production {
 
     public static function handle_sheet() {
         $order = self::requested_order();
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { wp_die( 'Usá la ficha de archivos aprobados del nuevo circuito.', 403 ); }
         if ( 'POST' === strtoupper( $_SERVER['REQUEST_METHOD'] ?? '' ) ) { self::guard(); check_admin_referer( 'ge_production_sheet_' . $order->get_id() ); $token = self::new_token(); $order->update_meta_data( '_ge_production_sheet_token', $token ); $order->update_meta_data( '_ge_production_sheet_expires', time() + DAY_IN_SECONDS ); $order->save(); wp_safe_redirect( add_query_arg( array( 'action' => 'ge_production_sheet', 'order_id' => $order->get_id(), 'token' => $token ), admin_url( 'admin-post.php' ) ) ); exit; }
         $token = sanitize_text_field( wp_unslash( $_GET['token'] ?? '' ) ); $valid = $token && hash_equals( (string) $order->get_meta( '_ge_production_sheet_token' ), $token ) && absint( $order->get_meta( '_ge_production_sheet_expires' ) ) >= time();
         if ( ! GE_WTP_Staff_Portal::can_access() && ! $valid ) { wp_die( 'Enlace no válido o vencido.', 403 ); }

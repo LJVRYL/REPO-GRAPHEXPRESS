@@ -224,8 +224,7 @@ final class GE_WTP_Portal {
             <main class="ge-portal-main">
                 <?php self::render_notice(); ?>
                 <?php if ( ! self::is_staff_preview() ) :
-                    $saved_billing = get_user_meta( self::portal_customer_id(), GE_WTP_Billing::PROFILE_META, true );
-                    $billing_missing = is_array( $saved_billing ) ? GE_WTP_Billing::missing_fields( $saved_billing ) : array( 'billing_mode' );
+                    $billing_missing = GE_WTP_Billing::missing_fields( GE_WTP_Billing::profile( self::portal_customer_id() ) );
                     if ( $billing_missing && 'perfil' !== $section ) : ?>
                         <div class="ge-profile-notice is-pending">Completá tus datos de facturación antes de aceptar o pagar un presupuesto. <a href="<?php echo esc_url( self::portal_url( 'perfil' ) ); ?>">Ir a Mi perfil</a></div>
                     <?php endif;
@@ -367,6 +366,8 @@ final class GE_WTP_Portal {
             'order-created'  => array( 'success', 'Pedido generado correctamente. Graph Express ya puede revisarlo.' ),
             'document-added' => array( 'success', 'Documento cargado correctamente.' ),
             'item-artwork-added' => array( 'success', 'El archivo quedó asociado al producto correcto.' ),
+            'quote-approved' => array( 'success', 'Aprobaste el presupuesto. Ahora cargá los archivos para imprimir y envialos a revisión.' ),
+            'quote-submitted' => array( 'success', 'Enviamos tu presupuesto y tus archivos a Graph Express. La producción comenzará después del control interno.' ),
             'reorder-loaded'  => array( 'success', 'El pedido anterior se agregó al carrito. Podés revisar cantidades, destino, comentarios y archivos antes de generarlo.' ),
             'error'          => array( 'error', 'No pudimos completar la operación. Revisá los datos e intentá nuevamente.' ),
         );
@@ -386,7 +387,7 @@ final class GE_WTP_Portal {
         $active_orders = array_filter(
             $orders,
             function ( $order ) {
-                return ! in_array( $order->get_status(), array( 'ge-entregado', 'ge-cobrado', 'cancelled', 'refunded' ), true );
+                return 'entregado' !== GE_WTP_Order_Lifecycle::stage( $order ) && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true );
             }
         );
         $documents = 0;
@@ -409,6 +410,7 @@ final class GE_WTP_Portal {
                 <?php if ( GE_WTP_Catalog::exchange_updated_at() ) : ?><small>Actualizado: <?php echo esc_html( GE_WTP_Catalog::exchange_updated_at() ); ?></small><?php endif; ?>
             </div><?php else : ?><div class="ge-rate-card"><span class="ge-rate-label">Tu cuenta</span><strong><?php echo esc_html( $portal_user->display_name ); ?></strong><span><?php echo esc_html( $portal_user->user_email ); ?></span><small>Datos y trabajos visibles sólo para vos.</small></div><?php endif; ?>
         </section>
+        <?php GE_WTP_Customer_Quotes::render_dashboard(); ?>
         <section class="ge-stats">
             <article><span><?php echo esc_html( $markcom ? 'Productos disponibles' : 'Pedidos totales' ); ?></span><strong><?php echo esc_html( $markcom ? 9 : count( $orders ) ); ?></strong><small><?php echo esc_html( $markcom ? count( GE_WTP_Catalog::products() ) . ' presentaciones' : 'En tu historial' ); ?></small></article>
             <article><span>Pedidos activos</span><strong><?php echo esc_html( count( $active_orders ) ); ?></strong><small>En seguimiento</small></article>
@@ -529,7 +531,7 @@ final class GE_WTP_Portal {
                 <?php GE_WTP_Artwork_Library::render_order_picker(); ?>
                 <label>Referencia PO <input type="text" name="po_reference" placeholder="Puede completarse después"></label>
                 <label>Comentario general <textarea name="order_notes" rows="3" placeholder="Destino, fecha requerida u otra indicación"></textarea></label>
-                <label class="ge-file-field">Adjuntar artes, originales o PO <input type="file" name="ge_documents[]" multiple accept=".pdf,.jpg,.jpeg,.png,.zip"><span>PDF, JPG, PNG o ZIP · capacidad prevista hasta 1 GB. En producción los originales se enviarán al almacenamiento externo.</span></label>
+                <label class="ge-file-field">Adjuntar artes, originales o PO <input type="file" name="ge_documents[]" multiple accept=".pdf,.jpg,.jpeg,.png,.zip"><span>PDF, JPG, PNG o ZIP · hasta 250 MB por archivo. Se guardan en el almacenamiento privado del VPS.</span></label>
                 <button class="ge-button ge-button-primary ge-button-block" type="submit" <?php disabled( $rate <= 0 ); ?>>Generar pedido</button>
                 <?php if ( $rate <= 0 ) : ?><small class="ge-form-warning">Graph Express debe configurar el tipo de cambio.</small><?php endif; ?>
             </form>
@@ -566,9 +568,9 @@ final class GE_WTP_Portal {
                 esc_html( $reference ? $reference : '#' . $order->get_id() ),
                 esc_html( wc_format_datetime( $order->get_date_created(), 'd/m/Y' ) ),
                 esc_html( $order->get_item_count() ),
-                esc_attr( sanitize_html_class( $order->get_status() ) ),
-                esc_html( wc_get_order_status_name( $order->get_status() ) ),
-                wp_kses_post( $order->get_formatted_order_total() ),
+                esc_attr( sanitize_html_class( GE_WTP_Order_Lifecycle::stage( $order ) ) ),
+                esc_html( GE_WTP_Customer_Quotes::is_quote_order( $order ) ? GE_WTP_Customer_Quotes::stage_label( $order ) : GE_WTP_Order_Lifecycle::label( $order ) ),
+                wp_kses_post( $order->get_formatted_order_total() . ( GE_WTP_Customer_Quotes::is_quote_order( $order ) ? ' + IVA' : '' ) ),
                 ''
             );
         }
@@ -577,6 +579,11 @@ final class GE_WTP_Portal {
 
     private static function render_order_detail( $order ) {
         $documents = GE_WTP_Documents::get_documents( $order->get_id() );
+        $is_customer_quote = GE_WTP_Customer_Quotes::is_quote_order( $order );
+        if ( class_exists( 'GE_WTP_VPS_Storage' ) && GE_WTP_VPS_Storage::ready() ) {
+            wp_enqueue_script( 'ge-order-files', GE_WTP_PLUGIN_URL . 'assets/js/order-files.js', array(), GE_WTP_VERSION, true );
+            wp_localize_script( 'ge-order-files', 'geOrderUpload', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'action' => GE_WTP_VPS_Storage::AJAX_ACTION, 'nonce' => wp_create_nonce( GE_WTP_VPS_Storage::AJAX_ACTION ), 'maxFileBytes' => (int) GE_WTP_VPS_Storage::limits()['max_file_bytes'] ) );
+        }
         $markcom = 'yes' === $order->get_meta( '_ge_markcom_order' );
         $reference = $order->get_meta( '_ge_markcom_reference' );
         $reference = $reference ? $reference : '#' . $order->get_id();
@@ -584,18 +591,19 @@ final class GE_WTP_Portal {
         <div class="ge-order-detail">
             <section class="ge-panel">
                 <a class="ge-back-link" href="<?php echo esc_url( self::portal_url( 'pedidos' ) ); ?>">← Volver a pedidos</a>
-                <div class="ge-order-title"><div><span class="ge-eyebrow">Orden</span><h2><?php echo esc_html( $reference ); ?></h2><p>Creada el <?php echo esc_html( wc_format_datetime( $order->get_date_created(), 'd/m/Y H:i' ) ); ?></p></div><span class="ge-status ge-status-large"><?php echo esc_html( wc_get_order_status_name( $order->get_status() ) ); ?></span></div>
-                <div class="ge-order-meta"><?php if ( $markcom ) : ?><div><small>PO</small><strong><?php echo esc_html( $order->get_meta( '_ge_markcom_po_reference' ) ? $order->get_meta( '_ge_markcom_po_reference' ) : 'Pendiente' ); ?></strong></div><div><small>Tipo de cambio</small><strong><?php echo esc_html( number_format_i18n( $order->get_meta( '_ge_markcom_exchange_rate' ), 2 ) . ' ARS/USD' ); ?></strong></div><?php else : ?><div><small>Pago</small><strong><?php echo esc_html( $order->get_payment_method_title() ? $order->get_payment_method_title() : 'A coordinar' ); ?></strong></div><div><small>Entrega</small><strong><?php echo esc_html( $order->get_shipping_method() ? $order->get_shipping_method() : 'A coordinar' ); ?></strong></div><?php endif; ?><div><small>Total</small><strong><?php echo wp_kses_post( $order->get_formatted_order_total() ); ?></strong></div></div>
+                <div class="ge-order-title"><div><span class="ge-eyebrow"><?php echo $is_customer_quote ? 'Presupuesto' : 'Orden'; ?></span><h2><?php echo esc_html( $reference ); ?></h2><p>Creada el <?php echo esc_html( wc_format_datetime( $order->get_date_created(), 'd/m/Y H:i' ) ); ?></p></div><span class="ge-status ge-status-large"><?php echo esc_html( $is_customer_quote ? GE_WTP_Customer_Quotes::stage_label( $order ) : GE_WTP_Order_Lifecycle::label( $order ) ); ?></span></div>
+                <div class="ge-order-meta"><?php if ( $markcom ) : ?><div><small>PO</small><strong><?php echo esc_html( $order->get_meta( '_ge_markcom_po_reference' ) ? $order->get_meta( '_ge_markcom_po_reference' ) : 'Pendiente' ); ?></strong></div><div><small>Tipo de cambio</small><strong><?php echo esc_html( number_format_i18n( $order->get_meta( '_ge_markcom_exchange_rate' ), 2 ) . ' ARS/USD' ); ?></strong></div><?php else : ?><div><small>Pago</small><strong><?php echo esc_html( $order->get_payment_method_title() ? $order->get_payment_method_title() : 'A coordinar' ); ?></strong></div><div><small>Entrega</small><strong><?php echo esc_html( $order->get_shipping_method() ? $order->get_shipping_method() : 'A coordinar' ); ?></strong></div><?php endif; ?><div><small><?php echo $is_customer_quote ? 'Base imponible' : 'Total'; ?></small><strong><?php echo wp_kses_post( $order->get_formatted_order_total() . ( $is_customer_quote ? ' + IVA' : '' ) ); ?></strong></div></div>
                 <div class="ge-order-items">
                     <?php foreach ( $order->get_items() as $item ) : $item_status = class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::item_status( $item, $order ) : 'pending'; ?><div><span><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) . ' unidades' ); ?></small><em class="ge-item-status is-<?php echo esc_attr( $item_status ); ?>"><?php echo esc_html( class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::item_status_label( $item, $order ) : 'Pendiente de aprobación' ); ?></em><?php echo wp_kses_post( wc_display_item_meta( $item, array( 'echo' => false, 'separator' => ' · ' ) ) ); ?></span><strong><?php echo wp_kses_post( $order->get_formatted_line_subtotal( $item ) ); ?></strong></div><?php endforeach; ?>
                     <?php foreach ( $order->get_items( 'fee' ) as $fee ) : ?><div class="ge-order-fee"><span><strong><?php echo esc_html( $fee->get_name() ); ?></strong><small>Cargo del pedido</small></span><strong><?php echo wp_kses_post( wc_price( $fee->get_total(), array( 'currency' => $order->get_currency() ) ) ); ?></strong></div><?php endforeach; ?>
                 </div>
                 <?php self::render_item_artwork_uploads( $order, $documents ); ?>
-                <?php GE_WTP_Payments::render_portal_order_payment( $order ); ?>
-                <?php if ( class_exists( 'GE_WTP_Commercial_Checkout' ) ) { GE_WTP_Commercial_Checkout::render_order_balance( $order ); } ?>
-                <a class="ge-button ge-button-secondary" href="<?php echo esc_url( GE_WTP_Quotes::order_url( $order->get_id() ) ); ?>">Descargar presupuesto PDF</a>
-                <?php GE_WTP_Reorders::order_actions( $order, $markcom ? 'markcom-order' : 'customer-order' ); ?>
-                <?php GE_WTP_Artwork_Library::render_order_links( $order ); ?>
+                <?php GE_WTP_Customer_Quotes::render_order_step( $order ); ?>
+                <?php if ( ! $is_customer_quote && ! $order->get_meta( '_ge_commercial_quote_id', true ) ) { GE_WTP_Payments::render_portal_order_payment( $order ); } ?>
+                <?php GE_WTP_Commercial_Checkout::render_order_balance( $order ); ?>
+                <?php if ( ! GE_WTP_Customer_Quotes::is_quote_order( $order ) ) : ?><a class="ge-button ge-button-secondary" href="<?php echo esc_url( GE_WTP_Quotes::order_url( $order->get_id() ) ); ?>">Descargar presupuesto PDF</a><?php endif; ?>
+                <?php if ( ! $is_customer_quote ) { GE_WTP_Reorders::order_actions( $order, $markcom ? 'markcom-order' : 'customer-order' ); } ?>
+                <?php if ( ! $is_customer_quote ) { GE_WTP_Artwork_Library::render_order_links( $order ); } ?>
             </section>
             <aside class="ge-panel">
                 <span class="ge-eyebrow">Archivos</span><h2>Documentos del pedido</h2>
@@ -663,11 +671,12 @@ final class GE_WTP_Portal {
                                 <section class="ge-item-artwork-slot <?php echo $slot_documents ? 'has-file' : ''; ?>">
                                     <div class="ge-item-artwork-slot-title"><strong><?php echo esc_html( $label ); ?></strong><small><?php echo $slot_documents ? esc_html( count( $slot_documents ) . ' archivo(s) cargado(s)' ) : 'Pendiente de archivo'; ?></small></div>
                                     <?php foreach ( $slot_documents as $document ) { self::render_artwork_thumbnail( $order, $document ); } ?>
-                                    <?php if ( ! self::is_staff_preview() ) : ?>
-                                        <form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-                                            <input type="hidden" name="action" value="ge_customer_item_artwork_upload"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="order_item_id" value="<?php echo esc_attr( $item_id ); ?>"><input type="hidden" name="artwork_side" value="<?php echo esc_attr( $side ); ?>"><?php wp_nonce_field( 'ge_customer_item_artwork_upload_' . $order->get_id() . '_' . $item_id ); ?>
-                                            <label><span><?php echo $slot_documents ? 'Agregar una nueva versión' : 'Cargar ' . esc_html( strtolower( $label ) ); ?></span><input type="file" name="ge_item_artwork" required accept=".pdf,.jpg,.jpeg,.png"></label>
+                                    <?php if ( ! self::is_staff_preview() && ( ! GE_WTP_Customer_Quotes::is_quote_order( $order ) || 'approved_for_production' !== $order->get_meta( GE_WTP_Customer_Quotes::STAGE_META, true ) ) ) : ?>
+                                        <form method="post" enctype="multipart/form-data" data-ge-order-upload="<?php echo class_exists( 'GE_WTP_VPS_Storage' ) && GE_WTP_VPS_Storage::ready() ? '1' : '0'; ?>" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                                            <input type="hidden" name="action" value="ge_customer_item_artwork_upload"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="order_item_id" value="<?php echo esc_attr( $item_id ); ?>"><input type="hidden" name="artwork_side" value="<?php echo esc_attr( $side ); ?>"><input type="hidden" name="ge_vps_uploads" value="[]"><?php wp_nonce_field( 'ge_customer_item_artwork_upload_' . $order->get_id() . '_' . $item_id ); ?>
+                                            <label><span><?php echo $slot_documents ? 'Agregar una nueva versión' : 'Cargar ' . esc_html( strtolower( $label ) ); ?></span><input type="file" name="ge_item_artwork" required accept=".pdf,.ai,.eps,.psd,.tif,.tiff,.svg,.cdr,.zip,.jpg,.jpeg,.png"></label>
                                             <button type="submit"><?php echo $slot_documents ? 'Subir versión' : 'Cargar archivo'; ?></button>
+                                            <progress max="100" value="0" hidden aria-label="Progreso de carga"></progress><p role="status" aria-live="polite"></p>
                                         </form>
                                     <?php endif; ?>
                                 </section>
@@ -777,11 +786,34 @@ final class GE_WTP_Portal {
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : false;
         $item = $order ? $order->get_item( $item_id ) : false;
         if ( ! $order || ! ( $item instanceof WC_Order_Item_Product ) || ! GE_WTP_Documents::can_access_order( $order ) || ! isset( self::artwork_slots_for_item( $item )[ $side ] ) ) { wp_die( 'El producto o la cara seleccionada no son válidos.', 403 ); }
-        $result = GE_WTP_Documents::handle_uploaded_files( $order_id, 'ge_item_artwork', 'arte', array( 'order_item_id' => $item_id, 'artwork_side' => $side, 'allowed_extensions' => array( 'pdf', 'jpg', 'jpeg', 'png' ) ) );
+        if ( GE_WTP_Customer_Quotes::is_quote_order( $order ) && 'approved_for_production' === $order->get_meta( GE_WTP_Customer_Quotes::STAGE_META, true ) ) { wp_die( 'Este trabajo ya fue aprobado para producción.', 409 ); }
+        $claims = isset( $_POST['ge_vps_uploads'] ) ? json_decode( wp_unslash( $_POST['ge_vps_uploads'] ), true ) : array();
+        if ( is_array( $claims ) && $claims && class_exists( 'GE_WTP_VPS_Storage' ) ) {
+            $uploads = GE_WTP_VPS_Storage::validate_uploaded_claims( wp_list_pluck( $claims, 'token' ), get_current_user_id() );
+            $result = array();
+            if ( ! is_wp_error( $uploads ) ) {
+                foreach ( $uploads as $upload ) {
+                    $final = GE_WTP_VPS_Storage::finalize_descriptor( $upload, $order_id, $item_id );
+                    if ( is_wp_error( $final ) ) { continue; }
+                    $result[] = array( 'id' => wp_generate_uuid4(), 'provider' => 'vps', 'relative_path' => $final['relative_path'], 'name' => $final['name'], 'size' => $final['size'], 'mime' => $final['mime'], 'category' => 'arte', 'order_item_id' => $item_id, 'artwork_side' => $side, 'uploaded_by' => get_current_user_id(), 'uploaded_at' => current_time( 'mysql' ), 'analysis' => array( 'confidence' => 'pending', 'warning' => 'Pendiente de control de preprensa.' ) );
+                }
+                if ( $result ) { $order->update_meta_data( GE_WTP_Documents::META_KEY, array_merge( GE_WTP_Documents::get_documents( $order_id ), $result ) ); $order->save(); }
+            }
+        } else {
+            $result = GE_WTP_Documents::handle_uploaded_files( $order_id, 'ge_item_artwork', 'arte', array( 'order_item_id' => $item_id, 'artwork_side' => $side ) );
+        }
         if ( is_wp_error( $result ) || ! $result ) {
             wp_safe_redirect( self::portal_url( 'pedidos', array( 'pedido' => $order_id, 'ge_notice' => 'error' ) ) ); exit;
         }
         GE_WTP_Artwork_Library::attach_customer_uploads_to_item( $order, $item, $result, $side );
+        if ( GE_WTP_Customer_Quotes::is_quote_order( $order ) && 'submitted' === $order->get_meta( GE_WTP_Customer_Quotes::STAGE_META, true ) ) {
+            $order->update_meta_data( GE_WTP_Customer_Quotes::STAGE_META, 'files_pending' );
+            $order->add_order_note( 'El cliente cargó una nueva versión. Debe volver a enviar el presupuesto y archivos para revisión.' );
+            $order->save();
+            $key = $order->get_meta( GE_WTP_Customer_Quotes::KEY_META, true );
+            $quote = get_user_meta( get_current_user_id(), $key, true );
+            if ( is_array( $quote ) ) { $quote['status'] = 'aprobada_cliente'; update_user_meta( get_current_user_id(), $key, $quote ); }
+        }
         wp_safe_redirect( self::portal_url( 'pedidos', array( 'pedido' => $order_id, 'ge_notice' => 'item-artwork-added' ) ) ); exit;
     }
 
