@@ -398,7 +398,15 @@ final class GE_WTP_Commercial_Checkout {
         $tax_total = (int) ( $snapshot['tax_cents'] ?? 0 );
         if ( $tax_total > 0 && ! $rate_id ) { return new WP_Error( 'ge_quote_tax_rate', 'Falta configurar la tasa de IVA para la orden.' ); }
         $existing = wc_get_orders( array( 'limit' => 50, 'meta_key' => self::QUOTE_META, 'meta_value' => $quote['id'] ) );
-        foreach ( $existing as $candidate ) { if ( 'yes' !== $candidate->get_meta( self::PAYMENT_META, true ) ) { return $candidate; } }
+        foreach ( $existing as $candidate ) {
+            if ( 'yes' === $candidate->get_meta( self::PAYMENT_META, true ) ) { continue; }
+            $expected = (int) get_post_meta( $quote['id'], '_ge_commercial_final_total_cents', true );
+            $actual = GE_WTP_Quote_Balance::cents( wc_format_decimal( $candidate->get_total(), 2 ) );
+            if ( $actual !== $expected || ! $candidate->get_meta( '_ge_production_initialized', true ) ) {
+                return new WP_Error( 'ge_quote_incomplete_order', 'Hay un pedido incompleto para este presupuesto; requiere conciliación manual antes de continuar.' );
+            }
+            return $candidate;
+        }
         $customer = get_userdata( $quote['customer_id'] );
         $order = wc_create_order( array( 'customer_id' => $quote['customer_id'] ) );
         if ( is_wp_error( $order ) ) { return $order; }
