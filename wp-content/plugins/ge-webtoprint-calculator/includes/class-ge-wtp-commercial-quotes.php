@@ -149,6 +149,8 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! empty( $quote['snapshot']['valid_until'] ) && $quote['snapshot']['valid_until'] < wp_date( 'Y-m-d' ) ) {
             return new WP_Error( 'ge_quote_expired', 'El presupuesto venció. Solicitá una actualización.' );
         }
+        try { GE_WTP_Billing::assert_can_accept_or_pay( $quote['snapshot']['billing'] ?? array(), GE_WTP_Billing::entity() ); }
+        catch ( DomainException $error ) { return new WP_Error( 'ge_quote_billing_changed', 'Los datos fiscales del presupuesto requieren revisión antes de aceptarlo.' ); }
         $lock = 'ge_commercial_quote_accept_' . $quote_id;
         if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'Estamos procesando el presupuesto. Volvé a intentar.' ); }
         try {
@@ -224,8 +226,7 @@ final class GE_WTP_Commercial_Quotes {
         }
         $entity = GE_WTP_Billing::entity();
         $profile = GE_WTP_Billing::profile( $customer_id );
-        $rate = absint( get_option( 'ge_commercial_tax_rate_basis_points', 0 ) );
-        $resolution = GE_WTP_Billing::resolve( $entity, $profile, (int) $snapshot['net_cents'], $rate );
+        $resolution = GE_WTP_Billing::resolve_net_quote( $entity, $profile, (int) $snapshot['net_cents'] );
         if ( ! empty( $resolution['blockers'] ) ) {
             return new WP_Error( 'ge_quote_billing_blocked', 'Faltan datos fiscales o una configuración de facturación válida.', $resolution['blockers'] );
         }

@@ -183,6 +183,8 @@ final class GE_WTP_Commercial_Checkout {
         if ( ! empty( $snapshot['valid_until'] ) && $snapshot['valid_until'] < wp_date( 'Y-m-d' ) ) {
             return new WP_Error( 'ge_quote_expired', 'El presupuesto venció.' );
         }
+        try { GE_WTP_Billing::assert_can_accept_or_pay( $snapshot['billing'] ?? array(), GE_WTP_Billing::entity() ); }
+        catch ( DomainException $error ) { return new WP_Error( 'ge_quote_billing_changed', 'Los datos fiscales requieren revisión antes del cobro.' ); }
         $lock = 'ge_commercial_start_' . $quote_id;
         if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'El pago se está preparando. Volvé a intentar.' ); }
         try {
@@ -224,6 +226,8 @@ final class GE_WTP_Commercial_Checkout {
         $quote_id = absint( $order->get_meta( self::QUOTE_META, true ) );
         $quote = $quote_id ? GE_WTP_Commercial_Quotes::get( $quote_id, $actor_id ) : null;
         if ( ! $quote || is_wp_error( $quote ) || $quote['converted_order_id'] !== $order->get_id() ) { return new WP_Error( 'ge_quote_balance', 'Pedido inválido.' ); }
+        try { GE_WTP_Billing::assert_can_accept_or_pay( $quote['snapshot']['billing'] ?? array(), GE_WTP_Billing::entity() ); }
+        catch ( DomainException $error ) { return new WP_Error( 'ge_quote_billing_changed', 'Los datos fiscales requieren revisión antes del cobro.' ); }
         $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
         if ( $due <= 0 ) { return new WP_Error( 'ge_quote_balance_paid', 'El saldo ya está abonado.' ); }
         $lock = 'ge_commercial_balance_' . $order_id;
