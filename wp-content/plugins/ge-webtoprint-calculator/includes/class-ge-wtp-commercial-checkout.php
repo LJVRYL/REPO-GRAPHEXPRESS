@@ -23,6 +23,23 @@ final class GE_WTP_Commercial_Checkout {
 
     public static function enabled() { return 'yes' === get_option( 'ge_commercial_checkout_enabled', 'no' ); }
 
+    /** Read-only service for staff and future structured Graph actions. */
+    public static function payment_status( $quote_id, $actor_id ) {
+        $quote = GE_WTP_Commercial_Quotes::get( $quote_id, $actor_id );
+        if ( is_wp_error( $quote ) ) { return $quote; }
+        $order = $quote['converted_order_id'] ? wc_get_order( $quote['converted_order_id'] ) : false;
+        return array(
+            'quote_id' => $quote['id'],
+            'quote_version' => $quote['version'],
+            'quote_status' => $quote['status'],
+            'order_id' => $order ? $order->get_id() : null,
+            'final_total_cents' => $order ? (int) $order->get_meta( '_ge_final_total_cents', true ) : null,
+            'amount_paid_cents' => $order ? (int) $order->get_meta( '_ge_amount_paid_cents', true ) : 0,
+            'amount_due_cents' => $order ? (int) $order->get_meta( '_ge_amount_due_cents', true ) : null,
+            'payment_status' => $order ? (string) $order->get_meta( '_ge_payment_state', true ) : 'unpaid',
+        );
+    }
+
     public static function render_quote_checkout( $quote ) {
         if ( ! is_array( $quote ) || ! in_array( $quote['status'], array( 'accepted', 'converted' ), true ) ) { return; }
         $snapshot = $quote['snapshot'];
