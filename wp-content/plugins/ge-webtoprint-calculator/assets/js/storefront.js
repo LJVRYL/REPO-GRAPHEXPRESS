@@ -68,13 +68,13 @@
                 var requestedWidth = Math.max(0.01, Number(width.value || 0));
                 var billedWidth = rollWidths.length ? rollWidths.find(function (candidate) { return Number(candidate) >= requestedWidth; }) : requestedWidth;
                 if (rollWidths.length && !billedWidth) {
-                    if (rollHint) rollHint.textContent = 'El ancho supera los rollos disponibles. Consultanos por una cotización en paños.';
+                    if (rollHint) rollHint.textContent = 'Para este tamaño, consultanos por una cotización especial.';
                     price.textContent = 'Consultar';
                     if (base) base.textContent = '';
                     return;
                 }
                 factor = (billedWidth / 100) * Math.max(0.01, Number(height.value || 0) / 100);
-                if (rollHint) rollHint.textContent = 'Medida final: ' + requestedWidth + ' × ' + height.value + ' cm. Se cobra el ancho completo del rollo de ' + billedWidth + ' cm por ' + height.value + ' cm de largo.';
+                if (rollHint) rollHint.textContent = 'Tamaño final: ' + requestedWidth + ' × ' + height.value + ' cm. Precio actualizado.';
             }
             if (length) { factor = Math.max(0.01, Number(length.value || 0) / 100); }
             var total = Number(option.dataset.price || 0) * factor * Math.max(1, Number(quantity.value || 1));

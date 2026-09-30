@@ -25,6 +25,7 @@ require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes
 require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-roll-pricing.php';
 require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-catalog.php';
 require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quotes.php';
+require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-ui.php';
 
 if ( GE_WTP_Roll_Pricing::widths_for_catalog_key( 'vinilo-blanco' ) !== array( 104.0, 124.0, 135.0, 150.0 ) ) { throw new RuntimeException( 'Anchos de rollo incorrectos.' ); }
 foreach ( array( 'vinilo-base-gris', 'vinilo-cristal', 'vinilo-microperforado' ) as $key ) {
@@ -41,4 +42,6 @@ $old_draft = array( 'items' => array( array( 'product_id' => 46, 'quantity' => 1
 if ( ! GE_WTP_Commercial_Quotes::needs_roll_reprice( $old_draft ) ) { throw new RuntimeException( 'El borrador anterior podría enviarse sin revisar.' ); }
 $new_draft = array( 'items' => array( array( 'product_id' => 46, 'quantity' => 1, 'configuration' => $narrow['configuration'], 'unit_net_cents' => $narrow['price'] * 100 ) ) );
 if ( GE_WTP_Commercial_Quotes::needs_roll_reprice( $new_draft ) ) { throw new RuntimeException( 'El borrador recalculado quedó bloqueado.' ); }
+$public_label = GE_WTP_Commercial_Quote_UI::customer_configuration_label( array( 'sku' => 'GF-VIN-001', 'configuration' => $narrow['configuration'], 'configuration_label' => $narrow['description'] ) );
+if ( '50 × 120 cm' !== $public_label || false !== strpos( $public_label, 'rollo' ) ) { throw new RuntimeException( 'La configuración pública expuso el cálculo interno.' ); }
 echo "vinyl-roll-pricing: OK\n";

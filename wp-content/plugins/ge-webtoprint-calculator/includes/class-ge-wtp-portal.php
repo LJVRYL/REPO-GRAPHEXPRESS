@@ -41,6 +41,8 @@ final class GE_WTP_Portal {
         $css_path = GE_WTP_PLUGIN_DIR . 'assets/css/portal.css';
         $js_path = GE_WTP_PLUGIN_DIR . 'assets/js/portal.js';
         wp_enqueue_style( 'ge-markcom-portal', GE_WTP_PLUGIN_URL . 'assets/css/portal.css', array(), file_exists( $css_path ) ? (string) filemtime( $css_path ) : GE_WTP_VERSION );
+        $quote_css = GE_WTP_PLUGIN_DIR . 'assets/css/commercial-quotes.css';
+        wp_enqueue_style( 'ge-commercial-quote-detail', GE_WTP_PLUGIN_URL . 'assets/css/commercial-quotes.css', array( 'ge-markcom-portal' ), file_exists( $quote_css ) ? (string) filemtime( $quote_css ) : GE_WTP_VERSION );
         wp_enqueue_script( 'ge-markcom-portal', GE_WTP_PLUGIN_URL . 'assets/js/portal.js', array(), file_exists( $js_path ) ? (string) filemtime( $js_path ) : GE_WTP_VERSION, true );
     }
 

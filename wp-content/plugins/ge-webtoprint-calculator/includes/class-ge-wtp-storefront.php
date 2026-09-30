@@ -63,7 +63,7 @@ final class GE_WTP_Storefront {
         $config = self::config( $product->get_id() );
         if ( empty( $config['roll_widths_cm'] ) ) { return $attributes; }
         foreach ( $attributes as &$attribute ) {
-            if ( ( $attribute['label'] ?? '' ) === 'Unidad de cálculo' ) { $attribute['value'] = 'Metro lineal según ancho de rollo'; }
+            if ( ( $attribute['label'] ?? '' ) === 'Unidad de cálculo' ) { $attribute['value'] = 'Por medida'; }
         }
         unset( $attribute );
         return $attributes;
@@ -135,7 +135,7 @@ final class GE_WTP_Storefront {
                     <label><span><?php echo ! empty( $config['roll_widths_cm'] ) ? 'Ancho final (cm)' : 'Ancho (cm)'; ?></span><input type="number" name="width" min="1" step="0.1" value="100" data-ge-width required></label>
                     <label><span><?php echo ! empty( $config['roll_widths_cm'] ) ? 'Largo final (cm)' : 'Alto (cm)'; ?></span><input type="number" name="height" min="1" step="0.1" value="100" data-ge-height required></label>
                 </div>
-                <?php if ( ! empty( $config['roll_widths_cm'] ) ) : ?><p data-ge-roll-hint>Se cobra el largo solicitado por el ancho completo del rollo disponible, desde <?php echo esc_html( min( $config['roll_widths_cm'] ) ); ?> cm. La medida final puede ser menor.</p><?php endif; ?>
+                <?php if ( ! empty( $config['roll_widths_cm'] ) ) : ?><p data-ge-roll-hint>Indicá el tamaño final para ver el precio.</p><?php endif; ?>
             <?php elseif ('ml' === $mode) : ?>
                 <div class="ge-storefront-measures"><label><span>Largo (cm)</span><input type="number" name="length" min="1" step="0.1" value="100" data-ge-length required></label></div>
             <?php endif; ?>
@@ -229,8 +229,7 @@ final class GE_WTP_Storefront {
                 }
             }
             $unit_price = round($unit_price * ($billable_width / 100) * ($height / 100));
-            $configuration = self::decimal($width) . ' × ' . self::decimal($height) . ' cm · ' . $option['label'];
-            if ( ! empty( $config['roll_widths_cm'] ) ) { $configuration .= ' · cálculo: rollo ' . self::decimal( $billable_width ) . ' cm × ' . self::decimal( $height ) . ' cm'; }
+            $configuration = self::decimal($width) . ' × ' . self::decimal($height) . ' cm';
         } elseif ('ml' === $mode) {
             $length = isset($_POST['length']) ? max(1, (float) str_replace(',', '.', wp_unslash($_POST['length']))) : 100;
             $unit_price = round($unit_price * ($length / 100));
@@ -245,6 +244,7 @@ final class GE_WTP_Storefront {
             'ge_base_price'        => $unit_price,
             'ge_unique'            => wp_generate_uuid4(),
         );
+        if ( ! empty( $config['roll_widths_cm'] ) ) { $cart_data['ge_internal_roll_width_cm'] = $billable_width; }
         $comments = isset($_POST['ge_order_comments']) ? sanitize_textarea_field(wp_unslash($_POST['ge_order_comments'])) : '';
         if ('' !== $comments) {
             $cart_data['ge_order_comments'] = function_exists('mb_substr') ? mb_substr($comments, 0, 2000) : substr($comments, 0, 2000);
@@ -331,6 +331,7 @@ final class GE_WTP_Storefront {
         if (!empty($values['ge_configuration'])) {
             $item->add_meta_data('Configuración', wc_clean($values['ge_configuration']), true);
         }
+        if ( ! empty( $values['ge_internal_roll_width_cm'] ) ) { $item->update_meta_data( '_ge_internal_roll_width_cm', $values['ge_internal_roll_width_cm'] ); }
         if (!empty($values['ge_order_comments'])) {
             $item->add_meta_data('Datos adicionales', wc_clean($values['ge_order_comments']), true);
         }
@@ -479,7 +480,7 @@ final class GE_WTP_Storefront {
             $roll_widths = GE_WTP_Roll_Pricing::widths_for_catalog_key( $catalog_key );
             if ( $roll_widths && 'm2' === ( $config['mode'] ?? '' ) ) {
                 $config['roll_widths_cm'] = $roll_widths;
-                foreach ( $config['options'] as &$option ) { $option['label'] = 'Metro lineal según ancho de rollo'; }
+                foreach ( $config['options'] as &$option ) { $option['label'] = 'A medida'; }
                 unset( $option );
             }
             $selector_config = get_post_meta($product_id, '_ge_storefront_selectors', true);
