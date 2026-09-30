@@ -5,6 +5,10 @@ $section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'
 wp_enqueue_style( 'ge-staff-admin-components', GE_WTP_PLUGIN_URL . 'assets/css/admin.css', array(), GE_WTP_VERSION );
 $staff_css = GE_WTP_PLUGIN_DIR . 'assets/css/staff.css';
 wp_enqueue_style( 'ge-staff-portal', GE_WTP_PLUGIN_URL . 'assets/css/staff.css', array( 'ge-staff-admin-components' ), is_file( $staff_css ) ? (string) filemtime( $staff_css ) : GE_WTP_VERSION );
+if ( in_array( $section, array( 'quotes', 'production' ), true ) && GE_WTP_Staff_Portal::can_access() ) {
+    $production_css = GE_WTP_PLUGIN_DIR . 'assets/css/production.css';
+    wp_enqueue_style( 'ge-production', GE_WTP_PLUGIN_URL . 'assets/css/production.css', array( 'ge-staff-portal' ), is_file( $production_css ) ? (string) filemtime( $production_css ) : GE_WTP_VERSION );
+}
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head><meta charset="<?php bloginfo( 'charset' ); ?>"><meta name="viewport" content="width=device-width, initial-scale=1"><?php wp_head(); ?></head>
