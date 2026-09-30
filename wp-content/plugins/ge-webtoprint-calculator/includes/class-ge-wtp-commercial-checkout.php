@@ -16,6 +16,7 @@ final class GE_WTP_Commercial_Checkout {
         add_action( 'admin_post_ge_commercial_upload_receipt', array( __CLASS__, 'handle_receipt' ) );
         add_action( 'admin_post_ge_commercial_confirm_payment', array( __CLASS__, 'handle_staff_confirm' ) );
         add_action( 'admin_post_ge_commercial_confirm_cash_balance', array( __CLASS__, 'handle_cash_balance' ) );
+        add_action( 'admin_post_ge_commercial_cancel_balance_attempt', array( __CLASS__, 'handle_cancel_balance_attempt' ) );
         add_action( 'woocommerce_payment_complete', array( __CLASS__, 'reconcile_payment' ), 30 );
         add_filter( 'woocommerce_available_payment_gateways', array( __CLASS__, 'limit_gateways' ), 95 );
     }
@@ -108,6 +109,11 @@ final class GE_WTP_Commercial_Checkout {
                 wp_nonce_field( 'ge_commercial_confirm_payment_' . $id );
                 echo '<label><input type="checkbox" name="bank_verified" value="yes" required> Verifiqué la acreditación bancaria del importe exacto</label><button class="ge-staff-button" type="submit">Confirmar pago</button></form>';
             }
+            if ( 'balance' === $payment->get_meta( self::KIND_META, true ) && ! $payment->is_paid() && 'cancelled' !== $payment->get_status() ) {
+                echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_cancel_balance_attempt"><input type="hidden" name="payment_order_id" value="' . esc_attr( $id ) . '">';
+                wp_nonce_field( 'ge_commercial_cancel_balance_attempt_' . $id );
+                echo '<button class="ge-staff-button" type="submit">Cancelar intento de saldo para cobrar al entregar</button></form>';
+            }
             echo '</section>';
         }
         if ( $quote['converted_order_id'] ) {
@@ -126,14 +132,18 @@ final class GE_WTP_Commercial_Checkout {
         $id = absint( $_POST['order_id'] ?? 0 );
         check_admin_referer( 'ge_commercial_confirm_cash_balance_' . $id );
         if ( 'yes' !== sanitize_key( wp_unslash( $_POST['cash_received'] ?? '' ) ) ) { wp_die( 'Confirmá la recepción del efectivo.', '', array( 'response' => 422 ) ); }
-        $lock = 'ge_commercial_cash_' . $id;
+        $main = wc_get_order( $id );
+        $quote_id = $main ? absint( $main->get_meta( self::QUOTE_META, true ) ) : 0;
+        if ( ! $quote_id ) { wp_die( 'Pedido inválido.', '', array( 'response' => 409 ) ); }
+        $lock = 'ge_commercial_reconcile_' . $quote_id;
         if ( ! add_option( $lock, time(), '', 'no' ) ) { wp_die( 'El cobro se está procesando.', '', array( 'response' => 409 ) ); }
+        $failure = '';
         try {
             $order = wc_get_order( $id );
-            if ( ! $order || ! $order->get_meta( self::QUOTE_META, true ) || 'ready' !== $order->get_meta( '_ge_production_status', true ) ) { wp_die( 'Pedido inválido.', '', array( 'response' => 409 ) ); }
-            if ( $order->get_meta( '_ge_commercial_balance_payment_order', true ) ) { wp_die( 'Hay un cobro de saldo en curso; concilialo antes de registrar efectivo.', '', array( 'response' => 409 ) ); }
+            if ( ! $order || ! $order->get_meta( self::QUOTE_META, true ) || 'ready' !== $order->get_meta( '_ge_production_status', true ) ) { throw new DomainException( 'Pedido inválido.' ); }
+            if ( $order->get_meta( '_ge_commercial_balance_payment_order', true ) ) { throw new DomainException( 'Hay un cobro de saldo en curso; concilialo antes de registrar efectivo.' ); }
             $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
-            if ( $due <= 0 ) { wp_die( 'El saldo ya está abonado.', '', array( 'response' => 409 ) ); }
+            if ( $due <= 0 ) { throw new DomainException( 'El saldo ya está abonado.' ); }
             $attempts = (array) $order->get_meta( '_ge_commercial_credited_attempts', true );
             $attempts[] = array( 'key' => 'cash:order:' . $id, 'amount_cents' => $due );
             $state = GE_WTP_Quote_Balance::reconcile( (int) $order->get_meta( '_ge_final_total_cents', true ), $attempts );
@@ -141,11 +151,38 @@ final class GE_WTP_Commercial_Checkout {
             $order->update_meta_data( '_ge_amount_paid_cents', $state['amount_paid_cents'] );
             $order->update_meta_data( '_ge_amount_due_cents', $state['amount_due_cents'] );
             $order->update_meta_data( '_ge_payment_state', $state['payment_status'] );
+            if ( 0 === $state['amount_due_cents'] ) { $order->set_date_paid( current_time( 'timestamp', true ) ); }
             $order->add_order_note( 'Saldo en efectivo recibido al entregar por el usuario interno #' . get_current_user_id() . ': ' . GE_WTP_Quote_Balance::decimal( $due ) . ' ARS.' );
             $order->save();
-            $quote_id = absint( $order->get_meta( self::QUOTE_META, true ) );
+        } catch ( DomainException $error ) { $failure = $error->getMessage();
         } finally { delete_option( $lock ); }
+        if ( $failure ) { wp_die( esc_html( $failure ), '', array( 'response' => 409 ) ); }
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote_id ) ) ); exit;
+    }
+
+    public static function handle_cancel_balance_attempt() {
+        if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', '', array( 'response' => 403 ) ); }
+        $id = absint( $_POST['payment_order_id'] ?? 0 );
+        check_admin_referer( 'ge_commercial_cancel_balance_attempt_' . $id );
+        $payment = wc_get_order( $id );
+        $main_id = $payment ? absint( $payment->get_meta( '_ge_commercial_operational_order_id', true ) ) : 0;
+        $main = $main_id ? wc_get_order( $main_id ) : false;
+        if ( ! $payment || ! $main || 'balance' !== $payment->get_meta( self::KIND_META, true ) || 'yes' !== $payment->get_meta( self::PAYMENT_META, true ) || $payment->is_paid() || $id !== absint( $main->get_meta( '_ge_commercial_balance_payment_order', true ) ) ) { wp_die( 'Intento inválido.', '', array( 'response' => 409 ) ); }
+        $lock = 'ge_commercial_reconcile_' . absint( $main->get_meta( self::QUOTE_META, true ) );
+        if ( ! add_option( $lock, time(), '', 'no' ) ) { wp_die( 'El cobro se está procesando.', '', array( 'response' => 409 ) ); }
+        $failure = '';
+        try {
+            $payment = wc_get_order( $id );
+            $main = wc_get_order( $main_id );
+            if ( ! $payment || ! $main || $payment->is_paid() || $id !== absint( $main->get_meta( '_ge_commercial_balance_payment_order', true ) ) ) { throw new DomainException( 'El intento ya cambió.' ); }
+            $payment->update_status( 'cancelled', 'Intento de saldo cancelado por el usuario interno #' . get_current_user_id() . ' para coordinar otro cobro.' );
+            $main->delete_meta_data( '_ge_commercial_balance_payment_order' );
+            $main->add_order_note( 'Intento de cobro de saldo #' . $id . ' cancelado por el usuario interno #' . get_current_user_id() . '.' );
+            $main->save();
+        } catch ( DomainException $error ) { $failure = $error->getMessage();
+        } finally { delete_option( $lock ); }
+        if ( $failure ) { wp_die( esc_html( $failure ), '', array( 'response' => 409 ) ); }
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => absint( $main->get_meta( self::QUOTE_META, true ) ) ) ) ); exit;
     }
 
     public static function handle_staff_confirm() {
@@ -268,6 +305,7 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( self::KIND_META, $kind );
         $order->update_meta_data( self::METHOD_META, $method );
         $order->update_meta_data( self::AMOUNT_META, $amount_cents );
+        if ( 'balance' === $kind ) { $order->update_meta_data( '_ge_commercial_operational_order_id', absint( $quote['converted_order_id'] ) ); }
         $order->update_meta_data( '_ge_commercial_final_total_cents', $final_total_cents );
         $order->calculate_totals( false );
         $order->save();
@@ -326,6 +364,7 @@ final class GE_WTP_Commercial_Checkout {
             $order->update_meta_data( '_ge_amount_paid_cents', $state['amount_paid_cents'] );
             $order->update_meta_data( '_ge_amount_due_cents', $state['amount_due_cents'] );
             $order->update_meta_data( '_ge_payment_state', $state['payment_status'] );
+            if ( 0 === $state['amount_due_cents'] ) { $order->set_date_paid( current_time( 'timestamp', true ) ); }
             $order->add_order_note( 'Cobro acreditado: ' . GE_WTP_Quote_Balance::decimal( $received ) . ' ARS. Saldo: ' . GE_WTP_Quote_Balance::decimal( $state['amount_due_cents'] ) . ' ARS.' );
             $order->save();
             $payment->update_meta_data( '_ge_commercial_reconciled', 'yes' );
@@ -351,6 +390,9 @@ final class GE_WTP_Commercial_Checkout {
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
         $order->set_billing_last_name( $customer->last_name );
+        $method = (string) get_post_meta( $quote['id'], '_ge_commercial_method', true );
+        $order->set_payment_method( 'bacs' === $method ? 'bacs' : 'ge_commercial_mercadopago' );
+        $order->set_payment_method_title( 'bacs' === $method ? 'Transferencia bancaria' : 'Mercado Pago' );
         $line_count = count( $snapshot['items'] );
         $allocated_tax = 0;
         foreach ( $snapshot['items'] as $index => $line ) {
