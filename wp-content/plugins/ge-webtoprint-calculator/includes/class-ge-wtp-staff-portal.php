@@ -105,7 +105,9 @@ final class GE_WTP_Staff_Portal {
             return;
         }
         $section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : 'dashboard';
-        if ( 'orders' === $section ) {
+        if ( 'quotes' === $section ) {
+            GE_WTP_Commercial_Quote_UI::render_staff();
+        } elseif ( 'orders' === $section ) {
             self::render_orders();
         } elseif ( 'production' === $section ) {
             GE_WTP_Production::render();
@@ -196,7 +198,7 @@ final class GE_WTP_Staff_Portal {
     private static function render_orders() {
         $order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
         $order = $order_id ? wc_get_order( $order_id ) : false;
-        echo '<div class="ge-staff-heading"><div><span>Operación central</span><h1>Pedidos</h1><p>Tienda online, mostrador y cuentas corporativas en un solo lugar.</p></div><a class="ge-staff-button" href="' . esc_url( self::portal_url( 'production', array( 'view' => 'new' ) ) ) . '">＋ Nuevo pedido manual</a></div>';
+        echo '<div class="ge-staff-heading"><div><span>Operación central</span><h1>Pedidos</h1><p>Tienda online, mostrador y cuentas corporativas en un solo lugar.</p></div><div><a class="ge-staff-button" href="' . esc_url( self::portal_url( 'quotes' ) ) . '">＋ Nuevo presupuesto</a> <a class="ge-staff-button" href="' . esc_url( self::portal_url( 'production', array( 'view' => 'new' ) ) ) . '">＋ Nuevo pedido manual</a></div></div>';
         if ( ! $order ) {
             $orders = GE_WTP_Orders::get_all_orders( 250 );
             $query = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';

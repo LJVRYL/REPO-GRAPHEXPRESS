@@ -232,7 +232,7 @@ final class GE_WTP_Production {
     }
 
     public static function ensure_order( $order ) {
-        if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_production_initialized' ) ) { return; }
+        if ( ! $order instanceof WC_Order || 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) || $order->get_meta( '_ge_production_initialized' ) ) { return; }
         $created = $order->get_date_created() ? $order->get_date_created()->getTimestamp() : current_time( 'timestamp' );
         $assignments = array();
         foreach ( $order->get_items( 'line_item' ) as $item ) {
@@ -607,7 +607,7 @@ final class GE_WTP_Production {
         $old_order_status = $order->get_status();
         $is_markcom = 'yes' === $order->get_meta( '_ge_markcom_order' ) && $order->get_meta( '_ge_markcom_reference' );
         $order->update_status( $mapping[ $production_status ], 'Estado actualizado desde el panel de producción.' );
-        if ( ! $is_markcom && class_exists( 'GE_WTP_Notifications' ) ) { GE_WTP_Notifications::send_order_status_changed( $order, $old_order_status ); }
+        if ( ! $is_markcom && ! $order->get_meta( '_ge_commercial_quote_id', true ) && class_exists( 'GE_WTP_Notifications' ) ) { GE_WTP_Notifications::send_order_status_changed( $order, $old_order_status ); }
     }
 
     private static function alert( $order ) {

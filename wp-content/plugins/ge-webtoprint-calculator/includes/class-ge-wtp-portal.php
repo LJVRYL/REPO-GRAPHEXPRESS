@@ -99,7 +99,7 @@ final class GE_WTP_Portal {
     }
 
     private static function portal_order_belongs_to_customer( $order ) {
-        if ( ! $order ) { return false; }
+        if ( ! $order || 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) ) { return false; }
         $user = self::portal_user();
         return (int) $order->get_customer_id() === (int) $user->ID
             || ( 0 === (int) $order->get_customer_id() && $order->get_billing_email() && 0 === strcasecmp( $order->get_billing_email(), $user->user_email ) );
@@ -206,7 +206,7 @@ final class GE_WTP_Portal {
         }
 
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
-        $allowed = array( 'inicio', 'pedidos', 'guardados', 'documentos', 'perfil' );
+        $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil' );
         if ( self::portal_is_markcom() ) {
             $allowed[] = 'catalogo';
         }
@@ -224,6 +224,8 @@ final class GE_WTP_Portal {
                 <?php
                 if ( 'catalogo' === $section ) {
                     self::render_catalog();
+                } elseif ( 'presupuestos' === $section ) {
+                    GE_WTP_Commercial_Quote_UI::render_customer();
                 } elseif ( 'pedidos' === $section ) {
                     self::render_orders();
                 } elseif ( 'guardados' === $section ) {
@@ -318,6 +320,7 @@ final class GE_WTP_Portal {
         $user = self::portal_user();
         $items = array(
             'inicio'     => 'Resumen',
+            'presupuestos' => 'Presupuestos',
             'pedidos'    => 'Pedidos',
             'guardados'  => 'Guardados',
             'documentos' => 'Documentos',
@@ -579,6 +582,7 @@ final class GE_WTP_Portal {
                 </div>
                 <?php self::render_item_artwork_uploads( $order, $documents ); ?>
                 <?php GE_WTP_Payments::render_portal_order_payment( $order ); ?>
+                <?php if ( class_exists( 'GE_WTP_Commercial_Checkout' ) ) { GE_WTP_Commercial_Checkout::render_order_balance( $order ); } ?>
                 <a class="ge-button ge-button-secondary" href="<?php echo esc_url( GE_WTP_Quotes::order_url( $order->get_id() ) ); ?>">Descargar presupuesto PDF</a>
                 <?php GE_WTP_Reorders::order_actions( $order, $markcom ? 'markcom-order' : 'customer-order' ); ?>
                 <?php GE_WTP_Artwork_Library::render_order_links( $order ); ?>

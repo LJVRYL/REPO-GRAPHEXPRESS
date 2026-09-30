@@ -95,7 +95,7 @@ final class GE_WTP_Payments {
     }
 
     public static function render_portal_order_payment( $order ) {
-        if ( ! $order instanceof WC_Order || ! class_exists( 'GE_WTP_Documents' ) || ! GE_WTP_Documents::can_access_order( $order ) ) { return; }
+        if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_commercial_quote_id', true ) || ! class_exists( 'GE_WTP_Documents' ) || ! GE_WTP_Documents::can_access_order( $order ) ) { return; }
         $payment_state = sanitize_key( (string) $order->get_meta( '_ge_payment_state' ) );
         $is_paid = $order->is_paid() || 'paid' === $payment_state;
         $base_total = self::base_total( $order );
@@ -136,7 +136,7 @@ final class GE_WTP_Payments {
     }
 
     public static function render_staff_order_payment( $order ) {
-        if ( ! $order instanceof WC_Order || ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
+        if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_commercial_quote_id', true ) || ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
         $state = sanitize_key( (string) $order->get_meta( '_ge_payment_state' ) );
         $paid = $order->is_paid() || 'paid' === $state;
         $labels = array( 'receipt_uploaded' => 'Comprobante recibido · pendiente de verificación', 'paid' => 'Pago confirmado' );
