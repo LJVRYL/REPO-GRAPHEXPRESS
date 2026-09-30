@@ -43,6 +43,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Manual_Orders::init();
         GE_WTP_Newsletter::init();
         GE_WTP_Customers::init();
+        GE_WTP_Billing::init();
         GE_WTP_Reorders::init();
         GE_WTP_Artwork_Library::init();
         GE_WTP_Delivery_Labels::init();

@@ -64,7 +64,7 @@ final class GE_WTP_Customers {
     }
 
     public static function registration_fields() {
-        ?><p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide"><label for="reg_ge_first_name">Nombre&nbsp;<span class="optional">(opcional)</span></label><input type="text" class="woocommerce-Input woocommerce-Input--text input-text" name="ge_first_name" id="reg_ge_first_name" maxlength="100" value="<?php echo isset( $_POST['ge_first_name'] ) ? esc_attr( wp_unslash( $_POST['ge_first_name'] ) ) : ''; ?>"></p><p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide"><label for="reg_ge_whatsapp">WhatsApp&nbsp;<span class="optional">(opcional)</span></label><input type="tel" class="woocommerce-Input woocommerce-Input--text input-text" name="ge_whatsapp" id="reg_ge_whatsapp" maxlength="40" value="<?php echo isset( $_POST['ge_whatsapp'] ) ? esc_attr( wp_unslash( $_POST['ge_whatsapp'] ) ) : ''; ?>"></p><?php
+        ?><p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide"><label for="reg_ge_first_name">Nombre&nbsp;<span class="optional">(opcional)</span></label><input type="text" class="woocommerce-Input woocommerce-Input--text input-text" name="ge_first_name" id="reg_ge_first_name" maxlength="100" value="<?php echo isset( $_POST['ge_first_name'] ) ? esc_attr( wp_unslash( $_POST['ge_first_name'] ) ) : ''; ?>"></p><p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide"><label for="reg_ge_whatsapp">WhatsApp&nbsp;<span class="optional">(opcional)</span></label><input type="tel" class="woocommerce-Input woocommerce-Input--text input-text" name="ge_whatsapp" id="reg_ge_whatsapp" maxlength="40" value="<?php echo isset( $_POST['ge_whatsapp'] ) ? esc_attr( wp_unslash( $_POST['ge_whatsapp'] ) ) : ''; ?>"></p><p class="form-row form-row-wide"><label for="reg_ge_billing_mode">¿Necesitás Factura A?</label><select id="reg_ge_billing_mode" name="ge_billing_mode"><option value="common">No, cliente común</option><option value="invoice_a">Sí, completaré mis datos fiscales antes de aceptar o pagar</option></select></p><?php
     }
 
     public static function save_registration_fields( $customer_id ) {
@@ -72,6 +72,8 @@ final class GE_WTP_Customers {
         $whatsapp = isset( $_POST['ge_whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['ge_whatsapp'] ) ) : '';
         if ( $name ) { wp_update_user( array( 'ID' => $customer_id, 'first_name' => $name, 'display_name' => $name ) ); }
         if ( $whatsapp ) { update_user_meta( $customer_id, '_ge_whatsapp', $whatsapp ); update_user_meta( $customer_id, 'billing_phone', $whatsapp ); }
+        $mode = isset( $_POST['ge_billing_mode'] ) && 'invoice_a' === sanitize_key( wp_unslash( $_POST['ge_billing_mode'] ) ) ? 'invoice_a' : 'common';
+        GE_WTP_Billing::save_profile( $customer_id, array( 'billing_mode' => $mode ), $customer_id );
     }
 
     public static function start_customer_verification( $customer_id ) {
@@ -101,12 +103,13 @@ final class GE_WTP_Customers {
         $newsletter = 'yes' === get_user_meta( $user_id, '_ge_newsletter_optin', true );
         $verified = self::email_verified( $user_id );
         $pending_email = get_user_meta( $user_id, '_ge_pending_email', true );
+        $billing = GE_WTP_Billing::profile( $user_id );
         $status = isset( $_GET['profile_status'] ) ? sanitize_key( wp_unslash( $_GET['profile_status'] ) ) : '';
         ob_start();
         ?>
         <section class="ge-customer-profile">
-            <div class="ge-profile-heading"><div><span>Ficha del cliente</span><h1><?php echo $staff ? 'Datos y entregas' : 'Mis datos'; ?></h1><p><?php echo $staff ? 'Información compartida por el cliente y datos operativos internos.' : 'Completá solamente los datos que quieras usar para pedidos, facturación y entregas.'; ?></p></div><?php if ( $staff ) : ?><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'customers' ) ); ?>">← Volver a clientes</a><?php endif; ?></div>
-            <?php if ( 'saved' === $status ) : ?><div class="ge-profile-notice">Los datos se guardaron correctamente.</div><?php elseif ( 'verified' === $status ) : ?><div class="ge-profile-notice">Email verificado correctamente.</div><?php elseif ( 'email-pending' === $status ) : ?><div class="ge-profile-notice is-pending">Te enviamos un enlace al nuevo email. El cambio se aplicará cuando lo verifiques.</div><?php elseif ( 'error' === $status || 'verify-error' === $status ) : ?><div class="ge-profile-notice is-error">No pudimos completar la operación. Revisá el email y volvé a intentar.</div><?php endif; ?>
+            <div class="ge-profile-heading"><div><span>Ficha del cliente · <?php echo esc_html( 'invoice_a' === $billing['billing_mode'] ? 'Factura A' : 'Común' ); ?></span><h1><?php echo $staff ? 'Datos y entregas' : 'Mis datos'; ?></h1><p><?php echo $staff ? 'Información compartida por el cliente y datos operativos internos.' : 'Completá solamente los datos que quieras usar para pedidos, facturación y entregas.'; ?></p></div><?php if ( $staff ) : ?><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'customers' ) ); ?>">← Volver a clientes</a><?php endif; ?></div>
+            <?php if ( 'saved' === $status ) : ?><div class="ge-profile-notice">Los datos se guardaron correctamente.</div><?php elseif ( 'verified' === $status ) : ?><div class="ge-profile-notice">Email verificado correctamente.</div><?php elseif ( 'email-pending' === $status ) : ?><div class="ge-profile-notice is-pending">Te enviamos un enlace al nuevo email. El cambio se aplicará cuando lo verifiques.</div><?php elseif ( 'billing-error' === $status ) : ?><div class="ge-profile-notice is-error">Revisá la modalidad, el CUIT y el email de facturación.</div><?php elseif ( 'error' === $status || 'verify-error' === $status ) : ?><div class="ge-profile-notice is-error">No pudimos completar la operación. Revisá el email y volvé a intentar.</div><?php endif; ?>
             <form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="<?php echo $staff ? 'ge_staff_save_customer' : 'ge_customer_save_profile'; ?>">
                 <input type="hidden" name="profile_context" value="<?php echo esc_attr( $context ); ?>">
@@ -119,8 +122,15 @@ final class GE_WTP_Customers {
                         <label class="ge-field-wide">Email obligatorio<input type="email" name="email" value="<?php echo esc_attr( $user->user_email ); ?>" required maxlength="190" <?php disabled( $staff ); ?>></label>
                         <label>WhatsApp<input type="tel" name="whatsapp" value="<?php echo esc_attr( get_user_meta( $user_id, '_ge_whatsapp', true ) ?: get_user_meta( $user_id, 'billing_phone', true ) ); ?>" maxlength="40" placeholder="+54 9 11..."></label>
                         <label>Persona de contacto<input type="text" name="contact_person" value="<?php echo esc_attr( get_user_meta( $user_id, '_ge_contact_person', true ) ); ?>" maxlength="140"></label>
-                        <label>Razón social / empresa<input type="text" name="company" value="<?php echo esc_attr( get_user_meta( $user_id, 'billing_company', true ) ); ?>" maxlength="160"></label>
-                        <label>CUIT<input type="text" name="cuit" value="<?php echo esc_attr( get_user_meta( $user_id, '_ge_cuit', true ) ); ?>" maxlength="20"></label>
+                    </div></section>
+                    <section class="ge-profile-card"><div class="ge-profile-card-title"><span>02</span><div><h2>Datos de facturación</h2><p>Elegí el flujo que necesitás. Los datos para Factura A se completan antes de aceptar o pagar un presupuesto.</p></div></div><div class="ge-profile-fields">
+                        <label class="ge-field-wide">¿Necesitás Factura A?<select name="billing_mode"><option value="common" <?php selected( $billing['billing_mode'], 'common' ); ?>>No · Cliente común</option><option value="invoice_a" <?php selected( $billing['billing_mode'], 'invoice_a' ); ?>>Sí · Necesito Factura A</option></select></label>
+                        <label>CUIT<input type="text" name="cuit" value="<?php echo esc_attr( $billing['cuit'] ); ?>" maxlength="20" inputmode="numeric"></label>
+                        <label>Razón social / nombre fiscal<input type="text" name="company" value="<?php echo esc_attr( $billing['legal_name'] ); ?>" maxlength="160"></label>
+                        <label>Condición frente al IVA<select name="vat_status"><option value="">Seleccionar</option><option value="registered" <?php selected( $billing['vat_status'], 'registered' ); ?>>Responsable inscripto</option><option value="monotributo" <?php selected( $billing['vat_status'], 'monotributo' ); ?>>Monotributista</option><option value="exempt" <?php selected( $billing['vat_status'], 'exempt' ); ?>>Exento</option><option value="final_consumer" <?php selected( $billing['vat_status'], 'final_consumer' ); ?>>Consumidor final</option></select></label>
+                        <label>Email de facturación<input type="email" name="billing_email" value="<?php echo esc_attr( $billing['billing_email'] ); ?>" maxlength="190"></label>
+                        <label class="ge-field-wide">Domicilio fiscal<input type="text" name="fiscal_address" value="<?php echo esc_attr( $billing['fiscal_address'] ); ?>" maxlength="220"></label>
+                        <?php if ( $staff ) : ?><label class="ge-field-wide"><input type="checkbox" name="billing_verify" value="1" <?php checked( ! empty( $billing['verified_at'] ) ); ?>> Datos fiscales verificados por Graph</label><p class="ge-field-wide">Verificación: <?php echo esc_html( $billing['verified_at'] ?: 'Pendiente' ); ?> · Los cambios quedan en la auditoría de la ficha.</p><?php endif; ?>
                     </div></section>
                     <section class="ge-profile-card"><div class="ge-profile-card-title"><span>02</span><div><h2>Preferencias</h2><p>Cómo suele trabajar y recibir sus pedidos.</p></div></div><div class="ge-email-state <?php echo $verified ? 'is-verified' : 'is-pending'; ?>"><strong><?php echo $verified ? '✓ Email verificado' : 'Email pendiente de verificación'; ?></strong><?php if ( $pending_email ) : ?><small>Cambio pendiente: <?php echo esc_html( self::mask_email( $pending_email ) ); ?></small><?php endif; ?><?php if ( ! $verified && ! $staff ) : ?><button type="submit" form="ge-resend-verification">Reenviar enlace</button><?php endif; ?></div><div class="ge-profile-fields"><label class="ge-field-wide">Modalidad habitual<select name="delivery_preference"><option value="">Sin preferencia</option><option value="retiro" <?php selected( get_user_meta( $user_id, '_ge_delivery_preference', true ), 'retiro' ); ?>>Retiro por Graph Express</option><option value="envio" <?php selected( get_user_meta( $user_id, '_ge_delivery_preference', true ), 'envio' ); ?>>Envío a domicilio</option><option value="coordinar" <?php selected( get_user_meta( $user_id, '_ge_delivery_preference', true ), 'coordinar' ); ?>>Coordinar en cada pedido</option></select></label><?php if ( ! $staff ) : ?><label class="ge-profile-consent ge-field-wide"><input type="checkbox" name="newsletter_optin" value="1" <?php checked( $newsletter ); ?>><span><strong>Quiero recibir novedades</strong><small>Promociones y contenidos de Graph Express. Los emails necesarios para pedidos se envían igualmente.</small></span></label><?php endif; ?></div></section>
                 </div>
@@ -297,6 +307,7 @@ final class GE_WTP_Customers {
         $old_email = wp_get_current_user()->user_email;
         $email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
         if ( ! is_email( $email ) || ( email_exists( $email ) && (int) email_exists( $email ) !== $user_id ) ) { self::redirect_profile( 'error' ); }
+        try { GE_WTP_Billing::normalize_profile( self::posted_billing() ); } catch ( InvalidArgumentException $e ) { self::redirect_profile( 'billing-error' ); }
         $email_changed = strtolower( $old_email ) !== strtolower( $email );
         $updated = wp_update_user( array( 'ID' => $user_id, 'first_name' => self::post_text( 'first_name' ), 'last_name' => self::post_text( 'last_name' ), 'display_name' => trim( self::post_text( 'first_name' ) . ' ' . self::post_text( 'last_name' ) ) ?: $old_email ) );
         if ( is_wp_error( $updated ) ) { self::redirect_profile( 'error' ); }
@@ -317,21 +328,21 @@ final class GE_WTP_Customers {
         $user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
         check_admin_referer( 'ge_staff_save_customer_' . $user_id );
         if ( ! get_userdata( $user_id ) ) { wp_die( 'Cliente inválido.' ); }
+        try { GE_WTP_Billing::normalize_profile( self::posted_billing() ); } catch ( InvalidArgumentException $e ) { wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'customers', array( 'customer_id' => $user_id, 'profile_status' => 'billing-error' ) ) ); exit; }
         wp_update_user( array( 'ID' => $user_id, 'first_name' => self::post_text( 'first_name' ), 'last_name' => self::post_text( 'last_name' ) ) );
-        self::save_shared_fields( $user_id );
+        self::save_shared_fields( $user_id, true );
         $avatar_result = self::save_avatar( $user_id );
         update_user_meta( $user_id, '_ge_customer_tags', self::post_text( 'internal_tags' ) );
         update_user_meta( $user_id, '_ge_customer_internal_notes', isset( $_POST['internal_notes'] ) ? sanitize_textarea_field( wp_unslash( $_POST['internal_notes'] ) ) : '' );
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'customers', array( 'customer_id' => $user_id, 'profile_status' => is_wp_error( $avatar_result ) ? 'error' : 'saved' ) ) ); exit;
     }
 
-    private static function save_shared_fields( $user_id ) {
+    private static function save_shared_fields( $user_id, $staff = false ) {
         $whatsapp = self::post_text( 'whatsapp' );
         update_user_meta( $user_id, '_ge_whatsapp', $whatsapp );
         update_user_meta( $user_id, 'billing_phone', $whatsapp );
         update_user_meta( $user_id, '_ge_contact_person', self::post_text( 'contact_person' ) );
-        update_user_meta( $user_id, 'billing_company', self::post_text( 'company' ) );
-        update_user_meta( $user_id, '_ge_cuit', self::post_text( 'cuit' ) );
+        GE_WTP_Billing::save_profile( $user_id, self::posted_billing(), get_current_user_id(), $staff && ! empty( $_POST['billing_verify'] ) );
         $preference = isset( $_POST['delivery_preference'] ) ? sanitize_key( wp_unslash( $_POST['delivery_preference'] ) ) : '';
         update_user_meta( $user_id, '_ge_delivery_preference', in_array( $preference, array( 'retiro', 'envio', 'coordinar' ), true ) ? $preference : '' );
         update_user_meta( $user_id, self::ADDRESSES_META, self::sanitize_addresses( isset( $_POST['addresses'] ) ? wp_unslash( $_POST['addresses'] ) : array() ) );
@@ -361,6 +372,17 @@ final class GE_WTP_Customers {
 
     private static function post_text( $key ) {
         return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '';
+    }
+
+    private static function posted_billing() {
+        return array(
+            'billing_mode' => self::post_text( 'billing_mode' ),
+            'cuit' => self::post_text( 'cuit' ),
+            'legal_name' => self::post_text( 'company' ),
+            'vat_status' => self::post_text( 'vat_status' ),
+            'billing_email' => self::post_text( 'billing_email' ),
+            'fiscal_address' => self::post_text( 'fiscal_address' ),
+        );
     }
 
     private static function redirect_profile( $status ) {

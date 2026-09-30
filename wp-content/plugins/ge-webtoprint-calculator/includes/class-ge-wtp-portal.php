@@ -164,6 +164,8 @@ final class GE_WTP_Portal {
         if ( is_wp_error( $user_id ) || ! $user_id ) { self::registration_error_redirect( 'failed' ); }
         update_user_meta( $user_id, '_ge_whatsapp', $whatsapp );
         update_user_meta( $user_id, 'billing_phone', $whatsapp );
+        $billing_mode = isset( $_POST['billing_mode'] ) && 'invoice_a' === sanitize_key( wp_unslash( $_POST['billing_mode'] ) ) ? 'invoice_a' : 'common';
+        GE_WTP_Billing::save_profile( $user_id, array( 'billing_mode' => $billing_mode ), $user_id );
         update_user_meta( $user_id, '_ge_registration_source', 'portal' );
         if ( ! empty( $_POST['newsletter_optin'] ) && class_exists( 'GE_WTP_Newsletter' ) ) {
             GE_WTP_Newsletter::subscribe( $email, $first_name, $last_name, 'portal-registration' );
@@ -221,6 +223,13 @@ final class GE_WTP_Portal {
             <?php self::render_header( $section ); ?>
             <main class="ge-portal-main">
                 <?php self::render_notice(); ?>
+                <?php if ( ! self::is_staff_preview() ) :
+                    $saved_billing = get_user_meta( self::portal_customer_id(), GE_WTP_Billing::PROFILE_META, true );
+                    $billing_missing = is_array( $saved_billing ) ? GE_WTP_Billing::missing_fields( $saved_billing ) : array( 'billing_mode' );
+                    if ( $billing_missing && 'perfil' !== $section ) : ?>
+                        <div class="ge-profile-notice is-pending">Completá tus datos de facturación antes de aceptar o pagar un presupuesto. <a href="<?php echo esc_url( self::portal_url( 'perfil' ) ); ?>">Ir a Mi perfil</a></div>
+                    <?php endif;
+                endif; ?>
                 <?php
                 if ( 'catalogo' === $section ) {
                     self::render_catalog();
@@ -281,6 +290,7 @@ final class GE_WTP_Portal {
                             <div class="ge-auth-name-grid"><p><label for="ge-register-name">Nombre</label><input id="ge-register-name" type="text" name="first_name" autocomplete="given-name" required maxlength="100"></p><p><label for="ge-register-lastname">Apellido <span>(opcional)</span></label><input id="ge-register-lastname" type="text" name="last_name" autocomplete="family-name" maxlength="100"></p></div>
                             <p><label for="ge-register-email">Email</label><input id="ge-register-email" type="email" name="email" autocomplete="email" required maxlength="190"></p>
                             <p><label for="ge-register-whatsapp">WhatsApp <span>(opcional)</span></label><input id="ge-register-whatsapp" type="tel" name="whatsapp" autocomplete="tel" maxlength="40" placeholder="+54 9 11..."></p>
+                            <p><label for="ge-register-billing">¿Necesitás Factura A?</label><select id="ge-register-billing" name="billing_mode"><option value="common">No, cliente común</option><option value="invoice_a">Sí, completaré mis datos fiscales en Mi perfil</option></select></p>
                             <p><label for="ge-register-password">Contraseña</label><input id="ge-register-password" type="password" name="password" autocomplete="new-password" required minlength="10"><small class="ge-field-help">Mínimo 10 caracteres.</small></p>
                             <p><label for="ge-register-confirmation">Repetir contraseña</label><input id="ge-register-confirmation" type="password" name="password_confirmation" autocomplete="new-password" required minlength="10"></p>
                             <p class="ge-auth-check"><label><input type="checkbox" name="terms" value="1" required> Acepto que Graph Express use estos datos para gestionar mi cuenta y mis pedidos.</label></p>

@@ -132,6 +132,7 @@ final class GE_WTP_Staff_Portal {
         $category = $legacy_category ?: ( isset( $_GET['category'] ) ? sanitize_key( wp_unslash( $_GET['category'] ) ) : '' );
         $categories = array(
             'general' => array( 'icon' => 'GE', 'title' => 'General', 'description' => 'Identidad, datos del negocio y preferencias generales.' ),
+            'billing' => array( 'icon' => 'FA', 'title' => 'Facturación', 'description' => 'Emisor, comprobantes habilitados y política de precios.' ),
             'notifications' => array( 'icon' => '✉', 'title' => 'Notificaciones', 'description' => 'Destinatarios, eventos, resúmenes y trazabilidad de correos.' ),
             'operations' => array( 'icon' => 'OT', 'title' => 'Pedidos y producción', 'description' => 'Criterios operativos, tiempos, estados y automatizaciones.' ),
             'customers' => array( 'icon' => 'CL', 'title' => 'Clientes y archivos', 'description' => 'Perfiles, direcciones, biblioteca y conservación de originales.' ),
@@ -158,7 +159,7 @@ final class GE_WTP_Staff_Portal {
                     <?php foreach ( $categories as $key => $item ) : ?><a class="<?php echo $category === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( self::portal_url( 'settings', array( 'category' => $key ) ) ); ?>"><b><?php echo esc_html( $item['icon'] ); ?></b><span><?php echo esc_html( $item['title'] ); ?></span></a><?php endforeach; ?>
                 </aside>
                 <div class="ge-settings-content">
-                    <?php if ( 'notifications' === $category ) : GE_WTP_Notification_Center::render( false ); elseif ( 'integrations' === $category ) : GE_WTP_Google_Auth::render_settings(); else : $item = $categories[ $category ]; ?>
+                    <?php if ( 'notifications' === $category ) : GE_WTP_Notification_Center::render( false ); elseif ( 'integrations' === $category ) : GE_WTP_Google_Auth::render_settings(); elseif ( 'billing' === $category ) : GE_WTP_Billing::render_settings(); else : $item = $categories[ $category ]; ?>
                         <section class="ge-settings-placeholder"><b><?php echo esc_html( $item['icon'] ); ?></b><span>Próxima categoría</span><h2><?php echo esc_html( $item['title'] ); ?></h2><p><?php echo esc_html( $item['description'] ); ?> La estructura ya está lista para incorporar estos controles cuando los definamos.</p><a href="<?php echo esc_url( self::portal_url( 'settings' ) ); ?>">Volver a configuración</a></section>
                     <?php endif; ?>
                 </div>
