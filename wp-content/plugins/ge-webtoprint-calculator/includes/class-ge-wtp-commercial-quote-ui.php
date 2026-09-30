@@ -29,7 +29,7 @@ final class GE_WTP_Commercial_Quote_UI {
         $catalog = array();
         foreach ( wc_get_products( array( 'status' => 'publish', 'limit' => 500, 'orderby' => 'name', 'order' => 'ASC' ) ) as $product ) {
             $label = $product->get_name() . ' (#' . $product->get_id() . ')';
-            $catalog[ $label ] = array( 'id' => $product->get_id(), 'price' => (float) $product->get_price() );
+            $catalog[ $label ] = array( 'id' => $product->get_id(), 'price' => (float) wc_get_price_excluding_tax( $product ) );
         }
         echo '<form class="ge-manual-order" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_quote_save">';
         wp_nonce_field( 'ge_commercial_quote_save' );
