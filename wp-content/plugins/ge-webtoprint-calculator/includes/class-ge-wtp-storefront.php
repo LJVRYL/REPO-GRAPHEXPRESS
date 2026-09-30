@@ -18,6 +18,7 @@ final class GE_WTP_Storefront {
         add_filter('woocommerce_add_to_cart_validation', array(__CLASS__, 'admin_preview_validation'), 9999, 5);
         add_action('woocommerce_before_calculate_totals', array(__CLASS__, 'apply_cart_prices'));
         add_filter('woocommerce_get_item_data', array(__CLASS__, 'cart_item_data'), 10, 2);
+        add_filter('woocommerce_display_product_attributes', array(__CLASS__, 'display_roll_unit'), 10, 2);
         add_action('woocommerce_checkout_create_order_line_item', array(__CLASS__, 'order_item_data'), 10, 4);
         add_action('woocommerce_checkout_order_created', array(__CLASS__, 'finalize_order_uploads'));
         add_action('woocommerce_store_api_checkout_order_processed', array(__CLASS__, 'finalize_order_uploads'));
@@ -56,6 +57,16 @@ final class GE_WTP_Storefront {
 
     public static function purchasable($purchasable, $product) {
         return self::config($product->get_id()) ? true : $purchasable;
+    }
+
+    public static function display_roll_unit( $attributes, $product ) {
+        $config = self::config( $product->get_id() );
+        if ( empty( $config['roll_widths_cm'] ) ) { return $attributes; }
+        foreach ( $attributes as &$attribute ) {
+            if ( ( $attribute['label'] ?? '' ) === 'Unidad de cálculo' ) { $attribute['value'] = 'Metro lineal según ancho de rollo'; }
+        }
+        unset( $attribute );
+        return $attributes;
     }
 
     public static function admin_preview_validation($valid, $product_id, $quantity, $variation_id = 0, $variations = array()) {
