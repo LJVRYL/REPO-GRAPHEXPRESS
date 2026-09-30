@@ -187,7 +187,19 @@ final class GE_WTP_Commercial_Quotes {
             if ( ! $name || $quantity < 1 || $quantity > 100000 ) {
                 return new WP_Error( 'ge_quote_line', 'Nombre o cantidad inválidos.' );
             }
-            try { $unit_cents = GE_WTP_Quote_Balance::cents( $line['unit_net'] ?? '' ); }
+            $configuration = array(); $configuration_label = '';
+            $unit_net = $line['unit_net'] ?? '';
+            if ( $product ) {
+                $priced = GE_WTP_Commercial_Quote_Catalog::price( $product_id, $line['configuration'] ?? array(), $quantity );
+                if ( is_wp_error( $priced ) ) { return $priced; }
+                $configuration = $priced['configuration'];
+                $configuration_label = $priced['description'];
+                $quantity = absint( $priced['quantity'] ?? $quantity );
+                if ( ! $priced['manual'] ) { $unit_net = wc_format_decimal( $priced['price'], 2 ); }
+            }
+            $finishes = array_values( array_unique( array_map( 'sanitize_key', (array) ( $line['finishes'] ?? array() ) ) ) );
+            if ( array_diff( $finishes, array_keys( GE_WTP_Workflow::finishing_catalog() ) ) ) { return new WP_Error( 'ge_quote_finishes', 'Revisá las terminaciones seleccionadas.' ); }
+            try { $unit_cents = GE_WTP_Quote_Balance::cents( $unit_net ); }
             catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_quote_price', 'Precio unitario inválido.' ); }
             $line_cents = $unit_cents * $quantity;
             if ( $line_cents <= 0 || $line_cents > 999999999999 ) { return new WP_Error( 'ge_quote_price', 'Importe de ítem fuera de rango.' ); }
@@ -199,12 +211,15 @@ final class GE_WTP_Commercial_Quotes {
                 'unit_net_cents' => $unit_cents,
                 'net_cents' => $line_cents,
                 'details' => sanitize_textarea_field( $line['details'] ?? '' ),
+                'configuration' => $configuration,
+                'configuration_label' => $configuration_label,
+                'finishes' => $finishes,
                 'lead_days' => absint( $line['lead_days'] ?? 0 ),
             );
             $net += $line_cents;
             if ( $net > 999999999999 ) { return new WP_Error( 'ge_quote_price', 'Total fuera de rango.' ); }
         }
-        $valid_until = sanitize_text_field( $args['valid_until'] ?? '' );
+        $valid_until = sanitize_text_field( $args['valid_until'] ?? wp_date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) ) );
         if ( $valid_until && ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/D', $valid_until ) || $valid_until < wp_date( 'Y-m-d' ) ) ) {
             return new WP_Error( 'ge_quote_validity', 'Fecha de validez inválida.' );
         }

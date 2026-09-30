@@ -1,0 +1,19 @@
+.ge-commercial-quote .ge-manual-contact-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ge-commercial-quote .ge-manual-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ge-commercial-quote .ge-manual-line{grid-template-columns:minmax(220px,1.6fr) 95px minmax(175px,1fr) minmax(170px,1fr) 38px}
+.ge-commercial-quote .ge-quote-config,.ge-commercial-quote .ge-quote-finishes{grid-column:1/-1}
+.ge-commercial-quote .ge-quote-config{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;padding:13px;border:1px solid #e3dced;border-radius:9px;background:#fff}
+.ge-commercial-quote .ge-quote-config[hidden]{display:none}
+.ge-commercial-quote .ge-quote-config label{display:grid;gap:5px;color:#504960;font-size:12px;font-weight:700}
+.ge-commercial-quote .ge-quote-config input,.ge-commercial-quote .ge-quote-config select{width:100%;min-height:42px;padding:8px;border:1px solid #cbc7d3;border-radius:8px;background:#fff;font:inherit}
+.ge-commercial-quote .ge-quote-config input[type=checkbox]{width:22px;min-height:22px}
+.ge-commercial-quote .ge-quote-finishes{display:flex;flex-wrap:wrap;gap:9px;margin:0;padding:10px 0 0;border:0;border-top:1px solid #e7e1ec}
+.ge-commercial-quote .ge-quote-finishes legend{padding:0;color:#504960;font-size:12px;font-weight:800}
+.ge-commercial-quote .ge-quote-finishes label{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #ded8e7;border-radius:8px;background:#fff;color:#514b5c;font-size:12px;font-weight:600}
+.ge-commercial-quote .ge-quote-finishes input{width:18px;min-height:18px;margin:0}
+.ge-commercial-quote [data-ge-price-hint],.ge-commercial-quote .ge-manual-plan-grid small{display:block;color:#6b6475;font-size:11px;font-weight:500}
+.ge-commercial-quote input[readonly]{background:#f2f0f6}
+.ge-quote-actions{display:flex;flex-wrap:wrap;gap:10px}
+.ge-quote-actions .is-secondary{border:1px solid #cbc4dc;background:#fff;color:#342d46}
+@media(max-width:1100px){.ge-commercial-quote .ge-manual-line{grid-template-columns:minmax(200px,1fr) 95px minmax(175px,1fr)}.ge-commercial-quote .ge-manual-line .is-detail{grid-column:1/3}}
+@media(max-width:760px){.ge-commercial-quote .ge-manual-contact-grid,.ge-commercial-quote .ge-manual-plan-grid,.ge-commercial-quote .ge-manual-line{grid-template-columns:1fr}.ge-commercial-quote .ge-manual-line .is-detail,.ge-commercial-quote .ge-quote-config,.ge-commercial-quote .ge-quote-finishes{grid-column:1}.ge-quote-actions{width:100%}.ge-quote-actions button{flex:1}}

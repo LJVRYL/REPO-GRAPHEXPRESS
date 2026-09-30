@@ -9,6 +9,10 @@ if ( in_array( $section, array( 'quotes', 'production' ), true ) && GE_WTP_Staff
     $production_css = GE_WTP_PLUGIN_DIR . 'assets/css/production.css';
     wp_enqueue_style( 'ge-production', GE_WTP_PLUGIN_URL . 'assets/css/production.css', array( 'ge-staff-portal' ), is_file( $production_css ) ? (string) filemtime( $production_css ) : GE_WTP_VERSION );
 }
+if ( 'quotes' === $section && GE_WTP_Staff_Portal::can_access() ) {
+    $quote_css = GE_WTP_PLUGIN_DIR . 'assets/css/commercial-quotes.css';
+    wp_enqueue_style( 'ge-commercial-quotes', GE_WTP_PLUGIN_URL . 'assets/css/commercial-quotes.css', array( 'ge-production' ), is_file( $quote_css ) ? (string) filemtime( $quote_css ) : GE_WTP_VERSION );
+}
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head><meta charset="<?php bloginfo( 'charset' ); ?>"><meta name="viewport" content="width=device-width, initial-scale=1"><?php wp_head(); ?></head>

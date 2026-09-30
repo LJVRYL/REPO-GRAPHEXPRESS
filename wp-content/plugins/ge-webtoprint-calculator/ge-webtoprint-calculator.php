@@ -35,6 +35,7 @@ require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-order-lifecycle.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-orders.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-quotes.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-quote-balance.php';
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-commercial-quote-catalog.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-commercial-quotes.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-commercial-quote-ui.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-commercial-checkout.php';

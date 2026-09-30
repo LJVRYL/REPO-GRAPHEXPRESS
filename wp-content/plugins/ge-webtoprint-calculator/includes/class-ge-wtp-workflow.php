@@ -204,7 +204,7 @@ final class GE_WTP_Workflow {
         GE_WTP_Production::render_documents( $order );
     }
 
-    private static function finishing_catalog() {
+    public static function finishing_catalog() {
         $saved = get_option( 'ge_wtp_finishing_catalog', array() );
         $defaults = array( 'corte' => 'Corte', 'hendido' => 'Hendido', 'pegado' => 'Pegado', 'abrochado' => 'Abrochado', 'agujereado' => 'Agujereado', 'confeccion' => 'Confección', 'emblocado' => 'Emblocado', 'laminado' => 'Laminado', 'troquelado' => 'Troquelado' );
         return is_array( $saved ) && $saved ? array_map( 'sanitize_text_field', $saved ) : $defaults;

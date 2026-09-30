@@ -69,6 +69,16 @@ final class GE_WTP_Digital_Catalog {
         return compact('values', 'labels', 'quote_required', 'surcharge');
     }
 
+    public static function commercial_quote_price($product_id, $input) {
+        $product = wc_get_product(absint($product_id));
+        $config = $product ? $product->get_meta('_ge_digital_config') : array();
+        if (!is_array($config) || empty($config['fields'])) return new WP_Error('ge_quote_config', 'Configuración no disponible.');
+        $selection = self::validate_selection($config, is_array($input) ? $input : array());
+        if (is_wp_error($selection)) return $selection;
+        $price = self::calculated_price(self::public_calculator_config($config), $selection);
+        return array('price' => $price, 'values' => $selection['values'], 'labels' => $selection['labels']);
+    }
+
     private static function calculated_price($config, $selection) {
         if ($selection['quote_required'] || !empty($config['quote_only']) || 'estimated' === ($config['price_status'] ?? '')) { return 0; }
         $values = $selection['values']; $surcharge = $selection['surcharge'];

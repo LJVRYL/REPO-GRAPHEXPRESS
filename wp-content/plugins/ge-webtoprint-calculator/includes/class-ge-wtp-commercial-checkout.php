@@ -18,6 +18,7 @@ final class GE_WTP_Commercial_Checkout {
         add_action( 'admin_post_ge_commercial_confirm_cash_balance', array( __CLASS__, 'handle_cash_balance' ) );
         add_action( 'admin_post_ge_commercial_cancel_balance_attempt', array( __CLASS__, 'handle_cancel_balance_attempt' ) );
         add_action( 'woocommerce_payment_complete', array( __CLASS__, 'reconcile_payment' ), 30 );
+        add_action( 'woocommerce_thankyou', array( __CLASS__, 'render_receipt_thankyou' ), 15 );
         add_filter( 'woocommerce_available_payment_gateways', array( __CLASS__, 'limit_gateways' ), 95 );
     }
 
@@ -92,9 +93,17 @@ final class GE_WTP_Commercial_Checkout {
 
     private static function render_receipt_form( $payment ) {
         if ( 'bacs' !== $payment->get_meta( self::METHOD_META, true ) || $payment->is_paid() ) { return; }
-        echo '<p>Si transferiste, adjuntá el comprobante. Graph Express verificará la acreditación antes de registrar el pago.</p><form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_upload_receipt"><input type="hidden" name="payment_order_id" value="' . esc_attr( $payment->get_id() ) . '">';
+        echo '<p>Si pagaste por transferencia, podés subir el comprobante ahora o volver a esta sección más tarde. No es obligatorio para continuar; Graph Express verificará la acreditación bancaria antes de registrar el pago.</p><form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_upload_receipt"><input type="hidden" name="payment_order_id" value="' . esc_attr( $payment->get_id() ) . '">';
         wp_nonce_field( 'ge_commercial_upload_receipt_' . $payment->get_id() );
         echo '<label>Comprobante<input type="file" name="ge_payment_receipt" accept=".pdf,.jpg,.jpeg,.png" required></label><button class="ge-button ge-button-secondary" type="submit">Enviar comprobante</button></form>';
+    }
+
+    public static function render_receipt_thankyou( $order_id ) {
+        $payment = wc_get_order( absint( $order_id ) );
+        if ( ! $payment || 'yes' !== $payment->get_meta( self::PAYMENT_META, true ) || 'bacs' !== $payment->get_meta( self::METHOD_META, true ) || $payment->is_paid() || ! is_user_logged_in() || (int) $payment->get_customer_id() !== get_current_user_id() ) { return; }
+        echo '<section class="ge-panel"><h3>Comprobante de transferencia</h3>';
+        self::render_receipt_form( $payment );
+        echo '<p><a href="' . esc_url( GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => absint( $payment->get_meta( self::QUOTE_META, true ) ) ) ) ) . '">Volver a mi presupuesto</a></p></section>';
     }
 
     public static function handle_receipt() {
@@ -311,6 +320,7 @@ final class GE_WTP_Commercial_Checkout {
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
         $order->set_billing_last_name( $customer->last_name );
+        $order->set_billing_phone( get_user_meta( $customer->ID, '_ge_whatsapp', true ) ?: get_user_meta( $customer->ID, 'billing_phone', true ) );
         $item = new WC_Order_Item_Product();
         $item->set_name( ( 'balance' === $kind ? 'Saldo' : ( 'deposit' === $kind ? 'Seña' : 'Pago total' ) ) . ' · ' . $quote['number'] );
         $item->set_quantity( 1 );
@@ -434,7 +444,9 @@ final class GE_WTP_Commercial_Checkout {
                 $allocated_tax += $line_tax;
                 $item->set_taxes( array( 'total' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ), 'subtotal' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ) ) );
             }
-            $item->add_meta_data( 'Especificaciones', $line['details'], true );
+            $specifications = implode( ' · ', array_filter( array( $line['configuration_label'] ?? '', $line['details'] ?? '' ) ) );
+            if ( $specifications ) { $item->add_meta_data( 'Especificaciones', $specifications, true ); }
+            if ( ! empty( $line['finishes'] ) ) { $item->update_meta_data( GE_WTP_Workflow::FINISHES_META, $line['finishes'] ); }
             $item->update_meta_data( '_ge_item_status', 'pending' );
             $order->add_item( $item );
         }
