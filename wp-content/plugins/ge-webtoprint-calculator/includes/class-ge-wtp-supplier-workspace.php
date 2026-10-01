@@ -200,6 +200,11 @@ final class GE_WTP_Supplier_Workspace {
         $sent = ! $last_dispatch ? 'Sin envío registrado' : ( $sent_ok ? 'Orden enviada' : 'Último envío fallido' );
         $grants = (array) $order->get_meta( GE_WTP_Workflow_Dispatch::GRANTS_META, true );
         $file_count = 0; foreach ( $grants as $grant ) { if ( $key === ( $grant['supplier'] ?? '' ) ) { $file_count += count( (array) ( $grant['document_ids'] ?? array() ) ); } }
+        $portal_row = GE_WTP_Supplier_Portal::latest( $order, $key, true );
+        if ( $portal_row ) {
+            $sent = GE_WTP_Supplier_Portal::state_label( $portal_row ) . ' · ETA: ' . ( $portal_row['eta'] ?? 'Sin informar' );
+            $file_count = count( $portal_row['snapshot']['files'] );
+        }
         $payment_state = '' === $cost ? 'Costo pendiente' : ( $paid <= 0 ? 'Sin pagos' : ( $paid < (float) $cost ? 'Pago parcial' : 'Pagado' ) );
         ?><article class="ge-sw-order"><div><strong>#<?php echo esc_html( $order->get_id() ); ?> · <?php echo esc_html( implode( ', ', array_map( static function ( $item ) { return $item->get_name(); }, $order->get_items( 'line_item' ) ) ) ); ?></strong><small><?php echo esc_html( $order->get_date_created() ? $order->get_date_created()->date_i18n( 'd/m/Y' ) : 'Sin fecha' ); ?> · <?php echo esc_html( $order->get_meta( '_ge_production_status', true ) ?: $order->get_status() ); ?> · <?php echo esc_html( $sent ); ?></small><small>Fecha requerida: <?php echo esc_html( $order->get_meta( '_ge_production_promised_date', true ) ?: 'Sin cargar' ); ?> · <?php echo esc_html( $file_count ); ?> archivo(s) vinculados a envíos privados</small></div><div class="ge-sw-order-right"><span><?php echo '' === $cost ? 'Costo pendiente' : self::money( $cost ); ?></span><small><?php echo esc_html( $payment_state ); ?> · <?php echo '' === $cost ? 'Saldo desconocido' : 'Saldo ' . self::money( (float) $cost - $paid ); ?></small><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>">Abrir pedido →</a></div><details><summary>Registrar costo</summary><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_supplier_ws_payable"><input type="hidden" name="supplier_id" value="<?php echo esc_attr( $key ); ?>"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_supplier_ws_payable_' . $key . '_' . $order->get_id() ); ?><label>Costo acordado · ARS<input type="number" min="0" step="0.01" name="amount" value="<?php echo esc_attr( $cost ); ?>" required></label><label>Vencimiento<input type="date" name="due_date" value="<?php echo esc_attr( $payables[ $key ]['due_date'] ?? '' ); ?>"></label><button type="submit">Guardar costo</button></form></details></article><?php
     }
@@ -232,7 +237,14 @@ final class GE_WTP_Supplier_Workspace {
 
     private static function render_timeline( $orders, $entries ) {
         $events = array();
-        foreach ( $orders as $order ) { $time = $order->get_date_created(); if ( $time ) { $events[] = array( 'time' => $time->getTimestamp(), 'label' => 'Pedido #' . $order->get_id() . ' vinculado' ); } }
+        foreach ( $orders as $order ) {
+            $time = $order->get_date_created(); if ( $time ) { $events[] = array( 'time' => $time->getTimestamp(), 'label' => 'Pedido #' . $order->get_id() . ' vinculado' ); }
+            $supplier_keys = array(); foreach ( $order->get_items() as $item ) { $supplier_keys[] = $item->get_meta( '_ge_production_supplier', true ); }
+            foreach ( array_unique( $supplier_keys ) as $supplier_key ) {
+                $row = GE_WTP_Supplier_Portal::latest( $order, $supplier_key, true );
+                if ( $row ) { foreach ( $row['events'] as $event ) { $events[] = array( 'time' => $event['time'], 'label' => 'Pedido #' . $order->get_id() . ' · ' . $event['action'] . ( ! empty( $event['eta'] ) ? ' · ETA ' . $event['eta'] : '' ) ); } }
+            }
+        }
         foreach ( $entries as $row ) { $events[] = array( 'time' => absint( $row['created_ts'] ?? 0 ), 'label' => ( $row['type'] ?? 'Registro' ) . ': ' . ( $row['title'] ?? '' ) ); }
         usort( $events, static function ( $a, $b ) { return $b['time'] <=> $a['time']; } );
         ?><details class="ge-sw-timeline"><summary>Ver actividad cronológica (<?php echo esc_html( count( $events ) ); ?>)</summary><ol><?php foreach ( array_slice( $events, 0, 100 ) as $event ) : ?><li><time><?php echo esc_html( wp_date( 'd/m/Y H:i', $event['time'] ) ); ?></time> · <?php echo esc_html( $event['label'] ); ?></li><?php endforeach; ?></ol></details><?php
@@ -324,14 +336,28 @@ final class GE_WTP_Supplier_Workspace {
         if ( $checked['ext'] !== $ext && ! ( 'jpeg' === $ext && 'jpg' === $checked['ext'] ) ) { return false; }
         $root = WP_CONTENT_DIR . '/ge-private/supplier-workspace'; $base = $root . '/' . $key;
         if ( ! wp_mkdir_p( $base ) ) { return false; }
-        foreach ( array( WP_CONTENT_DIR . '/ge-private', $root, $base ) as $directory ) {
-            if ( ! is_file( $directory . '/.htaccess' ) && false === file_put_contents( $directory . '/.htaccess', "Require all denied\nDeny from all\n" ) ) { return false; }
+        foreach ( array( $root, $base ) as $directory ) {
+            if ( ! is_file( $directory . '/.htaccess' ) && false === file_put_contents( $directory . '/.htaccess', "Require all denied\n" ) ) { return false; }
             if ( ! is_file( $directory . '/index.php' ) && false === file_put_contents( $directory . '/index.php', "<?php\nhttp_response_code(404);\nexit;\n" ) ) { return false; }
         }
         $name = wp_generate_uuid4() . '.' . $ext; $path = $base . '/' . $name;
         if ( ! move_uploaded_file( $file['tmp_name'], $path ) ) { return false; }
         @chmod( $path, 0640 );
         return array( 'file_name' => $original, 'stored_name' => $name, 'file_hash' => hash_file( 'sha256', $path ), 'file_size' => (int) $file['size'] );
+    }
+
+    /** Reuses the workspace document store with a supplier-scoped portal grant. */
+    public static function portal_document( $order_id, $token, $type ) {
+        $order = wc_get_order( $order_id ); $grant = GE_WTP_Supplier_Portal::authorize( $order, $token );
+        if ( ! $grant || ! in_array( $type, array( 'invoice', 'delivery_note', 'other' ), true ) ) { return new WP_Error( 'document', 'Acceso al documento no autorizado.' ); }
+        $stored = self::upload( $grant['supplier'] );
+        if ( ! $stored || empty( $stored['stored_name'] ) ) { return new WP_Error( 'file', 'Elegí un PDF o imagen válido de hasta 20 MB.' ); }
+        $row = array_merge( array( 'type' => 'document', 'document_type' => $type, 'title' => $stored['file_name'], 'order_id' => $order_id, 'notes' => 'Recibido desde el portal del proveedor.', 'created_at' => current_time( 'mysql' ), 'created_ts' => time(), 'created_by' => 0, 'source' => 'supplier_portal', 'dispatch_id' => $grant['id'] ), $stored );
+        $id = wp_insert_post( array( 'post_type' => self::ENTRY, 'post_status' => 'private', 'post_title' => $stored['file_name'] ), true );
+        if ( is_wp_error( $id ) || ! $id ) { return new WP_Error( 'document', 'No se pudo registrar el documento.' ); }
+        update_post_meta( $id, '_ge_supplier_key', $grant['supplier'] ); update_post_meta( $id, self::META, $row );
+        GE_WTP_Supplier_Portal::audit( $order, 'graph.supplier.upload_document', $grant['supplier'], array( 'entry_id' => $id, 'dispatch_id' => $grant['id'], 'checksum' => $stored['file_hash'] ) ); $order->save();
+        return $grant;
     }
 
     public static function handle_entry() {

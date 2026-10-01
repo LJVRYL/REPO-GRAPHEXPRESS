@@ -231,7 +231,7 @@ final class GE_WTP_Workflow {
     }
 
     private static function render_supplier( $order ) {
-        echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>04 · Salida</span><h2>Enviar orden al proveedor</h2></div></div><p>El email incluirá los trabajos, las indicaciones y enlaces privados a los archivos finales durante 7 días. Se envía desde el remitente configurado en Notificaciones del sitio, sin adjuntos pesados ni precios al cliente.</p></section>';
+        echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>04 · Salida</span><h2>Destino y orden de producción</h2></div></div><p>Elegí producción interna o un proveedor. Revisá la ficha técnica y el mensaje antes de enviar desde el correo configurado de Graphex. El portal privado permite descargar archivos, confirmar recepción e informar una fecha estimada.</p></section>';
         if ( ! self::released( $order ) ) {
             $suppliers = GE_WTP_Production::suppliers();
             echo '<section class="ge-production-card ge-dispatch-card"><div class="ge-production-section-head"><div><span>Preparación</span><h2>Falta liberar el pedido</h2></div></div><p>El botón de envío aparecerá cuando se guarden la fecha, los archivos finales y sus aprobaciones, y se liberen los trabajos.</p><ul>';
@@ -245,7 +245,7 @@ final class GE_WTP_Workflow {
         $status = sanitize_key( wp_unslash( $_GET['dispatch_status'] ?? '' ) );
         if ( 'supplier-sent' === $status ) { echo '<div class="ge-production-notice" role="status">La orden fue enviada desde Graph Express.</div>'; }
         elseif ( 'supplier-failed' === $status ) { echo '<div class="ge-production-notice is-error" role="status">Falló el envío. Revisá el correo configurado y el historial.</div>'; }
-        GE_WTP_Workflow_Dispatch::render( $order );
+        GE_WTP_Supplier_Portal::render( $order );
     }
 
     private static function render_customer( $order ) {

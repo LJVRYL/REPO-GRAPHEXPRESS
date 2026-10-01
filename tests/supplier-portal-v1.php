@@ -1,0 +1,76 @@
+<?php
+require getenv( 'GE_WP_LOAD' );
+if ( ! GE_WTP_Notifications::is_local_environment() ) { throw new RuntimeException( 'QA requires isolated localhost.' ); }
+$checks = 0;
+function check_sp( $ok, $message ) { global $checks; if ( ! $ok ) { throw new RuntimeException( $message ); } $checks++; echo "PASS $message\n"; }
+function good_sp( $value ) { if ( is_wp_error( $value ) ) { throw new RuntimeException( $value->get_error_message() ); } return $value; }
+$admin = get_users( array( 'role' => 'administrator', 'number' => 1 ) )[0]->ID; wp_set_current_user( $admin );
+$profiles = (array) get_option( GE_WTP_Supplier_Dispatch::OPTION, array() );
+$profiles['custom-qa-portal'] = array( 'name' => 'Proveedor QA · Impresión', 'email' => 'supplier-qa@example.invalid', 'notes' => 'Sólo QA', 'channel' => 'email', 'auto_email' => 'no' );
+$profiles['custom-qa-other'] = array( 'name' => 'Otro proveedor QA', 'email' => '', 'notes' => 'Sólo QA' );
+update_option( GE_WTP_Supplier_Dispatch::OPTION, $profiles, false );
+function fixture_sp() {
+    $order = wc_create_order(); $order->update_meta_data( '_ge_production_initialized', current_time( 'mysql' ) ); $order->update_meta_data( '_ge_work_order', 'yes' ); $order->update_meta_data( GE_WTP_Workflow::VERSION_META, '1' ); $order->update_meta_data( GE_WTP_Workflow::STAGE_META, 'production' );
+    $order->update_meta_data( '_ge_manual_reference', 'QA-' . $order->get_id() ); $order->update_meta_data( '_ge_production_promised_date', wp_date( 'Y-m-d', time() + 5 * DAY_IN_SECONDS ) );
+    $item = new WC_Order_Item_Product(); $item->set_name( 'Folletos QA full color' ); $item->set_quantity( 500 ); $item->set_subtotal( 123456 ); $item->set_total( 123456 ); $item->add_meta_data( 'Especificaciones', 'A5 · 148 × 210 mm · Couché 150 g · CMYK frente y dorso' ); $item->add_meta_data( 'Margen', 'SECRET_MARGIN' ); $item->add_meta_data( 'CUIT cliente', 'SECRET_FISCAL' ); $order->add_item( $item ); $order->save();
+    $item->update_meta_data( '_ge_item_status', 'production' ); $item->update_meta_data( '_ge_production_supplier', 'custom-qa-portal' ); $item->save();
+    GE_WTP_Documents::ensure_private_directory();
+    $file_id = wp_generate_uuid4(); $stored = 'qa-supplier-' . $file_id . '.pdf'; $bytes = "%PDF-1.4\nQA exact immutable version\n%%EOF\n";
+    file_put_contents( GE_WTP_Documents::private_directory() . '/' . $stored, $bytes );
+    $doc = array( 'id' => $file_id, 'name' => 'folletos-A5-v1.pdf', 'stored_name' => $stored, 'mime' => 'application/pdf', 'size' => strlen( $bytes ), 'category' => 'arte', 'order_item_id' => $item->get_id(), 'analysis' => array( 'sha256' => hash( 'sha256', $bytes ) ) );
+    $order->update_meta_data( GE_WTP_Documents::META_KEY, array( $doc ) ); $order->save();
+    $item->update_meta_data( '_ge_item_artwork_sources', array( 'document:' . $file_id ) ); $item->update_meta_data( '_ge_item_artwork_version', 'v1' ); $item->update_meta_data( '_ge_item_artwork_staff_approval', array( 'approved' => true ) );
+    $item->update_meta_data( '_ge_item_artwork_release_hash', GE_WTP_Artwork_Library::release_fingerprint( $item, array( 'document:' . $file_id ), 'v1', array(), GE_WTP_Artwork_Library::order_sources( $order ) ) ); $item->save();
+    return array( $order->get_id(), $item->get_id(), $doc );
+}
+list( $id, $iid, $doc ) = fixture_sp();
+good_sp( GE_WTP_Supplier_Portal::set_source( $id, 'internal' ) );
+$order = wc_get_order( $id ); check_sp( 'internal' === $order->get_meta( '_ge_production_source' ) && ! $order->get_meta( GE_WTP_Supplier_Portal::META ), 'internal has no supplier dispatch' );
+check_sp( GE_WTP_Workflow_Dispatch::all_sent( $order ), 'internal does not block customer notice' );
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::set_source( $id, 'supplier', 'unknown' ) ), 'unknown supplier rejected' );
+good_sp( GE_WTP_Supplier_Portal::set_source( $id, 'supplier', 'custom-qa-portal' ) );
+$row = good_sp( GE_WTP_Supplier_Portal::prepare( $id, 'custom-qa-portal', 'Retirar empaquetado en cajas.' ) );
+$again = good_sp( GE_WTP_Supplier_Portal::prepare( $id, 'custom-qa-portal', 'Retirar empaquetado en cajas.' ) ); check_sp( $again['id'] === $row['id'], 'prepare retry reuses same version' );
+$url = GE_WTP_Supplier_Portal::url( $id, $row ); parse_str( wp_parse_url( $url, PHP_URL_QUERY ), $query ); $token = $query['token'];
+check_sp( strlen( $token ) === 64 && false === strpos( wp_json_encode( $row ), $token ), 'token is 256 bit and encrypted at rest' );
+check_sp( ! GE_WTP_Supplier_Portal::authorize( wc_get_order( $id ), $token ), 'draft link is not externally active' );
+$message = GE_WTP_Supplier_Portal::message( $row, $url ); check_sp( false === strpos( $message, 'SECRET_' ) && false === strpos( $message, '123456' ), 'technical whitelist excludes sale price margin and fiscal data' );
+check_sp( strpos( $message, '148 × 210' ) !== false && strpos( $message, 'Couché' ) !== false && strpos( $message, 'CMYK' ) !== false, 'preview includes dimensions material and printing' );
+$mail_count = 0; $mail_filter = static function( $return, $atts ) use ( &$mail_count ) { if ( strpos( $atts['subject'], 'Orden de producción' ) !== false ) { $mail_count++; } return true; }; add_filter( 'pre_wp_mail', $mail_filter, 100, 2 );
+$sent = good_sp( GE_WTP_Supplier_Portal::notify( $id, $row['id'] ) ); $duplicate = good_sp( GE_WTP_Supplier_Portal::notify( $id, $row['id'] ) );
+check_sp( $mail_count === 1 && $sent['sent_at'] === $duplicate['sent_at'], 'double send emits one simulated email' );
+check_sp( GE_WTP_Workflow_Dispatch::all_sent( wc_get_order( $id ) ), 'unacknowledged supplier does not block operation' );
+check_sp( (bool) GE_WTP_Supplier_Portal::authorize( wc_get_order( $id ), $token ), 'sent token authorizes order' );
+check_sp( ! GE_WTP_Supplier_Portal::authorize( wc_get_order( $id ), str_repeat( 'a', 64 ) ), 'forged token denied' );
+list( $other_id ) = fixture_sp(); check_sp( ! GE_WTP_Supplier_Portal::authorize( wc_get_order( $other_id ), $token ), 'token cannot access another order' );
+wp_set_current_user( 0 );
+$ack = good_sp( GE_WTP_Supplier_Portal::supplier_action( $id, $token, 'acknowledged' ) ); check_sp( $ack['state'] === 'acknowledged', 'supplier acknowledges without staff login' );
+$eta = wp_date( 'Y-m-d', time() + 3 * DAY_IN_SECONDS ); $eta_row = good_sp( GE_WTP_Supplier_Portal::supplier_action( $id, $token, 'eta', $eta ) ); check_sp( $eta_row['eta'] === $eta, 'ETA persisted in management data' );
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::supplier_action( $id, $token, 'eta', '2026-02-31' ) ), 'invalid ETA rejected' );
+good_sp( GE_WTP_Supplier_Portal::supplier_action( $id, $token, 'in_production' ) ); $ready = good_sp( GE_WTP_Supplier_Portal::supplier_action( $id, $token, 'ready' ) );
+check_sp( $ready['state'] === 'ready' && wc_get_order( $id )->get_item( $iid )->get_meta( '_ge_item_status' ) === 'production', 'supplier ready never changes staff received/payment state' );
+good_sp( GE_WTP_Supplier_Portal::supplier_action( $id, $token, 'acknowledged' ) ); check_sp( GE_WTP_Supplier_Portal::latest( wc_get_order( $id ), 'custom-qa-portal' )['state'] === 'ready', 'replayed acknowledgment cannot regress ready' );
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::notify( $id, $row['id'] ) ), 'unauthenticated staff notify denied' ); wp_set_current_user( $admin );
+$order = wc_get_order( $id ); $item = $order->get_item( $iid ); $item->update_meta_data( '_ge_item_artwork_version', 'v2' ); $item->save();
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::prepare( $id, 'custom-qa-portal', '' ) ), 'unapproved new artwork cannot dispatch' );
+$new_doc = $doc; $new_doc['id'] = wp_generate_uuid4(); $new_doc['stored_name'] = 'qa-supplier-' . $new_doc['id'] . '.pdf'; $new_doc['name'] = 'folletos-A5-v2.pdf'; $bytes = "%PDF-1.4\nQA version TWO\n%%EOF\n"; file_put_contents( GE_WTP_Documents::private_directory() . '/' . $new_doc['stored_name'], $bytes ); $new_doc['size'] = strlen( $bytes ); $new_doc['analysis']['sha256'] = hash( 'sha256', $bytes );
+$order->update_meta_data( GE_WTP_Documents::META_KEY, array( $doc, $new_doc ) ); $order->save(); $tokens = array( 'document:' . $new_doc['id'] ); $item->update_meta_data( '_ge_item_artwork_sources', $tokens ); $item->update_meta_data( '_ge_item_artwork_release_hash', GE_WTP_Artwork_Library::release_fingerprint( $item, $tokens, 'v2', array(), GE_WTP_Artwork_Library::order_sources( $order ) ) ); $item->save();
+$new_row = good_sp( GE_WTP_Supplier_Portal::prepare( $id, 'custom-qa-portal', 'Versión actualizada.' ) ); check_sp( $new_row['id'] !== $row['id'] && $new_row['snapshot']['files'][ $new_doc['id'] ]['checksum'] !== $row['snapshot']['files'][ $doc['id'] ]['checksum'], 'new version preserves original checksum and creates explicit dispatch' );
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::supplier_action( $id, $token, 'ready' ) ), 'old version cannot confirm current job' );
+good_sp( GE_WTP_Supplier_Portal::notify( $id, $new_row['id'] ) );
+good_sp( GE_WTP_Supplier_Portal::set_source( $other_id, 'supplier', 'custom-qa-other' ) ); $manual = good_sp( GE_WTP_Supplier_Portal::prepare( $other_id, 'custom-qa-other', '' ) );
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::notify( $other_id, $manual['id'] ) ), 'supplier without email cannot send email' ); $manual = good_sp( GE_WTP_Supplier_Portal::notify( $other_id, $manual['id'], true ) ); check_sp( 'not_sent' === $manual['email_status'] && 'sent' === $manual['state'] && 'manual' === $manual['channel'], 'manual fallback records channel without claiming email sent' );
+$order = wc_get_order( $other_id ); $rows = $order->get_meta( GE_WTP_Supplier_Portal::META ); parse_str( wp_parse_url( GE_WTP_Supplier_Portal::url( $other_id, $manual ), PHP_URL_QUERY ), $mq ); $rows[0]['expires'] = time() - 1; $order->update_meta_data( GE_WTP_Supplier_Portal::META, $rows ); $order->save(); check_sp( ! GE_WTP_Supplier_Portal::authorize( wc_get_order( $other_id ), $mq['token'] ), 'expired link denied' );
+good_sp( GE_WTP_Supplier_Portal::set_source( $other_id, 'internal' ) ); check_sp( ! GE_WTP_Supplier_Portal::authorize( wc_get_order( $other_id ), $mq['token'] ), 'switching internal revokes supplier access' );
+$logs = GE_WTP_Notifications::get_logs( 20 ); $found = false; foreach ( $logs as $log ) { if ( 'workflow_supplier_portal' === get_post_meta( $log->ID, '_ge_email_context', true ) ) { $found = true; check_sp( false === strpos( $log->post_content, 'token=' ), 'email audit omits bearer secret' ); break; } } check_sp( $found, 'email recorded in native notification trace' );
+list( $fail_id ) = fixture_sp(); good_sp( GE_WTP_Supplier_Portal::set_source( $fail_id, 'supplier', 'custom-qa-portal' ) ); $failure_row = good_sp( GE_WTP_Supplier_Portal::prepare( $fail_id, 'custom-qa-portal', 'QA failure' ) );
+$failure_filter = static function() { return false; }; add_filter( 'pre_wp_mail', $failure_filter, 101 );
+$failed = good_sp( GE_WTP_Supplier_Portal::notify( $fail_id, $failure_row['id'] ) ); check_sp( 'failed' === $failed['email_status'] && empty( $failed['sent_at'] ), 'failed email does not mark dispatch sent' ); remove_filter( 'pre_wp_mail', $failure_filter, 101 );
+$retried = good_sp( GE_WTP_Supplier_Portal::notify( $fail_id, $failure_row['id'], false, true ) ); check_sp( 'sent' === $retried['email_status'], 'explicit retry recovers failed email' );
+$socket = explode( ':', DB_HOST, 2 )[1] ?? ''; $db = new mysqli( 'localhost', DB_USER, DB_PASSWORD, DB_NAME, 0, $socket ); $key = 'ge_supplier_' . $GLOBALS['wpdb']->prefix . $fail_id; $db->query( "SELECT GET_LOCK('" . $db->real_escape_string( $key ) . "',0)" );
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::notify( $fail_id, $failure_row['id'] ) ), 'concurrent connection cannot duplicate send' ); $db->close();
+check_sp( ! is_wp_error( GE_WTP_Supplier_Portal::notify( $fail_id, $failure_row['id'] ) ), 'disconnected writer releases lock' );
+good_sp( GE_WTP_Supplier_Portal::staff_status( $fail_id, $failure_row['id'], 'received' ) ); parse_str( wp_parse_url( GE_WTP_Supplier_Portal::url( $fail_id, $failure_row ), PHP_URL_QUERY ), $fq );
+check_sp( is_wp_error( GE_WTP_Supplier_Portal::supplier_action( $fail_id, $fq['token'], 'in_production' ) ), 'supplier cannot reopen staff-received work' ); good_sp( GE_WTP_Supplier_Portal::staff_status( $fail_id, $failure_row['id'], 'cancelled' ) ); check_sp( ! GE_WTP_Supplier_Portal::authorize( wc_get_order( $fail_id ), $fq['token'] ), 'staff cancellation revokes access' );
+$ctx = array( 'order_id' => $id, 'item_id' => $iid, 'other_order_id' => $other_id, 'staff' => $admin, 'file_id' => $new_doc['id'], 'old_file_id' => $doc['id'], 'old_url' => $url, 'portal_url' => GE_WTP_Supplier_Portal::url( $id, GE_WTP_Supplier_Portal::latest( wc_get_order( $id ), 'custom-qa-portal' ) ) );
+file_put_contents( getenv( 'GE_QA_CONTEXT' ), wp_json_encode( $ctx ) ); echo "QA_SUPPLIER_OK $checks checks\n";

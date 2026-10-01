@@ -46,6 +46,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Production::init();
         GE_WTP_Workflow::init();
         GE_WTP_Workflow_Dispatch::init();
+        GE_WTP_Supplier_Portal::init();
         GE_WTP_Supplier_Dispatch::init();
         GE_WTP_Supplier_Workspace::init();
         GE_WTP_Manual_Orders::init();

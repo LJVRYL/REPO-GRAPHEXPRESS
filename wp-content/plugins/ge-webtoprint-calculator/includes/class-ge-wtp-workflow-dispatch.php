@@ -74,6 +74,11 @@ final class GE_WTP_Workflow_Dispatch {
         foreach ( $groups as $supplier => $items ) {
             foreach ( $items as $item ) { if ( ! GE_WTP_Artwork_Library::item_ready_for_production( $item, $order ) ) { return false; } }
             if ( 'internal' === $supplier ) { continue; }
+            $portal_dispatch = GE_WTP_Supplier_Portal::latest( $order, $supplier );
+            if ( $portal_dispatch && ! empty( $portal_dispatch['sent_at'] ) ) {
+                $snapshot = GE_WTP_Supplier_Portal::snapshot( $order, $supplier, $portal_dispatch['snapshot']['notes'] );
+                if ( ! is_wp_error( $snapshot ) && hash_equals( $portal_dispatch['fingerprint'], hash( 'sha256', wp_json_encode( $snapshot ) ) ) ) { continue; }
+            }
             $profile = GE_WTP_Supplier_Dispatch::profile( $supplier );
             $sent = self::sent_for( $order, $supplier );
             if ( ! self::documents_for_items( $order, $items ) || ! $sent || ! is_email( $profile['email'] ?? '' ) || ! hash_equals( (string) $profile['email'], (string) ( $sent['email'] ?? '' ) ) ) { return false; }
@@ -101,30 +106,9 @@ final class GE_WTP_Workflow_Dispatch {
     }
 
     public static function send() {
+        // Existing forms enter the reviewed flow; no direct email bypass.
         if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', 403 ); }
-        $order = wc_get_order( absint( $_POST['order_id'] ?? 0 ) ); $supplier = sanitize_key( wp_unslash( $_POST['supplier'] ?? '' ) );
-        if ( ! GE_WTP_Workflow::enabled( $order ) || 'production' !== $order->get_meta( GE_WTP_Workflow::STAGE_META, true ) ) { wp_die( 'Orden no liberada.', 403 ); }
-        check_admin_referer( 'ge_workflow_supplier_' . $order->get_id() . '_' . $supplier );
-        $groups = self::groups( $order ); $items = $groups[ $supplier ] ?? array(); $profile = GE_WTP_Supplier_Dispatch::profile( $supplier );
-        $documents = $items && 'internal' !== $supplier ? self::documents_for_items( $order, $items ) : false;
-        if ( ! $documents || ! is_email( $profile['email'] ?? '' ) ) { wp_die( 'Revisá el proveedor y los archivos finales.', 400 ); }
-        $token = bin2hex( random_bytes( 32 ) ); $grant = array( 'id' => wp_generate_uuid4(), 'hash' => hash( 'sha256', $token ), 'supplier' => $supplier, 'fingerprint' => self::group_fingerprint( $items ), 'document_ids' => array_keys( $documents ), 'expires' => time() + 7 * DAY_IN_SECONDS, 'created_at' => time(), 'created_by' => get_current_user_id(), 'accesses' => array() );
-        $grants = (array) $order->get_meta( self::GRANTS_META, true ); $grants[] = $grant; $order->update_meta_data( self::GRANTS_META, array_slice( $grants, -30 ) ); $order->save();
-        $reference = self::reference( $order ); $rows = '';
-        foreach ( $items as $item ) {
-            $specifications = wc_display_item_meta( $item, array( 'echo' => false, 'separator' => ' · ' ) );
-            $rows .= '<li><strong>' . esc_html( self::item_summary( $item ) ) . '</strong> ' . wp_kses_post( $specifications ) . '</li>';
-        }
-        $links = '';
-        foreach ( $documents as $document ) {
-            $url = add_query_arg( array( 'action' => 'ge_workflow_supplier_file', 'order_id' => $order->get_id(), 'document_id' => $document['id'], 'token' => $token ), admin_url( 'admin-post.php' ) );
-            $links .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( $document['name'] ) . '</a></li>';
-        }
-        $html = '<p>Solicitamos producir la orden <strong>' . esc_html( $reference ) . '</strong> para el ' . esc_html( GE_WTP_Production::date_label_public( $order->get_meta( '_ge_production_promised_date' ) ) ) . '.</p><ul>' . $rows . '</ul><p>Indicaciones: ' . nl2br( esc_html( $order->get_meta( '_ge_production_technical_notes' ) ?: 'Sin observaciones adicionales.' ) ) . '</p><p>Archivos finales (enlaces privados válidos por 7 días):</p><ul>' . $links . '</ul><p>Confirmá recepción y fecha de entrega respondiendo este correo.</p>';
-        $sent = GE_WTP_Notifications::send( $profile['email'], 'Orden de producción ' . $reference . ' · Graph Express', $html, 'workflow_supplier_order', $order->get_id() );
-        if ( ! $sent ) { $grants = array_values( array_filter( $grants, function( $entry ) use ( $grant ) { return ( $entry['id'] ?? '' ) !== $grant['id']; } ) ); $order->update_meta_data( self::GRANTS_META, $grants ); }
-        $history = (array) $order->get_meta( self::HISTORY_META, true ); $history[] = array( 'time' => time(), 'user_id' => get_current_user_id(), 'supplier' => $supplier, 'email' => $profile['email'], 'sent' => (bool) $sent, 'grant_id' => $sent ? $grant['id'] : '', 'fingerprint' => self::group_fingerprint( $items ) ); $order->update_meta_data( self::HISTORY_META, array_slice( $history, -50 ) ); $order->save();
-        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'step' => 'supplier', 'dispatch_status' => $sent ? 'supplier-sent' : 'supplier-failed' ) ) ); exit;
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => absint( $_POST['order_id'] ?? 0 ), 'step' => 'supplier' ) ) ); exit;
     }
 
     public static function download() {

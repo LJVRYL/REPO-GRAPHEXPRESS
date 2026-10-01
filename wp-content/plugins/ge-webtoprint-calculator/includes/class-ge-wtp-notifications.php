@@ -206,6 +206,7 @@ final class GE_WTP_Notifications {
         $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers );
         $result = self::is_local_environment() ? 'simulated' : ( $ok ? 'sent' : 'failed' );
         $logged_html = 'customer_portal_invite' === $context ? '<p>Invitación con enlace privado para definir contraseña. El enlace se omitió del historial.</p>' : $html;
+        if ( 'workflow_supplier_portal' === $context ) { $logged_html = '<p>Orden técnica enviada al proveedor. El enlace privado se omite del historial. Consultá la versión y el detalle en Producción.</p>'; }
         self::log( $to, $subject, $logged_html, $context, $object_id, $result, self::$last_mail_error );
         return $ok;
     }
