@@ -64,6 +64,7 @@ require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-supplier-dispatch.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-manual-orders.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-newsletter.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-customers.php';
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-customer-workspace.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-customer-quotes.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-jobs.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-portal.php';

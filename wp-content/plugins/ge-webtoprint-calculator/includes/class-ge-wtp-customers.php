@@ -15,6 +15,7 @@ final class GE_WTP_Customers {
         add_action( 'woocommerce_account_' . self::ENDPOINT . '_endpoint', array( __CLASS__, 'account_content' ) );
         add_action( 'admin_post_ge_customer_save_profile', array( __CLASS__, 'handle_save_profile' ) );
         add_action( 'admin_post_ge_staff_save_customer', array( __CLASS__, 'handle_staff_save_customer' ) );
+        GE_WTP_Customer_Workspace::init();
         add_action( 'admin_post_ge_staff_invite_customer', array( __CLASS__, 'handle_staff_invite_customer' ) );
         add_action( 'admin_post_ge_customer_avatar', array( __CLASS__, 'handle_avatar' ) );
         add_action( 'admin_post_nopriv_ge_verify_customer_email', array( __CLASS__, 'handle_verify_email' ) );
@@ -57,6 +58,10 @@ final class GE_WTP_Customers {
         if ( is_page( 'cliente-markcom' ) || is_page( 'mi-perfil' ) || is_page( 'gestion' ) || ( function_exists( 'is_account_page' ) && is_account_page() ) ) {
             wp_enqueue_style( 'ge-customer-profile', GE_WTP_PLUGIN_URL . 'assets/css/customer-profile.css', array(), GE_WTP_VERSION );
             wp_enqueue_script( 'ge-customer-profile', GE_WTP_PLUGIN_URL . 'assets/js/customer-profile.js', array(), GE_WTP_VERSION, true );
+            if ( is_page( 'gestion' ) ) {
+                wp_enqueue_style( 'ge-customer-workspace', GE_WTP_PLUGIN_URL . 'assets/css/customer-workspace.css', array( 'ge-customer-profile' ), GE_WTP_VERSION );
+                wp_enqueue_script( 'ge-customer-workspace', GE_WTP_PLUGIN_URL . 'assets/js/customer-workspace.js', array(), GE_WTP_VERSION, true );
+            }
         }
     }
 
@@ -421,14 +426,7 @@ final class GE_WTP_Customers {
         if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_operations' ) ) { return; }
         $customer_id = isset( $_GET['customer_id'] ) ? absint( $_GET['customer_id'] ) : 0;
         if ( $customer_id ) {
-            echo '<div class="ge-staff-actions"><a class="ge-staff-button" target="_blank" rel="noopener" href="' . esc_url( GE_WTP_Portal::preview_url( $customer_id ) ) . '">Abrir panel del cliente ↗</a></div>';
-            echo '<div class="ge-staff-actions"><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'view' => 'new', 'customer_id' => $customer_id ) ) ) . '">Cargar pedido</a><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'new' => 1, 'customer_id' => $customer_id ) ) ) . '">Cargar presupuesto</a></div>';
-            if ( isset( $_GET['invite_status'] ) ) { echo '<div class="ge-production-notice' . ( 'sent' === $_GET['invite_status'] ? '' : ' is-error' ) . '">' . ( 'sent' === $_GET['invite_status'] ? 'La invitación fue aceptada por el servidor de correo y quedó registrada.' : 'No se pudo enviar la invitación. Revisá el correo antes de reintentar.' ) . '</div>'; }
-            echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_staff_invite_customer"><input type="hidden" name="user_id" value="' . esc_attr( $customer_id ) . '">';
-            wp_nonce_field( 'ge_staff_invite_customer_' . $customer_id );
-            echo '<button class="ge-staff-button" type="submit">Enviar acceso al portal</button><p>El cliente recibirá un enlace temporal para definir su propia contraseña.</p></form>';
-            echo self::profile_form( $customer_id, 'staff', true );
-            GE_WTP_Customer_Branches::render_staff( $customer_id );
+            GE_WTP_Customer_Workspace::render( $customer_id );
             return;
         }
         $users = get_users( array( 'role__in' => array( 'customer', 'ge_markcom_client' ), 'orderby' => 'registered', 'order' => 'DESC', 'number' => 500 ) );

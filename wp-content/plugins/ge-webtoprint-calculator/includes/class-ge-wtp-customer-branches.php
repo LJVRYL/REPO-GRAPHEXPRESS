@@ -95,15 +95,17 @@ final class GE_WTP_Customer_Branches {
     }
 
     public static function render_staff( $customer_id ) {
-        echo '<section class="ge-profile-card"><div class="ge-profile-card-title"><span>05</span><div><h2>Perfiles de facturación por sucursal</h2><p>El perfil principal se edita arriba. Los perfiles usados por pedidos se archivan sin borrar su historial.</p></div></div>';
+        echo '<div class="ge-workspace-branches">';
         if ( isset( $_GET['billing_status'] ) ) { echo '<p>' . esc_html( 'saved' === $_GET['billing_status'] ? 'Perfil guardado.' : 'No se pudo guardar el perfil. Revisá los datos fiscales.' ) . '</p>'; }
         foreach ( self::profiles( $customer_id, true ) as $profile ) {
             if ( 'default' === $profile['id'] ) { continue; }
-            echo '<p><strong>' . esc_html( $profile['label'] ) . '</strong> · ' . esc_html( $profile['legal_name'] ) . ' · ' . esc_html( $profile['cuit'] ?: 'Sin CUIT' ) . ( empty( $profile['active'] ) ? ' · Archivado' : '' ) . '</p>';
+            echo '<details class="ge-workspace-item"><summary><strong>' . esc_html( $profile['label'] ) . '</strong><span>' . esc_html( $profile['legal_name'] ?: 'Sin razón social' ) . ' · ' . esc_html( $profile['cuit'] ?: 'Sin CUIT' ) . ( empty( $profile['active'] ) ? ' · Inactivo' : '' ) . '</span></summary>';
             if ( ! empty( $profile['active'] ) ) { self::form( $customer_id, $profile ); }
+            echo '</details>';
         }
+        echo '<details class="ge-workspace-item"><summary><strong>Agregar perfil</strong><span>Otra sucursal o razón social</span></summary>';
         self::form( $customer_id, array() );
-        echo '</section>';
+        echo '</details></div>';
     }
 
     public static function render_order_summary( $order, $staff = false ) {
@@ -124,13 +126,13 @@ final class GE_WTP_Customer_Branches {
 
     private static function form( $customer_id, $profile ) {
         $existing = ! empty( $profile['id'] );
-        echo '<form class="ge-profile-fields" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_billing_profile"><input type="hidden" name="customer_id" value="' . esc_attr( $customer_id ) . '"><input type="hidden" name="id" value="' . esc_attr( $profile['id'] ?? '' ) . '">';
+        echo '<form class="ge-profile-fields ge-workspace-form" data-ge-workspace-form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_billing_profile"><input type="hidden" name="customer_id" value="' . esc_attr( $customer_id ) . '"><input type="hidden" name="id" value="' . esc_attr( $profile['id'] ?? '' ) . '">';
         wp_nonce_field( 'ge_customer_billing_profile_' . $customer_id );
         foreach ( array( 'label' => 'Sucursal / perfil', 'branch' => 'Sede', 'legal_name' => 'Razón social', 'cuit' => 'CUIT', 'fiscal_address' => 'Domicilio fiscal', 'billing_email' => 'Email de facturación', 'contact_name' => 'Contacto', 'contact_phone' => 'Teléfono' ) as $key => $label ) { echo '<label>' . esc_html( $label ) . '<input name="' . esc_attr( $key ) . '" value="' . esc_attr( $profile[ $key ] ?? '' ) . '" maxlength="220"></label>'; }
         echo '<label><input type="checkbox" name="is_default" value="1"' . checked( ! empty( $profile['is_default'] ), true, false ) . '> Usar por defecto</label>';
         echo '<label>Condición fiscal<select name="vat_status">';
         foreach ( array( '' => 'Seleccionar', 'registered' => 'Responsable inscripto', 'monotributo' => 'Monotributista', 'exempt' => 'Exento', 'final_consumer' => 'Consumidor final' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '"' . selected( $profile['vat_status'] ?? '', $value, false ) . '>' . esc_html( $label ) . '</option>'; }
-        echo '</select></label><label>Modalidad<select name="billing_mode"><option value="common">Común</option><option value="invoice_a"' . selected( $profile['billing_mode'] ?? '', 'invoice_a', false ) . '>Requiere A si el emisor puede emitirla</option></select></label><button type="submit">' . ( $existing ? 'Guardar perfil' : 'Agregar perfil' ) . '</button>';
+        echo '</select></label><label>Modalidad<select name="billing_mode"><option value="common">Común</option><option value="invoice_a"' . selected( $profile['billing_mode'] ?? '', 'invoice_a', false ) . '>Requiere A si el emisor puede emitirla</option></select></label><div class="ge-workspace-save"><span data-ge-save-state aria-live="polite">Sin cambios</span><button type="submit">' . ( $existing ? 'Guardar' : 'Agregar perfil' ) . '</button></div>';
         if ( $existing ) { echo '<button type="submit" name="archive" value="1" onclick="return confirm(\'¿Archivar este perfil?\')">Desactivar perfil</button>'; }
         echo '</form>';
     }

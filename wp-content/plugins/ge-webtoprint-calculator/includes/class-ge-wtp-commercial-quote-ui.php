@@ -43,6 +43,7 @@ final class GE_WTP_Commercial_Quote_UI {
         }
         echo '<form class="ge-manual-order ge-commercial-quote" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_quote_save">';
         wp_nonce_field( 'ge_commercial_quote_save' );
+        if ( $customer && ! $editing ) { echo '<input type="hidden" name="source_customer_id" value="' . esc_attr( $customer->ID ) . '">'; }
         if ( $editing ) { echo '<input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="expected_version" value="' . esc_attr( $quote['version'] ) . '">'; }
         $phone = $customer ? ( get_user_meta( $customer->ID, '_ge_whatsapp', true ) ?: get_user_meta( $customer->ID, 'billing_phone', true ) ) : '';
         echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>01 · Cliente</span><h2>Datos de contacto</h2></div></div><div class="ge-manual-contact-grid"><label>Nombre o razón social<input name="customer_name" required maxlength="160" value="' . esc_attr( $customer ? $customer->display_name : '' ) . '"' . ( $editing ? ' readonly' : '' ) . '></label><label>Email<input type="email" name="customer_email" required maxlength="190" value="' . esc_attr( $customer ? $customer->user_email : '' ) . '"' . ( $editing ? ' readonly' : '' ) . '></label><label>WhatsApp / teléfono<input type="tel" name="customer_phone" maxlength="50" autocomplete="tel" value="' . esc_attr( $phone ) . '" placeholder="+54 9 11..."></label></div><p class="ge-manual-help">' . esc_html( $editing ? 'Para cambiar de cliente, creá otro presupuesto.' : 'Si el email ya existe, se usa su ficha. Si es nuevo, se crea una ficha y se prepara el acceso al portal.' ) . '</p></section>';
@@ -279,7 +280,10 @@ final class GE_WTP_Commercial_Quote_UI {
         }
         $args = array( 'valid_until' => wp_unslash( $_POST['valid_until'] ?? '' ), 'deposit_percent' => wp_unslash( $_POST['deposit_percent'] ?? 50 ), 'notes_customer' => wp_unslash( $_POST['notes_customer'] ?? '' ), 'notes_internal' => wp_unslash( $_POST['notes_internal'] ?? '' ), 'expected_version' => absint( $_POST['expected_version'] ?? 0 ), 'billing_profile_id' => sanitize_text_field( wp_unslash( $_POST['billing_profile_id'] ?? 'default' ) ), 'delivery_address_id' => sanitize_text_field( wp_unslash( $_POST['delivery_address_id'] ?? '' ) ) );
         if ( is_wp_error( GE_WTP_Commercial_Quotes::build_snapshot( $lines, $args ) ) ) { self::staff_error( 'save' ); }
-        $customer_id = $existing ? $existing['customer_id'] : absint( email_exists( $email ) );
+        $source_customer_id = absint( $_POST['source_customer_id'] ?? 0 );
+        $source_customer = $source_customer_id ? get_userdata( $source_customer_id ) : false;
+        if ( $source_customer_id && ( ! $source_customer || 0 !== strcasecmp( $source_customer->user_email, $email ) ) ) { self::staff_error( 'save' ); }
+        $customer_id = $existing ? $existing['customer_id'] : ( $source_customer_id ?: absint( email_exists( $email ) ) );
         if ( $existing ) {
             $customer = get_userdata( $customer_id );
             if ( ! $customer || 0 !== strcasecmp( $customer->user_email, $email ) ) { self::staff_error( 'save' ); }
