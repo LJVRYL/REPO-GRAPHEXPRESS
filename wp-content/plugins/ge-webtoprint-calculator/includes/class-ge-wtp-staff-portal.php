@@ -183,18 +183,71 @@ final class GE_WTP_Staff_Portal {
     }
 
     private static function render_dashboard() {
-        $orders = GE_WTP_Orders::get_all_orders( 100 );
-        $active = 0; $documents = 0; $markcom = 0;
+        $orders = GE_WTP_Orders::get_all_orders( 250 );
+        $quotes = get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => 8, 'orderby' => 'date', 'order' => 'DESC' ) );
+        $open_quotes = new WP_Query( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_query' => array( array( 'key' => GE_WTP_Commercial_Quotes::STATUS_META, 'value' => array( 'draft', 'sent', 'viewed', 'accepted' ), 'compare' => 'IN' ) ) ) );
+        $awaiting_quotes = new WP_Query( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_query' => array( array( 'key' => GE_WTP_Commercial_Quotes::STATUS_META, 'value' => array( 'sent', 'viewed' ), 'compare' => 'IN' ) ) ) );
+        $counts = array( 'orders' => 0, 'production' => 0, 'delayed' => 0, 'ready' => 0, 'blocked' => 0, 'balance' => 0 );
+        $attention = array(); $recent_orders = array();
+        $today = wp_date( 'Y-m-d' );
         foreach ( $orders as $order ) {
-            if ( 'entregado' !== GE_WTP_Order_Lifecycle::stage( $order ) && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { $active++; }
-            if ( 'yes' === $order->get_meta( '_ge_markcom_order' ) ) { $markcom++; }
-            $documents += count( GE_WTP_Documents::get_documents( $order->get_id() ) );
+            if ( 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) || GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { continue; }
+            $delivered = 'entregado' === GE_WTP_Order_Lifecycle::stage( $order );
+            $closed = GE_WTP_Production::is_closed( $order );
+            $cancelled = in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true );
+            $ready = 'ready' === $order->get_meta( '_ge_production_status', true );
+            if ( ! $delivered && ! $cancelled ) { $counts['orders']++; }
+            if ( ! $closed && ! $delivered && ! $cancelled ) {
+                if ( $ready ) { $counts['ready']++; }
+                else { $counts['production']++; }
+                $promised = (string) $order->get_meta( '_ge_production_promised_date', true );
+                if ( ! $ready && $promised && $promised < $today ) { $counts['delayed']++; $attention[] = array( 'label' => 'Trabajo demorado', 'order' => $order ); }
+                if ( ! $ready && ! GE_WTP_Documents::get_documents( $order->get_id() ) ) { $counts['blocked']++; }
+            }
+            $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
+            if ( $due > 0 && ! $cancelled ) { $counts['balance'] += $due; if ( $ready ) { $attention[] = array( 'label' => 'Listo con saldo pendiente', 'order' => $order ); } }
+            if ( count( $recent_orders ) < 6 ) { $recent_orders[] = $order; }
         }
+        $activity = array();
+        foreach ( $recent_orders as $order ) {
+            $date = $order->get_date_created();
+            if ( $date ) { $activity[] = array( 'time' => $date->getTimestamp(), 'label' => 'Pedido #' . $order->get_id() . ' creado', 'url' => self::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ); }
+            $history = $order->get_meta( '_ge_production_closure_history', true );
+            if ( is_array( $history ) ) { foreach ( array_slice( $history, -2 ) as $event ) { if ( ! empty( $event['time'] ) ) { $activity[] = array( 'time' => absint( $event['time'] ), 'label' => 'closed' === ( $event['event'] ?? '' ) ? 'Trabajo #' . $order->get_id() . ' cerrado' : 'Trabajo #' . $order->get_id() . ' reabierto', 'url' => self::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); } } }
+        }
+        foreach ( array_slice( $quotes, 0, 4 ) as $post ) { $activity[] = array( 'time' => strtotime( $post->post_date ), 'label' => 'Presupuesto GE-PRE-' . $post->ID . ' creado', 'url' => self::portal_url( 'quotes', array( 'quote_id' => $post->ID ) ) ); }
+        usort( $activity, function( $a, $b ) { return $b['time'] <=> $a['time']; } );
+        $q = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) );
         ?>
-        <div class="ge-staff-heading"><div><span>Operación</span><h1>Buen día, <?php echo esc_html( wp_get_current_user()->display_name ); ?></h1><p>Lo importante para trabajar hoy, sin entrar al administrador de WordPress.</p></div><a class="ge-staff-button" href="<?php echo esc_url( self::portal_url( 'orders' ) ); ?>">Ver pedidos</a></div>
-        <div class="ge-admin-metrics"><article><span>Pedidos activos</span><strong><?php echo esc_html( $active ); ?></strong><small>requieren seguimiento</small></article><article><span>Pedidos totales</span><strong><?php echo esc_html( count( $orders ) ); ?></strong><small>tienda y portal</small></article><article><span>Pedidos Markcom</span><strong><?php echo esc_html( $markcom ); ?></strong><small>cuenta corporativa</small></article><article><span>Documentos</span><strong><?php echo esc_html( $documents ); ?></strong><small>archivos privados</small></article></div>
-        <section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Actividad</span><h2>Últimos pedidos</h2></div><a href="<?php echo esc_url( self::portal_url( 'orders' ) ); ?>">Ver todos →</a></div><?php self::orders_table( array_slice( $orders, 0, 8 ) ); ?></section>
+        <div class="ge-control-hero"><div><span>GRAPHEX · CENTRO OPERATIVO</span><h1>Buen día, <?php echo esc_html( wp_get_current_user()->display_name ); ?></h1><p>Presupuestos, pedidos y producción en una sola vista.</p></div><div class="ge-control-actions"><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>">Nuevo presupuesto</a><a href="<?php echo esc_url( self::portal_url( 'production', array( 'view' => 'new' ) ) ); ?>">Nuevo pedido</a><a href="<?php echo esc_url( self::portal_url( 'customers' ) ); ?>">Clientes</a><a href="<?php echo esc_url( self::portal_url( 'production' ) ); ?>">Producción</a></div></div>
+        <form class="ge-control-search" method="get" action="<?php echo esc_url( self::portal_url() ); ?>"><label for="ge-global-q">Buscar cliente, presupuesto o pedido</label><div><input id="ge-global-q" type="search" name="q" value="<?php echo esc_attr( $q ); ?>" placeholder="Número, nombre, email o teléfono"><button type="submit">Buscar</button></div></form>
+        <?php if ( $q ) { self::render_dashboard_search( $q, $orders, $quotes ); } ?>
+        <div class="ge-control-kpis"><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>"><span>Presupuestos abiertos</span><strong><?php echo esc_html( $open_quotes->found_posts ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>"><span>Esperan respuesta</span><strong><?php echo esc_html( $awaiting_quotes->found_posts ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'orders' ) ); ?>"><span>Pedidos activos</span><strong><?php echo esc_html( $counts['orders'] ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'production' ) ); ?>"><span>Trabajos abiertos</span><strong><?php echo esc_html( $counts['production'] ); ?></strong></a><a class="is-alert" href="<?php echo esc_url( self::portal_url( 'production', array( 'filter' => 'delayed' ) ) ); ?>"><span>Demorados</span><strong><?php echo esc_html( $counts['delayed'] ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'production', array( 'filter' => 'ready' ) ) ); ?>"><span>Listos para entrega</span><strong><?php echo esc_html( $counts['ready'] ); ?></strong></a></div>
+        <?php if ( count( $orders ) >= 250 ) : ?><p class="ge-control-scope">Pedidos y producción: vista de los 250 pedidos más recientes. Abrí cada sección para revisar el historial.</p><?php endif; ?>
+        <div class="ge-control-grid"><section class="ge-control-panel ge-control-attention"><header><div><span>PRIORIDAD</span><h2>Atención hoy</h2></div><a href="<?php echo esc_url( self::portal_url( 'production', array( 'filter' => 'delayed' ) ) ); ?>">Ver producción →</a></header><div class="ge-control-highlights"><div><strong><?php echo esc_html( $counts['blocked'] ); ?></strong><span>trabajos sin archivos</span></div><div><strong><?php echo wp_kses_post( wc_price( $counts['balance'] / 100 ) ); ?></strong><span>saldos registrados</span></div></div><?php if ( $attention ) : ?><ul><?php foreach ( array_slice( $attention, 0, 5 ) as $alert ) : $order = $alert['order']; ?><li><span><?php echo esc_html( $alert['label'] ); ?></span><a href="<?php echo esc_url( self::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>">#<?php echo esc_html( $order->get_id() ); ?> · <?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_email() ); ?> →</a></li><?php endforeach; ?></ul><?php else : ?><p>No hay urgencias detectadas en los pedidos recientes.</p><?php endif; ?></section>
+        <section class="ge-control-panel"><header><div><span>COMERCIAL</span><h2>Presupuestos recientes</h2></div><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>">Ver todos →</a></header><?php if ( $quotes ) : ?><ul><?php foreach ( $quotes as $post ) : $quote = GE_WTP_Commercial_Quotes::get( $post->ID, get_current_user_id() ); if ( is_wp_error( $quote ) ) { continue; } $customer = get_userdata( $quote['customer_id'] ); ?><li><span><?php echo esc_html( $quote['number'] . ' · ' . ( $quote['status'] ?: 'sin estado' ) . ' · ' . wp_date( 'd/m', strtotime( $post->post_date ) ) . ' · ' . ( isset( $quote['snapshot']['total_cents'] ) ? number_format_i18n( $quote['snapshot']['total_cents'] / 100, 2 ) . ' ARS' : 'total a confirmar' ) ); ?></span><a href="<?php echo esc_url( self::portal_url( 'quotes', array( 'quote_id' => $quote['id'] ) ) ); ?>"><?php echo esc_html( $customer ? $customer->display_name : 'Cliente' ); ?> →</a></li><?php endforeach; ?></ul><?php else : ?><p>Todavía no hay presupuestos comerciales.</p><?php endif; ?></section>
+        <section class="ge-control-panel"><header><div><span>VENTAS</span><h2>Pedidos recientes</h2></div><a href="<?php echo esc_url( self::portal_url( 'orders' ) ); ?>">Ver todos →</a></header><?php if ( $recent_orders ) : ?><ul><?php foreach ( $recent_orders as $order ) : ?><li><span>#<?php echo esc_html( $order->get_id() ); ?> · <?php echo esc_html( GE_WTP_Order_Lifecycle::label( $order ) ) . ' · ' . wp_kses_post( $order->get_formatted_order_total() ); ?></span><a href="<?php echo esc_url( self::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ); ?>"><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_email() ); ?> →</a></li><?php endforeach; ?></ul><?php else : ?><p>Todavía no hay pedidos.</p><?php endif; ?></section>
+        <section class="ge-control-panel"><header><div><span>PRODUCCIÓN</span><h2>Seguimiento</h2></div><a href="<?php echo esc_url( self::portal_url( 'production' ) ); ?>">Ver producción →</a></header><div class="ge-control-stages"><a href="<?php echo esc_url( self::portal_url( 'production' ) ); ?>"><strong><?php echo esc_html( $counts['production'] ); ?></strong><span>En cola</span></a><a href="<?php echo esc_url( self::portal_url( 'production', array( 'filter' => 'ready' ) ) ); ?>"><strong><?php echo esc_html( $counts['ready'] ); ?></strong><span>Listos</span></a><a href="<?php echo esc_url( self::portal_url( 'production', array( 'filter' => 'closed' ) ) ); ?>"><strong>→</strong><span>Cerrados</span></a></div><p>El cierre operativo conserva la etapa, los archivos y el historial.</p></section></div>
+        <section class="ge-control-panel ge-control-activity"><header><div><span>TRAZABILIDAD</span><h2>Actividad reciente</h2></div></header><?php if ( $activity ) : ?><ul><?php foreach ( array_slice( $activity, 0, 6 ) as $event ) : ?><li><span><?php echo esc_html( wp_date( 'd/m H:i', $event['time'] ) ); ?></span><a href="<?php echo esc_url( $event['url'] ); ?>"><?php echo esc_html( $event['label'] ); ?> →</a></li><?php endforeach; ?></ul><?php else : ?><p>Todavía no hay actividad reciente.</p><?php endif; ?></section>
         <?php
+    }
+
+    private static function render_dashboard_search( $query, $orders, $quotes ) {
+        $matches = array();
+        foreach ( $orders as $order ) {
+            $text = implode( ' ', array( $order->get_id(), $order->get_formatted_billing_full_name(), $order->get_billing_company(), $order->get_billing_email(), $order->get_billing_phone() ) );
+            if ( false !== mb_stripos( $text, $query ) ) { $matches[] = array( 'label' => 'Pedido #' . $order->get_id(), 'url' => self::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ); }
+            if ( count( $matches ) >= 8 ) { break; }
+        }
+        foreach ( $quotes as $post ) {
+            if ( false !== mb_stripos( 'GE-PRE-' . $post->ID . ' ' . $post->post_title, $query ) ) { $matches[] = array( 'label' => 'Presupuesto GE-PRE-' . $post->ID, 'url' => self::portal_url( 'quotes', array( 'quote_id' => $post->ID ) ) ); }
+        }
+        $customers = get_users( array( 'search' => '*' . esc_attr( $query ) . '*', 'search_columns' => array( 'user_email', 'display_name', 'user_login' ), 'number' => 5 ) );
+        foreach ( $customers as $customer ) { $matches[] = array( 'label' => 'Cliente: ' . $customer->display_name, 'url' => self::portal_url( 'customers', array( 'customer_id' => $customer->ID ) ) ); }
+        echo '<section class="ge-control-panel ge-control-results"><h2>Resultados recientes</h2>';
+        if ( ! $matches ) { echo '<p>Sin coincidencias en esta vista. Probá la búsqueda de Pedidos o Clientes para consultar el historial.</p>'; }
+        foreach ( array_slice( $matches, 0, 12 ) as $match ) { echo '<a href="' . esc_url( $match['url'] ) . '">' . esc_html( $match['label'] ) . ' →</a>'; }
+        echo '</section>';
     }
 
     private static function render_orders() {
@@ -275,7 +328,7 @@ final class GE_WTP_Staff_Portal {
                 <input type="hidden" name="action" value="ge_backoffice_order_status"><input type="hidden" name="return_to" value="staff"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_backoffice_order_status_' . $order->get_id() ); ?>
                 <?php if ( $tracking_stage_locked ) : ?>
                     <input type="hidden" name="stage" value="<?php echo esc_attr( GE_WTP_Order_Lifecycle::stage( $order ) ); ?>">
-                    <p><strong>Etapa: <?php echo esc_html( GE_WTP_Order_Lifecycle::label( $order ) ); ?></strong></p>
+                    <p><strong>Etapa: <?php echo esc_html( GE_WTP_Order_Lifecycle::label( $order ) ) . ' · ' . wp_kses_post( $order->get_formatted_order_total() ); ?></strong></p>
                     <small>La etapa avanza desde Revisión y planificación, al aprobar y avisar al cliente. Acá podés guardar la fecha y una nota.</small>
                 <?php else : ?>
                     <label>Etapa<select name="stage"><?php foreach ( $statuses as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( GE_WTP_Order_Lifecycle::stage( $order ), $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>

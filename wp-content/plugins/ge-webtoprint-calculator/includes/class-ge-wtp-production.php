@@ -14,6 +14,8 @@ final class GE_WTP_Production {
         add_action( 'admin_post_ge_production_document_trash', array( __CLASS__, 'handle_document_trash' ) );
         add_action( 'admin_post_ge_production_document_restore', array( __CLASS__, 'handle_document_restore' ) );
         add_action( 'admin_post_ge_production_quick_status', array( __CLASS__, 'handle_quick_status' ) );
+        add_action( 'admin_post_ge_production_close_order', array( __CLASS__, 'handle_close_order' ) );
+        add_action( 'admin_post_ge_production_reopen_order', array( __CLASS__, 'handle_reopen_order' ) );
         add_action( 'admin_post_ge_production_create_item_order', array( __CLASS__, 'handle_create_item_order' ) );
         add_action( 'admin_post_ge_production_event', array( __CLASS__, 'handle_event' ) );
         add_action( 'admin_post_ge_production_event_status', array( __CLASS__, 'handle_event_status' ) );
@@ -56,6 +58,80 @@ final class GE_WTP_Production {
 
     public static function statuses() {
         return array( 'approved' => 'Aprobado', 'production' => 'En producción', 'ready' => 'Listo para entrega' );
+    }
+
+    public static function close_reasons() {
+        return array( 'finished' => 'Trabajo terminado', 'external' => 'Resuelto externamente', 'no_files' => 'No requirió archivos', 'cancelled' => 'Cancelado', 'duplicate' => 'Duplicado', 'qa' => 'Prueba / QA', 'other' => 'Otro' );
+    }
+
+    public static function is_closed( $order ) {
+        return $order instanceof WC_Order && 'closed' === $order->get_meta( '_ge_production_operational_status', true );
+    }
+
+    public static function is_production_order( $order ) {
+        return $order instanceof WC_Order
+            && 'yes' !== $order->get_meta( '_ge_commercial_payment_order', true )
+            && ( ! class_exists( 'GE_WTP_Customer_Quotes' ) || ! GE_WTP_Customer_Quotes::is_quote_order( $order ) )
+            && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true );
+    }
+
+    public static function close_order( $order, $reason, $note = '', $actor_id = 0 ) {
+        $actor_id = $actor_id ?: get_current_user_id();
+        if ( ! self::is_production_order( $order ) || ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) {
+            return new WP_Error( 'ge_production_close_forbidden', 'No se puede cerrar este trabajo.' );
+        }
+        $reasons = self::close_reasons();
+        if ( ! isset( $reasons[ $reason ] ) ) { return new WP_Error( 'ge_production_close_reason', 'Elegí un motivo de cierre.' ); }
+        if ( self::is_closed( $order ) ) { return new WP_Error( 'ge_production_already_closed', 'El trabajo ya está cerrado.' ); }
+        $now = time();
+        $order->update_meta_data( '_ge_production_operational_status', 'closed' );
+        $order->update_meta_data( '_ge_production_closed_at', $now );
+        $order->update_meta_data( '_ge_production_closed_by', $actor_id );
+        $order->update_meta_data( '_ge_production_close_reason', $reason );
+        $order->update_meta_data( '_ge_production_close_note', sanitize_textarea_field( $note ) );
+        $history = $order->get_meta( '_ge_production_closure_history', true );
+        $history = is_array( $history ) ? $history : array();
+        $history[] = array( 'event' => 'closed', 'time' => $now, 'user_id' => $actor_id, 'reason' => $reason, 'note' => sanitize_textarea_field( $note ) );
+        $order->update_meta_data( '_ge_production_closure_history', array_slice( $history, -100 ) );
+        $order->save();
+        $order->add_order_note( 'Producción cerrada administrativamente: ' . $reasons[ $reason ] . '. ' . sanitize_textarea_field( $note ), false, true );
+        return true;
+    }
+
+    public static function reopen_order( $order, $actor_id = 0 ) {
+        $actor_id = $actor_id ?: get_current_user_id();
+        if ( ! self::is_production_order( $order ) || ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) || ! self::is_closed( $order ) ) {
+            return new WP_Error( 'ge_production_reopen_forbidden', 'No se puede reabrir este trabajo.' );
+        }
+        $now = time();
+        $history = $order->get_meta( '_ge_production_closure_history', true );
+        $history = is_array( $history ) ? $history : array();
+        $history[] = array( 'event' => 'reopened', 'time' => $now, 'user_id' => $actor_id );
+        $order->update_meta_data( '_ge_production_closure_history', array_slice( $history, -100 ) );
+        $order->update_meta_data( '_ge_production_operational_status', 'active' );
+        $order->save();
+        $order->add_order_note( 'Producción reabierta administrativamente.', false, true );
+        return true;
+    }
+
+    public static function handle_close_order() {
+        self::guard(); $order = self::requested_order();
+        check_admin_referer( 'ge_production_close_' . $order->get_id() );
+        $reason = sanitize_key( wp_unslash( $_POST['close_reason'] ?? '' ) );
+        $note = sanitize_textarea_field( wp_unslash( $_POST['close_note'] ?? '' ) );
+        $result = self::close_order( $order, $reason, $note );
+        $args = array( 'closure' => is_wp_error( $result ) ? $result->get_error_code() : 'closed' );
+        if ( empty( $_POST['return_queue'] ) ) { $args['order_id'] = $order->get_id(); }
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', $args ) ); exit;
+    }
+
+    public static function handle_reopen_order() {
+        self::guard(); $order = self::requested_order();
+        check_admin_referer( 'ge_production_reopen_' . $order->get_id() );
+        $result = self::reopen_order( $order );
+        $args = array( 'closure' => is_wp_error( $result ) ? $result->get_error_code() : 'reopened' );
+        if ( empty( $_POST['return_queue'] ) ) { $args['order_id'] = $order->get_id(); } else { $args['filter'] = 'closed'; }
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', $args ) ); exit;
     }
 
     public static function item_statuses() {
@@ -343,7 +419,7 @@ final class GE_WTP_Production {
         $production_css = GE_WTP_PLUGIN_DIR . 'assets/css/production.css';
         wp_enqueue_style( 'ge-production', GE_WTP_PLUGIN_URL . 'assets/css/production.css', array( 'ge-staff-portal' ), is_file( $production_css ) ? (string) filemtime( $production_css ) : GE_WTP_VERSION );
         $order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
-        if ( $order_id ) { $order = wc_get_order( $order_id ); if ( $order ) { self::ensure_order( $order ); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { GE_WTP_Workflow::render( $order ); } else { self::render_order( $order ); } return; } }
+        if ( $order_id ) { $order = wc_get_order( $order_id ); if ( self::is_production_order( $order ) ) { self::ensure_order( $order ); self::render_operational_controls( $order ); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { GE_WTP_Workflow::render( $order ); } else { self::render_order( $order ); } return; } }
         $view = sanitize_key( wp_unslash( $_GET['view'] ?? 'queue' ) );
         self::render_tabs( $view );
         if ( 'new' === $view && class_exists( 'GE_WTP_Manual_Orders' ) ) { GE_WTP_Manual_Orders::render(); return; }
@@ -358,23 +434,39 @@ final class GE_WTP_Production {
     }
 
     private static function render_queue() {
-        $orders = GE_WTP_Orders::get_all_orders( 250 );
-        $active = array(); $delayed = 0; $today = 0; $ready = 0;
+        $filters = array( 'active' => 'Activos', 'delayed' => 'Demorados', 'no_files' => 'Sin archivos', 'ready' => 'Listos para entrega', 'closed' => 'Cerrados', 'all' => 'Todos' );
+        $filter = sanitize_key( wp_unslash( $_GET['filter'] ?? 'active' ) );
+        if ( ! isset( $filters[ $filter ] ) ) { $filter = 'active'; }
+        $page = max( 1, absint( $_GET['paged'] ?? 1 ) );
+        $query = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) );
+        $args = array( 'limit' => 50, 'page' => $page, 'paginate' => true, 'orderby' => 'date', 'order' => 'DESC', 'status' => array_values( array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) ) ) );
+        if ( 'closed' === $filter ) { $args['meta_query'] = array( array( 'key' => '_ge_production_operational_status', 'value' => 'closed' ) ); }
+        $results = wc_get_orders( $args );
+        $orders = is_object( $results ) && isset( $results->orders ) ? $results->orders : array();
+        $rows = array();
         foreach ( $orders as $order ) {
-            self::ensure_order( $order );
-            if ( 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { continue; }
-            if ( ! self::actionable_items( $order ) ) { continue; }
-            $status = $order->get_meta( '_ge_production_status' );
-            if ( 'ready' === $status ) { $ready++; continue; }
-            $active[] = $order; $alert = self::alert( $order );
-            if ( 'delayed' === $alert['key'] ) { $delayed++; } elseif ( 'today' === $alert['key'] ) { $today++; }
+            if ( ! self::is_production_order( $order ) ) { continue; }
+            $closed = self::is_closed( $order );
+            $ready = 'ready' === $order->get_meta( '_ge_production_status' );
+            $delivered = 'entregado' === GE_WTP_Order_Lifecycle::stage( $order );
+            if ( 'active' === $filter && ( $closed || $ready || $delivered ) ) { continue; }
+            if ( 'closed' === $filter && ! $closed ) { continue; }
+            if ( 'ready' === $filter && ( $closed || ! $ready || $delivered ) ) { continue; }
+            if ( 'delayed' === $filter && ( $closed || $ready || $delivered || 'delayed' !== self::alert( $order )['key'] ) ) { continue; }
+            if ( 'no_files' === $filter && ( $closed || $delivered || GE_WTP_Documents::get_documents( $order->get_id() ) ) ) { continue; }
+            if ( $query ) {
+                $haystack = implode( ' ', array( $order->get_id(), self::order_reference( $order ), $order->get_formatted_billing_full_name(), $order->get_billing_company(), $order->get_billing_email(), $order->get_billing_phone() ) );
+                if ( false === mb_stripos( $haystack, $query ) ) { continue; }
+            }
+            $rows[] = $order;
         }
-        usort( $active, function( $a, $b ) { return strcmp( (string) $a->get_meta( '_ge_production_promised_date' ), (string) $b->get_meta( '_ge_production_promised_date' ) ); } );
         ?>
-        <div class="ge-staff-heading"><div><span>Operación</span><h1>Producción</h1><p>Cola de trabajos, proveedores, tiempos y alertas.</p></div></div>
+        <div class="ge-staff-heading"><div><span>Operación</span><h1>Producción</h1><p>Cerrá trabajos resueltos sin alterar su etapa comercial ni el estado de pago.</p></div></div>
         <?php self::render_notice(); ?>
-        <div class="ge-production-metrics"><article><span>En cola</span><strong><?php echo esc_html( count( $active ) ); ?></strong></article><article class="is-danger"><span>Demorados</span><strong><?php echo esc_html( $delayed ); ?></strong></article><article class="is-warning"><span>Vencen hoy</span><strong><?php echo esc_html( $today ); ?></strong></article><article class="is-ready"><span>Listos</span><strong><?php echo esc_html( $ready ); ?></strong></article></div>
-        <section class="ge-production-board"><div class="ge-production-section-head"><div><span>Cola diaria</span><h2>Trabajos activos</h2></div><b><?php echo esc_html( wp_date( 'd/m/Y' ) ); ?></b></div><?php if ( ! $active ) : ?><div class="ge-admin-empty">No hay trabajos activos.</div><?php else : ?><div class="ge-production-list"><?php foreach ( $active as $order ) : self::queue_row( $order ); endforeach; ?></div><?php endif; ?></section>
+        <nav class="ge-queue-filters" aria-label="Filtrar trabajos"><?php foreach ( $filters as $key => $label ) : ?><a class="<?php echo $key === $filter ? 'is-active' : ''; ?>" href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'filter' => $key ) ) ); ?>"><?php echo esc_html( $label ); ?></a><?php endforeach; ?></nav>
+        <form class="ge-queue-search" method="get" action="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url() ); ?>"><input type="hidden" name="section" value="production"><input type="hidden" name="filter" value="<?php echo esc_attr( $filter ); ?>"><label for="ge-queue-q">Cliente, pedido, email o teléfono</label><input id="ge-queue-q" type="search" name="q" value="<?php echo esc_attr( $query ); ?>" placeholder="Buscar en esta página"><button type="submit">Buscar</button></form>
+        <section class="ge-production-board"><div class="ge-production-section-head"><div><span>Cola operativa · página <?php echo esc_html( $page ); ?></span><h2><?php echo esc_html( $filters[ $filter ] ); ?></h2></div><b><?php echo esc_html( count( $rows ) ); ?> visibles</b></div><?php if ( ! $rows ) : ?><div class="ge-admin-empty">No hay trabajos con este filtro en la página actual.</div><?php else : ?><div class="ge-production-list"><?php foreach ( $rows as $order ) : self::queue_row( $order ); endforeach; ?></div><?php endif; ?></section>
+        <nav class="ge-queue-pages" aria-label="Páginas de producción"><?php if ( $page > 1 ) : ?><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'filter' => $filter, 'paged' => $page - 1, 'q' => $query ) ) ); ?>">← Anterior</a><?php endif; ?><?php if ( is_object( $results ) && $page < (int) $results->max_num_pages ) : ?><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'filter' => $filter, 'paged' => $page + 1, 'q' => $query ) ) ); ?>">Siguiente →</a><?php endif; ?></nav>
         <?php
     }
 
@@ -384,7 +476,40 @@ final class GE_WTP_Production {
         $priority = self::priorities()[ $order->get_meta( '_ge_production_priority' ) ] ?? 'Normal';
         $alert = self::alert( $order ); $reference = self::order_reference( $order );
         $active_items = self::actionable_items( $order );
-        ?><article class="ge-production-row is-<?php echo esc_attr( $alert['key'] ); ?>"><div class="ge-production-main"><small><?php echo esc_html( $reference ); ?></small><strong><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></strong><span><?php echo esc_html( implode( ' · ', array_map( function( $item ) { return $item->get_name(); }, $active_items ) ) ); ?></span></div><div><small>Proveedor</small><strong><?php echo esc_html( $supplier ); ?></strong></div><div><small>Prometido</small><strong><?php echo esc_html( self::date_label( $order->get_meta( '_ge_production_promised_date' ) ) ); ?></strong><em><?php echo esc_html( $alert['label'] ); ?></em></div><details class="ge-production-quick-status"><summary><small>Estado</small><strong><?php echo esc_html( $status ); ?></strong><span><?php echo esc_html( $priority ); ?> · Cambiar ▾</span></summary><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_production_quick_status"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_quick_status_' . $order->get_id() ); ?><div><?php foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) : ?><label><span><?php echo esc_html( $item->get_name() ); ?></span><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) ); ?> unidades</small><select name="item_statuses[<?php echo esc_attr( $item_id ); ?>]" aria-label="Estado de <?php echo esc_attr( $item->get_name() ); ?>"><?php foreach ( self::item_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( self::item_status( $item, $order ), $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php endforeach; ?></div><button type="submit">Guardar estados</button></form></details><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>">Abrir →</a></article><?php
+        if ( ! $active_items ) { $active_items = $order->get_items( 'line_item' ); }
+        $created = $order->get_date_created();
+        $age = $created ? max( 0, (int) floor( ( time() - $created->getTimestamp() ) / DAY_IN_SECONDS ) ) : 0;
+        $age_label = $age ? $age . ( 1 === $age ? ' día abierto' : ' días abierto' ) : 'hoy';
+        $files = GE_WTP_Documents::get_documents( $order->get_id() );
+        $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
+        ?><article class="ge-production-row is-<?php echo esc_attr( $alert['key'] ); ?>"><div class="ge-production-main"><small><?php echo esc_html( $reference ); ?> · <?php echo esc_html( $age_label ); ?></small><strong><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></strong><span><?php echo esc_html( implode( ' · ', array_map( function( $item ) { return $item->get_name(); }, $active_items ) ) ); ?></span><span><?php echo esc_html( $files ? count( $files ) . ' archivo(s)' : 'Sin archivos' ); ?> · <?php echo esc_html( $due > 0 ? 'Saldo pendiente' : 'Pago: consultar pedido' ); ?></span></div><div><small>Proveedor</small><strong><?php echo esc_html( $supplier ); ?></strong></div><div><small>Prometido</small><strong><?php echo esc_html( self::date_label( $order->get_meta( '_ge_production_promised_date' ) ) ); ?></strong><em><?php echo esc_html( self::is_closed( $order ) ? 'Cerrado' : $alert['label'] ); ?></em></div><div class="ge-queue-row-actions"><span><?php echo esc_html( $status ); ?> · <?php echo esc_html( $priority ); ?></span><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>"><?php echo self::is_closed( $order ) ? 'Ver / reabrir →' : 'Abrir / cerrar →'; ?></a></div></article><?php
+        if ( self::is_closed( $order ) ) : ?>
+            <form class="ge-queue-closure" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('¿Reabrir este trabajo?');"><input type="hidden" name="action" value="ge_production_reopen_order"><input type="hidden" name="return_queue" value="1"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_reopen_' . $order->get_id() ); ?><button type="submit">Reabrir trabajo #<?php echo esc_html( $order->get_id() ); ?></button></form>
+        <?php else : ?>
+            <details class="ge-queue-closure"><summary>Terminar / cerrar #<?php echo esc_html( $order->get_id() ); ?></summary><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('¿Cerrar este trabajo en producción?');"><input type="hidden" name="action" value="ge_production_close_order"><input type="hidden" name="return_queue" value="1"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_close_' . $order->get_id() ); ?><label>Motivo<select name="close_reason" required><option value="">Elegir motivo</option><?php foreach ( self::close_reasons() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><label>Nota opcional<input type="text" name="close_note" maxlength="1000"></label><button type="submit">Confirmar cierre</button></form></details>
+        <?php endif;
+    }
+
+    private static function render_operational_controls( $order ) {
+        $closed = self::is_closed( $order );
+        $reason = sanitize_key( $order->get_meta( '_ge_production_close_reason', true ) );
+        $actor = get_userdata( absint( $order->get_meta( '_ge_production_closed_by', true ) ) );
+        $closed_at = absint( $order->get_meta( '_ge_production_closed_at', true ) );
+        $result = sanitize_key( wp_unslash( $_GET['closure'] ?? '' ) );
+        ?>
+        <section class="ge-production-card ge-closure-card" aria-label="Cierre operativo">
+            <div class="ge-production-section-head"><div><span>Estado operativo</span><h2><?php echo $closed ? 'Trabajo cerrado' : 'Trabajo activo'; ?></h2></div><span class="ge-closure-badge <?php echo $closed ? 'is-closed' : ''; ?>"><?php echo $closed ? 'Cerrado' : 'Activo'; ?></span></div>
+            <?php if ( 'closed' === $result || 'reopened' === $result ) : ?><p class="ge-production-notice" role="status"><?php echo 'closed' === $result ? 'Trabajo cerrado. Ya no figura entre los activos.' : 'Trabajo reabierto.'; ?></p><?php elseif ( $result ) : ?><p class="ge-production-notice is-error" role="alert">No se pudo cambiar el cierre. Verificá el estado del trabajo.</p><?php endif; ?>
+            <?php if ( $closed ) : ?>
+                <p>Cerrado el <?php echo esc_html( $closed_at ? wp_date( 'd/m/Y H:i', $closed_at ) : 'fecha no disponible' ); ?> por <?php echo esc_html( $actor ? $actor->display_name : 'usuario anterior' ); ?>. Motivo: <?php echo esc_html( self::close_reasons()[ $reason ] ?? 'Otro' ); ?>.</p>
+                <?php if ( $order->get_meta( '_ge_production_close_note', true ) ) : ?><p><?php echo esc_html( $order->get_meta( '_ge_production_close_note', true ) ); ?></p><?php endif; ?>
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('¿Reabrir este trabajo?');"><input type="hidden" name="action" value="ge_production_reopen_order"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_reopen_' . $order->get_id() ); ?><button type="submit">Reabrir trabajo</button></form>
+            <?php else : ?>
+                <p>El cierre quita este trabajo de la cola activa. Conserva pedido, pago, archivos y etapa productiva.</p>
+                <form class="ge-closure-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('¿Cerrar este trabajo en producción?');"><input type="hidden" name="action" value="ge_production_close_order"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_close_' . $order->get_id() ); ?><label>Motivo<select name="close_reason" required><option value="">Elegir motivo</option><?php foreach ( self::close_reasons() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><label>Nota opcional<textarea name="close_note" maxlength="1000" rows="2" placeholder="Qué pasó con el trabajo"></textarea></label><button type="submit">Terminar / cerrar trabajo</button></form>
+            <?php endif; ?>
+        </section>
+        <?php
     }
 
     private static function render_order( $order ) {
@@ -649,6 +774,9 @@ final class GE_WTP_Production {
     }
 
     private static function render_notice() {
+        $closure = sanitize_key( wp_unslash( $_GET['closure'] ?? '' ) );
+        if ( 'closed' === $closure || 'reopened' === $closure ) { echo '<div class="ge-production-notice" role="status">' . ( 'closed' === $closure ? 'Trabajo cerrado. Se conserva en Cerrados.' : 'Trabajo reabierto.' ) . '</div>'; }
+        elseif ( $closure ) { echo '<div class="ge-production-notice is-error" role="alert">No se pudo cambiar el cierre. Revisá el trabajo.</div>'; }
         $status = sanitize_key( wp_unslash( $_GET['dispatch_status'] ?? '' ) );
         $document_upload = sanitize_key( wp_unslash( $_GET['document_upload'] ?? '' ) );
         if ( 'supplier-sent' === $status ) { echo '<div class="ge-production-notice">La orden fue enviada al proveedor por email.</div>'; }
