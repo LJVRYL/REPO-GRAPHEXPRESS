@@ -112,7 +112,15 @@ final class GE_WTP_Customer_Workspace {
 
     private static function render_timeline( $user, $quotes, $orders, $logs ) {
         $events = array( array( 'at' => $user->user_registered, 'title' => 'Cliente registrado', 'detail' => '' ) );
-        foreach ( $quotes as $quote ) { $events[] = array( 'at' => $quote['captured_at'] ?? '', 'title' => 'Cotización · ' . ( $quote['title'] ?? $quote['reference'] ?? 'Sin título' ), 'detail' => 'Estado actual: ' . ucfirst( str_replace( '_', ' ', $quote['status'] ?? 'pendiente' ) ) ); }
+        foreach ( $quotes as $quote ) {
+            $events[] = array( 'at' => $quote['captured_at'] ?? '', 'title' => 'Cotización · ' . ( $quote['title'] ?? $quote['reference'] ?? 'Sin título' ), 'detail' => 'Estado actual: ' . ucfirst( str_replace( '_', ' ', $quote['status'] ?? 'pendiente' ) ) );
+            if ( empty( $quote['_quote_id'] ) ) { continue; }
+            $labels = array( 'sent' => 'Presupuesto enviado', 'viewed' => 'Presupuesto visto', 'accepted' => 'Presupuesto aceptado', 'accepted_staff' => 'Aceptación comercial registrada', 'file_uploaded' => 'Archivo recibido', 'file_attached' => 'Archivo vinculado', 'receipt_uploaded' => 'Comprobante recibido', 'receipt_attached' => 'Comprobante vinculado', 'payment_started' => 'Pago iniciado', 'payment_confirmed' => 'Pago confirmado', 'converted' => 'Pedido creado' );
+            foreach ( (array) get_post_meta( $quote['_quote_id'], '_ge_commercial_events', true ) as $event ) {
+                if ( ! isset( $labels[ $event['event'] ?? '' ] ) ) { continue; }
+                $events[] = array( 'at' => $event['at'] ?? '', 'title' => $labels[ $event['event'] ], 'detail' => $quote['title'] ?? '' );
+            }
+        }
         foreach ( $orders as $order ) {
             $events[] = array( 'at' => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '', 'title' => 'Pedido #' . $order->get_id(), 'detail' => GE_WTP_Order_Lifecycle::label( $order ) );
             foreach ( GE_WTP_Documents::issued_documents( $order->get_id() ) as $document ) { $events[] = array( 'at' => $document['uploaded_at'] ?? '', 'title' => 'Documento emitido · pedido #' . $order->get_id(), 'detail' => $document['document_number'] ?? '' ); }
@@ -138,7 +146,7 @@ final class GE_WTP_Customer_Workspace {
             $current = GE_WTP_Commercial_Quotes::get( $post->ID, get_current_user_id() );
             if ( is_wp_error( $current ) ) { continue; }
             $quotes[] = array(
-                'title' => $current['number'], 'reference' => 'Presupuesto actual', 'captured_at' => $post->post_date,
+                'title' => $current['number'], 'reference' => 'Presupuesto actual', 'captured_at' => $post->post_date, '_quote_id' => $current['id'],
                 'status' => $current['status'], '_url' => GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $current['id'] ) ),
                 '_amount' => isset( $current['snapshot']['total_cents'] ) ? wp_strip_all_tags( wc_price( $current['snapshot']['total_cents'] / 100 ) ) : '',
             );

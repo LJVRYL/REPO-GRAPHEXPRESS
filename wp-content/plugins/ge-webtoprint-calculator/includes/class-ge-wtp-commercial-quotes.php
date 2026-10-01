@@ -102,6 +102,9 @@ final class GE_WTP_Commercial_Quotes {
         if ( in_array( $quote['status'], array( 'accepted', 'converted', 'cancelled' ), true ) ) {
             return new WP_Error( 'ge_quote_locked', 'Este presupuesto ya no admite cambios.' );
         }
+        if ( get_post_meta( $quote_id, '_ge_commercial_initial_payment_order', true ) ) {
+            return new WP_Error( 'ge_quote_payment_locked', 'Hay un cobro iniciado. Revisá su estado antes de editar la propuesta.' );
+        }
         $snapshot = self::build_snapshot( $lines, $args );
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
         $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
@@ -143,6 +146,21 @@ final class GE_WTP_Commercial_Quotes {
         return self::get( $quote_id, $actor_id );
     }
 
+    public static function resend( $quote_id, $actor_id = 0 ) {
+        $actor_id = $actor_id ?: get_current_user_id();
+        if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
+        $quote = self::get( $quote_id, $actor_id );
+        if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) ) { return new WP_Error( 'ge_quote_state', 'Este presupuesto no se puede reenviar.' ); }
+        $customer = get_userdata( $quote['customer_id'] );
+        if ( ! $customer ) { return new WP_Error( 'ge_quote_customer', 'Cliente no disponible.' ); }
+        $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote_id ) );
+        $body = '<p>Hola ' . esc_html( $customer->first_name ?: $customer->display_name ) . ',</p><p>Podés volver a revisar tu presupuesto de Graph Express.</p><p><a href="' . esc_url( $url ) . '">Ver presupuesto ' . esc_html( $quote['number'] ) . '</a></p>';
+        if ( ! GE_WTP_Notifications::send( $customer->user_email, 'Tu presupuesto · ' . $quote['number'], $body, 'commercial_quote_sent', $quote_id ) ) { return new WP_Error( 'ge_quote_email', 'No se pudo reenviar. Revisá Notificaciones.' ); }
+        self::event( $quote_id, $quote['version'], 'sent', $actor_id );
+        return $quote;
+    }
+
     /** Older drafts must be reviewed before their previous area price is sent. */
     public static function needs_roll_reprice( $snapshot ) {
         foreach ( (array) ( $snapshot['items'] ?? array() ) as $item ) {
@@ -162,7 +180,7 @@ final class GE_WTP_Commercial_Quotes {
         $actor_id = $actor_id ?: get_current_user_id();
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
-        if ( $actor_id !== $quote['customer_id'] || 'sent' !== $quote['status'] || (int) $version !== $quote['version'] ) {
+        if ( $actor_id !== $quote['customer_id'] || ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) || (int) $version !== $quote['version'] ) {
             return new WP_Error( 'ge_quote_accept', 'El presupuesto cambió o no está disponible para aceptar.' );
         }
         if ( ! empty( $quote['snapshot']['valid_until'] ) && $quote['snapshot']['valid_until'] < wp_date( 'Y-m-d' ) ) {
@@ -174,16 +192,36 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'Estamos procesando el presupuesto. Volvé a intentar.' ); }
         try {
             $quote = self::get( $quote_id, $actor_id );
-            if ( is_wp_error( $quote ) || 'sent' !== $quote['status'] || $quote['version'] !== (int) $version ) {
+            if ( is_wp_error( $quote ) || ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) || $quote['version'] !== (int) $version ) {
                 return new WP_Error( 'ge_quote_accept', 'El presupuesto ya no está disponible.' );
             }
             update_post_meta( $quote_id, self::STATUS_META, 'accepted' );
             update_post_meta( $quote_id, '_ge_commercial_accepted_at', gmdate( 'c' ) );
+            update_post_meta( $quote_id, '_ge_commercial_accepted_by', $actor_id );
+            update_post_meta( $quote_id, '_ge_commercial_accept_source', 'portal' );
             self::event( $quote_id, $version, 'accepted', $actor_id );
             return self::get( $quote_id, $actor_id );
         } finally {
             delete_option( $lock );
         }
+    }
+
+    /** Records a staff-confirmed commercial acceptance, never artwork approval. */
+    public static function accept_staff( $quote_id, $version, $method, $reason, $actor_id ) {
+        if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
+        $quote = self::get( $quote_id, $actor_id );
+        if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( (int) $version !== $quote['version'] ) { return new WP_Error( 'ge_quote_version_changed', 'La versión cambió.' ); }
+        if ( in_array( $quote['status'], array( 'accepted', 'converted' ), true ) ) { return $quote; }
+        if ( ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) ) { return new WP_Error( 'ge_quote_state', 'Este presupuesto no admite aceptación comercial.' ); }
+        $method = sanitize_key( $method );
+        if ( ! in_array( $method, array( 'whatsapp', 'email', 'phone', 'in_person', 'other' ), true ) || ! trim( $reason ) ) { return new WP_Error( 'ge_quote_evidence', 'Indicá el canal y la referencia de la aceptación.' ); }
+        update_post_meta( $quote_id, self::STATUS_META, 'accepted' );
+        update_post_meta( $quote_id, '_ge_commercial_accepted_at', gmdate( 'c' ) );
+        update_post_meta( $quote_id, '_ge_commercial_accepted_by', $actor_id );
+        update_post_meta( $quote_id, '_ge_commercial_accept_source', 'staff:' . $method );
+        self::record_event( $quote_id, 'accepted_staff', $actor_id, array( 'method' => $method, 'reason' => sanitize_textarea_field( $reason ) ) );
+        return self::get( $quote_id, $actor_id );
     }
 
     public static function build_snapshot( $lines, $args = array() ) {
@@ -303,6 +341,76 @@ final class GE_WTP_Commercial_Quotes {
             }
         }
         return true;
+    }
+
+    /** Resolve a draft for staff conversion without sending an email. */
+    public static function prepare_for_conversion( $quote_id, $actor_id ) {
+        if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
+        $quote = self::get( $quote_id, $actor_id );
+        if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( ! empty( $quote['snapshot']['total_cents'] ) ) { return $quote; }
+        if ( 'draft' !== $quote['status'] ) { return new WP_Error( 'ge_quote_total', 'El presupuesto no tiene un total fiscal válido.' ); }
+        if ( self::needs_roll_reprice( $quote['snapshot'] ) ) { return new WP_Error( 'ge_quote_roll_reprice', 'Revisá y guardá el precio del vinilo antes de convertir.' ); }
+        $resolved = self::resolve_billing( $quote['customer_id'], $quote['snapshot'] );
+        if ( is_wp_error( $resolved ) ) { return $resolved; }
+        $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
+        if ( ! is_array( $versions ) ) { return new WP_Error( 'ge_quote_corrupt', 'Historial inválido.' ); }
+        $versions[ $quote['version'] ] = $resolved;
+        update_post_meta( $quote_id, self::VERSIONS_META, $versions );
+        self::event( $quote_id, $quote['version'], 'billing_resolved_for_conversion', $actor_id );
+        return self::get( $quote_id, $actor_id );
+    }
+
+    public static function mark_viewed( $quote_id, $actor_id ) {
+        $quote = self::get( $quote_id, $actor_id );
+        if ( is_wp_error( $quote ) || (int) $quote['customer_id'] !== (int) $actor_id ) { return; }
+        if ( 'sent' === $quote['status'] ) {
+            update_post_meta( $quote_id, self::STATUS_META, 'viewed' );
+            self::event( $quote_id, $quote['version'], 'viewed', $actor_id );
+        }
+    }
+
+    public static function record_event( $quote_id, $name, $actor_id, $data = array() ) {
+        $quote = self::get( $quote_id );
+        if ( is_wp_error( $quote ) ) { return; }
+        $events = get_post_meta( $quote_id, '_ge_commercial_events', true );
+        if ( ! is_array( $events ) ) { $events = array(); }
+        $events[] = array( 'event' => sanitize_key( $name ), 'version' => (int) $quote['version'], 'actor_id' => (int) $actor_id, 'at' => gmdate( 'c' ), 'data' => $data );
+        update_post_meta( $quote_id, '_ge_commercial_events', $events );
+    }
+
+    /** Four independent axes; a commercial acceptance never approves artwork. */
+    public static function state_axes( $quote ) {
+        $order = ! empty( $quote['converted_order_id'] ) ? wc_get_order( $quote['converted_order_id'] ) : false;
+        $payment = $order ? (string) $order->get_meta( '_ge_payment_state', true ) : 'pending';
+        if ( ! $order ) {
+            $attempt_id = absint( get_post_meta( $quote['id'], '_ge_commercial_initial_payment_order', true ) );
+            $attempt = $attempt_id ? wc_get_order( $attempt_id ) : false;
+            if ( $attempt && in_array( $attempt->get_status(), array( 'failed', 'cancelled' ), true ) ) { $payment = 'failed'; }
+        }
+        if ( 'unpaid' === $payment || ! $payment ) { $payment = 'pending'; }
+        $files = GE_WTP_Commercial_Quote_Files::all( $quote['id'] );
+        $artwork = $files ? 'received' : 'none';
+        if ( $files ) {
+            $last = end( $files );
+            if ( in_array( $last['analysis']['confidence'] ?? '', array( 'medium', 'high' ), true ) ) { $artwork = 'analyzed'; }
+            if ( 'final' === ( $last['source_type'] ?? '' ) ) { $artwork = 'final'; }
+        }
+        if ( $order ) {
+            $items = $order->get_items( 'line_item' );
+            $approved = (bool) $items;
+            foreach ( $items as $item ) {
+                if ( $item->get_meta( '_ge_item_artwork_sources', true ) && 'final' === $artwork ) { $artwork = 'approval_pending'; }
+                if ( ! $item->get_meta( '_ge_item_artwork_release_hash', true ) ) { $approved = false; }
+            }
+            if ( $approved ) { $artwork = 'approved'; }
+        }
+        $production = 'not_created';
+        if ( $order ) {
+            $status = (string) $order->get_meta( '_ge_production_status', true );
+            $production = array( 'pending' => 'created', 'approved' => 'ready', 'production' => 'in_production', 'ready' => 'ready_for_delivery', 'delivered' => 'delivered' )[ $status ] ?? 'created';
+        }
+        return array( 'commercial' => $quote['status'], 'payment' => $payment, 'artwork' => $artwork, 'production' => $production );
     }
 
     private static function event( $quote_id, $version, $name, $actor_id ) {

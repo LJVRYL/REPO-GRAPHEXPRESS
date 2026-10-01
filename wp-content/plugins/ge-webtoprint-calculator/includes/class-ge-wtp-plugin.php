@@ -28,6 +28,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Portal::init();
         GE_WTP_Quotes::init();
         GE_WTP_Commercial_Quotes::init();
+        GE_WTP_Commercial_Quote_Files::init();
         GE_WTP_Commercial_Quote_UI::init();
         GE_WTP_Commercial_Checkout::init();
         GE_WTP_Notifications::init();
