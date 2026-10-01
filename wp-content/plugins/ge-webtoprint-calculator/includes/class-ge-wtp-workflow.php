@@ -153,9 +153,9 @@ final class GE_WTP_Workflow {
         echo '<form class="ge-workflow-release" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_release"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
         wp_nonce_field( 'ge_workflow_release_' . $order->get_id() );
         $eligible = 0;
-        foreach ( $order->get_items( 'line_item' ) as $item ) { if ( 'ready' === $item->get_meta( self::ITEM_STATE_META, true ) && self::ready( $item, $order ) ) { $eligible++; } }
+        foreach ( $order->get_items( 'line_item' ) as $item ) { if ( self::ready( $item, $order ) ) { $eligible++; } }
         $has_date = (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $order->get_meta( '_ge_production_promised_date', true ) );
-        echo '<p>Para liberar un trabajo necesitás el archivo final asignado al producto, aprobación de esa versión por el cliente, control técnico y fecha prometida.</p>';
+        echo '<p>Para liberar un trabajo necesitás el archivo final asignado al producto, aprobación interna o aprobación del cliente cuando se requiera, y fecha prometida.</p>';
         if ( ! $eligible || ! $has_date ) { echo '<p class="ge-production-notice is-error">' . esc_html( ! $has_date ? 'Guardá primero la fecha prometida en Planificación.' : 'Todavía no hay trabajos con archivo y aprobación completos.' ) . '</p>'; }
         echo '<button class="ge-staff-button" type="submit" ' . disabled( ! $eligible || ! $has_date, true, false ) . '>Enviar trabajos aprobados a producción</button></form>';
     }
@@ -175,8 +175,9 @@ final class GE_WTP_Workflow {
             if ( 'ready' !== $state || ! $sources || empty( $staff['approved'] ) ) { continue; }
             $customer = (array) $item->get_meta( '_ge_item_artwork_customer_approval', true );
             echo '<article class="ge-workflow-approval-item"><strong>' . esc_html( $item->get_name() ) . '</strong><span>Versión: ' . esc_html( $item->get_meta( '_ge_item_artwork_version', true ) ?: 'sin definir' ) . '</span>';
-            if ( ! empty( $customer['approved'] ) ) { echo '<p>Confirmado por el cliente.</p>'; }
-            elseif ( is_email( $email ) ) { echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_request_approval"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '"><input type="hidden" name="item_id" value="' . esc_attr( $item_id ) . '">'; wp_nonce_field( 'ge_workflow_approval_' . $order->get_id() . '_' . $item_id ); echo '<button type="submit">Enviar versión al cliente para aprobar</button></form>'; }
+            if ( ! empty( $customer['approved'] ) ) { echo '<p>Aprobado por cliente.</p>'; }
+            elseif ( 'yes' !== $item->get_meta( '_ge_item_artwork_client_required', true ) ) { echo '<p>Aprobado por staff. No requiere confirmación del cliente.</p>'; }
+            elseif ( 'yes' === $item->get_meta( '_ge_item_artwork_client_required', true ) && is_email( $email ) ) { echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_request_approval"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '"><input type="hidden" name="item_id" value="' . esc_attr( $item_id ) . '">'; wp_nonce_field( 'ge_workflow_approval_' . $order->get_id() . '_' . $item_id ); echo '<button type="submit">Enviar versión al cliente para aprobar</button></form>'; }
             else { echo '<p>No hay email. Solicitá la aprobación por un canal verificable y registrá la evidencia en el control de archivos.</p>'; }
             echo '</article>';
         }
@@ -319,7 +320,8 @@ final class GE_WTP_Workflow {
         $registration = ! $order->get_customer_id() ? '<p>Si todavía no tenés cuenta, <a href="' . esc_url( wc_get_page_permalink( 'myaccount' ) ) . '">registrate con este mismo email</a> para ver el pedido.</p>' : '';
         $html = '<p>Preparámos el archivo de <strong>' . esc_html( $item->get_name() ) . '</strong>, versión <strong>' . esc_html( $item->get_meta( '_ge_item_artwork_version', true ) ) . '</strong>.</p><p><a href="' . esc_url( $portal ) . '">Revisar y aprobar la versión final en tu portal</a></p>' . $registration . '<p>Si necesitás cambios, respondé este mensaje antes de aprobar. No enviaremos este trabajo a producción sin tu confirmación.</p>';
         $sent = GE_WTP_Notifications::send( $email, 'Aprobación final del archivo · ' . self::reference( $order ), $html, 'workflow_artwork_approval', $order->get_id() );
-        $history = (array) $item->get_meta( '_ge_item_approval_requests', true ); $history[] = array( 'time' => time(), 'user_id' => get_current_user_id(), 'email' => $email, 'version' => (string) $item->get_meta( '_ge_item_artwork_version', true ), 'sent' => (bool) $sent ); $item->update_meta_data( '_ge_item_approval_requests', array_slice( $history, -30 ) ); $item->save();
+        $item->update_meta_data( '_ge_item_artwork_client_required', 'yes' );
+        $history = (array) $item->get_meta( '_ge_item_approval_requests', true ); $history[] = array( 'time' => time(), 'user_id' => get_current_user_id(), 'email' => $email, 'version' => (string) $item->get_meta( '_ge_item_artwork_version', true ), 'checksum' => GE_WTP_Artwork_Library::release_fingerprint( $item, $sources, (string) $item->get_meta( '_ge_item_artwork_version', true ), (array) $item->get_meta( '_ge_item_artwork_expected', true ), GE_WTP_Artwork_Library::order_sources( $order ) ), 'requested_at' => gmdate( 'c' ), 'sent' => (bool) $sent ); $item->update_meta_data( '_ge_item_approval_requests', array_slice( $history, -30 ) ); $item->save();
         self::redirect( $order, 'review', $sent ? 'approval-sent' : 'approval-failed' );
     }
 
@@ -367,7 +369,7 @@ final class GE_WTP_Workflow {
     public static function release() {
         $order = self::posted_order( 'ge_workflow_release' );
         $approved = array();
-        foreach ( $order->get_items( 'line_item' ) as $item ) { if ( 'production' !== GE_WTP_Production::item_status( $item, $order ) && 'ready' === $item->get_meta( self::ITEM_STATE_META, true ) && self::ready( $item, $order ) ) { $approved[] = $item; } }
+        foreach ( $order->get_items( 'line_item' ) as $item ) { if ( 'production' !== GE_WTP_Production::item_status( $item, $order ) && self::ready( $item, $order ) ) { $approved[] = $item; } }
         $date = (string) $order->get_meta( '_ge_production_promised_date', true );
         if ( ! $approved || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) { self::redirect( $order, 'review', 'blocked' ); }
         foreach ( $approved as $item ) { $item->update_meta_data( '_ge_item_status', 'production' ); $item->update_meta_data( '_ge_item_workflow_released_at', time() ); $item->update_meta_data( '_ge_item_workflow_released_by', get_current_user_id() ); $item->save(); }

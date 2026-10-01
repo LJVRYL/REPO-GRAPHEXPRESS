@@ -248,12 +248,13 @@ final class GE_WTP_Artwork_Library {
             'expected' => is_array( $expected ) ? $expected : array(),
             'customer' => (array) $item->get_meta( '_ge_item_artwork_customer_approval', true ),
             'staff' => (array) $item->get_meta( '_ge_item_artwork_staff_approval', true ),
+            'client_required' => 'yes' === $item->get_meta( '_ge_item_artwork_client_required', true ),
             'release_hash' => (string) $item->get_meta( '_ge_item_artwork_release_hash', true ),
             'released_at' => absint( $item->get_meta( '_ge_item_artwork_released_at', true ) ),
         );
     }
 
-    private static function release_fingerprint( $item, $tokens, $version, $expected, $available ) {
+    public static function release_fingerprint( $item, $tokens, $version, $expected, $available ) {
         $files = array();
         foreach ( (array) $tokens as $token ) {
             if ( isset( $available[ $token ] ) ) { $files[] = $token . ':' . ( $available[ $token ]['hash'] ?? '' ); }
@@ -297,7 +298,9 @@ final class GE_WTP_Artwork_Library {
         if ( ! $order ) { return false; }
         $data = self::item_release_data( $item ); $available = self::order_sources( $order );
         foreach ( $data['sources'] as $token ) { if ( ! isset( $available[ $token ] ) ) { return false; } }
-        if ( ! $data['sources'] || empty( $data['customer']['approved'] ) || empty( $data['staff']['approved'] ) ) { return false; }
+        if ( ! $data['sources'] ) { return false; }
+        $approved = ! empty( $data['customer']['approved'] ) || ( ! $data['client_required'] && ! empty( $data['staff']['approved'] ) );
+        if ( ! $approved ) { return false; }
         return $data['release_hash'] && hash_equals( $data['release_hash'], self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) );
     }
 
@@ -315,6 +318,7 @@ final class GE_WTP_Artwork_Library {
     }
 
     private static function production_items( $order ) {
+        if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { return $order->get_items( 'line_item' ); }
         if ( class_exists( 'GE_WTP_Production' ) && method_exists( 'GE_WTP_Production', 'actionable_items' ) ) { return GE_WTP_Production::actionable_items( $order, false ); }
         $items = array();
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
@@ -368,6 +372,7 @@ final class GE_WTP_Artwork_Library {
                 'notes' => sanitize_textarea_field( wp_unslash( $row['notes'] ?? '' ) ),
             );
             $old = self::item_release_data( $item );
+            $client_required = ! empty( $row['client_required'] );
             $new_hash = self::release_fingerprint( $item, $tokens, $version, $expected, $available );
             $old_hash = self::release_fingerprint( $item, $old['sources'], $old['version'], $old['expected'], $available );
             $changed = ! hash_equals( $old_hash, $new_hash );
@@ -383,14 +388,19 @@ final class GE_WTP_Artwork_Library {
                 }
             }
             elseif ( empty( $row['customer_approved'] ) ) { $customer = array(); }
-            if ( ! empty( $row['staff_approved'] ) && $tokens ) { $staff = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'staff-control' ); }
+            if ( ! empty( $row['staff_approved'] ) && $tokens ) { $staff = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'staff-control', 'approval_source' => 'staff', 'approved_by' => get_current_user_id(), 'approved_at' => gmdate( 'c' ), 'version_id' => $version, 'checksum' => $new_hash ); }
             elseif ( empty( $row['staff_approved'] ) ) { $staff = array(); }
             $item->update_meta_data( '_ge_item_artwork_sources', $tokens );
             $item->update_meta_data( '_ge_item_artwork_version', $version );
             $item->update_meta_data( '_ge_item_artwork_expected', $expected );
             $item->update_meta_data( '_ge_item_artwork_customer_approval', $customer );
             $item->update_meta_data( '_ge_item_artwork_staff_approval', $staff );
-            if ( $tokens && ! empty( $customer['approved'] ) && ! empty( $staff['approved'] ) ) {
+            if ( ! empty( $staff['approved'] ) && class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { $item->update_meta_data( GE_WTP_Workflow::ITEM_STATE_META, 'ready' ); }
+            $item->update_meta_data( '_ge_item_artwork_client_required', $client_required ? 'yes' : 'no' );
+            $history = (array) $item->get_meta( '_ge_item_artwork_approval_history', true );
+            $history[] = array( 'approved_by' => get_current_user_id(), 'approved_at' => gmdate( 'c' ), 'approval_source' => 'staff', 'version_id' => $version, 'checksum' => $new_hash, 'staff_approved' => ! empty( $staff['approved'] ), 'client_approval_required' => $client_required );
+            $item->update_meta_data( '_ge_item_artwork_approval_history', $history );
+            if ( $tokens && ( ! empty( $customer['approved'] ) || ( ! $client_required && ! empty( $staff['approved'] ) ) ) ) {
                 $item->update_meta_data( '_ge_item_artwork_release_hash', $new_hash ); $item->update_meta_data( '_ge_item_artwork_released_at', time() ); $item->update_meta_data( '_ge_item_artwork_released_by', get_current_user_id() );
             } else { $item->delete_meta_data( '_ge_item_artwork_release_hash' ); $item->delete_meta_data( '_ge_item_artwork_released_at' ); $item->delete_meta_data( '_ge_item_artwork_released_by' ); }
             $item->save();
@@ -408,9 +418,13 @@ final class GE_WTP_Artwork_Library {
             if ( ! in_array( (int) $item_id, $selected, true ) ) { continue; }
             $data = self::item_release_data( $item ); if ( ! $data['sources'] ) { continue; }
             if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( 'production' === GE_WTP_Production::item_status( $item, $order ) || 'ready' !== $item->get_meta( GE_WTP_Workflow::ITEM_STATE_META, true ) || empty( $data['staff']['approved'] ) ) ) { continue; }
-            $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'customer-portal' );
+            $hash = self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available );
+            $posted_hash = sanitize_text_field( wp_unslash( $_POST['approval_hash'][ $item_id ] ?? '' ) );
+            if ( ! $posted_hash || ! hash_equals( $hash, $posted_hash ) ) { continue; }
+            $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'customer-portal', 'approval_source' => 'client', 'version_id' => $data['version'], 'checksum' => $hash, 'approved_at' => gmdate( 'c' ) );
             $item->update_meta_data( '_ge_item_artwork_customer_approval', $customer );
-            if ( ! empty( $data['staff']['approved'] ) ) { $item->update_meta_data( '_ge_item_artwork_release_hash', self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) ); $item->update_meta_data( '_ge_item_artwork_released_at', time() ); }
+            if ( ! empty( $customer['approved'] ) ) { $item->update_meta_data( '_ge_item_artwork_release_hash', self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) ); $item->update_meta_data( '_ge_item_artwork_released_at', time() ); }
+            $history = (array) $item->get_meta( '_ge_item_artwork_approval_history', true ); $history[] = $customer; $item->update_meta_data( '_ge_item_artwork_approval_history', $history );
             $item->save();
         }
         wp_safe_redirect( GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order->get_id(), 'ge_notice' => 'artwork-approved' ) ) ); exit;
@@ -422,6 +436,8 @@ final class GE_WTP_Artwork_Library {
         echo '<section class="ge-artwork-approval ge-panel"><span class="ge-eyebrow">Archivos para producir</span><h2>Confirmá cada archivo</h2><p>La aprobación del presupuesto no aprueba automáticamente el diseño. Revisá nombre, versión y medidas antes de confirmar.</p><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_artwork_approval"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">'; wp_nonce_field( 'ge_customer_artwork_approval_' . $order->get_id() );
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
             $data = self::item_release_data( $item ); $ready = self::item_ready_for_production( $item, $order );
+            if ( ! $data['client_required'] ) { continue; }
+            echo '<input type="hidden" name="approval_hash[' . esc_attr( $item_id ) . ']" value="' . esc_attr( self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) ) . '">';
             if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( 'production' === GE_WTP_Production::item_status( $item, $order ) || 'ready' !== $item->get_meta( GE_WTP_Workflow::ITEM_STATE_META, true ) || empty( $data['staff']['approved'] ) ) ) { continue; }
             echo '<article class="ge-artwork-approval-item ' . ( $ready ? 'is-ready' : '' ) . '"><div><strong>' . esc_html( $item->get_name() ) . '</strong><small>' . esc_html( number_format_i18n( $item->get_quantity() ) ) . ' unidades · versión ' . esc_html( $data['version'] ?: 'sin definir' ) . '</small></div>';
             if ( ! $data['sources'] ) { echo '<p class="ge-artwork-waiting">Graph Express todavía debe asignar el archivo exacto a este producto.</p>'; }
@@ -458,7 +474,7 @@ final class GE_WTP_Artwork_Library {
         <article><header><div><strong><?php echo esc_html( $item->get_name() ); ?></strong><small><?php echo esc_html( number_format_i18n( $item->get_quantity() ) ); ?> unidades</small></div><b class="<?php echo self::item_ready_for_production( $item, $order ) ? 'is-ready' : 'is-blocked'; ?>"><?php echo self::item_ready_for_production( $item, $order ) ? 'LIBERADO' : 'PENDIENTE'; ?></b></header>
         <fieldset><legend>Archivo(s) exacto(s) para este producto</legend><?php if ( ! $available ) : ?><p>No hay archivos vinculados al pedido. Cargalos en “Documentos del pedido” como Arte o vinculalos desde la Biblioteca.</p><?php else : foreach ( $available as $token => $source ) : ?><label class="ge-artwork-source"><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][sources][]" value="<?php echo esc_attr( $token ); ?>" <?php checked( in_array( $token, $data['sources'], true ) ); ?>><span><strong><?php echo esc_html( $source['name'] ); ?></strong><small><?php echo esc_html( $source['code'] . self::analysis_summary( $source['analysis'] ) ); ?></small></span><a target="_blank" rel="noopener" href="<?php echo esc_url( $source['url'] ); ?>">Ver</a></label><?php endforeach; endif; ?></fieldset>
         <div class="ge-artwork-spec-grid"><label>Versión<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][version]" value="<?php echo esc_attr( $data['version'] ); ?>" placeholder="v1 final"></label><label>Medida esperada<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][dimensions]" value="<?php echo esc_attr( $data['expected']['dimensions'] ?? '' ); ?>" placeholder="21 × 14,5 cm"></label><label>Páginas/diseños esperados<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][pages]" value="<?php echo esc_attr( $data['expected']['pages'] ?? '' ); ?>" placeholder="5 archivos / 200 números"></label><label>Orientación<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][orientation]" value="<?php echo esc_attr( $data['expected']['orientation'] ?? '' ); ?>" placeholder="Horizontal"></label><label class="is-wide">Observaciones<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][notes]" value="<?php echo esc_attr( $data['expected']['notes'] ?? '' ); ?>" placeholder="Sponsors alternados, numeración, frente..."></label></div>
-        <div class="ge-artwork-confirm-grid"><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_approved]" value="1" <?php checked( ! empty( $data['customer']['approved'] ) ); ?>><span><strong>Cliente confirmó este archivo</strong><small>Marcá sólo con evidencia en portal, email, WhatsApp o presencial.</small></span></label><label>Método<select name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_method]"><option value="staff-recorded">Registrado manualmente</option><option value="whatsapp" <?php selected( $data['customer']['method'] ?? '', 'whatsapp' ); ?>>WhatsApp</option><option value="email" <?php selected( $data['customer']['method'] ?? '', 'email' ); ?>>Email</option><option value="in-person" <?php selected( $data['customer']['method'] ?? '', 'in-person' ); ?>>Presencial</option><option value="customer-portal" <?php selected( $data['customer']['method'] ?? '', 'customer-portal' ); ?>>Portal del cliente</option></select></label><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][staff_approved]" value="1" <?php checked( ! empty( $data['staff']['approved'] ) ); ?>><span><strong>Control técnico Graph Express</strong><small>Nombre, medida, páginas, orientación y versión revisados.</small></span></label></div>
+        <h3>Aprobación de arte</h3><div class="ge-artwork-confirm-grid"><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][client_required]" value="1" <?php checked( $data['client_required'] ); ?>><span><strong>Requiere aprobación del cliente</strong><small>Activá sólo cuando este trabajo necesite OK del cliente.</small></span></label><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_approved]" value="1" <?php checked( ! empty( $data['customer']['approved'] ) ); ?>><span><strong>Cliente confirmó este archivo</strong><small>Marcá sólo con evidencia en portal, email, WhatsApp o presencial.</small></span></label><label>Método<select name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_method]"><option value="staff-recorded">Registrado manualmente</option><option value="whatsapp" <?php selected( $data['customer']['method'] ?? '', 'whatsapp' ); ?>>WhatsApp</option><option value="email" <?php selected( $data['customer']['method'] ?? '', 'email' ); ?>>Email</option><option value="in-person" <?php selected( $data['customer']['method'] ?? '', 'in-person' ); ?>>Presencial</option><option value="customer-portal" <?php selected( $data['customer']['method'] ?? '', 'customer-portal' ); ?>>Portal del cliente</option></select></label><label><input type="checkbox" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][staff_approved]" value="1" <?php checked( ! empty( $data['staff']['approved'] ) ); ?>><span><strong>Aprobar internamente</strong><small>Nombre, medida, páginas, orientación y versión revisados.</small></span></label></div>
         <?php if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) : ?><label>Referencia de la aprobación externa del cliente<input type="text" name="artwork_items[<?php echo esc_attr( $item_id ); ?>][customer_evidence]" maxlength="240" value="<?php echo esc_attr( $data['customer']['evidence'] ?? '' ); ?>" placeholder="Fecha y enlace o mensaje de WhatsApp, email o aprobación presencial"></label><?php endif; ?>
         </article><?php endforeach; ?></div><div class="ge-artwork-control-actions"><button class="ge-staff-button" type="submit">Guardar control de archivos</button><?php if ( self::order_ready_for_dispatch( $order ) ) : ?><a target="_blank" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=ge_artwork_release_sheet&order_id=' . $order->get_id() ), 'ge_artwork_release_sheet_' . $order->get_id() ) ); ?>">Abrir ficha “Archivos a producir” ↗</a><?php endif; ?></div></form></section>
         <?php

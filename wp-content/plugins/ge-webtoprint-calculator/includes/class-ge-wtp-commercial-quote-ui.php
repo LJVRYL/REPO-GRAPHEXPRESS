@@ -20,10 +20,11 @@ final class GE_WTP_Commercial_Quote_UI {
         $new = ! empty( $_GET['new'] );
         if ( is_wp_error( $quote ) ) { echo '<section class="ge-panel"><p>' . esc_html( $quote->get_error_message() ) . '</p></section>'; return; }
         $error = sanitize_key( wp_unslash( $_GET['quote_error'] ?? '' ) );
-        $messages = array( 'save' => 'No pudimos guardar el presupuesto. Revisá cliente, ítems e importes.', 'send' => 'No pudimos enviar el presupuesto. Revisá la configuración fiscal y el registro de Notificaciones.', 'file' => 'El presupuesto se guardó, pero no se pudo adjuntar el archivo. Revisá el formato y tamaño.' );
+        $messages = array( 'ge_quote_busy' => 'El presupuesto se está procesando. Esperá unos segundos y volvé a abrirlo; si el pedido ya existe se mostrará su enlace.', 'convert' => 'No se pudo convertir el presupuesto. Revisá su estado antes de volver a intentar.', 'save' => 'No pudimos guardar el presupuesto. Revisá cliente, ítems e importes.', 'send' => 'No pudimos enviar el presupuesto. Revisá la configuración fiscal y el registro de Notificaciones.', 'file' => 'El presupuesto se guardó, pero no se pudo adjuntar el archivo. Revisá el formato y tamaño.' );
         echo '<div class="ge-staff-heading"><div><span>Comercial</span><h1>' . esc_html( $quote ? $quote['number'] : ( $legacy ? ( $legacy['reference'] ?: 'Presupuesto anterior' ) : ( $new ? 'Nuevo presupuesto' : 'Presupuestos' ) ) ) . '</h1><p>' . esc_html( $legacy ? 'Registro histórico conservado en la ficha del cliente.' : ( $quote ? 'Propuesta comercial y actividad.' : ( $new ? 'Prepará la propuesta y agregá archivos si ya están disponibles.' : 'Consultá las propuestas actuales y los registros anteriores en un mismo lugar.' ) ) ) . '</p></div>';
         if ( ! $quote && ! $legacy ) { echo '<a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', $new ? array() : array( 'new' => 1 ) ) ) . '">' . esc_html( $new ? 'Ver presupuestos' : '＋ Nuevo presupuesto' ) . '</a>'; }
         echo '</div>';
+        if ( 'convert' === $error && $quote_id ) { $detail = get_transient( 'ge_quote_convert_error_' . get_current_user_id() . '_' . $quote_id ); if ( $detail ) { $messages['convert'] = $detail; } }
         if ( $error ) { echo '<div class="ge-production-notice is-error">' . esc_html( $messages[ $error ] ?? 'Revisá el presupuesto.' ) . '</div>'; }
         if ( $quote && ! empty( $_GET['edit'] ) && in_array( $quote['status'], array( 'draft', 'sent', 'viewed' ), true ) && ! get_post_meta( $quote['id'], '_ge_commercial_initial_payment_order', true ) ) { self::render_staff_form( $quote ); }
         elseif ( $quote ) { self::render_staff_detail( $quote ); }
@@ -141,6 +142,14 @@ final class GE_WTP_Commercial_Quote_UI {
                 echo '</div><div class="ge-quote-file-links"><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'], true ) ) . '" target="_blank" rel="noopener">Vista previa</a><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'] ) ) . '">Descargar</a></div></article>';
             }
             echo '</div>';
+            if ( ! $customer_view && ! $quote['converted_order_id'] ) {
+                $latest = end( $files );
+                echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><h3>Aprobación de arte</h3><input type="hidden" name="action" value="ge_commercial_quote_approve_file"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="file_id" value="' . esc_attr( $latest['id'] ) . '"><input type="hidden" name="checksum" value="' . esc_attr( $latest['analysis']['sha256'] ?? '' ) . '">';
+                wp_nonce_field( 'ge_commercial_quote_approve_file_' . $quote['id'] );
+                echo '<p>Versión exacta: ' . esc_html( $latest['name'] ) . ' · ' . esc_html( ! empty( $latest['staff_approval']['approved'] ) ? 'Aprobado por staff' : 'Pendiente de revisión' ) . '</p><label>Producto<select name="item_index">';
+                foreach ( $quote['snapshot']['items'] as $index => $line ) { echo '<option value="' . esc_attr( $index ) . '">' . esc_html( $line['name'] ) . '</option>'; }
+                echo '</select></label><label><input type="checkbox" name="client_required" value="1" ' . checked( ! empty( $latest['client_approval_required'] ), true, false ) . '> Requiere aprobación del cliente</label><button type="submit" class="ge-staff-button">Aprobar internamente</button></form>';
+            }
         }
         if ( ! $customer_view || ( ! GE_WTP_Portal::is_staff_preview() && ! in_array( $quote['status'], array( 'draft', 'rejected', 'cancelled' ), true ) ) ) {
             echo '<form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_quote_file"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '">';
@@ -176,13 +185,13 @@ final class GE_WTP_Commercial_Quote_UI {
         foreach ( GE_WTP_Commercial_Quote_Files::all( $quote['id'] ) as $file ) { echo '<li>Archivo: ' . esc_html( $file['name'] ?? 'Sin nombre' ) . '</li>'; }
         echo '</ul></div>';
         echo '<p>Se conservarán los ítems, facturación, dirección y ' . esc_html( count( GE_WTP_Commercial_Quote_Files::all( $quote['id'] ) ) ) . ' archivo(s). Podés continuar sin pago o archivo; el arte final seguirá requiriendo aprobación.</p>';
-        echo '<label>Confirmación comercial<select name="confirmation_method" required><option value="">Elegir canal</option>';
+        echo '<label>Confirmación comercial<select name="confirmation_method"><option value="staff">Aprobación interna / staff</option>';
         if ( 'portal' === get_post_meta( $quote['id'], '_ge_commercial_accept_source', true ) ) { echo '<option value="portal">Portal · aceptación registrada</option>'; }
         echo '<option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="phone">Teléfono</option><option value="in_person">Presencial</option><option value="other">Otro</option></select></label>';
         echo '<label>Pago informado<select name="payment_state"><option value="unregistered">Sin registrar</option><option value="deposit">Seña informada</option><option value="paid">Pago total informado</option></select></label><label>Importe recibido informado (opcional)<input type="number" name="amount_received" min="0" step="0.01" inputmode="decimal"></label><p>El pago informado requiere conciliación; no se marcará acreditado automáticamente.</p>';
         echo '<label>Proveedor (opcional)<select name="supplier_key"><option value="">Asignar después</option>';
         foreach ( GE_WTP_Production::suppliers() as $key => $supplier ) { echo '<option value="' . esc_attr( $key ) . '">' . esc_html( $supplier['name'] ) . '</option>'; }
-        echo '</select></label><label>Notas de producción<textarea name="production_notes" rows="3"></textarea></label><label>Motivo o referencia de la confirmación<textarea name="reason" rows="2" placeholder="Ej.: aceptación comercial manual por WhatsApp"></textarea></label>';
+        echo '</select></label><label>Notas de producción<textarea name="production_notes" rows="3"></textarea></label><label>Referencia de la confirmación (opcional)<textarea name="reason" rows="2" placeholder="Ej.: aceptación comercial manual por WhatsApp"></textarea></label>';
         echo '<div class="ge-quote-dialog-actions"><button type="button" class="ge-staff-button is-secondary" onclick="this.closest(\'dialog\').close()">Cancelar</button><button type="submit" class="ge-staff-button">Crear pedido y continuar</button></div></form></dialog>';
     }
 
@@ -450,7 +459,7 @@ final class GE_WTP_Commercial_Quote_UI {
         check_admin_referer( 'ge_commercial_quote_convert_' . $quote_id );
         $args = array(
             'expected_version' => absint( $_POST['expected_version'] ?? 0 ),
-            'confirmation_method' => sanitize_key( wp_unslash( $_POST['confirmation_method'] ?? 'other' ) ),
+            'confirmation_method' => sanitize_key( wp_unslash( $_POST['confirmation_method'] ?? 'staff' ) ),
             'payment_state' => sanitize_key( wp_unslash( $_POST['payment_state'] ?? 'unregistered' ) ),
             'amount_received' => sanitize_text_field( wp_unslash( $_POST['amount_received'] ?? '' ) ),
             'supplier_key' => sanitize_key( wp_unslash( $_POST['supplier_key'] ?? '' ) ),
@@ -458,8 +467,11 @@ final class GE_WTP_Commercial_Quote_UI {
             'reason' => sanitize_textarea_field( wp_unslash( $_POST['reason'] ?? '' ) ),
         );
         $order = GE_WTP_Commercial_Checkout::convert_staff( $quote_id, $args, get_current_user_id() );
-        if ( is_wp_error( $order ) ) { wp_die( esc_html( $order->get_error_message() ), '', array( 'response' => 409 ) ); }
-        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ); exit;
+        if ( is_wp_error( $order ) ) {
+            set_transient( 'ge_quote_convert_error_' . get_current_user_id() . '_' . $quote_id, $order->get_error_message(), 120 );
+            wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote_id, 'quote_error' => 'convert' ) ) ); exit;
+        }
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); exit;
     }
 
     private static function require_staff() {

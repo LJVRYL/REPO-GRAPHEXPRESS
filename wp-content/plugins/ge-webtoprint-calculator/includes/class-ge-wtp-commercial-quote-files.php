@@ -8,9 +8,38 @@ final class GE_WTP_Commercial_Quote_Files {
     const RECEIPT_META = '_ge_commercial_receipt_files';
 
     public static function init() {
+        add_action( 'admin_post_ge_commercial_quote_approve_file', array( __CLASS__, 'handle_approve_file' ) );
         add_action( 'admin_post_ge_commercial_quote_file', array( __CLASS__, 'handle_upload' ) );
         add_action( 'admin_post_ge_commercial_quote_receipt', array( __CLASS__, 'handle_receipt' ) );
         add_action( 'admin_post_ge_commercial_quote_file_download', array( __CLASS__, 'handle_download' ) );
+    }
+
+    public static function approve_file( $quote_id, $file_id, $checksum, $item_index, $required, $actor_id ) {
+        if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
+        $quote = GE_WTP_Commercial_Quotes::get( $quote_id, $actor_id );
+        if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( $quote['converted_order_id'] ) { return new WP_Error( 'ge_quote_converted', 'Aprobá el arte desde el pedido vinculado.' ); }
+        if ( ! isset( $quote['snapshot']['items'][ $item_index ] ) ) { return new WP_Error( 'ge_quote_item', 'Ítem inválido.' ); }
+        $files = self::all( $quote_id ); $found = false;
+        foreach ( $files as &$file ) {
+            if ( $file['id'] !== $file_id ) { continue; }
+            if ( ! $checksum || ! hash_equals( (string) ( $file['analysis']['sha256'] ?? '' ), $checksum ) ) { return new WP_Error( 'ge_quote_file_changed', 'El archivo cambió. Volvé a revisarlo.' ); }
+            $file['staff_approval'] = array( 'approved' => true, 'approved_by' => (int) $actor_id, 'approved_at' => gmdate( 'c' ), 'approval_source' => 'staff', 'version_id' => $file_id, 'checksum' => $checksum, 'quote_version' => $quote['version'], 'item_index' => (int) $item_index );
+            $file['client_approval_required'] = (bool) $required; $found = true; break;
+        }
+        unset( $file );
+        if ( ! $found ) { return new WP_Error( 'ge_quote_file_missing', 'Archivo no encontrado.' ); }
+        update_post_meta( $quote_id, self::META, $files );
+        GE_WTP_Commercial_Quotes::record_event( $quote_id, 'artwork_staff_approved', $actor_id, array( 'version_id' => $file_id, 'checksum' => $checksum, 'item_index' => $item_index, 'client_approval_required' => (bool) $required ) );
+        return true;
+    }
+
+    public static function handle_approve_file() {
+        $quote_id = absint( $_POST['quote_id'] ?? 0 );
+        check_admin_referer( 'ge_commercial_quote_approve_file_' . $quote_id );
+        $result = self::approve_file( $quote_id, sanitize_text_field( wp_unslash( $_POST['file_id'] ?? '' ) ), sanitize_text_field( wp_unslash( $_POST['checksum'] ?? '' ) ), absint( $_POST['item_index'] ?? 0 ), ! empty( $_POST['client_required'] ), get_current_user_id() );
+        if ( is_wp_error( $result ) ) { set_transient( 'ge_quote_convert_error_' . get_current_user_id() . '_' . $quote_id, $result->get_error_message(), 120 ); }
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote_id, 'quote_error' => is_wp_error( $result ) ? 'convert' : '' ) ) ); exit;
     }
 
     public static function all( $quote_id, $category = 'arte' ) {
@@ -78,6 +107,31 @@ final class GE_WTP_Commercial_Quote_Files {
             $item->delete_meta_data( '_ge_item_artwork_release_hash' );
             $item->delete_meta_data( '_ge_item_artwork_released_at' );
             $item->delete_meta_data( '_ge_item_artwork_released_by' );
+            $item->save();
+        }
+        $quote = GE_WTP_Commercial_Quotes::get( $quote_id );
+        $items = array_values( $order->get_items( 'line_item' ) );
+        $latest = array();
+        foreach ( self::all( $quote_id ) as $file ) {
+            $approval = $file['staff_approval'] ?? array();
+            if ( empty( $approval['approved'] ) || (int) ( $approval['quote_version'] ?? 0 ) !== (int) $quote['version'] || ! hash_equals( (string) ( $file['analysis']['sha256'] ?? '' ), (string) ( $approval['checksum'] ?? '' ) ) ) { continue; }
+            $latest[ (int) $approval['item_index'] ] = $file;
+        }
+        // A newly uploaded, unreviewed version must never inherit an earlier release.
+        foreach ( $latest as $index => $file ) {
+            if ( ! isset( $items[ $index ] ) || $file['id'] !== ( end( $documents )['id'] ?? '' ) ) { continue; }
+            $item = $items[ $index ];
+            self::attach_to_item( $order->get_id(), $item->get_id(), $file['id'], (int) $file['staff_approval']['approved_by'] );
+            $item = $order->get_item( $item->get_id() );
+            $version = $file['id']; $tokens = array( 'document:' . $file['id'] );
+            $item->update_meta_data( '_ge_item_artwork_sources', $tokens );
+            $item->update_meta_data( '_ge_item_artwork_version', $version );
+            $hash = GE_WTP_Artwork_Library::release_fingerprint( $item, $tokens, $version, array(), GE_WTP_Artwork_Library::order_sources( $order ) );
+            $approval = $file['staff_approval']; $approval['time'] = strtotime( $approval['approved_at'] ); $approval['user_id'] = $approval['approved_by']; $approval['fingerprint'] = $hash;
+            $item->update_meta_data( '_ge_item_artwork_staff_approval', $approval );
+            $item->update_meta_data( '_ge_item_artwork_client_required', ! empty( $file['client_approval_required'] ) ? 'yes' : 'no' );
+            $item->update_meta_data( GE_WTP_Workflow::ITEM_STATE_META, 'ready' );
+            if ( empty( $file['client_approval_required'] ) ) { $item->update_meta_data( '_ge_item_artwork_release_hash', $hash ); $item->update_meta_data( '_ge_item_artwork_released_at', time() ); $item->update_meta_data( '_ge_item_artwork_released_by', $approval['approved_by'] ); }
             $item->save();
         }
         $order->add_order_note( 'Nuevo archivo heredado del presupuesto; revisar versión vigente y solicitar nueva aprobación de arte antes de liberar.' );

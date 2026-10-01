@@ -1,5 +1,14 @@
 (function () {
   'use strict';
+  var convertForm = document.querySelector('#ge-quote-convert form');
+  if (convertForm) convertForm.addEventListener('submit', function (event) {
+    if (convertForm.dataset.submitting) { event.preventDefault(); return; }
+    convertForm.dataset.submitting = '1';
+    var button = convertForm.querySelector('button[type="submit"]');
+    button.disabled = true; button.textContent = 'Procesando…';
+    button.setAttribute('aria-busy', 'true');
+  });
+
   var root = document.querySelector('[data-ge-lines]');
   var template = document.getElementById('ge-manual-line-template');
   var catalogNode = document.getElementById('ge-manual-catalog');

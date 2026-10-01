@@ -172,7 +172,7 @@ final class GE_WTP_Commercial_Checkout {
         $quote_id = $main ? absint( $main->get_meta( self::QUOTE_META, true ) ) : 0;
         if ( ! $quote_id ) { wp_die( 'Pedido inválido.', '', array( 'response' => 409 ) ); }
         $lock = 'ge_commercial_reconcile_' . $quote_id;
-        if ( ! add_option( $lock, time(), '', 'no' ) ) { wp_die( 'El cobro se está procesando.', '', array( 'response' => 409 ) ); }
+        if ( ! self::acquire_lock( $lock ) ) { wp_die( 'El cobro se está procesando.', '', array( 'response' => 409 ) ); }
         $failure = '';
         try {
             $order = wc_get_order( $id );
@@ -192,7 +192,7 @@ final class GE_WTP_Commercial_Checkout {
             $order->add_order_note( 'Saldo en efectivo recibido al entregar por el usuario interno #' . get_current_user_id() . ': ' . GE_WTP_Quote_Balance::decimal( $due ) . ' ARS.' );
             $order->save();
         } catch ( DomainException $error ) { $failure = $error->getMessage();
-        } finally { delete_option( $lock ); }
+        } finally { self::release_lock( $lock ); }
         if ( $failure ) { wp_die( esc_html( $failure ), '', array( 'response' => 409 ) ); }
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote_id ) ) ); exit;
     }
@@ -206,7 +206,7 @@ final class GE_WTP_Commercial_Checkout {
         $main = $main_id ? wc_get_order( $main_id ) : false;
         if ( ! $payment || ! $main || 'balance' !== $payment->get_meta( self::KIND_META, true ) || 'yes' !== $payment->get_meta( self::PAYMENT_META, true ) || $payment->is_paid() || $id !== absint( $main->get_meta( '_ge_commercial_balance_payment_order', true ) ) ) { wp_die( 'Intento inválido.', '', array( 'response' => 409 ) ); }
         $lock = 'ge_commercial_reconcile_' . absint( $main->get_meta( self::QUOTE_META, true ) );
-        if ( ! add_option( $lock, time(), '', 'no' ) ) { wp_die( 'El cobro se está procesando.', '', array( 'response' => 409 ) ); }
+        if ( ! self::acquire_lock( $lock ) ) { wp_die( 'El cobro se está procesando.', '', array( 'response' => 409 ) ); }
         $failure = '';
         try {
             $payment = wc_get_order( $id );
@@ -217,7 +217,7 @@ final class GE_WTP_Commercial_Checkout {
             $main->add_order_note( 'Intento de cobro de saldo #' . $id . ' cancelado por el usuario interno #' . get_current_user_id() . '.' );
             $main->save();
         } catch ( DomainException $error ) { $failure = $error->getMessage();
-        } finally { delete_option( $lock ); }
+        } finally { self::release_lock( $lock ); }
         if ( $failure ) { wp_die( esc_html( $failure ), '', array( 'response' => 409 ) ); }
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => absint( $main->get_meta( self::QUOTE_META, true ) ) ) ) ); exit;
     }
@@ -262,7 +262,7 @@ final class GE_WTP_Commercial_Checkout {
         $billing = GE_WTP_Commercial_Quotes::check_billing_snapshot( $quote );
         if ( is_wp_error( $billing ) ) { return $billing; }
         $lock = 'ge_commercial_start_' . $quote_id;
-        if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'El pago se está preparando. Volvé a intentar.' ); }
+        if ( ! self::acquire_lock( $lock ) ) { return new WP_Error( 'ge_quote_busy', 'El pago se está preparando. Volvé a intentar.' ); }
         try {
             $existing_id = absint( get_post_meta( $quote_id, '_ge_commercial_initial_payment_order', true ) );
             if ( $existing_id ) {
@@ -291,7 +291,7 @@ final class GE_WTP_Commercial_Checkout {
             }
             GE_WTP_Commercial_Quotes::record_event( $quote_id, 'payment_started', $actor_id, array( 'payment_order_id' => $payment_order->get_id(), 'method' => $method, 'kind' => $kind ) );
             return $payment_order;
-        } finally { delete_option( $lock ); }
+        } finally { self::release_lock( $lock ); }
     }
 
     public static function handle_start_balance() {
@@ -317,7 +317,7 @@ final class GE_WTP_Commercial_Checkout {
         $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
         if ( $due <= 0 ) { return new WP_Error( 'ge_quote_balance_paid', 'El saldo ya está abonado.' ); }
         $lock = 'ge_commercial_balance_' . $order_id;
-        if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'El saldo se está preparando.' ); }
+        if ( ! self::acquire_lock( $lock ) ) { return new WP_Error( 'ge_quote_busy', 'El saldo se está preparando.' ); }
         try {
             $existing_id = absint( $order->get_meta( '_ge_commercial_balance_payment_order', true ) );
             if ( $existing_id ) { $existing = wc_get_order( $existing_id ); if ( $existing ) { return $existing; } }
@@ -327,7 +327,7 @@ final class GE_WTP_Commercial_Checkout {
             $order->update_meta_data( '_ge_commercial_balance_payment_order', $payment->get_id() );
             $order->save();
             return $payment;
-        } finally { delete_option( $lock ); }
+        } finally { self::release_lock( $lock ); }
     }
 
     private static function create_payment_order( $quote, $kind, $method, $amount_cents, $final_total_cents ) {
@@ -386,7 +386,7 @@ final class GE_WTP_Commercial_Checkout {
         if ( ! $payment || 'yes' !== $payment->get_meta( self::PAYMENT_META, true ) ) { return; }
         $quote_id = absint( $payment->get_meta( self::QUOTE_META, true ) );
         $lock = 'ge_commercial_reconcile_' . $quote_id;
-        if ( ! $quote_id || ! add_option( $lock, time(), '', 'no' ) ) { return; }
+        if ( ! $quote_id || ! self::acquire_lock( $lock ) ) { return; }
         try {
             $intended = (int) $payment->get_meta( self::AMOUNT_META, true );
             $received = GE_WTP_Quote_Balance::cents( wc_format_decimal( $payment->get_total(), 2 ) );
@@ -423,7 +423,23 @@ final class GE_WTP_Commercial_Checkout {
             GE_WTP_Commercial_Quotes::record_event( $quote_id, 'payment_confirmed', get_current_user_id(), array( 'payment_order_id' => $payment->get_id(), 'order_id' => $order->get_id(), 'amount_cents' => $received ) );
         } catch ( Throwable $error ) {
             $payment->add_order_note( 'La conciliación automática requiere revisión. No repetir el cobro.' );
-        } finally { delete_option( $lock ); }
+        } finally { self::release_lock( $lock ); }
+    }
+
+    /** MySQL owns the lock for the connection lifetime: crashed requests cannot orphan it. */
+    private static function acquire_lock( $name ) {
+        global $wpdb;
+        $key = 'ge:' . substr( hash( 'sha256', $wpdb->prefix . $name ), 0, 55 );
+        if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $key ) ) ) { return false; }
+        // Legacy option locks are obsolete once all writers use this connection lock.
+        delete_option( $name );
+        return true;
+    }
+
+    private static function release_lock( $name ) {
+        global $wpdb;
+        $key = 'ge:' . substr( hash( 'sha256', $wpdb->prefix . $name ), 0, 55 );
+        $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $key ) );
     }
 
     /** Staff may create the same operational order before any customer portal action. */
@@ -435,9 +451,17 @@ final class GE_WTP_Commercial_Checkout {
             $existing = wc_get_order( $quote['converted_order_id'] );
             return $existing ?: new WP_Error( 'ge_quote_missing_order', 'El pedido vinculado no está disponible; requiere conciliación.' );
         }
+        $recovered = self::find_operational_order( $quote );
+        if ( $recovered ) {
+            if ( is_wp_error( $recovered ) ) { return $recovered; }
+            update_post_meta( $quote_id, GE_WTP_Commercial_Quotes::ORDER_META, $recovered->get_id() );
+            update_post_meta( $quote_id, GE_WTP_Commercial_Quotes::STATUS_META, 'converted' );
+            GE_WTP_Commercial_Quotes::record_event( $quote_id, 'conversion_recovered', $actor_id, array( 'order_id' => $recovered->get_id() ) );
+            return $recovered;
+        }
         if ( isset( $args['expected_version'] ) && (int) $args['expected_version'] !== (int) $quote['version'] ) { return new WP_Error( 'ge_quote_version_changed', 'El presupuesto cambió. Volvé a abrirlo antes de crear el pedido.' ); }
         $lock = 'ge_commercial_reconcile_' . $quote_id;
-        if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'El presupuesto se está procesando.' ); }
+        if ( ! self::acquire_lock( $lock ) ) { return new WP_Error( 'ge_quote_busy', 'El presupuesto se está procesando.' ); }
         try {
             $quote = GE_WTP_Commercial_Quotes::prepare_for_conversion( $quote_id, $actor_id );
             if ( is_wp_error( $quote ) ) { return $quote; }
@@ -449,11 +473,10 @@ final class GE_WTP_Commercial_Checkout {
             $payment = $initial ? wc_get_order( $initial ) : false;
             $final = $payment ? (int) get_post_meta( $quote_id, '_ge_commercial_final_total_cents', true ) : (int) $quote['snapshot']['total_cents'];
             if ( $final <= 0 ) { return new WP_Error( 'ge_quote_total', 'El total final no es válido.' ); }
-            $method = sanitize_key( $args['confirmation_method'] ?? 'other' );
-            if ( ! in_array( $method, array( 'portal', 'whatsapp', 'email', 'phone', 'in_person', 'other' ), true ) ) { return new WP_Error( 'ge_quote_confirmation', 'Elegí cómo se confirmó el presupuesto.' ); }
+            $method = sanitize_key( $args['confirmation_method'] ?? 'staff' );
+            if ( ! in_array( $method, array( 'staff', 'portal', 'whatsapp', 'email', 'phone', 'in_person', 'other' ), true ) ) { return new WP_Error( 'ge_quote_confirmation', 'Elegí cómo se confirmó el presupuesto.' ); }
             $reason = sanitize_textarea_field( $args['reason'] ?? '' );
             if ( 'portal' === $method && 'portal' !== get_post_meta( $quote_id, '_ge_commercial_accept_source', true ) ) { return new WP_Error( 'ge_quote_confirmation', 'No figura una aceptación del cliente en el portal.' ); }
-            if ( 'portal' !== $method && ! trim( $reason ) ) { return new WP_Error( 'ge_quote_confirmation', 'Indicá la referencia de la confirmación comercial.' ); }
             $payment_claim = sanitize_key( $args['payment_state'] ?? 'unregistered' );
             if ( ! in_array( $payment_claim, array( 'unregistered', 'deposit', 'paid' ), true ) ) { $payment_claim = 'unregistered'; }
             $amount_received = sanitize_text_field( $args['amount_received'] ?? '' );
@@ -492,7 +515,21 @@ final class GE_WTP_Commercial_Checkout {
             }
             GE_WTP_Commercial_Quotes::record_event( $quote_id, 'converted', $actor_id, array( 'order_id' => $order->get_id(), 'override' => $audit['override'], 'confirmation_method' => $method ) );
             return $order;
-        } finally { delete_option( $lock ); }
+        } catch ( Throwable $error ) {
+            return new WP_Error( 'ge_quote_conversion_failed', 'La conversión requiere revisión. Volvé al presupuesto; el reintento localizará cualquier pedido ya creado.' );
+        } finally { self::release_lock( $lock ); }
+    }
+
+    private static function find_operational_order( $quote ) {
+        $orders = wc_get_orders( array( 'limit' => 50, 'meta_key' => self::QUOTE_META, 'meta_value' => $quote['id'] ) );
+        $orders = array_values( array_filter( $orders, static function ( $order ) { return 'yes' !== $order->get_meta( self::PAYMENT_META, true ); } ) );
+        if ( count( $orders ) > 1 ) { return new WP_Error( 'ge_quote_multiple_orders', 'Hay más de un pedido vinculado. Revisá la conciliación antes de continuar.' ); }
+        if ( ! $orders ) { return false; }
+        $candidate = $orders[0];
+        $expected = (int) get_post_meta( $quote['id'], '_ge_commercial_final_total_cents', true ) ?: (int) ( $quote['snapshot']['total_cents'] ?? 0 );
+        $actual = GE_WTP_Quote_Balance::cents( wc_format_decimal( $candidate->get_total(), 2 ) );
+        if ( $actual !== $expected || ! $candidate->get_meta( '_ge_production_initialized', true ) ) { return new WP_Error( 'ge_quote_incomplete_order', 'Hay un pedido incompleto para este presupuesto; requiere conciliación antes de continuar. No se creará otro.' ); }
+        return $candidate;
     }
 
     private static function create_operational_order( $quote, $payment ) {
@@ -514,6 +551,10 @@ final class GE_WTP_Commercial_Checkout {
         $order = wc_create_order( array( 'customer_id' => $quote['customer_id'] ) );
         if ( is_wp_error( $order ) ) { return $order; }
         $order->set_created_via( 'ge_commercial_quote' );
+        // Persist provenance before constructing lines, so interrupted builds are found on retry.
+        $order->update_meta_data( self::QUOTE_META, $quote['id'] );
+        $order->update_meta_data( '_ge_source_quote_id', $quote['id'] );
+        $order->save();
         $order->set_currency( 'ARS' );
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
@@ -604,8 +645,8 @@ final class GE_WTP_Commercial_Checkout {
         $calculated = GE_WTP_Quote_Balance::cents( wc_format_decimal( $order->get_total(), 2 ) );
         if ( $calculated !== $final ) { $order->add_order_note( 'Total inconsistente con presupuesto aceptado; no liberar producción.' ); $order->save(); return new WP_Error( 'ge_quote_total_mismatch', 'El total de la orden no coincide con el presupuesto.' ); }
         $order->save();
-        GE_WTP_Commercial_Quote_Files::inherit( $quote['id'], $order );
         GE_WTP_Workflow::enable( $order );
+        GE_WTP_Commercial_Quote_Files::inherit( $quote['id'], $order );
         $order->set_status( 'ge-confirmado', $payment ? 'Pedido creado tras acreditarse el primer cobro del presupuesto.' : 'Pedido creado manualmente desde presupuesto; pago y arte pendientes de verificación.' );
         $order->save();
         GE_WTP_Production::ensure_order( $order );
