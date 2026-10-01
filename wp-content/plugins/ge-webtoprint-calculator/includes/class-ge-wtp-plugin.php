@@ -37,6 +37,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Turnstile::init();
         GE_WTP_VPS_Storage::init();
         GE_WTP_Documents::init();
+        GE_WTP_Issued_Documents::init();
         GE_WTP_Order_Lifecycle::init();
         GE_WTP_Canva::init();
         GE_WTP_Product_Images::init();
@@ -49,6 +50,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Newsletter::init();
         GE_WTP_Customers::init();
         GE_WTP_Billing::init();
+        GE_WTP_Customer_Branches::init();
         GE_WTP_Customer_Quotes::init();
         GE_WTP_Reorders::init();
         GE_WTP_Artwork_Library::init();

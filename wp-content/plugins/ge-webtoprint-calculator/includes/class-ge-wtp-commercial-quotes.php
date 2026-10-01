@@ -250,6 +250,8 @@ final class GE_WTP_Commercial_Quotes {
             'notes_customer' => sanitize_textarea_field( $args['notes_customer'] ?? '' ),
             'notes_internal' => sanitize_textarea_field( $args['notes_internal'] ?? '' ),
             'billing' => null,
+            'billing_profile_id' => sanitize_text_field( $args['billing_profile_id'] ?? 'default' ),
+            'delivery_address_id' => sanitize_text_field( $args['delivery_address_id'] ?? '' ),
             'created_at' => gmdate( 'c' ),
         );
     }
@@ -259,7 +261,11 @@ final class GE_WTP_Commercial_Quotes {
             return new WP_Error( 'ge_quote_billing_unavailable', 'Falta configurar el perfil fiscal antes de enviar presupuestos.' );
         }
         $entity = GE_WTP_Billing::entity();
-        $profile = GE_WTP_Billing::profile( $customer_id );
+        $profile = GE_WTP_Customer_Branches::find( $customer_id, $snapshot['billing_profile_id'] ?? 'default' );
+        if ( ! $profile ) { return new WP_Error( 'ge_quote_profile', 'Seleccioná un perfil de facturación activo del cliente.' ); }
+        $delivery_id = $snapshot['delivery_address_id'] ?? '';
+        $delivery = '' !== (string) $delivery_id ? GE_WTP_Customer_Branches::delivery( $customer_id, $delivery_id ) : null;
+        if ( '' !== (string) $delivery_id && ! $delivery ) { return new WP_Error( 'ge_quote_delivery', 'Seleccioná una dirección de entrega del cliente.' ); }
         $resolution = GE_WTP_Billing::resolve_net_quote( $entity, $profile, (int) $snapshot['net_cents'] );
         if ( ! empty( $resolution['blockers'] ) ) {
             return new WP_Error( 'ge_quote_billing_blocked', 'Faltan datos fiscales o una configuración de facturación válida.', $resolution['blockers'] );
@@ -268,6 +274,7 @@ final class GE_WTP_Commercial_Quotes {
             return new WP_Error( 'ge_quote_billing_policy', 'El presupuesto requiere precios de entrada antes de IVA.' );
         }
         $snapshot['billing'] = GE_WTP_Billing::snapshot( $entity, $profile, $resolution );
+        $snapshot['delivery'] = $delivery;
         $snapshot['tax_cents'] = (int) $resolution['tax_cents'];
         $snapshot['total_cents'] = (int) $resolution['total_cents'];
         $snapshot['snapshot_hash'] = hash( 'sha256', wp_json_encode( $snapshot ) );
@@ -278,7 +285,8 @@ final class GE_WTP_Commercial_Quotes {
         $billing = $quote['snapshot']['billing'] ?? array();
         try { GE_WTP_Billing::assert_can_accept_or_pay( $billing, GE_WTP_Billing::entity() ); }
         catch ( DomainException $error ) { return new WP_Error( 'ge_quote_billing_changed', 'Los datos fiscales requieren una nueva versión del presupuesto.' ); }
-        $current = GE_WTP_Billing::profile( $quote['customer_id'] );
+        $current = GE_WTP_Customer_Branches::find( $quote['customer_id'], $quote['snapshot']['billing_profile_id'] ?? 'default' );
+        if ( ! $current ) { return new WP_Error( 'ge_quote_billing_changed', 'El perfil fiscal seleccionado ya no está activo; hace falta una nueva versión.' ); }
         foreach ( array( 'billing_mode', 'cuit', 'legal_name', 'vat_status', 'billing_email', 'fiscal_address' ) as $field ) {
             if ( ( $billing['profile'][ $field ] ?? null ) !== ( $current[ $field ] ?? null ) ) {
                 return new WP_Error( 'ge_quote_billing_changed', 'El perfil fiscal del cliente cambió; hace falta una nueva versión.' );

@@ -98,11 +98,20 @@ final class GE_WTP_Documents {
             'arte'        => 'Arte / original',
             'po'          => 'Orden de compra',
             'factura'     => 'Factura',
+            'nota_credito' => 'Nota de crédito',
+            'nota_debito' => 'Nota de débito',
+            'presupuesto_emitido' => 'Presupuesto PDF emitido',
             'comprobante' => 'Comprobante de pago',
             'remito'      => 'Remito',
             'produccion'  => 'Producción / entrega',
             'otro'        => 'Otro documento',
         );
+    }
+
+    public static function upload_categories() {
+        $categories = self::categories();
+        foreach ( array( 'factura', 'nota_credito', 'nota_debito', 'presupuesto_emitido' ) as $issued ) { unset( $categories[ $issued ] ); }
+        return $categories;
     }
 
     public static function handle_uploaded_files( $order_id, $field = 'ge_documents', $category = 'arte', $context = array() ) {
@@ -173,6 +182,13 @@ final class GE_WTP_Documents {
             if ( ! empty( $context['artwork_side'] ) ) {
                 $record['artwork_side'] = sanitize_key( $context['artwork_side'] );
             }
+            if ( ! empty( $context['issued_document'] ) ) {
+                $record['issued_by_graphex'] = true;
+                $record['document_number'] = sanitize_text_field( $context['document_number'] ?? '' );
+                $record['issue_date'] = sanitize_text_field( $context['issue_date'] ?? '' );
+                $record['replaces_id'] = sanitize_text_field( $context['replaces_id'] ?? '' );
+                $record['billing_profile_snapshot'] = $context['billing_profile_snapshot'] ?? array();
+            }
             $saved[] = $record;
         }
 
@@ -211,6 +227,56 @@ final class GE_WTP_Documents {
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : false;
         $documents = $order ? $order->get_meta( self::META_KEY, true ) : array();
         return is_array( $documents ) ? $documents : array();
+    }
+
+    public static function issued_documents( $order_id, $include_history = false ) {
+        return array_values( array_filter( self::get_documents( $order_id ), function ( $document ) use ( $include_history ) {
+            return ! empty( $document['issued_by_graphex'] ) && ( $include_history || empty( $document['superseded_at'] ) );
+        } ) );
+    }
+
+    /** Keep every fiscal file immutable. A replacement only supersedes its predecessor. */
+    public static function attach_issued( $order_id, $type, $number, $issue_date, $replaces_id = '' ) {
+        $types = array( 'factura', 'nota_credito', 'nota_debito', 'presupuesto_emitido', 'otro' );
+        if ( ! in_array( $type, $types, true ) ) { return new WP_Error( 'ge_issued_type', 'Tipo de documento inválido.' ); }
+        if ( $issue_date && ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $issue_date ) || gmdate( 'Y-m-d', strtotime( $issue_date ) ) !== $issue_date ) ) {
+            return new WP_Error( 'ge_issued_date', 'Fecha de emisión inválida.' );
+        }
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) { return new WP_Error( 'ge_issued_order', 'Pedido inválido.' ); }
+        $documents = self::get_documents( $order_id );
+        $previous = null;
+        if ( $replaces_id ) {
+            foreach ( $documents as $document ) {
+                if ( ( $document['id'] ?? '' ) === $replaces_id && ! empty( $document['issued_by_graphex'] ) && empty( $document['superseded_at'] ) ) { $previous = $document; break; }
+            }
+            if ( ! $previous || ( $previous['category'] ?? '' ) !== $type ) { return new WP_Error( 'ge_issued_version', 'La versión anterior no corresponde a este documento.' ); }
+        }
+        $files = $_FILES['ge_issued_document'] ?? array();
+        if ( is_array( $files['name'] ?? null ) || empty( $files['name'] ) ) { return new WP_Error( 'ge_issued_file', 'Seleccioná un solo PDF.' ); }
+        $snapshot = $order->get_meta( '_ge_billing_profile_snapshot', true );
+        $saved = self::handle_uploaded_files( $order_id, 'ge_issued_document', $type, array(
+            'allowed_extensions' => array( 'pdf' ), 'issued_document' => true,
+            'document_number' => $number, 'issue_date' => $issue_date, 'replaces_id' => $replaces_id,
+            'billing_profile_snapshot' => is_array( $snapshot ) ? $snapshot : array(),
+        ) );
+        if ( is_wp_error( $saved ) ) { return $saved; }
+        if ( count( $saved ) !== 1 ) { return new WP_Error( 'ge_issued_upload', 'No se pudo guardar el PDF.' ); }
+        if ( $previous ) {
+            $documents = self::get_documents( $order_id );
+            foreach ( $documents as &$document ) {
+                if ( ( $document['id'] ?? '' ) === $replaces_id ) {
+                    $document['superseded_at'] = current_time( 'mysql' );
+                    $document['superseded_by'] = $saved[0]['id'];
+                    break;
+                }
+            }
+            unset( $document );
+            $order->update_meta_data( self::META_KEY, $documents );
+            $order->save();
+        }
+        $order->add_order_note( sprintf( 'Documento emitido %s %s cargado por usuario #%d. Archivo #%s.', $type, $number, get_current_user_id(), $saved[0]['id'] ) );
+        return $saved[0];
     }
 
     public static function get_documents_with_analysis( $order_id ) {
@@ -318,6 +384,7 @@ final class GE_WTP_Documents {
 
         foreach ( self::get_documents( $order_id ) as $document ) {
             if ( isset( $document['id'] ) && hash_equals( (string) $document['id'], $document_id ) ) {
+                if ( ! empty( $document['superseded_at'] ) && ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_operations' ) ) { wp_die( 'Esta versión fue reemplazada.', 403 ); }
                 self::stream_record( $document, ! empty( $_GET['inline'] ) );
             }
         }

@@ -600,6 +600,8 @@ final class GE_WTP_Portal {
                     <?php foreach ( $order->get_items( 'fee' ) as $fee ) : ?><div class="ge-order-fee"><span><strong><?php echo esc_html( $fee->get_name() ); ?></strong><small>Cargo del pedido</small></span><strong><?php echo wp_kses_post( wc_price( $fee->get_total(), array( 'currency' => $order->get_currency() ) ) ); ?></strong></div><?php endforeach; ?>
                 </div>
                 <?php self::render_item_artwork_uploads( $order, $documents ); ?>
+                <?php GE_WTP_Customer_Branches::render_order_summary( $order ); ?>
+                <?php GE_WTP_Issued_Documents::render_portal( $order ); ?>
                 <?php GE_WTP_Customer_Quotes::render_order_step( $order ); ?>
                 <?php if ( ! $is_customer_quote && ! $order->get_meta( '_ge_commercial_quote_id', true ) ) { GE_WTP_Payments::render_portal_order_payment( $order ); } ?>
                 <?php GE_WTP_Commercial_Checkout::render_order_balance( $order ); ?>
@@ -612,7 +614,7 @@ final class GE_WTP_Portal {
                 <?php self::render_document_list( $order, $documents ); ?>
                 <form class="ge-upload-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                     <input type="hidden" name="action" value="ge_markcom_upload_document"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_markcom_upload_document_' . $order->get_id() ); ?>
-                    <label>Tipo de documento<select name="category"><?php foreach ( GE_WTP_Documents::categories() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+                    <label>Tipo de documento<select name="category"><?php foreach ( GE_WTP_Documents::categories() as $key => $label ) : if ( in_array( $key, array( 'factura', 'nota_credito', 'nota_debito', 'presupuesto_emitido' ), true ) ) { continue; } ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
                     <label>Archivo<input type="file" name="ge_documents[]" multiple required accept=".pdf,.jpg,.jpeg,.png,.zip"></label>
                     <button class="ge-button ge-button-secondary ge-button-block" type="submit">Cargar documento</button>
                 </form>
@@ -723,6 +725,7 @@ final class GE_WTP_Portal {
         }
         echo '<div class="ge-document-list">';
         foreach ( $documents as $document ) {
+            if ( ! empty( $document['superseded_at'] ) ) { continue; }
             $categories = GE_WTP_Documents::categories();
             $category = isset( $categories[ $document['category'] ] ) ? $categories[ $document['category'] ] : 'Documento';
             printf( '<a href="%1$s"><span class="ge-doc-icon">↓</span><span><strong>%2$s</strong><small>%3$s · %4$s</small></span></a>', esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ), esc_html( $document['name'] ), esc_html( $category ), esc_html( size_format( $document['size'] ) ) );
@@ -774,6 +777,7 @@ final class GE_WTP_Portal {
             wp_die( 'Acceso denegado.', 403 );
         }
         $category = isset( $_POST['category'] ) ? sanitize_key( wp_unslash( $_POST['category'] ) ) : 'otro';
+        if ( in_array( $category, array( 'factura', 'nota_credito', 'nota_debito', 'presupuesto_emitido' ), true ) ) { wp_die( 'Sólo Graph Express puede cargar documentos emitidos.', 403 ); }
         $result = GE_WTP_Documents::handle_uploaded_files( $order_id, 'ge_documents', $category );
         wp_safe_redirect( self::portal_url( 'pedidos', array( 'pedido' => $order_id, 'ge_notice' => is_wp_error( $result ) ? 'error' : 'document-added' ) ) );
         exit;

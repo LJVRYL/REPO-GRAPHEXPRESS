@@ -427,6 +427,18 @@ final class GE_WTP_Commercial_Checkout {
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
         $order->set_billing_last_name( $customer->last_name );
+        $billing_profile = $snapshot['billing']['profile'] ?? array();
+        $delivery = $snapshot['delivery'] ?? array();
+        if ( ! empty( $billing_profile['legal_name'] ) ) { $order->set_billing_company( $billing_profile['legal_name'] ); }
+        if ( ! empty( $billing_profile['fiscal_address'] ) ) { $order->set_billing_address_1( $billing_profile['fiscal_address'] ); }
+        if ( ! empty( $delivery['street'] ) ) {
+            $order->set_shipping_company( $delivery['label'] ?? '' );
+            $order->set_shipping_first_name( $delivery['recipient'] ?? '' );
+            $order->set_shipping_address_1( $delivery['street'] );
+            $order->set_shipping_city( $delivery['city'] ?? '' );
+            $order->set_shipping_state( $delivery['province'] ?? '' );
+            $order->set_shipping_postcode( $delivery['postal_code'] ?? '' );
+        }
         $method = (string) get_post_meta( $quote['id'], '_ge_commercial_method', true );
         $order->set_payment_method( 'bacs' === $method ? 'bacs' : 'ge_commercial_mercadopago' );
         $order->set_payment_method_title( 'bacs' === $method ? 'Transferencia bancaria' : 'Mercado Pago' );
@@ -471,6 +483,9 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( '_ge_commercial_quote_version', $quote['version'] );
         $order->update_meta_data( '_ge_commercial_snapshot_hash', $snapshot['snapshot_hash'] ?? '' );
         $order->update_meta_data( '_ge_commercial_billing_snapshot', $snapshot['billing'] );
+        $order->update_meta_data( '_ge_billing_profile_snapshot', $billing_profile );
+        $order->update_meta_data( '_ge_billing_profile_id', $snapshot['billing_profile_id'] ?? 'default' );
+        $order->update_meta_data( '_ge_delivery_snapshot', $delivery );
         $order->update_meta_data( '_ge_final_total_cents', $final );
         $order->update_meta_data( '_ge_deposit_percent', $snapshot['deposit_percent'] );
         $order->calculate_totals( false );

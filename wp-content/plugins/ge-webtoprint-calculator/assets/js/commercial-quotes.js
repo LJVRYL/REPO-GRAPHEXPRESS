@@ -6,6 +6,44 @@
   if (!root || !template || !catalogNode) return;
   var catalog = {};
   try { catalog = JSON.parse(catalogNode.textContent || '{}'); } catch (error) { return; }
+  var branchPicker = document.querySelector('[data-ge-branch-picker]');
+  if (branchPicker) {
+    var emailInput = document.querySelector('input[name="customer_email"]');
+    var billingSelect = branchPicker.querySelector('[data-ge-billing-profile]');
+    var deliverySelect = branchPicker.querySelector('[data-ge-delivery-address]');
+    var selected = {};
+    try { selected = JSON.parse(document.querySelector('[data-ge-branch-selected]').textContent || '{}'); } catch (error) { selected = {}; }
+    var requestNumber = 0;
+    function addOption(select, value, label) {
+      var option = document.createElement('option'); option.value = value; option.textContent = label; select.appendChild(option);
+    }
+    function loadBranches() {
+      var number = ++requestNumber;
+      var query = new URLSearchParams({ action: 'ge_customer_branch_options', _ajax_nonce: branchPicker.dataset.nonce, email: emailInput.value });
+      fetch(branchPicker.dataset.ajax + '?' + query.toString(), { credentials: 'same-origin' }).then(function (response) { return response.json(); }).then(function (result) {
+        if (number !== requestNumber || !result.success) return;
+        var previousProfile = billingSelect.value || selected.profile || 'default';
+        var previousDelivery = deliverySelect.value || selected.delivery || '';
+        billingSelect.replaceChildren(); deliverySelect.replaceChildren();
+        addOption(deliverySelect, '', 'A coordinar');
+        (result.data.profiles || []).forEach(function (profile) { addOption(billingSelect, profile.id, profile.label + (profile.cuit ? ' · CUIT ' + profile.cuit : '')); });
+        if (!billingSelect.options.length) addOption(billingSelect, 'default', 'Perfil principal');
+        (result.data.addresses || []).forEach(function (address) { addOption(deliverySelect, address.id, address.label + ' · ' + address.street); });
+        billingSelect.value = previousProfile;
+        if (billingSelect.selectedIndex < 0) billingSelect.selectedIndex = 0;
+        if (!document.querySelector('input[name="quote_id"]') && previousProfile === 'default') {
+          var preferred = (result.data.profiles || []).find(function (profile) { return profile.is_default; });
+          if (preferred) billingSelect.value = preferred.id;
+        }
+        deliverySelect.value = previousDelivery;
+        if (deliverySelect.selectedIndex < 0) deliverySelect.value = '';
+        if (!previousDelivery && deliverySelect.options.length === 2) deliverySelect.selectedIndex = 1;
+        selected = {};
+      }).catch(function () { /* Keep the existing selections when the lookup is unavailable. */ });
+    }
+    emailInput.addEventListener('change', loadBranches);
+    if (emailInput.value) loadBranches();
+  }
   var nextIndex = root.querySelectorAll('[data-ge-line]').length;
 
   function field(tag, name, label, type) {

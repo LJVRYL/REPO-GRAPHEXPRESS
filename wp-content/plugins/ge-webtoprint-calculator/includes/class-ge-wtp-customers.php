@@ -148,6 +148,7 @@ final class GE_WTP_Customers {
 
     private static function render_address_fields( $address, $index ) {
         ?>
+        <input type="hidden" name="addresses[<?php echo esc_attr( $index ); ?>][id]" value="<?php echo esc_attr( $address['id'] ?? '' ); ?>">
         <fieldset data-ge-address-item><legend>Destino <span data-ge-address-number><?php echo '__INDEX__' === (string) $index ? '' : esc_html( (int) $index + 1 ); ?></span></legend><?php if ( '0' !== (string) $index ) : ?><button class="ge-remove-address" type="button" data-ge-remove-address>Quitar</button><?php endif; ?><div class="ge-profile-fields"><label>Nombre del lugar<input type="text" name="addresses[<?php echo esc_attr( $index ); ?>][label]" value="<?php echo esc_attr( $address['label'] ); ?>" maxlength="100" placeholder="Oficina, depósito..."></label><label>Quién recibe<input type="text" name="addresses[<?php echo esc_attr( $index ); ?>][recipient]" value="<?php echo esc_attr( $address['recipient'] ); ?>" maxlength="140"></label><label class="ge-field-wide">Dirección<input type="text" name="addresses[<?php echo esc_attr( $index ); ?>][street]" value="<?php echo esc_attr( $address['street'] ); ?>" maxlength="220" placeholder="Calle, número, piso y departamento"></label><label>Ciudad<input type="text" name="addresses[<?php echo esc_attr( $index ); ?>][city]" value="<?php echo esc_attr( $address['city'] ); ?>" maxlength="100"></label><label>Provincia<input type="text" name="addresses[<?php echo esc_attr( $index ); ?>][province]" value="<?php echo esc_attr( $address['province'] ); ?>" maxlength="100"></label><label>Código postal<input type="text" name="addresses[<?php echo esc_attr( $index ); ?>][postal_code]" value="<?php echo esc_attr( $address['postal_code'] ); ?>" maxlength="20"></label><label>WhatsApp de recepción<input type="tel" name="addresses[<?php echo esc_attr( $index ); ?>][phone]" value="<?php echo esc_attr( $address['phone'] ); ?>" maxlength="40"></label><label class="ge-field-wide">Días y horarios<input type="text" name="addresses[<?php echo esc_attr( $index ); ?>][hours]" value="<?php echo esc_attr( $address['hours'] ); ?>" maxlength="180" placeholder="Lunes a viernes de 9 a 17 h"></label><label class="ge-field-wide">Indicaciones<textarea name="addresses[<?php echo esc_attr( $index ); ?>][notes]" rows="2" maxlength="500" placeholder="Acceso, recepción, llamar antes..."><?php echo esc_textarea( $address['notes'] ); ?></textarea></label></div></fieldset>
         <?php
     }
@@ -370,10 +371,14 @@ final class GE_WTP_Customers {
     private static function sanitize_addresses( $addresses ) {
         if ( ! is_array( $addresses ) ) { return array(); }
         $clean = array();
+        $seen = array();
         foreach ( array_slice( $addresses, 0, 4 ) as $address ) {
             if ( ! is_array( $address ) ) { continue; }
             $row = self::empty_address();
             foreach ( array_keys( $row ) as $key ) { $row[ $key ] = isset( $address[ $key ] ) ? sanitize_text_field( $address[ $key ] ) : ''; }
+            $row['id'] = sanitize_text_field( $address['id'] ?? '' ) ?: wp_generate_uuid4();
+            if ( isset( $seen[ $row['id'] ] ) ) { $row['id'] = wp_generate_uuid4(); }
+            $seen[ $row['id'] ] = true;
             if ( ! $row['street'] ) { continue; }
             $clean[] = $row;
         }
@@ -386,7 +391,7 @@ final class GE_WTP_Customers {
     }
 
     private static function empty_address() {
-        return array( 'label' => '', 'recipient' => '', 'street' => '', 'city' => '', 'province' => '', 'postal_code' => '', 'phone' => '', 'hours' => '', 'notes' => '' );
+        return array( 'id' => '', 'label' => '', 'recipient' => '', 'street' => '', 'city' => '', 'province' => '', 'postal_code' => '', 'phone' => '', 'hours' => '', 'notes' => '' );
     }
 
     private static function post_text( $key ) {
@@ -417,11 +422,13 @@ final class GE_WTP_Customers {
         $customer_id = isset( $_GET['customer_id'] ) ? absint( $_GET['customer_id'] ) : 0;
         if ( $customer_id ) {
             echo '<div class="ge-staff-actions"><a class="ge-staff-button" target="_blank" rel="noopener" href="' . esc_url( GE_WTP_Portal::preview_url( $customer_id ) ) . '">Abrir panel del cliente ↗</a></div>';
+            echo '<div class="ge-staff-actions"><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'view' => 'new', 'customer_id' => $customer_id ) ) ) . '">Cargar pedido</a><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'new' => 1, 'customer_id' => $customer_id ) ) ) . '">Cargar presupuesto</a></div>';
             if ( isset( $_GET['invite_status'] ) ) { echo '<div class="ge-production-notice' . ( 'sent' === $_GET['invite_status'] ? '' : ' is-error' ) . '">' . ( 'sent' === $_GET['invite_status'] ? 'La invitación fue aceptada por el servidor de correo y quedó registrada.' : 'No se pudo enviar la invitación. Revisá el correo antes de reintentar.' ) . '</div>'; }
             echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_staff_invite_customer"><input type="hidden" name="user_id" value="' . esc_attr( $customer_id ) . '">';
             wp_nonce_field( 'ge_staff_invite_customer_' . $customer_id );
             echo '<button class="ge-staff-button" type="submit">Enviar acceso al portal</button><p>El cliente recibirá un enlace temporal para definir su propia contraseña.</p></form>';
             echo self::profile_form( $customer_id, 'staff', true );
+            GE_WTP_Customer_Branches::render_staff( $customer_id );
             return;
         }
         $users = get_users( array( 'role__in' => array( 'customer', 'ge_markcom_client' ), 'orderby' => 'registered', 'order' => 'DESC', 'number' => 500 ) );

@@ -1,0 +1,137 @@
+<?php
+
+defined( 'ABSPATH' ) || exit;
+
+/** Additional fiscal identities under one commercial customer account. */
+final class GE_WTP_Customer_Branches {
+    const META = '_ge_billing_profiles';
+
+    public static function init() {
+        add_action( 'admin_post_ge_customer_billing_profile', array( __CLASS__, 'handle_save' ) );
+        add_action( 'wp_ajax_ge_customer_branch_options', array( __CLASS__, 'ajax_options' ) );
+    }
+
+    public static function profiles( $customer_id, $include_inactive = false ) {
+        $legacy = GE_WTP_Billing::profile( $customer_id );
+        $legacy['id'] = 'default';
+        $legacy['label'] = 'Perfil principal';
+        $legacy['active'] = true;
+        $legacy['legacy'] = true;
+        $stored = get_user_meta( $customer_id, self::META, true );
+        $stored = is_array( $stored ) ? $stored : array();
+        $legacy['is_default'] = ! array_filter( $stored, function ( $profile ) { return ! empty( $profile['active'] ) && ! empty( $profile['is_default'] ); } );
+        return array_values( array_filter( array_merge( array( $legacy ), $stored ), function ( $profile ) use ( $include_inactive ) { return $include_inactive || ! empty( $profile['active'] ); } ) );
+    }
+
+    public static function default_profile_id( $customer_id ) {
+        foreach ( self::profiles( $customer_id ) as $profile ) { if ( ! empty( $profile['is_default'] ) ) { return $profile['id']; } }
+        return 'default';
+    }
+
+    public static function find( $customer_id, $id, $include_inactive = false ) {
+        foreach ( self::profiles( $customer_id, $include_inactive ) as $profile ) {
+            if ( (string) ( $profile['id'] ?? '' ) === (string) $id ) { return $profile; }
+        }
+        return null;
+    }
+
+    public static function delivery( $customer_id, $id ) {
+        foreach ( GE_WTP_Customers::addresses( $customer_id ) as $index => $address ) {
+            if ( (string) ( $address['id'] ?? $index ) === (string) $id ) { return array_merge( $address, array( 'id' => (string) ( $address['id'] ?? $index ) ) ); }
+        }
+        return null;
+    }
+
+    public static function save( $customer_id, $input, $actor_id ) {
+        if ( ! user_can( $actor_id, 'manage_woocommerce' ) && ! user_can( $actor_id, 'ge_manage_operations' ) ) { return new WP_Error( 'ge_profile_forbidden', 'Acceso denegado.' ); }
+        if ( ! get_userdata( $customer_id ) ) { return new WP_Error( 'ge_profile_customer', 'Cliente inexistente.' ); }
+        $id = sanitize_text_field( $input['id'] ?? '' );
+        if ( 'default' === $id ) { return new WP_Error( 'ge_profile_default', 'Editá el perfil principal en la ficha.' ); }
+        $stored = get_user_meta( $customer_id, self::META, true );
+        $stored = is_array( $stored ) ? $stored : array();
+        $index = null;
+        foreach ( $stored as $key => $profile ) { if ( ( $profile['id'] ?? '' ) === $id ) { $index = $key; break; } }
+        if ( $id && null === $index ) { return new WP_Error( 'ge_profile_missing', 'Perfil no encontrado.' ); }
+        $old = null === $index ? array() : $stored[ $index ];
+        if ( ! empty( $input['archive'] ) ) {
+            $profile = $old;
+            $profile['active'] = false;
+        } else {
+            try { $profile = GE_WTP_Billing::normalize_profile( $input ); }
+            catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_profile_invalid', $error->getMessage() ); }
+            $profile['id'] = $id ?: wp_generate_uuid4();
+            $profile['label'] = sanitize_text_field( $input['label'] ?? '' );
+            if ( ! $profile['label'] ) { return new WP_Error( 'ge_profile_label', 'Indicá la sucursal o el nombre del perfil.' ); }
+            $profile['branch'] = sanitize_text_field( $input['branch'] ?? '' );
+            $profile['contact_name'] = sanitize_text_field( $input['contact_name'] ?? '' );
+            $profile['contact_phone'] = sanitize_text_field( $input['contact_phone'] ?? '' );
+            $profile['active'] = true;
+            $profile['is_default'] = ! empty( $input['is_default'] );
+            $profile['created_at'] = $old['created_at'] ?? gmdate( 'c' );
+        }
+        $profile['updated_at'] = gmdate( 'c' );
+        $profile['updated_by'] = (int) $actor_id;
+        if ( ! empty( $profile['is_default'] ) ) { foreach ( $stored as &$other ) { $other['is_default'] = false; } unset( $other ); }
+        if ( null === $index ) { $stored[] = $profile; } else { $stored[ $index ] = $profile; }
+        update_user_meta( $customer_id, self::META, $stored );
+        add_user_meta( $customer_id, '_ge_billing_audit', array( 'at' => gmdate( 'c' ), 'actor_id' => $actor_id, 'profile_id' => $profile['id'], 'action' => ! empty( $input['archive'] ) ? 'archive' : ( $old ? 'update' : 'create' ) ) );
+        return $profile;
+    }
+
+    public static function handle_save() {
+        $customer_id = absint( $_POST['customer_id'] ?? 0 );
+        check_admin_referer( 'ge_customer_billing_profile_' . $customer_id );
+        $result = self::save( $customer_id, wp_unslash( $_POST ), get_current_user_id() );
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'customers', array( 'customer_id' => $customer_id, 'billing_status' => is_wp_error( $result ) ? $result->get_error_code() : 'saved' ) ) );
+        exit;
+    }
+
+    public static function ajax_options() {
+        if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_operations' ) ) { wp_send_json_error( 'Acceso denegado.', 403 ); }
+        check_ajax_referer( 'ge_customer_branch_options' );
+        $email = sanitize_email( wp_unslash( $_GET['email'] ?? '' ) );
+        $customer_id = absint( email_exists( $email ) );
+        wp_send_json_success( array( 'customer_id' => $customer_id, 'profiles' => $customer_id ? array_map( function ( $profile ) { return array( 'id' => $profile['id'], 'label' => $profile['label'], 'cuit' => $profile['cuit'], 'is_default' => ! empty( $profile['is_default'] ) ); }, self::profiles( $customer_id ) ) : array(), 'addresses' => $customer_id ? array_map( function ( $index, $address ) { return array( 'id' => (string) ( $address['id'] ?? $index ), 'label' => $address['label'] ?: $address['street'], 'street' => $address['street'] ); }, array_keys( GE_WTP_Customers::addresses( $customer_id ) ), GE_WTP_Customers::addresses( $customer_id ) ) : array() ) );
+    }
+
+    public static function render_staff( $customer_id ) {
+        echo '<section class="ge-profile-card"><div class="ge-profile-card-title"><span>05</span><div><h2>Perfiles de facturación por sucursal</h2><p>El perfil principal se edita arriba. Los perfiles usados por pedidos se archivan sin borrar su historial.</p></div></div>';
+        if ( isset( $_GET['billing_status'] ) ) { echo '<p>' . esc_html( 'saved' === $_GET['billing_status'] ? 'Perfil guardado.' : 'No se pudo guardar el perfil. Revisá los datos fiscales.' ) . '</p>'; }
+        foreach ( self::profiles( $customer_id, true ) as $profile ) {
+            if ( 'default' === $profile['id'] ) { continue; }
+            echo '<p><strong>' . esc_html( $profile['label'] ) . '</strong> · ' . esc_html( $profile['legal_name'] ) . ' · ' . esc_html( $profile['cuit'] ?: 'Sin CUIT' ) . ( empty( $profile['active'] ) ? ' · Archivado' : '' ) . '</p>';
+            if ( ! empty( $profile['active'] ) ) { self::form( $customer_id, $profile ); }
+        }
+        self::form( $customer_id, array() );
+        echo '</section>';
+    }
+
+    public static function render_order_summary( $order, $staff = false ) {
+        $profile = $order->get_meta( '_ge_billing_profile_snapshot', true );
+        if ( ! is_array( $profile ) || ! $profile ) {
+            $billing = $order->get_meta( '_ge_commercial_billing_snapshot', true );
+            $profile = is_array( $billing ) ? ( $billing['profile'] ?? array() ) : array();
+        }
+        $delivery = $order->get_meta( '_ge_delivery_snapshot', true );
+        $delivery = is_array( $delivery ) ? $delivery : array();
+        $customer = get_userdata( $order->get_customer_id() );
+        echo '<section class="' . ( $staff ? 'ge-admin-panel' : 'ge-panel' ) . ' ge-order-branch-summary"><h2>Cliente, facturación y entrega</h2>';
+        echo '<p><strong>Cliente comercial:</strong> ' . esc_html( $customer ? $customer->display_name : ( $order->get_formatted_billing_full_name() ?: $order->get_billing_email() ) ) . '</p>';
+        echo '<p><strong>Facturar a:</strong> ' . esc_html( $profile ? ( ( $profile['label'] ?? 'Perfil principal' ) . ' · ' . ( $profile['legal_name'] ?: 'Sin razón social' ) . ( $staff && ! empty( $profile['cuit'] ) ? ' · CUIT ' . $profile['cuit'] : '' ) ) : ( $order->get_billing_company() ?: 'Datos históricos del pedido' ) ) . '</p>';
+        echo '<p><strong>Entregar en:</strong> ' . esc_html( $delivery ? ( ( $delivery['label'] ?? 'Destino' ) . ' · ' . ( $delivery['street'] ?? '' ) ) : ( $order->get_shipping_address_1() ?: 'A coordinar' ) ) . '</p>';
+        echo '</section>';
+    }
+
+    private static function form( $customer_id, $profile ) {
+        $existing = ! empty( $profile['id'] );
+        echo '<form class="ge-profile-fields" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_billing_profile"><input type="hidden" name="customer_id" value="' . esc_attr( $customer_id ) . '"><input type="hidden" name="id" value="' . esc_attr( $profile['id'] ?? '' ) . '">';
+        wp_nonce_field( 'ge_customer_billing_profile_' . $customer_id );
+        foreach ( array( 'label' => 'Sucursal / perfil', 'branch' => 'Sede', 'legal_name' => 'Razón social', 'cuit' => 'CUIT', 'fiscal_address' => 'Domicilio fiscal', 'billing_email' => 'Email de facturación', 'contact_name' => 'Contacto', 'contact_phone' => 'Teléfono' ) as $key => $label ) { echo '<label>' . esc_html( $label ) . '<input name="' . esc_attr( $key ) . '" value="' . esc_attr( $profile[ $key ] ?? '' ) . '" maxlength="220"></label>'; }
+        echo '<label><input type="checkbox" name="is_default" value="1"' . checked( ! empty( $profile['is_default'] ), true, false ) . '> Usar por defecto</label>';
+        echo '<label>Condición fiscal<select name="vat_status">';
+        foreach ( array( '' => 'Seleccionar', 'registered' => 'Responsable inscripto', 'monotributo' => 'Monotributista', 'exempt' => 'Exento', 'final_consumer' => 'Consumidor final' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '"' . selected( $profile['vat_status'] ?? '', $value, false ) . '>' . esc_html( $label ) . '</option>'; }
+        echo '</select></label><label>Modalidad<select name="billing_mode"><option value="common">Común</option><option value="invoice_a"' . selected( $profile['billing_mode'] ?? '', 'invoice_a', false ) . '>Requiere A si el emisor puede emitirla</option></select></label><button type="submit">' . ( $existing ? 'Guardar perfil' : 'Agregar perfil' ) . '</button>';
+        if ( $existing ) { echo '<button type="submit" name="archive" value="1" onclick="return confirm(\'¿Archivar este perfil?\')">Desactivar perfil</button>'; }
+        echo '</form>';
+    }
+}
