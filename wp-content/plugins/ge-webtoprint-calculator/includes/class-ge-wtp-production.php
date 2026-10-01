@@ -419,11 +419,11 @@ final class GE_WTP_Production {
         $production_css = GE_WTP_PLUGIN_DIR . 'assets/css/production.css';
         wp_enqueue_style( 'ge-production', GE_WTP_PLUGIN_URL . 'assets/css/production.css', array( 'ge-staff-portal' ), is_file( $production_css ) ? (string) filemtime( $production_css ) : GE_WTP_VERSION );
         $order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
-        if ( $order_id ) { $order = wc_get_order( $order_id ); if ( self::is_production_order( $order ) ) { self::ensure_order( $order ); self::render_operational_controls( $order ); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { GE_WTP_Workflow::render( $order ); } else { self::render_order( $order ); } return; } }
+        if ( $order_id ) { $order = wc_get_order( $order_id ); if ( self::is_production_order( $order ) ) { self::ensure_order( $order ); self::render_operational_controls( $order ); GE_WTP_Supplier_Workspace::render_order_links( $order ); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { GE_WTP_Workflow::render( $order ); } else { self::render_order( $order ); } return; } }
         $view = sanitize_key( wp_unslash( $_GET['view'] ?? 'queue' ) );
         self::render_tabs( $view );
         if ( 'new' === $view && class_exists( 'GE_WTP_Manual_Orders' ) ) { GE_WTP_Manual_Orders::render(); return; }
-        if ( 'suppliers' === $view && class_exists( 'GE_WTP_Supplier_Dispatch' ) ) { GE_WTP_Supplier_Dispatch::render_settings(); return; }
+        if ( in_array( $view, array( 'suppliers', 'supplier' ), true ) ) { GE_WTP_Supplier_Workspace::render( $view ); return; }
         if ( 'events' === $view ) { self::render_events(); return; }
         self::render_queue();
     }
