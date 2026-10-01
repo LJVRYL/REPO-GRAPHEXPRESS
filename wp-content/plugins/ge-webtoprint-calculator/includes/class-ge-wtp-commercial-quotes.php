@@ -194,12 +194,19 @@ final class GE_WTP_Commercial_Quotes {
         foreach ( $lines as $line ) {
             if ( ! is_array( $line ) ) { return new WP_Error( 'ge_quote_line', 'Ítem inválido.' ); }
             $product_id = absint( $line['product_id'] ?? 0 );
+            $source_type = sanitize_key( $line['source_type'] ?? ( $product_id ? 'catalog_product' : 'custom' ) );
+            if ( ! in_array( $source_type, array( 'catalog_product', 'custom' ), true ) || ( 'catalog_product' === $source_type && ! $product_id ) || ( 'custom' === $source_type && $product_id ) ) {
+                return new WP_Error( 'ge_quote_source', 'Elegí un producto del catálogo o un ítem personalizado válido.' );
+            }
             $product = $product_id ? wc_get_product( $product_id ) : false;
             if ( $product_id && ( ! $product || 'publish' !== $product->get_status() ) ) {
                 return new WP_Error( 'ge_quote_product', 'Un producto de catálogo ya no está disponible.' );
             }
             $name = sanitize_text_field( $line['name'] ?? ( $product ? $product->get_name() : '' ) );
-            $quantity = absint( $line['quantity'] ?? 0 );
+            $unit = sanitize_text_field( $line['unit'] ?? 'u' );
+            if ( ! in_array( $unit, array( 'u', 'm²', 'ml', 'lote', 'servicio' ), true ) ) { return new WP_Error( 'ge_quote_unit', 'Unidad inválida.' ); }
+            $quantity_input = (string) ( $line['quantity'] ?? '' );
+            $quantity = preg_match( '/^[1-9][0-9]{0,5}$/D', $quantity_input ) ? (int) $quantity_input : 0;
             if ( ! $name || $quantity < 1 || $quantity > 100000 ) {
                 return new WP_Error( 'ge_quote_line', 'Nombre o cantidad inválidos.' );
             }
@@ -218,15 +225,18 @@ final class GE_WTP_Commercial_Quotes {
             try { $unit_cents = GE_WTP_Quote_Balance::cents( $unit_net ); }
             catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_quote_price', 'Precio unitario inválido.' ); }
             $line_cents = $unit_cents * $quantity;
-            if ( $line_cents <= 0 || $line_cents > 999999999999 ) { return new WP_Error( 'ge_quote_price', 'Importe de ítem fuera de rango.' ); }
+            if ( $line_cents < 0 || $line_cents > 999999999999 ) { return new WP_Error( 'ge_quote_price', 'Importe de ítem fuera de rango.' ); }
             $items[] = array(
-                'product_id' => $product_id,
+                'source_type' => $source_type,
+                'product_id' => $product_id ?: null,
                 'sku' => $product ? $product->get_sku() : '',
                 'name' => $name,
                 'quantity' => $quantity,
+                'unit' => $unit,
                 'unit_net_cents' => $unit_cents,
                 'net_cents' => $line_cents,
                 'details' => sanitize_textarea_field( $line['details'] ?? '' ),
+                'notes' => sanitize_textarea_field( $line['notes'] ?? '' ),
                 'configuration' => $configuration,
                 'configuration_label' => $configuration_label,
                 'finishes' => $finishes,

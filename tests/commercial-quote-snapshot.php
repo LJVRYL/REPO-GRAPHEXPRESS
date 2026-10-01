@@ -43,6 +43,25 @@ $snapshot = GE_WTP_Commercial_Quotes::build_snapshot( $lines, array( 'valid_unti
 if ( $snapshot instanceof WP_Error || $snapshot['net_cents'] !== 15000 || $snapshot['items'][0]['sku'] !== 'ST-1' || $snapshot['items'][0]['finishes'] !== array( 'corte' ) ) {
     throw new RuntimeException( 'El snapshot no conserva el importe o el producto.' );
 }
+if ( $snapshot['items'][0]['source_type'] !== 'catalog_product' || $snapshot['items'][1]['source_type'] !== 'custom' || $snapshot['items'][1]['product_id'] !== null ) {
+    throw new RuntimeException( 'El presupuesto mixto perdió el origen de sus ítems.' );
+}
+$custom = GE_WTP_Commercial_Quotes::build_snapshot( array( array( 'source_type' => 'custom', 'name' => 'Almohada bamboo 45×30 cm', 'details' => 'Trabajo a medida', 'notes' => 'Terminación acordada', 'quantity' => 10, 'unit' => 'u', 'unit_net' => '33000.00' ) ) );
+if ( $custom instanceof WP_Error || $custom['net_cents'] !== 33000000 || $custom['items'][0]['unit_net_cents'] !== 3300000 || $custom['items'][0]['notes'] !== 'Terminación acordada' ) {
+    throw new RuntimeException( 'El ítem personalizado no conserva el acuerdo de ARS 330.000.' );
+}
+$invalid_source = GE_WTP_Commercial_Quotes::build_snapshot( array( array( 'source_type' => 'catalog_product', 'name' => 'Inventado', 'quantity' => 1, 'unit_net' => '1.00' ) ) );
+if ( ! $invalid_source instanceof WP_Error || 'ge_quote_source' !== $invalid_source->get_error_code() ) {
+    throw new RuntimeException( 'Se aceptó un catálogo sin producto.' );
+}
+$invalid_quantity = GE_WTP_Commercial_Quotes::build_snapshot( array( array( 'source_type' => 'custom', 'name' => 'Trabajo', 'quantity' => '-2', 'unit_net' => '1.00' ) ) );
+if ( ! $invalid_quantity instanceof WP_Error || 'ge_quote_line' !== $invalid_quantity->get_error_code() ) {
+    throw new RuntimeException( 'Se aceptó una cantidad negativa.' );
+}
+$zero_price = GE_WTP_Commercial_Quotes::build_snapshot( array( array( 'source_type' => 'custom', 'name' => 'Bonificación', 'quantity' => 1, 'unit_net' => '0.00' ) ) );
+if ( $zero_price instanceof WP_Error || $zero_price['items'][0]['net_cents'] !== 0 ) {
+    throw new RuntimeException( 'Se rechazó un precio cero válido.' );
+}
 $product->price = '999.00';
 if ( $snapshot['items'][0]['unit_net_cents'] !== 2500 || $snapshot['items'][0]['name'] !== 'Stickers 5 cm' ) {
     throw new RuntimeException( 'El catálogo alteró un snapshot existente.' );

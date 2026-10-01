@@ -456,8 +456,12 @@ final class GE_WTP_Commercial_Checkout {
                 $allocated_tax += $line_tax;
                 $item->set_taxes( array( 'total' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ), 'subtotal' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ) ) );
             }
-            $specifications = implode( ' · ', array_filter( array( GE_WTP_Commercial_Quote_UI::customer_configuration_label( $line ), $line['details'] ?? '' ) ) );
+            $specifications = implode( ' · ', array_filter( array( GE_WTP_Commercial_Quote_UI::customer_configuration_label( $line ), $line['details'] ?? '', $line['notes'] ?? '' ) ) );
             if ( $specifications ) { $item->add_meta_data( 'Especificaciones', $specifications, true ); }
+            if ( 'u' !== ( $line['unit'] ?? 'u' ) ) { $item->add_meta_data( 'Unidad', $line['unit'], true ); }
+            $item->update_meta_data( '_ge_quote_source_type', $line['source_type'] ?? ( ! empty( $line['product_id'] ) ? 'catalog_product' : 'custom' ) );
+            $item->update_meta_data( '_ge_quote_unit', $line['unit'] ?? 'u' );
+            $item->update_meta_data( '_ge_quote_unit_net_cents', (int) $line['unit_net_cents'] );
             if ( ! empty( $line['configuration']['roll_width_cm'] ) ) { $item->update_meta_data( '_ge_internal_roll_width_cm', $line['configuration']['roll_width_cm'] ); }
             if ( ! empty( $line['finishes'] ) ) { $item->update_meta_data( GE_WTP_Workflow::FINISHES_META, $line['finishes'] ); }
             $item->update_meta_data( '_ge_item_status', 'pending' );
