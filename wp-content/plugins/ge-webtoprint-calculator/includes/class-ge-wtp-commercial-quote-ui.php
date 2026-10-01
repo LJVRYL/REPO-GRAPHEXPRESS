@@ -15,14 +15,17 @@ final class GE_WTP_Commercial_Quote_UI {
         if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', 403 ); }
         $quote_id = absint( $_GET['quote_id'] ?? 0 );
         $quote = $quote_id ? GE_WTP_Commercial_Quotes::get( $quote_id, get_current_user_id() ) : null;
+        $legacy = self::selected_legacy_quote();
+        $new = ! empty( $_GET['new'] );
         if ( is_wp_error( $quote ) ) { echo '<section class="ge-panel"><p>' . esc_html( $quote->get_error_message() ) . '</p></section>'; return; }
         $error = sanitize_key( wp_unslash( $_GET['quote_error'] ?? '' ) );
         $messages = array( 'save' => 'No pudimos guardar el presupuesto. Revisá cliente, ítems e importes.', 'send' => 'No pudimos enviar el presupuesto. Revisá la configuración fiscal y el registro de Notificaciones.' );
-        echo '<div class="ge-staff-heading"><div><span>Comercial</span><h1>' . esc_html( $quote ? $quote['number'] : 'Nuevo presupuesto' ) . '</h1><p>' . esc_html( $quote ? 'Revisá los ítems y las condiciones antes de enviarlo.' : 'Prepará una propuesta sin abrir producción ni pedir archivos.' ) . '</p></div><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes' ) ) . '">Ver presupuestos</a></div>';
+        echo '<div class="ge-staff-heading"><div><span>Comercial</span><h1>' . esc_html( $quote ? $quote['number'] : ( $legacy ? ( $legacy['reference'] ?: 'Presupuesto anterior' ) : ( $new ? 'Nuevo presupuesto' : 'Presupuestos' ) ) ) . '</h1><p>' . esc_html( $legacy ? 'Registro histórico conservado en la ficha del cliente.' : ( $quote ? 'Revisá los ítems y las condiciones antes de enviarlo.' : ( $new ? 'Prepará una propuesta sin abrir producción ni pedir archivos.' : 'Consultá las propuestas actuales y los registros anteriores en un mismo lugar.' ) ) ) . '</p></div><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', $quote || $legacy || $new ? array() : array( 'new' => 1 ) ) ) . '">' . esc_html( $quote || $legacy || $new ? 'Ver presupuestos' : '＋ Nuevo presupuesto' ) . '</a></div>';
         if ( $error ) { echo '<div class="ge-production-notice is-error">' . esc_html( $messages[ $error ] ?? 'Revisá el presupuesto.' ) . '</div>'; }
         if ( $quote && ! empty( $_GET['edit'] ) && in_array( $quote['status'], array( 'draft', 'sent' ), true ) ) { self::render_staff_form( $quote ); }
         elseif ( $quote ) { self::render_staff_detail( $quote ); }
-        else { self::render_staff_form(); }
+        elseif ( $legacy ) { self::render_legacy_detail( $legacy ); }
+        elseif ( $new ) { self::render_staff_form(); }
         self::render_staff_list();
     }
 
@@ -85,15 +88,103 @@ final class GE_WTP_Commercial_Quote_UI {
     }
 
     private static function render_staff_list() {
-        $posts = get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => 30, 'orderby' => 'date', 'order' => 'DESC' ) );
-        echo '<section class="ge-production-card"><h2>Presupuestos recientes</h2>';
-        if ( ! $posts ) { echo '<p>Todavía no hay presupuestos comerciales.</p>'; }
-        foreach ( $posts as $post ) {
+        $rows = self::history_rows();
+        echo '<section class="ge-production-card ge-quote-history" id="presupuestos"><div class="ge-production-section-head"><div><span>Comercial · historial unificado</span><h2>Todos los presupuestos</h2></div><strong>' . esc_html( count( $rows ) ) . ' registros</strong></div>';
+        echo '<p>Incluye propuestas actuales, presupuestos guardados en fichas de clientes y referencias anteriores vinculadas a pedidos. “Enviado” sólo aparece cuando existe estado o trazabilidad de envío.</p>';
+        if ( ! $rows ) { echo '<p>Todavía no hay presupuestos registrados.</p></section>'; return; }
+        $page = max( 1, absint( $_GET['quote_page'] ?? 1 ) );
+        $pages = (int) ceil( count( $rows ) / 30 );
+        $page = min( $page, $pages );
+        echo '<div class="ge-quote-history-list">';
+        foreach ( array_slice( $rows, ( $page - 1 ) * 30, 30 ) as $row ) {
+            echo '<article class="ge-quote-history-row"><div><small>' . esc_html( $row['source'] . ' · ' . $row['date'] ) . '</small><a href="' . esc_url( $row['url'] ) . '">' . esc_html( $row['reference'] ) . '</a><span>' . esc_html( $row['customer'] ) . '</span></div><div><strong>' . esc_html( $row['status'] ) . '</strong><small>' . esc_html( $row['amount'] ) . '</small></div><a class="ge-quote-history-open" href="' . esc_url( $row['url'] ) . '">Ver detalle →</a></article>';
+        }
+        echo '</div>';
+        if ( $pages > 1 ) { echo '<nav class="ge-quote-history-pages" aria-label="Páginas de presupuestos">'; if ( $page > 1 ) { echo '<a href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_page' => $page - 1 ) ) ) . '">← Anterior</a>'; } echo '<span>Página ' . esc_html( $page ) . ' de ' . esc_html( $pages ) . '</span>'; if ( $page < $pages ) { echo '<a href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_page' => $page + 1 ) ) ) . '">Siguiente →</a>'; } echo '</nav>'; }
+        echo '</section>';
+    }
+
+    private static function selected_legacy_quote() {
+        $user_id = absint( $_GET['legacy_user'] ?? 0 );
+        $key = sanitize_key( wp_unslash( $_GET['legacy_key'] ?? '' ) );
+        if ( ! $user_id || 0 !== strpos( $key, GE_WTP_Customer_Quotes::PREFIX ) ) { return null; }
+        $quote = get_user_meta( $user_id, $key, true );
+        if ( ! is_array( $quote ) ) { return null; }
+        $quote['user_id'] = $user_id;
+        $quote['key'] = $key;
+        return $quote;
+    }
+
+    private static function render_legacy_detail( $quote ) {
+        $customer = get_userdata( $quote['user_id'] );
+        echo '<section class="ge-production-card ge-quote-view"><div class="ge-production-section-head"><div><span>Presupuesto anterior · ficha del cliente</span><h2>' . esc_html( $quote['title'] ?? $quote['reference'] ?? 'Propuesta' ) . '</h2></div><strong>' . esc_html( self::legacy_status( $quote ) ) . '</strong></div>';
+        echo '<p><strong>Cliente:</strong> ' . esc_html( $customer ? $customer->display_name : 'Ficha no disponible' ) . '</p>';
+        if ( ! empty( $quote['details'] ) ) { echo '<p>' . nl2br( esc_html( $quote['details'] ) ) . '</p>'; }
+        $items = array_values( array_filter( (array) ( $quote['items'] ?? array() ), 'is_array' ) );
+        $options = array_values( array_filter( (array) ( $quote['options'] ?? array() ), 'is_array' ) );
+        $lines = $items ?: $options;
+        if ( $lines ) {
+            echo '<div class="ge-quote-history-lines">';
+            foreach ( $lines as $line ) { echo '<div><span><strong>' . esc_html( $line['title'] ?? $line['label'] ?? 'Trabajo gráfico' ) . '</strong><small>' . esc_html( $line['details'] ?? '' ) . '</small></span><b>' . wp_kses_post( wc_price( (float) ( $line['total'] ?? 0 ), array( 'currency' => 'ARS' ) ) ) . ' + IVA</b></div>'; }
+            echo '</div>';
+        }
+        if ( ! empty( $quote['order_id'] ) && wc_get_order( absint( $quote['order_id'] ) ) ) { echo '<p><a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => absint( $quote['order_id'] ) ) ) ) . '">Ver pedido vinculado</a></p>'; }
+        echo '<p class="ge-quote-review-note">Este registro conserva las condiciones anteriores; no crea un pedido nuevo ni envía mensajes.</p></section>';
+    }
+
+    private static function legacy_status( $quote ) {
+        if ( ! empty( $quote['order_id'] ) && wc_get_order( absint( $quote['order_id'] ) ) ) { return 'Aceptado · pedido creado'; }
+        $labels = array( 'enviada' => 'Enviado', 'quoted' => 'Cotizado · envío sin verificar', 'borrador' => 'Borrador', 'pending_price' => 'Precio pendiente' );
+        return $labels[ sanitize_key( $quote['status'] ?? '' ) ] ?? 'En seguimiento';
+    }
+
+    private static function history_rows() {
+        global $wpdb;
+        $rows = array();
+        $labels = array( 'draft' => 'Borrador', 'sent' => 'Enviado', 'viewed' => 'Visto', 'accepted' => 'Aceptado', 'rejected' => 'Rechazado', 'expired' => 'Vencido', 'converted' => 'Convertido en pedido', 'cancelled' => 'Cancelado' );
+        foreach ( get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => -1, 'orderby' => 'date', 'order' => 'DESC' ) ) as $post ) {
             $quote = GE_WTP_Commercial_Quotes::get( $post->ID, get_current_user_id() );
             if ( is_wp_error( $quote ) ) { continue; }
-            echo '<p><a href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote['id'] ) ) ) . '">' . esc_html( $quote['number'] ) . '</a> · ' . esc_html( $quote['status'] ) . ' · v' . esc_html( $quote['version'] ) . '</p>';
+            $customer = get_userdata( $quote['customer_id'] );
+            $rows[] = array( 'time' => strtotime( $post->post_date ), 'date' => wp_date( 'd/m/Y', strtotime( $post->post_date ) ), 'source' => 'Presupuesto actual', 'reference' => $quote['number'], 'customer' => $customer ? $customer->display_name : 'Cliente no disponible', 'status' => $labels[ $quote['status'] ] ?? 'En seguimiento', 'amount' => isset( $quote['snapshot']['total_cents'] ) ? wp_strip_all_tags( wc_price( $quote['snapshot']['total_cents'] / 100 ) ) : 'Ver detalle', 'url' => GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote['id'] ) ) );
         }
-        echo '</section>';
+        $like = $wpdb->esc_like( GE_WTP_Customer_Quotes::PREFIX ) . '%';
+        $legacy = $wpdb->get_results( $wpdb->prepare( "SELECT user_id, meta_key FROM {$wpdb->usermeta} WHERE meta_key LIKE %s ORDER BY umeta_id DESC", $like ), ARRAY_A );
+        foreach ( (array) $legacy as $record ) {
+            $user_id = absint( $record['user_id'] ); $key = (string) $record['meta_key'];
+            $quote = get_user_meta( $user_id, $key, true );
+            if ( ! is_array( $quote ) ) { continue; }
+            $customer = get_userdata( $user_id );
+            $time = strtotime( (string) ( $quote['captured_at'] ?? '' ) ) ?: 0;
+            $items = array_values( array_filter( (array) ( $quote['items'] ?? array() ), 'is_array' ) );
+            $options = array_values( array_filter( (array) ( $quote['options'] ?? array() ), 'is_array' ) );
+            $total = $items ? array_sum( array_map( function( $item ) { return (float) ( $item['total'] ?? 0 ); }, $items ) ) : ( 1 === count( $options ) ? (float) ( $options[0]['total'] ?? 0 ) : 0 );
+            $rows[] = array( 'time' => $time, 'date' => $time ? wp_date( 'd/m/Y', $time ) : 'Sin fecha', 'source' => 'Ficha anterior', 'reference' => (string) ( $quote['reference'] ?? $quote['title'] ?? 'Presupuesto anterior' ), 'customer' => $customer ? $customer->display_name : 'Cliente no disponible', 'status' => self::legacy_status( $quote ), 'amount' => $total > 0 ? wp_strip_all_tags( wc_price( $total ) ) . ' + IVA' : ( count( $options ) > 1 ? 'Varias alternativas' : 'Ver detalle' ), 'url' => GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'legacy_user' => $user_id, 'legacy_key' => $key ) ) );
+        }
+        foreach ( self::historical_quote_orders() as $order ) {
+            $note = (string) $order->get_customer_note();
+            $is_quote = GE_WTP_Customer_Quotes::is_quote_order( $order );
+            $is_markcom = 'yes' === $order->get_meta( '_ge_markcom_order', true );
+            $sent = 'ge-enviado' === $order->get_status();
+            if ( ! $is_quote && ! $is_markcom && ! $sent && false === stripos( $note, 'presupuesto' ) ) { continue; }
+            $created = $order->get_date_created();
+            $rows[] = array( 'time' => $created ? $created->getTimestamp() : 0, 'date' => $created ? wc_format_datetime( $created, 'd/m/Y' ) : 'Sin fecha', 'source' => $is_markcom ? 'Markcom · pedido anterior' : 'Pedido anterior', 'reference' => 'Pedido #' . $order->get_id(), 'customer' => $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email(), 'status' => $is_quote ? 'Aceptado · pedido creado' : ( $is_markcom ? 'Convertido en pedido' : ( $sent ? 'Enviado' : 'Referencia de presupuesto · revisar' ) ), 'amount' => wp_strip_all_tags( $order->get_formatted_order_total() ), 'url' => GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) );
+        }
+        usort( $rows, function( $a, $b ) { return $b['time'] <=> $a['time']; } );
+        return $rows;
+    }
+
+    private static function historical_quote_orders() {
+        global $wpdb;
+        $orders_table = $wpdb->prefix . 'wc_orders';
+        $meta_table = $wpdb->prefix . 'wc_orders_meta';
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $orders_table ) ) ) !== $orders_table ) {
+            return wc_get_orders( array( 'limit' => 300, 'orderby' => 'date', 'order' => 'DESC', 'type' => 'shop_order' ) );
+        }
+        $ids = $wpdb->get_col( "SELECT DISTINCT o.id FROM {$orders_table} o LEFT JOIN {$meta_table} m ON m.order_id = o.id WHERE o.type = 'shop_order' AND (o.status = 'wc-ge-enviado' OR o.customer_note LIKE '%presupuesto%' OR (m.meta_key IN ('_ge_quote','_ge_markcom_order') AND m.meta_value = 'yes') OR m.meta_key = '_ge_customer_quote_key') ORDER BY o.id DESC" );
+        $orders = array();
+        foreach ( (array) $ids as $id ) { $order = wc_get_order( absint( $id ) ); if ( $order instanceof WC_Order ) { $orders[] = $order; } }
+        return $orders;
     }
 
     public static function render_customer() {
@@ -229,6 +320,6 @@ final class GE_WTP_Commercial_Quote_UI {
         if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', 403 ); }
     }
     private static function staff_error( $code ) {
-        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_error' => sanitize_key( $code ) ) ) ); exit;
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'new' => 1, 'quote_error' => sanitize_key( $code ) ) ) ); exit;
     }
 }
