@@ -482,7 +482,7 @@ final class GE_WTP_Production {
         $age_label = $age ? $age . ( 1 === $age ? ' día abierto' : ' días abierto' ) : 'hoy';
         $files = GE_WTP_Documents::get_documents( $order->get_id() );
         $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
-        ?><article class="ge-production-row is-<?php echo esc_attr( $alert['key'] ); ?>"><div class="ge-production-main"><small><?php echo esc_html( $reference ); ?> · <?php echo esc_html( $age_label ); ?></small><strong><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></strong><span><?php echo esc_html( implode( ' · ', array_map( function( $item ) { return $item->get_name(); }, $active_items ) ) ); ?></span><span><?php echo esc_html( $files ? count( $files ) . ' archivo(s)' : 'Sin archivos' ); ?> · <?php echo esc_html( $due > 0 ? 'Saldo pendiente' : 'Pago: consultar pedido' ); ?></span></div><div><small>Proveedor</small><strong><?php echo esc_html( $supplier ); ?></strong></div><div><small>Prometido</small><strong><?php echo esc_html( self::date_label( $order->get_meta( '_ge_production_promised_date' ) ) ); ?></strong><em><?php echo esc_html( self::is_closed( $order ) ? 'Cerrado' : $alert['label'] ); ?></em></div><div class="ge-queue-row-actions"><span><?php echo esc_html( $status ); ?> · <?php echo esc_html( $priority ); ?></span><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>"><?php echo self::is_closed( $order ) ? 'Ver / reabrir →' : 'Abrir / cerrar →'; ?></a></div></article><?php
+        ?><article class="ge-production-row is-<?php echo esc_attr( $alert['key'] ); ?>"><div class="ge-production-main"><small><?php echo esc_html( $reference ); ?> · <?php echo esc_html( $age_label ); ?></small><strong><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></strong><span><?php echo esc_html( implode( ' · ', array_map( function( $item ) { return $item->get_name(); }, $active_items ) ) ); ?></span><span><?php echo esc_html( $files ? count( $files ) . ' archivo(s)' : 'Sin archivos' ); ?> · <?php echo esc_html( $due > 0 ? 'Saldo pendiente' : 'Pago: consultar pedido' ); ?></span></div><div><small>Proveedor</small><strong><?php echo esc_html( $supplier ); ?></strong></div><div><small>Prometido</small><strong><?php echo esc_html( self::date_label( $order->get_meta( '_ge_production_promised_date' ) ) ); ?></strong><em><?php echo esc_html( self::is_closed( $order ) ? 'Cerrado' : $alert['label'] ); ?></em></div><div class="ge-queue-row-actions"><span><?php echo esc_html( $status ); ?> · <?php echo esc_html( $priority ); ?></span><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id() ) ) ); ?>">Ver detalle →</a></div></article><?php
         if ( self::is_closed( $order ) ) : ?>
             <form class="ge-queue-closure" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('¿Reabrir este trabajo?');"><input type="hidden" name="action" value="ge_production_reopen_order"><input type="hidden" name="return_queue" value="1"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_production_reopen_' . $order->get_id() ); ?><button type="submit">Reabrir trabajo #<?php echo esc_html( $order->get_id() ); ?></button></form>
         <?php else : ?>
@@ -540,7 +540,7 @@ final class GE_WTP_Production {
         $items = $order->get_items( 'line_item' );
         ?>
         <section class="ge-production-card ge-production-files">
-            <div class="ge-production-section-head"><div><span>Archivos de producción</span><h2>Originales por trabajo</h2></div><p>Asociá cada archivo con el ítem correcto antes de enviarlo al proveedor.</p></div>
+            <div class="ge-production-section-head"><div><span>Archivos del pedido</span><h2>Archivo final por producto</h2></div><p>Los originales cargados al crear el pedido ya figuran acá. Subí una versión nueva sólo si hubo cambios y confirmá luego esa versión en el control de arte.</p></div>
             <?php
             $document_result = sanitize_key( wp_unslash( $_GET['document_result'] ?? '' ) );
             $document_messages = array( 'trashed' => 'Archivo eliminado del pedido. Podés restaurarlo desde la papelera.', 'restored' => 'Archivo restaurado al pedido.', 'in_use' => 'No se puede eliminar: este archivo está asignado a un producto.', 'missing' => 'El archivo ya no figura en este pedido.' );
@@ -549,16 +549,17 @@ final class GE_WTP_Production {
             <div class="ge-production-file-items">
                 <?php foreach ( $items as $item_id => $item ) :
                     $item_documents = array_values( array_filter( $documents, function( $document ) use ( $item_id ) { return absint( $document['order_item_id'] ?? 0 ) === absint( $item_id ); } ) );
-                    self::render_document_item( $order, $item_id, $item->get_name(), $item_documents );
+                    $released_item = class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && 'production' === self::item_status( $item, $order );
+                    self::render_document_item( $order, $item_id, $item->get_name(), $item_documents, ! $released_item );
                 endforeach; ?>
                 <?php $general_documents = array_values( array_filter( $documents, function( $document ) { return ! absint( $document['order_item_id'] ?? 0 ); } ) ); ?>
-                <?php self::render_document_item( $order, 0, 'Archivos generales del pedido', $general_documents ); ?>
+                <?php if ( $general_documents ) { self::render_document_item( $order, 0, 'Archivos sin asignar a un producto', $general_documents, false ); } ?>
             </div>
         </section>
         <?php
     }
 
-    private static function render_document_item( $order, $item_id, $title, $documents ) {
+    private static function render_document_item( $order, $item_id, $title, $documents, $allow_upload = true ) {
         $nonce_action = 'ge_production_document_' . $order->get_id() . '_' . absint( $item_id );
         $side_labels = array( 'front' => 'Frente', 'back' => 'Dorso', 'both' => 'Frente y dorso', 'reference' => 'Referencia / instrucciones' );
         ?>
@@ -571,13 +572,13 @@ final class GE_WTP_Production {
                 if ( ! empty( $analysis['pages'] ) ) { $details[] = absint( $analysis['pages'] ) . ' pág.'; }
                 ?><div class="ge-production-file-entry"><a href="<?php echo esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ); ?>" target="_blank" rel="noopener"><b>↓</b><span><strong><?php echo esc_html( $document['name'] ?? 'Archivo' ); ?></strong><small><?php echo esc_html( implode( ' · ', $details ) ); ?></small></span></a><?php if ( ! $item_id ) : ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('¿Eliminar este archivo del pedido? Podrás restaurarlo desde la papelera.');"><input type="hidden" name="action" value="ge_production_document_trash"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="document_id" value="<?php echo esc_attr( $document['id'] ); ?>"><?php wp_nonce_field( 'ge_production_document_trash_' . $order->get_id() . '_' . $document['id'] ); ?><button type="submit">Eliminar</button></form><?php endif; ?></div><?php endforeach; ?></div><?php else : ?><p class="ge-production-file-empty">Todavía no hay archivos asociados a este trabajo.</p><?php endif; ?>
             <?php if ( ! $item_id ) : $trashed = self::trashed_documents( $order ); if ( $trashed ) : ?><details class="ge-production-file-trash"><summary>Papelera (<?php echo esc_html( count( $trashed ) ); ?>)</summary><?php foreach ( $trashed as $document ) : if ( empty( $document['id'] ) ) { continue; } ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><span><?php echo esc_html( $document['name'] ?? 'Archivo' ); ?></span><input type="hidden" name="action" value="ge_production_document_restore"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="document_id" value="<?php echo esc_attr( $document['id'] ); ?>"><?php wp_nonce_field( 'ge_production_document_restore_' . $order->get_id() . '_' . $document['id'] ); ?><button type="submit">Restaurar</button></form><?php endforeach; ?></details><?php endif; endif; ?>
-            <form class="ge-production-upload" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+            <?php if ( $allow_upload ) : ?><form class="ge-production-upload" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="ge_production_document"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><input type="hidden" name="order_item_id" value="<?php echo esc_attr( $item_id ); ?>"><input type="hidden" name="return_step" value="<?php echo esc_attr( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ? GE_WTP_Workflow::step( $order ) : '' ); ?>"><?php wp_nonce_field( $nonce_action ); ?>
                 <label>Contenido<select name="artwork_side"><option value="front">Frente</option><option value="back">Dorso</option><option value="both">Frente y dorso</option><option value="reference">Referencia / instrucciones</option></select></label>
                 <label>Tipo<select name="category"><option value="arte">Arte / original</option><option value="produccion">Producción / entrega</option><option value="otro">Otro documento</option></select></label>
                 <label class="is-file">Seleccionar archivos<input type="file" name="ge_documents[]" accept=".pdf,.jpg,.jpeg,.png,.zip,.ai,.eps,.psd,.tif,.tiff,.svg,.cdr" multiple required><small>PDF, JPG, PNG, ZIP o archivo de diseño · hasta <?php echo esc_html( size_format( wp_max_upload_size() ) ); ?> por carga.</small></label>
-                <button class="ge-staff-button" type="submit">Cargar archivos</button>
-            </form>
+                <button class="ge-staff-button" type="submit"><?php echo esc_html( $documents ? 'Cargar nueva versión' : 'Cargar archivo final' ); ?></button>
+            </form><?php elseif ( $item_id ) : ?><p class="ge-production-file-empty">Este producto ya fue liberado. La versión aprobada queda protegida; un cambio requiere volver a revisar y aprobar el archivo antes de enviarlo al proveedor.</p><?php endif; ?>
         </article>
         <?php
     }

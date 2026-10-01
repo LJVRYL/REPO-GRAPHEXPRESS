@@ -19,6 +19,7 @@ final class GE_WTP_Staff_Portal {
         add_action( 'admin_init', array( __CLASS__, 'protect_wp_admin' ) );
         add_action( 'admin_post_ge_staff_order_update', array( __CLASS__, 'handle_order_update' ) );
         add_action( 'admin_post_ge_staff_order_shipping', array( __CLASS__, 'handle_order_shipping' ) );
+        add_action( 'admin_post_ge_staff_order_trash', array( __CLASS__, 'handle_order_trash' ) );
     }
 
     public static function install() {
@@ -219,7 +220,7 @@ final class GE_WTP_Staff_Portal {
         usort( $activity, function( $a, $b ) { return $b['time'] <=> $a['time']; } );
         $q = sanitize_text_field( wp_unslash( $_GET['q'] ?? '' ) );
         ?>
-        <div class="ge-control-hero"><div><span>GRAPHEX · CENTRO OPERATIVO</span><h1>Buen día, <?php echo esc_html( wp_get_current_user()->display_name ); ?></h1><p>Presupuestos, pedidos y producción en una sola vista.</p></div><div class="ge-control-actions"><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>">Nuevo presupuesto</a><a href="<?php echo esc_url( self::portal_url( 'production', array( 'view' => 'new' ) ) ); ?>">Nuevo pedido</a><a href="<?php echo esc_url( self::portal_url( 'customers' ) ); ?>">Clientes</a><a href="<?php echo esc_url( self::portal_url( 'production' ) ); ?>">Producción</a></div></div>
+        <div class="ge-control-hero"><div><span>GRAPHEX · CENTRO OPERATIVO</span><h1>Buen día, <?php echo esc_html( wp_get_current_user()->display_name ); ?></h1><p>Presupuestos, pedidos y producción en una sola vista.</p></div><div class="ge-control-actions"><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>">Nuevo presupuesto</a><a href="<?php echo esc_url( self::portal_url( 'production', array( 'view' => 'new' ) ) ); ?>">Nuevo pedido</a></div></div>
         <form class="ge-control-search" method="get" action="<?php echo esc_url( self::portal_url() ); ?>"><label for="ge-global-q">Buscar cliente, presupuesto o pedido</label><div><input id="ge-global-q" type="search" name="q" value="<?php echo esc_attr( $q ); ?>" placeholder="Número, nombre, email o teléfono"><button type="submit">Buscar</button></div></form>
         <?php if ( $q ) { self::render_dashboard_search( $q, $orders, $quotes ); } ?>
         <div class="ge-control-kpis"><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>"><span>Presupuestos abiertos</span><strong><?php echo esc_html( $open_quotes->found_posts ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'quotes' ) ); ?>"><span>Esperan respuesta</span><strong><?php echo esc_html( $awaiting_quotes->found_posts ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'orders' ) ); ?>"><span>Pedidos activos</span><strong><?php echo esc_html( $counts['orders'] ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'production' ) ); ?>"><span>Trabajos abiertos</span><strong><?php echo esc_html( $counts['production'] ); ?></strong></a><a class="is-alert" href="<?php echo esc_url( self::portal_url( 'production', array( 'filter' => 'delayed' ) ) ); ?>"><span>Demorados</span><strong><?php echo esc_html( $counts['delayed'] ); ?></strong></a><a href="<?php echo esc_url( self::portal_url( 'production', array( 'filter' => 'ready' ) ) ); ?>"><span>Listos para entrega</span><strong><?php echo esc_html( $counts['ready'] ); ?></strong></a></div>
@@ -256,6 +257,8 @@ final class GE_WTP_Staff_Portal {
         echo '<div class="ge-staff-heading"><div><span>Operación central</span><h1>Pedidos</h1><p>Tienda online, mostrador y cuentas corporativas en un solo lugar.</p></div><div class="ge-order-heading-actions"><a class="ge-staff-button" href="' . esc_url( self::portal_url( 'quotes' ) ) . '">＋ Nuevo presupuesto</a><a class="ge-staff-button" href="' . esc_url( self::portal_url( 'production', array( 'view' => 'new' ) ) ) . '">＋ Nuevo pedido manual</a>';
         if ( $order && ! GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { echo '<a class="ge-order-secondary-button" href="' . esc_url( self::portal_url( 'production', array( 'view' => 'new', 'same_customer_order' => $order->get_id() ) ) ) . '">Nuevo pedido al mismo cliente</a>'; }
         echo '</div></div>';
+        if ( isset( $_GET['order_trashed'] ) ) { echo '<div class="ge-order-notice" role="status">Pedido movido a la papelera de WooCommerce. Sus datos se conservaron y un administrador puede restaurarlo.</div>'; }
+        if ( isset( $_GET['trash_blocked'] ) ) { echo '<div class="ge-order-notice is-error" role="alert">No se pudo mover el pedido a la papelera. Revisá si tiene pagos, envíos o producción registrada.</div>'; }
         if ( ! $order ) {
             $orders = GE_WTP_Orders::get_all_orders( 250 );
             $query = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
@@ -297,13 +300,51 @@ final class GE_WTP_Staff_Portal {
 
     private static function orders_table( $orders ) {
         if ( ! $orders ) { echo '<div class="ge-admin-empty"><strong>Todavía no hay pedidos.</strong><span>Los nuevos aparecerán automáticamente acá.</span></div>'; return; }
-        echo '<div class="ge-admin-table-scroll"><table class="ge-admin-table"><thead><tr><th>Orden</th><th>Cliente</th><th>Origen</th><th>Fecha</th><th>Estado</th><th>Total</th><th></th></tr></thead><tbody>';
+        echo '<div class="ge-admin-table-scroll"><table class="ge-admin-table"><thead><tr><th>Orden</th><th>Cliente</th><th>Origen</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead><tbody>';
         foreach ( $orders as $order ) {
             $is_markcom = 'yes' === $order->get_meta( '_ge_markcom_order' );
             $is_manual = 'yes' === $order->get_meta( '_ge_manual_order' ); $is_work_order = 'yes' === $order->get_meta( '_ge_work_order' ); $reference = class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : '#' . $order->get_id(); $origin = GE_WTP_Customer_Quotes::is_quote_order( $order ) ? 'Presupuesto' : ( $is_markcom ? 'Markcom' : ( $is_work_order ? 'Orden de trabajo' : ( $is_manual ? 'Mostrador' : 'Tienda' ) ) );
-            echo '<tr><td><strong title="' . esc_attr( $reference ) . '">' . esc_html( sprintf( '%05d', $order->get_id() ) ) . '</strong><small>' . esc_html( $order->get_item_count() ) . ' ítems</small></td><td>' . esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_email() ?: $order->get_billing_phone() ) . '</td><td><span class="ge-admin-origin ' . ( $is_markcom ? 'is-markcom' : 'is-store' ) . '">' . esc_html( $origin ) . '</span></td><td>' . esc_html( wc_format_datetime( $order->get_date_created(), 'd/m/Y H:i' ) ) . '</td><td><span class="ge-admin-status">' . esc_html( GE_WTP_Customer_Quotes::is_quote_order( $order ) ? GE_WTP_Customer_Quotes::stage_label( $order ) : GE_WTP_Order_Lifecycle::label( $order ) ) . '</span></td><td><strong>' . wp_kses_post( $order->get_formatted_order_total() . ( GE_WTP_Customer_Quotes::is_quote_order( $order ) ? ' + IVA' : '' ) ) . '</strong></td><td><a href="' . esc_url( self::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ) . '">Ver →</a></td></tr>';
+            echo '<tr><td><strong title="' . esc_attr( $reference ) . '">' . esc_html( sprintf( '%05d', $order->get_id() ) ) . '</strong><small>' . esc_html( $order->get_item_count() ) . ' ítems</small></td><td>' . esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_email() ?: $order->get_billing_phone() ) . '</td><td><span class="ge-admin-origin ' . ( $is_markcom ? 'is-markcom' : 'is-store' ) . '">' . esc_html( $origin ) . '</span></td><td>' . esc_html( wc_format_datetime( $order->get_date_created(), 'd/m/Y H:i' ) ) . '</td><td><span class="ge-admin-status">' . esc_html( GE_WTP_Customer_Quotes::is_quote_order( $order ) ? GE_WTP_Customer_Quotes::stage_label( $order ) : GE_WTP_Order_Lifecycle::label( $order ) ) . '</span></td><td><strong>' . wp_kses_post( $order->get_formatted_order_total() . ( GE_WTP_Customer_Quotes::is_quote_order( $order ) ? ' + IVA' : '' ) ) . '</strong></td><td><div class="ge-order-row-actions"><a href="' . esc_url( self::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ) . '">Ver</a>';
+            if ( ! GE_WTP_Customer_Quotes::is_quote_order( $order ) ) {
+                $workflow_released = class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && 'production' === $order->get_meta( GE_WTP_Workflow::STAGE_META, true );
+                $already_handled = GE_WTP_Production::is_closed( $order ) || in_array( GE_WTP_Order_Lifecycle::stage( $order ), array( 'produccion', 'listo', 'entregado' ), true ) || in_array( $order->get_meta( '_ge_production_status', true ), array( 'production', 'ready' ), true );
+                echo '<a href="' . esc_url( self::portal_url( 'production', array( 'order_id' => $order->get_id(), 'step' => $workflow_released ? 'production' : 'review' ) ) ) . '">' . esc_html( $already_handled ? 'Ver producción' : 'Enviar a producción' ) . '</a>';
+            }
+            if ( self::can_trash_order( $order ) && current_user_can( 'manage_woocommerce' ) ) {
+                echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" onsubmit="return confirm(\'¿Confirmás que el pedido #' . esc_js( $order->get_id() ) . ' es un duplicado o prueba sin venta real? Pasará a la papelera recuperable de WooCommerce.\');"><input type="hidden" name="action" value="ge_staff_order_trash"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
+                wp_nonce_field( 'ge_staff_order_trash_' . $order->get_id() );
+                echo '<button class="ge-order-trash" type="submit" aria-label="Mover pedido #' . esc_attr( $order->get_id() ) . ' a la papelera" title="Mover a la papelera"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v6m4-6v6"/></svg></button></form>';
+            }
+            echo '</div></td></tr>';
         }
         echo '</tbody></table></div>';
+    }
+
+    public static function can_trash_order( $order ) {
+        if ( defined( 'EMPTY_TRASH_DAYS' ) && 0 === (int) EMPTY_TRASH_DAYS ) { return false; }
+        if ( ! $order instanceof WC_Order || 'trash' === $order->get_status() || GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { return false; }
+        $closed = class_exists( 'GE_WTP_Production' ) && GE_WTP_Production::is_closed( $order );
+        if ( ( $order->get_date_paid() && ! $closed ) || $order->get_transaction_id() || $order->get_total_refunded() > 0 || in_array( $order->get_status(), array( 'completed', 'refunded' ), true ) ) { return false; }
+        if ( $order->get_meta( '_ge_payment_state', true ) || $order->get_meta( '_ge_commercial_quote_id', true ) ) { return false; }
+        if ( 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) || ( 'production' === $order->get_meta( '_ge_production_status', true ) && ! $closed ) ) { return false; }
+        if ( $order->get_meta( '_ge_supplier_auto_dispatch_at', true ) && ! $closed ) { return false; }
+        foreach ( (array) $order->get_meta( '_ge_supplier_dispatch_history', true ) as $entry ) { if ( ! empty( $entry['success'] ) && ! $closed ) { return false; } }
+        foreach ( (array) $order->get_meta( '_ge_workflow_supplier_history', true ) as $entry ) { if ( ! empty( $entry['sent'] ) && ! $closed ) { return false; } }
+        return true;
+    }
+
+    public static function handle_order_trash() {
+        if ( ! self::can_access() || ! current_user_can( 'manage_woocommerce' ) ) { wp_die( 'Acceso denegado.', 403 ); }
+        $order_id = absint( $_POST['order_id'] ?? 0 );
+        check_admin_referer( 'ge_staff_order_trash_' . $order_id );
+        $order = wc_get_order( $order_id );
+        if ( ! self::can_trash_order( $order ) ) { wp_safe_redirect( self::portal_url( 'orders', array( 'trash_blocked' => 1 ) ) ); exit; }
+        $order->update_meta_data( '_ge_staff_trashed_at', time() );
+        $order->update_meta_data( '_ge_staff_trashed_by', get_current_user_id() );
+        $order->add_order_note( 'Pedido movido a la papelera desde Gestión por el usuario #' . get_current_user_id() . '. Se conserva para restauración.', false, true );
+        $order->save();
+        $moved = $order->delete( false );
+        wp_safe_redirect( self::portal_url( 'orders', array( $moved ? 'order_trashed' : 'trash_blocked' => 1 ) ) ); exit;
     }
 
     private static function order_detail( $order ) {

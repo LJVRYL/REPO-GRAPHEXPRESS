@@ -114,7 +114,7 @@ final class GE_WTP_Workflow {
         if ( isset( $messages[ $notice ] ) ) { echo '<div class="ge-production-notice' . ( in_array( $notice, array( 'blocked', 'email-failed', 'approval-failed' ), true ) ? ' is-error' : '' ) . '" role="status">' . esc_html( $messages[ $notice ] ) . '</div>'; }
         echo '<nav class="ge-workflow-steps" aria-label="Pasos del pedido">';
         foreach ( $labels as $key => $label ) {
-            $available = in_array( $key, array( 'review', 'prepress' ), true ) || self::released( $order );
+            $available = in_array( $key, array( 'review', 'prepress', 'supplier' ), true ) || self::released( $order );
             echo $available ? '<a class="' . ( $key === $step ? 'is-active' : '' ) . '" href="' . esc_url( self::url( $order, $key ) ) . '">' . esc_html( $label ) . '</a>' : '<span aria-disabled="true">' . esc_html( $label ) . '</span>';
         }
         echo '</nav>';
@@ -147,13 +147,17 @@ final class GE_WTP_Workflow {
             echo '</select></label></div></article>';
         }
         echo '</div><div class="ge-production-submit"><button class="ge-staff-button" type="submit">Guardar revisión</button></div></form></section>';
-        self::render_sources( $order );
         GE_WTP_Production::render_documents( $order );
         if ( class_exists( 'GE_WTP_Artwork_Library' ) ) { GE_WTP_Artwork_Library::render_staff_artwork_control(); self::$artwork_rendered = true; }
         self::render_approval_requests( $order );
         echo '<form class="ge-workflow-release" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_release"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
         wp_nonce_field( 'ge_workflow_release_' . $order->get_id() );
-        echo '<p>La aprobación final del cliente corresponde a la versión exacta indicada en el control de archivos.</p><button class="ge-staff-button" type="submit">Enviar trabajos aprobados a producción</button></form>';
+        $eligible = 0;
+        foreach ( $order->get_items( 'line_item' ) as $item ) { if ( 'ready' === $item->get_meta( self::ITEM_STATE_META, true ) && self::ready( $item, $order ) ) { $eligible++; } }
+        $has_date = (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $order->get_meta( '_ge_production_promised_date', true ) );
+        echo '<p>Para liberar un trabajo necesitás el archivo final asignado al producto, aprobación de esa versión por el cliente, control técnico y fecha prometida.</p>';
+        if ( ! $eligible || ! $has_date ) { echo '<p class="ge-production-notice is-error">' . esc_html( ! $has_date ? 'Guardá primero la fecha prometida en Planificación.' : 'Todavía no hay trabajos con archivo y aprobación completos.' ) . '</p>'; }
+        echo '<button class="ge-staff-button" type="submit" ' . disabled( ! $eligible || ! $has_date, true, false ) . '>Enviar trabajos aprobados a producción</button></form>';
     }
 
     public static function item_states() {
@@ -226,8 +230,17 @@ final class GE_WTP_Workflow {
     }
 
     private static function render_supplier( $order ) {
-        if ( ! self::released( $order ) ) { echo '<div class="ge-production-notice is-error">Liberá los trabajos antes de enviar una orden al proveedor.</div>'; return; }
-        echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>04 · Salida</span><h2>Revisar orden al proveedor</h2></div></div><p>Verificá destinatario, ítems, fecha, indicaciones y archivos antes de enviar. Esta comunicación no incluye precios al cliente.</p></section>';
+        echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>04 · Salida</span><h2>Enviar orden al proveedor</h2></div></div><p>El email incluirá los trabajos, las indicaciones y enlaces privados a los archivos finales durante 7 días. Se envía desde el remitente configurado en Notificaciones del sitio, sin adjuntos pesados ni precios al cliente.</p></section>';
+        if ( ! self::released( $order ) ) {
+            $suppliers = GE_WTP_Production::suppliers();
+            echo '<section class="ge-production-card ge-dispatch-card"><div class="ge-production-section-head"><div><span>Preparación</span><h2>Falta liberar el pedido</h2></div></div><p>El botón de envío aparecerá cuando se guarden la fecha, los archivos finales y sus aprobaciones, y se liberen los trabajos.</p><ul>';
+            foreach ( $order->get_items( 'line_item' ) as $item ) {
+                $key = sanitize_key( $item->get_meta( '_ge_production_supplier', true ) );
+                echo '<li>' . esc_html( $item->get_name() . ' · ' . ( $suppliers[ $key ]['name'] ?? 'Proveedor pendiente' ) . ' · ' . ( self::ready( $item, $order ) ? 'Archivo aprobado' : 'Archivo o aprobación pendiente' ) ) . '</li>';
+            }
+            echo '</ul><a class="ge-staff-button" href="' . esc_url( self::url( $order, 'review' ) ) . '">Completar revisión y liberar →</a></section>';
+            return;
+        }
         $status = sanitize_key( wp_unslash( $_GET['dispatch_status'] ?? '' ) );
         if ( 'supplier-sent' === $status ) { echo '<div class="ge-production-notice" role="status">La orden fue enviada desde Graph Express.</div>'; }
         elseif ( 'supplier-failed' === $status ) { echo '<div class="ge-production-notice is-error" role="status">Falló el envío. Revisá el correo configurado y el historial.</div>'; }
