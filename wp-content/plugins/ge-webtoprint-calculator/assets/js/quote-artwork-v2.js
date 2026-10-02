@@ -83,7 +83,7 @@
         }
         function schedule(){item.dataset.state='queued';queue=queue.then(run,run);}
         retry.addEventListener('click',schedule);
-        if(!file.size || file.size>config.maxFile){item.dataset.state='error';state.textContent='Archivo vacío o mayor de 250 MiB. Quitalo y elegí otro.';meter.hidden=true;return;}
+        if(!file.size || file.size>config.maxFile){item.dataset.state='error';state.textContent='Este archivo supera el límite de carga directa. Podés asociarlo desde Google Drive, Dropbox, WeTransfer u otro enlace.'; var link=document.createElement('button');link.type='button';link.textContent='Agregar link';link.onclick=function(){item.remove();block.querySelector('[data-ge-add-link]').click();};item.appendChild(link);meter.hidden=true;return;}
         if(!/\.(pdf|jpe?g|png|tiff?|ai|eps|psd|zip)$/i.test(file.name)){item.dataset.state='error';state.textContent='Formato no permitido. Quitalo y elegí otro.';meter.hidden=true;return;}
         if(config.chunkSize<1){item.dataset.state='error';state.textContent='La carga no está disponible. Contactá al equipo.';return;}
         if(form.querySelectorAll('[data-ge-artwork-list] li').length>30){item.dataset.state='error';state.textContent='Máximo 30 archivos por presupuesto. Quitá un archivo antes de continuar.';return;}

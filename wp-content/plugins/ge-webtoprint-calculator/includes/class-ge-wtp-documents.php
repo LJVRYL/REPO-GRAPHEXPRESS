@@ -345,6 +345,7 @@ final class GE_WTP_Documents {
     }
 
     public static function download_url( $order_id, $document_id, $inline = false ) {
+        if(class_exists('GE_WTP_External_Artwork')){foreach(self::get_documents($order_id)as$r){if(($r['id']??'')===$document_id && GE_WTP_External_Artwork::is_link($r) && !is_wp_error(GE_WTP_External_Artwork::validate_url($r['url']??''))){return $r['url'];}}}
         $url = wp_nonce_url(
             admin_url( 'admin-post.php?action=ge_markcom_download_document&order_id=' . absint( $order_id ) . '&document_id=' . rawurlencode( $document_id ) ),
             'ge_markcom_download_' . absint( $order_id ) . '_' . $document_id

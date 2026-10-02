@@ -25,6 +25,7 @@ final class GE_WTP_Commercial_Quote_Files {
         $files = self::all( $quote_id ); $found = false;
         foreach ( $files as &$file ) {
             if ( $file['id'] !== $file_id ) { continue; }
+            if(GE_WTP_External_Artwork::is_link($file)){return new WP_Error('ge_external_unverified','Importá el archivo antes de aprobar su diseño.');}
             if ( ! $checksum || ! hash_equals( (string) ( $file['analysis']['sha256'] ?? '' ), $checksum ) ) { return new WP_Error( 'ge_quote_file_changed', 'El archivo cambió. Volvé a revisarlo.' ); }
             $file['staff_approval'] = array( 'approved' => true, 'approved_by' => (int) $actor_id, 'approved_at' => gmdate( 'c' ), 'approval_source' => 'staff', 'version_id' => $file_id, 'checksum' => $checksum, 'quote_version' => $quote['version'], 'item_index' => (int) $item_index );
             $file['client_approval_required'] = (bool) $required; $found = true; break;
@@ -112,7 +113,7 @@ final class GE_WTP_Commercial_Quote_Files {
         $order->update_meta_data( GE_WTP_Documents::META_KEY, $documents );
         $order->save();
         foreach ( $documents as $document ) {
-            if (($document['source_quote_id'] ?? 0) === (int)$quote_id && !empty($document['quote_item_id']) && !empty($document['order_item_id'])) { self::attach_to_item($order->get_id(), $document['order_item_id'], $document['id'], get_current_user_id()); }
+            if (!GE_WTP_External_Artwork::is_link($document) && ($document['source_quote_id'] ?? 0) === (int)$quote_id && !empty($document['quote_item_id']) && !empty($document['order_item_id'])) { self::attach_to_item($order->get_id(), $document['order_item_id'], $document['id'], get_current_user_id()); }
         }
         foreach ( $order->get_items( 'line_item' ) as $item ) {
             $item->delete_meta_data( '_ge_item_artwork_customer_approval' );

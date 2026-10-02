@@ -152,6 +152,7 @@ final class GE_WTP_Commercial_Quote_UI {
         else {
             echo '<div class="ge-quote-file-list">';
             foreach ( $files as $file ) {
+                if(GE_WTP_External_Artwork::is_link($file)){GE_WTP_External_Artwork::render($file,$quote['id'],0,'',!$customer_view);continue;}
                 GE_WTP_File_Analysis::render( $file, ! $customer_view );
                 $analysis = is_array( $file['analysis'] ?? null ) ? $file['analysis'] : array();
                 $association_label = 'Archivo general';
@@ -168,8 +169,9 @@ final class GE_WTP_Commercial_Quote_UI {
                 echo '</div><div class="ge-quote-file-links"><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'], true ) ) . '" target="_blank" rel="noopener">Vista previa</a><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'] ) ) . '">Descargar</a></div></article>';
             }
             echo '</div>';
-            if ( ! $customer_view && ! $quote['converted_order_id'] ) {
-                $latest = end( $files );
+            $local_files=array_values(array_filter($files,function($f){return !GE_WTP_External_Artwork::is_link($f) && 'detached'!==($f['association_status']??'');}));
+            if ( ! $customer_view && ! $quote['converted_order_id'] && $local_files ) {
+                $latest = end( $local_files );
                 echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><h3>Aprobación de arte</h3><input type="hidden" name="action" value="ge_commercial_quote_approve_file"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="file_id" value="' . esc_attr( $latest['id'] ) . '"><input type="hidden" name="checksum" value="' . esc_attr( $latest['analysis']['sha256'] ?? '' ) . '">';
                 wp_nonce_field( 'ge_commercial_quote_approve_file_' . $quote['id'] );
                 echo '<p>Versión exacta: ' . esc_html( $latest['name'] ) . ' · ' . esc_html( ! empty( $latest['staff_approval']['approved'] ) ? 'Aprobado por staff' : 'Pendiente de revisión' ) . '</p><label>Producto<select name="item_index">';

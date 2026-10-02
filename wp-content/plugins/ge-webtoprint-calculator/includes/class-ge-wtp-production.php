@@ -569,6 +569,7 @@ final class GE_WTP_Production {
         <article class="ge-production-file-item">
             <header><div><strong><?php echo esc_html( $title ); ?></strong><small><?php echo esc_html( count( $documents ) ); ?> archivo<?php echo 1 === count( $documents ) ? '' : 's'; ?></small></div></header>
             <?php if ( $documents ) : ?><div class="ge-production-file-list"><?php foreach ( $documents as $document ) :
+                if(GE_WTP_External_Artwork::is_link($document)){GE_WTP_External_Artwork::render($document,0,$order->get_id());continue;} 
                 $side = sanitize_key( $document['artwork_side'] ?? 'reference' );
                 GE_WTP_File_Analysis::render( $document );
                 $analysis = is_array( $document['analysis'] ?? null ) ? $document['analysis'] : array();

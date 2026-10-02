@@ -8,6 +8,8 @@ final class GE_WTP_Quote_Artwork_V2 {
     const PREFIX = 'ge_qav2_';
 
     public static function init() {
+        require_once __DIR__ . '/class-ge-wtp-external-artwork.php';
+        GE_WTP_External_Artwork::init();
         add_action( 'wp_ajax_ge_quote_artwork_v2', array( __CLASS__, 'ajax' ) );
     }
     public static function uuid( $value ) {
@@ -27,6 +29,7 @@ final class GE_WTP_Quote_Artwork_V2 {
         return $n * ( 'g' === $unit ? 1073741824 : ( 'm' === $unit ? 1048576 : ( 'k' === $unit ? 1024 : 1 ) ) );
     }
     public static function enqueue( $quote_id = 0 ) {
+        GE_WTP_External_Artwork::enqueue();
         wp_enqueue_script('ge-commercial-quotes',GE_WTP_PLUGIN_URL.'assets/js/commercial-quotes.js',array(),filemtime(GE_WTP_PLUGIN_DIR.'assets/js/commercial-quotes.js'),true);
         wp_enqueue_script('ge-quote-artwork-v2',GE_WTP_PLUGIN_URL.'assets/js/quote-artwork-v2.js',array('ge-commercial-quotes'),filemtime(GE_WTP_PLUGIN_DIR.'assets/js/quote-artwork-v2.js'),true);
         wp_enqueue_style('ge-quote-artwork-v2',GE_WTP_PLUGIN_URL.'assets/css/quote-artwork-v2.css',array(),filemtime(GE_WTP_PLUGIN_DIR.'assets/css/quote-artwork-v2.css'));
@@ -35,8 +38,9 @@ final class GE_WTP_Quote_Artwork_V2 {
     public static function block( $index, $line_id, $files = array(), $quote_id = 0 ) {
         $general = 'general' === $index;
         $field = $general ? 'general_files[]' : 'lines['.$index.'][artwork_refs][]';
-        echo '<div class="ge-qav2" data-ge-artwork data-field="'.esc_attr($field).'"><strong>'.($general?'Archivos generales':'Archivos / Arte').'</strong><p class="ge-manual-help">Varios archivos · hasta 250 MiB cada uno. Se suben por separado.</p><label class="ge-qav2-drop">Seleccionar archivos o arrastrarlos aquí<input type="file" multiple data-ge-artwork-select accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,.ai,.eps,.psd,.zip"></label><label>Estado de los nuevos archivos<select data-ge-artwork-source><option value="preliminary">Preliminar</option><option value="final">Final entregado</option></select></label><ul data-ge-artwork-list>';
+        echo '<div class="ge-qav2" data-ge-artwork data-field="'.esc_attr($field).'"><strong>'.($general?'Archivos generales':'Archivos / Arte').'</strong><p class="ge-manual-help">Varios archivos · hasta 250 MiB cada uno. Se suben por separado.</p><label class="ge-qav2-drop">Subir archivo · seleccionar o arrastrar<input type="file" multiple data-ge-artwork-select accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff,.ai,.eps,.psd,.zip"></label><label>Estado de los nuevos archivos<select data-ge-artwork-source><option value="preliminary">Preliminar</option><option value="final">Final entregado</option></select></label><button type="button" data-ge-add-link>Agregar link</button><div data-ge-link-form hidden><label>URL<input type="url" data-ge-link-url placeholder="https://" maxlength="4096"></label><label>Nombre / etiqueta (opcional)<input type="text" data-ge-link-name maxlength="160"></label><label>Nota (opcional)<textarea data-ge-link-notes maxlength="1000"></textarea></label><button type="button" data-ge-save-link>Guardar enlace</button><button type="button" data-ge-cancel-link>Cancelar</button><p data-ge-link-error role="alert"></p></div><ul data-ge-artwork-list>';
         foreach ($files as $file) {
+            if (GE_WTP_External_Artwork::is_link($file)) { GE_WTP_External_Artwork::render($file,$quote_id,0,$field); continue; }
             echo '<li data-ge-existing-file><a target="_blank" rel="noopener" href="'.esc_url(GE_WTP_Commercial_Quote_Files::download_url($quote_id,$file['id'],true)).'">'.esc_html($file['name']).'</a><small>'.esc_html(size_format($file['size'])).' · Archivo existente</small><input type="hidden" name="'.esc_attr($field).'" value="'.esc_attr($file['id']).'"><button type="button" data-ge-artwork-remove>Quitar vínculo</button></li>';
         }
         echo '</ul><p data-ge-artwork-notice role="status" aria-live="polite"></p></div>';
@@ -107,7 +111,7 @@ final class GE_WTP_Quote_Artwork_V2 {
             $mime=(new finfo(FILEINFO_MIME_TYPE))->file($part);$allowed=self::allowed()[$row['extension']];
             if(!in_array($mime,$allowed,true)){self::fail('El contenido no coincide con el formato de archivo.');}
             if($part!==$path&&!rename($part,$path)){self::fail('No se pudo finalizar la carga.',503);}@chmod($path,0600);
-            $record=array('id'=>$id,'version_id'=>$id,'artifact_id'=>$id,'stored_name'=>$stored,'name'=>$row['name'],'mime'=>$mime,'size'=>$row['size'],'category'=>'arte','role'=>'artwork','source_type'=>$row['source_type'],'uploaded_by'=>$row['actor_id'],'uploaded_at'=>gmdate('c'),'status'=>'uploaded','analysis'=>array('sha256'=>hash_file('sha256',$path)));
+            $record=array('id'=>$id,'version_id'=>$id,'artifact_id'=>$id,'stored_name'=>$stored,'name'=>$row['name'],'mime'=>$mime,'size'=>$row['size'],'category'=>'arte','role'=>'artwork','source_type'=>$row['source_type'],'reference_type'=>'uploaded_file','uploaded_by'=>$row['actor_id'],'uploaded_at'=>gmdate('c'),'status'=>'uploaded','analysis'=>array('sha256'=>hash_file('sha256',$path)));
             if(class_exists('GE_WTP_File_Analysis')){$record=GE_WTP_File_Analysis::record($record,$root);}
             else{$record['analysis_status']='pending';do_action('ge_quote_artwork_analysis_pending',$record);}
             $record['checksum_sha256']=$record['analysis']['sha256'];$row['record']=$record;$row['status']='ready';update_option($key,$row,false);
@@ -135,6 +139,7 @@ final class GE_WTP_Quote_Artwork_V2 {
         }
         foreach($assignments as $id=>$uuid){
             $record=$known[$id];$path=trailingslashit(GE_WTP_Documents::private_directory()).wp_basename($record['stored_name']??'');
+            if(GE_WTP_External_Artwork::is_link($record)){if(is_wp_error(GE_WTP_External_Artwork::validate_url($record['url']??''))){return new WP_Error('ge_artwork_url','Enlace inválido.');}continue;}
             if(empty($record['provider']) && (!is_file($path)||filesize($path)!==(int)$record['size'])){return new WP_Error('ge_artwork_missing','Un original privado no está disponible. Contactá al equipo.');}
         }
         foreach($known as $id=>&$file){
