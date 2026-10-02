@@ -17,7 +17,7 @@ else {
 $content=ob_get_clean();
 $assets=array('ge-staff-admin-components'=>'admin.css','ge-staff-portal'=>'staff.css');
 if('dashboard'===$section)$assets['ge-control-dashboard']='dashboard.css';
-if(in_array($section,array('quotes','production'),true))$assets['ge-production']='production.css';
+if(in_array($section,array('quotes','production','suppliers'),true))$assets['ge-production']='production.css';
 if('quotes'===$section)$assets['ge-commercial-quotes']='commercial-quotes.css';
 foreach($assets as $handle=>$css){wp_enqueue_style($handle,GE_WTP_PLUGIN_URL.'assets/css/'.$css,array(),(string)filemtime(GE_WTP_PLUGIN_DIR.'assets/css/'.$css));}
 $styles=wp_styles();
