@@ -14,7 +14,7 @@ final class GE_WTP_Documents {
 
     public static function render_customer_order_files( $order ) {
         if ( ! self::can_access_order( $order ) ) { return; }
-        $documents = self::get_documents( $order->get_id() );
+        $documents = array_values( array_filter( self::get_documents( $order->get_id() ), array( __CLASS__, 'customer_visible' ) ) );
         echo '<section class="ge-customer-order-files"><h2>Archivos del pedido</h2>';
         if ( ! $documents ) { echo '<p>Todavía no hay archivos vinculados a este pedido.</p>'; }
         else {
@@ -279,6 +279,23 @@ final class GE_WTP_Documents {
         return $saved[0];
     }
 
+    public static function version_id( $document ) {
+        return (string) ( $document['version_id'] ?? $document['id'] ?? '' );
+    }
+
+    public static function find_version( $order_id, $version_id ) {
+        $order = wc_get_order( $order_id );
+        foreach ( $order ? (array) $order->get_meta( self::META_KEY, true ) : array() as $document ) {
+            if ( hash_equals( self::version_id( $document ), (string) $version_id ) ) { return $document; }
+        }
+        return null;
+    }
+
+    public static function customer_visible( $document ) {
+        return 'ai_candidate' !== ( $document['source_type'] ?? '' ) ||
+            in_array( $document['status'] ?? '', array( 'client_review', 'approved' ), true );
+    }
+
     public static function get_documents_with_analysis( $order_id ) {
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( $order_id ) : false;
         if ( ! $order ) { return array(); }
@@ -383,6 +400,7 @@ final class GE_WTP_Documents {
         }
 
         foreach ( self::get_documents( $order_id ) as $document ) {
+            if ( ! GE_WTP_Staff_Portal::can_access() && ! self::customer_visible( $document ) ) { continue; }
             if ( isset( $document['id'] ) && hash_equals( (string) $document['id'], $document_id ) ) {
                 if ( ! empty( $document['superseded_at'] ) && ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_operations' ) ) { wp_die( 'Esta versión fue reemplazada.', 403 ); }
                 self::stream_record( $document, ! empty( $_GET['inline'] ) );

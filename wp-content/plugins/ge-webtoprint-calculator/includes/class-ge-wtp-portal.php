@@ -580,7 +580,7 @@ final class GE_WTP_Portal {
     }
 
     private static function render_order_detail( $order ) {
-        $documents = GE_WTP_Documents::get_documents( $order->get_id() );
+        $documents = array_values( array_filter( GE_WTP_Documents::get_documents( $order->get_id() ), array( 'GE_WTP_Documents', 'customer_visible' ) ) );
         $is_customer_quote = GE_WTP_Customer_Quotes::is_quote_order( $order );
         if ( class_exists( 'GE_WTP_VPS_Storage' ) && GE_WTP_VPS_Storage::ready() ) {
             wp_enqueue_script( 'ge-order-files', GE_WTP_PLUGIN_URL . 'assets/js/order-files.js', array(), GE_WTP_VERSION, true );
@@ -702,7 +702,7 @@ final class GE_WTP_Portal {
             <?php
             $has_documents = false;
             foreach ( $orders as $order ) {
-                $documents = GE_WTP_Documents::get_documents( $order->get_id() );
+                $documents = array_values( array_filter( GE_WTP_Documents::get_documents( $order->get_id() ), array( 'GE_WTP_Documents', 'customer_visible' ) ) );
                 if ( ! $documents ) { continue; }
                 $has_documents = true;
                 $reference = $order->get_meta( '_ge_markcom_reference' );

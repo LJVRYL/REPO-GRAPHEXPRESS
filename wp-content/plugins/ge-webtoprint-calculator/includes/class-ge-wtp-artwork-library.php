@@ -221,6 +221,7 @@ final class GE_WTP_Artwork_Library {
         }
         if ( class_exists( 'GE_WTP_Documents' ) ) {
             foreach ( GE_WTP_Documents::get_documents_with_analysis( $order->get_id() ) as $document ) {
+                if ( ! GE_WTP_Documents::customer_visible( $document ) ) { continue; }
                 if ( ! empty( $document['category'] ) && 'arte' !== $document['category'] ) { continue; }
                 $id = sanitize_text_field( $document['id'] ?? '' );
                 if ( ! $id ) { continue; }

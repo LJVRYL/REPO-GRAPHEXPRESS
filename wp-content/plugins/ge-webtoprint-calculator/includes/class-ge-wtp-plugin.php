@@ -37,6 +37,8 @@ final class GE_WTP_Plugin {
         GE_WTP_Google_Auth::init();
         GE_WTP_Turnstile::init();
         GE_WTP_VPS_Storage::init();
+        require_once __DIR__ . '/class-ge-wtp-ai-artwork.php';
+        GE_WTP_AI_Artwork::init();
         GE_WTP_Documents::init();
         GE_WTP_Issued_Documents::init();
         GE_WTP_Order_Lifecycle::init();
