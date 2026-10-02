@@ -91,3 +91,14 @@
 @media(max-width:760px){.ge-quote-file{display:grid}.ge-quote-file-links{flex-wrap:wrap}.ge-quote-files form,.ge-quote-files label,.ge-quote-files button{width:100%}.ge-quote-convert{padding:18px}.ge-quote-dialog-actions button{width:100%}}
 @media(max-width:760px){.ge-quote-history-row{grid-template-columns:1fr;gap:10px;padding:15px}.ge-quote-history-row>div:nth-child(2){display:flex;justify-content:space-between;gap:12px}.ge-quote-history-open{width:fit-content}.ge-quote-history-lines>div{display:grid}.ge-quote-history-lines b{white-space:normal}}
 .ge-quote-files input[type="file"]{box-sizing:border-box;min-width:0;width:100%}
+
+/* Closeout: preserve Gestion v3 and clarify the saved quote sections. */
+.ge-quote-primary-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 24px}
+.ge-quote-primary-actions .ge-staff-button{min-height:44px;display:inline-flex;align-items:center;padding:10px 18px}
+.ge-quote-primary-actions>span{font-size:13px;color:var(--ge-muted,#605968)}
+.ge-quote-view .ge-issuer-summary{padding:16px 20px;margin:20px 0 12px;border:1px solid var(--ge-border,#e8e4ee);border-radius:13px;line-height:1.6;overflow-wrap:anywhere}
+.ge-quote-billing-delivery{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ge-quote-view .ge-quote-files,.ge-quote-view .ge-quote-receipts{margin-top:24px}
+.ge-quote-view .ge-quote-context span{font-size:12px;color:var(--ge-muted,#605968)}
+.ge-quote-primary-actions a:focus-visible{outline:2px solid var(--ge-violet,#6d45ef);outline-offset:3px}
+@media(max-width:760px){.ge-quote-billing-delivery{grid-template-columns:1fr}.ge-quote-primary-actions>a{justify-content:center;width:100%}.ge-quote-view-head{flex-wrap:wrap}.ge-quote-view .ge-quote-item-price{flex-wrap:wrap;gap:8px}.ge-quote-view .ge-quote-view-actions .ge-staff-button{justify-content:center}}

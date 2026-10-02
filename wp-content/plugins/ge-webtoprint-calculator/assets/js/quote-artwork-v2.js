@@ -51,7 +51,7 @@
     function select(files) {
       Array.from(files).forEach(function(file){
         var item = document.createElement('li'); var name = document.createElement('strong');name.textContent=file.name;
-        var state = document.createElement('small');state.textContent=(file.size/1048576).toFixed(1)+' MiB · En cola';
+        var state = document.createElement('small');state.setAttribute('aria-live','polite');state.textContent=(file.size/1048576).toFixed(1)+' MiB · En cola';
         var meter = document.createElement('progress');meter.max=100;meter.value=0;meter.setAttribute('aria-label','Progreso de '+file.name);
         var remove = document.createElement('button');remove.type='button';remove.textContent='Quitar';
         var retry = document.createElement('button');retry.type='button';retry.textContent='Reintentar';retry.hidden=true;
@@ -83,7 +83,7 @@
         }
         function schedule(){item.dataset.state='queued';queue=queue.then(run,run);}
         retry.addEventListener('click',schedule);
-        if(!file.size || file.size>config.maxFile){item.dataset.state='error';state.textContent='Este archivo supera el límite de carga directa. Podés asociarlo desde Google Drive, Dropbox, WeTransfer u otro enlace.'; var link=document.createElement('button');link.type='button';link.textContent='Agregar link';link.onclick=function(){item.remove();block.querySelector('[data-ge-add-link]').click();};item.appendChild(link);meter.hidden=true;return;}
+        if(!file.size || file.size>config.maxFile){item.dataset.state='error';state.textContent=!file.size?'El archivo está vacío. Elegí un archivo con contenido.':'Este archivo supera el límite de 250 MiB por archivo. Podés asociarlo desde Google Drive, Dropbox, WeTransfer u otro enlace.'; var link=document.createElement('button');link.type='button';link.textContent='Agregar link';link.onclick=function(){item.remove();block.querySelector('[data-ge-add-link]').click();};item.appendChild(link);meter.hidden=true;return;}
         if(!/\.(pdf|jpe?g|png|tiff?|ai|eps|psd|zip)$/i.test(file.name)){item.dataset.state='error';state.textContent='Formato no permitido. Quitalo y elegí otro.';meter.hidden=true;return;}
         if(config.chunkSize<1){item.dataset.state='error';state.textContent='La carga no está disponible. Contactá al equipo.';return;}
         if(form.querySelectorAll('[data-ge-artwork-list] li').length>30){item.dataset.state='error';state.textContent='Máximo 30 archivos por presupuesto. Quitá un archivo antes de continuar.';return;}

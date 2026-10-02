@@ -112,7 +112,8 @@ final class GE_WTP_Commercial_Quote_UI {
         $customer = get_userdata( $quote['customer_id'] );
         $status_labels = array( 'draft' => 'Borrador', 'sent' => 'Enviado', 'viewed' => 'Visto', 'accepted' => 'Aceptado', 'rejected' => 'Rechazado', 'expired' => 'Vencido', 'converted' => 'Convertido en pedido', 'cancelled' => 'Cancelado' );
         echo '<section class="ge-production-card ge-quote-view"><header class="ge-quote-view-head"><div><span class="ge-quote-kicker">Presupuesto ' . esc_html( $quote['number'] ) . ' · Versión ' . esc_html( $quote['version'] ) . '</span><h2>' . esc_html( $customer ? $customer->display_name : 'Cliente no disponible' ) . '</h2><small>' . esc_html( get_the_date( 'd/m/Y', $quote['id'] ) ) . '</small></div><span class="ge-quote-status is-' . esc_attr( $quote['status'] ) . '">' . esc_html( $status_labels[ $quote['status'] ] ?? ucfirst( $quote['status'] ) ) . '</span></header>';
-        echo '<div class="ge-quote-context"><div><span>Cliente</span><strong>' . esc_html( $customer ? $customer->display_name : 'Ficha no disponible' ) . '</strong>' . ( $customer ? '<small>' . esc_html( $customer->user_email ) . '</small>' : '' ) . '</div><div><span>Validez</span><strong>' . esc_html( ! empty( $quote['snapshot']['valid_until'] ) ? wp_date( 'd/m/Y', strtotime( $quote['snapshot']['valid_until'] ) ) : 'Sin fecha' ) . '</strong><small>Fecha límite para aceptar</small></div><div><span>Pago</span><strong>Seña ' . esc_html( $quote['snapshot']['deposit_percent'] ?? 50 ) . '% o total</strong><small>El cliente elige al aceptar</small></div></div>';
+        echo '<div class="ge-quote-context"><div><span>Datos del contacto</span><strong>' . esc_html( $customer ? $customer->display_name : 'Ficha no disponible' ) . '</strong>' . ( $customer ? '<small>' . esc_html( $customer->user_email ) . '</small>' : '' ) . '</div><div><span>Validez</span><strong>' . esc_html( ! empty( $quote['snapshot']['valid_until'] ) ? wp_date( 'd/m/Y', ( new DateTimeImmutable( $quote['snapshot']['valid_until'], wp_timezone() ) )->getTimestamp() ) : 'Sin fecha' ) . '</strong><small>Fecha límite para aceptar</small></div><div><span>Pago</span><strong>Seña ' . esc_html( $quote['snapshot']['deposit_percent'] ?? 50 ) . '% o total</strong><small>El cliente elige al aceptar</small></div></div>';
+        echo '<div class="ge-quote-primary-actions"><a class="ge-staff-button is-secondary ge-quote-pdf-download" href="' . esc_url( GE_WTP_Commercial_Quote_PDF::url( $quote['id'] ) ) . '">Descargar PDF</a><span>Versión ' . esc_html( $quote['version'] ) . ' · Datos del presupuesto guardado</span></div>';
         self::render_snapshot( $quote['snapshot'] );
         $payment = GE_WTP_Commercial_Checkout::payment_status( $quote['id'], get_current_user_id() );
         if ( ! is_wp_error( $payment ) ) {
@@ -147,7 +148,7 @@ final class GE_WTP_Commercial_Quote_UI {
     private static function render_files( $quote, $customer_view ) {
         GE_WTP_Quote_Artwork_V2::enqueue($quote['id']);
         $files = GE_WTP_Commercial_Quote_Files::all( $quote['id'] );
-        echo '<section class="' . esc_attr( $customer_view ? 'ge-panel' : 'ge-production-card' ) . ' ge-quote-files" id="ge-quote-files-' . esc_attr( $quote['id'] ) . '"><h3>Archivos del presupuesto</h3>';
+        echo '<section class="' . esc_attr( $customer_view ? 'ge-panel' : 'ge-production-card' ) . ' ge-quote-files" id="ge-quote-files-' . esc_attr( $quote['id'] ) . '"><h3>Archivos / Arte</h3>';
         if ( ! $files ) { echo '<p>Sin archivos. Podés continuar con la cotización o el pedido.</p>'; }
         else {
             echo '<div class="ge-quote-file-list">';
@@ -384,7 +385,7 @@ final class GE_WTP_Commercial_Quote_UI {
         $profile = $snapshot['billing']['profile'] ?? $snapshot['customer_billing_profile'] ?? array();
         $delivery = $snapshot['delivery'] ?? array();
         if ( $profile ) {
-            echo '<div class="ge-quote-context"><div><span>Facturar a</span><strong>' . esc_html( ( $profile['label'] ?? 'Perfil principal' ) . ' · ' . ( $profile['legal_name'] ?: 'Nombre fiscal pendiente' ) ) . '</strong></div><div><span>Entregar en</span><strong>' . esc_html( $delivery ? ( ( $delivery['label'] ?? 'Destino' ) . ' · ' . ( $delivery['street'] ?? '' ) ) : 'A coordinar' ) . '</strong></div></div>';
+            echo '<div class="ge-quote-context ge-quote-billing-delivery"><div><span>Facturación</span><strong>' . esc_html( ( $profile['label'] ?? 'Perfil principal' ) . ' · ' . ( ! empty( $profile['legal_name'] ) ? $profile['legal_name'] : 'Nombre fiscal pendiente' ) ) . '</strong></div><div><span>Entrega</span><strong>' . esc_html( $delivery ? ( ( $delivery['label'] ?? 'Destino' ) . ' · ' . ( $delivery['street'] ?? '' ) ) : 'A coordinar' ) . '</strong></div></div>';
         }
         $is_invoice_c = 'C' === ( $snapshot['billing']['resolution']['document_type'] ?? '' );
         echo '<section class="ge-quote-summary" aria-label="Detalle de productos e importes"><div class="ge-quote-summary-heading"><div><span class="ge-quote-kicker">Productos y servicios</span><h3>Detalle de la propuesta</h3></div><span>' . esc_html( count( $snapshot['items'] ) ) . ' ítems</span></div><div class="ge-quote-items">';
@@ -400,7 +401,7 @@ final class GE_WTP_Commercial_Quote_UI {
             echo '</div><div class="ge-quote-item-price"><span>' . esc_html( $line['quantity'] ) . ' ' . esc_html( $line['unit'] ?? 'u' ) . ' × ' . esc_html( self::money( $line['unit_net_cents'] ) ) . ( ! empty( $snapshot['tax_cents'] ) ? ' + IVA' : ' · precio base' ) . '</span><strong>' . esc_html( self::money( $line['net_cents'] ) ) . '</strong></div></article>';
         }
         echo '</div>'; self::render_totals( $snapshot );
-        if ( $customer && ! empty( $snapshot['valid_until'] ) ) { echo '<p class="ge-quote-validity">Válido hasta el ' . esc_html( wp_date( 'd/m/Y', strtotime( $snapshot['valid_until'] ) ) ) . '</p>'; }
+        if ( $customer && ! empty( $snapshot['valid_until'] ) ) { echo '<p class="ge-quote-validity">Válido hasta el ' . esc_html( wp_date( 'd/m/Y', ( new DateTimeImmutable( $snapshot['valid_until'], wp_timezone() ) )->getTimestamp() ) ) . '</p>'; }
         if ( ! empty( $snapshot['notes_customer'] ) ) { echo '<div class="ge-quote-note"><strong>Nota para el cliente</strong><p>' . nl2br( esc_html( $snapshot['notes_customer'] ) ) . '</p></div>'; }
         if ( ! $customer && ! empty( $snapshot['notes_internal'] ) ) { echo '<div class="ge-quote-note is-internal"><strong>Nota interna</strong><p>' . nl2br( esc_html( $snapshot['notes_internal'] ) ) . '</p></div>'; }
         echo '</section>';
