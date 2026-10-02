@@ -1,6 +1,7 @@
 <?php
 
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
 
 /** Commercial proposals. A quote never is a WooCommerce order. */
 final class GE_WTP_Commercial_Quotes {
@@ -68,8 +69,13 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! $customer || ! is_email( $customer->user_email ) ) {
             return new WP_Error( 'ge_quote_customer', 'El cliente necesita una ficha con email válido.' );
         }
+        $args['applied_by'] = $actor_id;
         $snapshot = self::build_snapshot( $lines, $args );
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
+        $chosen = GE_WTP_Billing_Issuers::choose( GE_WTP_Customer_Branches::find( $customer->ID, $snapshot['billing_profile_id'] ), $args, $actor_id );
+        if ( is_wp_error( $chosen ) ) { return $chosen; }
+        $snapshot['issuer_profile_id'] = $chosen['issuer']['id']; $snapshot['issuer_snapshot'] = $chosen['issuer']; $snapshot['issuer_suggestion'] = $chosen['suggestion'];
+        $snapshot = self::preview_billing( $customer->ID, $snapshot );
         $post_id = wp_insert_post( array(
             'post_type' => self::POST_TYPE,
             'post_status' => 'private',
@@ -83,6 +89,7 @@ final class GE_WTP_Commercial_Quotes {
         update_post_meta( $post_id, self::VERSIONS_META, array( 1 => $snapshot ) );
         update_post_meta( $post_id, '_ge_commercial_source', sanitize_key( $args['source'] ?? 'manual' ) );
         self::event( $post_id, 1, 'created', $actor_id );
+        self::record_event( $post_id, 'issuer_selected', $actor_id, array( 'issuer_profile_id' => $snapshot['issuer_profile_id'], 'issuer_hash' => $snapshot['issuer_snapshot']['snapshot_hash'], 'suggestion' => $snapshot['issuer_suggestion'], 'reason' => sanitize_textarea_field( $args['issuer_change_reason'] ?? 'Sugerencia comercial revisable' ) ) );
         return self::get( $post_id, $actor_id );
     }
 
@@ -106,16 +113,23 @@ final class GE_WTP_Commercial_Quotes {
         if ( get_post_meta( $quote_id, '_ge_commercial_initial_payment_order', true ) ) {
             return new WP_Error( 'ge_quote_payment_locked', 'Hay un cobro iniciado. Revisá su estado antes de editar la propuesta.' );
         }
+        $args['applied_by'] = $actor_id;
         $snapshot = self::build_snapshot( $lines, $args );
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
+        $chosen = GE_WTP_Billing_Issuers::choose( GE_WTP_Customer_Branches::find( $quote['customer_id'], $snapshot['billing_profile_id'] ), $args, $actor_id, $quote['snapshot'] );
+        if ( is_wp_error( $chosen ) ) { return $chosen; }
+        $snapshot['issuer_profile_id'] = $chosen['issuer']['id']; $snapshot['issuer_snapshot'] = $chosen['issuer']; $snapshot['issuer_suggestion'] = $chosen['suggestion'];
+        $issuer_changed = GE_WTP_Billing_Issuers::from_snapshot( $quote['snapshot'] ) !== $snapshot['issuer_snapshot'];
+        $snapshot = self::preview_billing( $quote['customer_id'], $snapshot );
         $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
         if ( ! is_array( $versions ) ) { return new WP_Error( 'ge_quote_corrupt', 'Historial del presupuesto inválido.' ); }
-        $version = $quote['status'] === 'draft' ? $quote['version'] : $quote['version'] + 1;
+        $version = $quote['status'] === 'draft' && ! $issuer_changed ? $quote['version'] : $quote['version'] + 1;
         $versions[ $version ] = $snapshot;
         update_post_meta( $quote_id, self::VERSIONS_META, $versions );
         update_post_meta( $quote_id, self::CURRENT_META, $version );
         update_post_meta( $quote_id, self::STATUS_META, 'draft' );
         self::event( $quote_id, $version, 'revised', $actor_id );
+        if ( $issuer_changed ) { self::record_event( $quote_id, 'issuer_changed', $actor_id, array( 'before' => GE_WTP_Billing_Issuers::from_snapshot( $quote['snapshot'] ), 'after' => $snapshot['issuer_snapshot'], 'reason' => sanitize_textarea_field( $args['issuer_change_reason'] ?? '' ) ) ); }
         return self::get( $quote_id, $actor_id );
     }
 
@@ -128,7 +142,12 @@ final class GE_WTP_Commercial_Quotes {
         if ( is_wp_error( $quote ) ) { return $quote; }
         if ( 'draft' !== $quote['status'] ) { return new WP_Error( 'ge_quote_state', 'Sólo puede enviarse un borrador.' ); }
         if ( self::needs_roll_reprice( $quote['snapshot'] ) ) { return new WP_Error( 'ge_quote_roll_reprice', 'Editá y guardá este borrador para recalcular el vinilo según el ancho del rollo antes de enviarlo.' ); }
-        $snapshot = self::resolve_billing( $quote['customer_id'], $quote['snapshot'] );
+        $snapshot = $quote['snapshot'];
+        $issuer = GE_WTP_Billing_Issuers::from_snapshot( $snapshot );
+        $publish = GE_WTP_Billing_Issuers::can_publish( $issuer ); if ( is_wp_error( $publish ) ) { return $publish; }
+        if ( isset( $snapshot['total_cents'] ) && 'pending' === ( $snapshot['fiscal_status'] ?? '' ) && ! empty( $snapshot['commercial_tax_policy'] ) ) { /* Commercial proposal; fiscal operations remain gated. */ }
+        elseif ( isset( $snapshot['total_cents'] ) ) { $valid = self::check_billing_snapshot( $quote ); if ( is_wp_error( $valid ) ) { return $valid; } }
+        else { $snapshot = self::resolve_billing( $quote['customer_id'], $snapshot ); }
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
         $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
         $versions[ $quote['version'] ] = $snapshot;
@@ -136,6 +155,7 @@ final class GE_WTP_Commercial_Quotes {
         $customer = get_userdata( $quote['customer_id'] );
         $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote_id ) );
         $body = '<p>Hola ' . esc_html( $customer->first_name ?: $customer->display_name ) . ',</p><p>Tenés un nuevo presupuesto de Graph Express para revisar.</p><p><a href="' . esc_url( $url ) . '">Ver presupuesto ' . esc_html( $quote['number'] ) . '</a></p>';
+        $body .= self::email_summary( $snapshot );
         if ( 'yes' === get_user_meta( $customer->ID, '_ge_commercial_needs_invite', true ) ) {
             $body .= '<p>Si es tu primer acceso, usá “¿Olvidaste tu contraseña?” en el portal para definirla con este email.</p>';
         }
@@ -153,13 +173,26 @@ final class GE_WTP_Commercial_Quotes {
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
         if ( ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) ) { return new WP_Error( 'ge_quote_state', 'Este presupuesto no se puede reenviar.' ); }
+        $publish = GE_WTP_Billing_Issuers::can_publish( GE_WTP_Billing_Issuers::from_snapshot( $quote['snapshot'] ) ); if ( is_wp_error( $publish ) ) { return $publish; }
         $customer = get_userdata( $quote['customer_id'] );
         if ( ! $customer ) { return new WP_Error( 'ge_quote_customer', 'Cliente no disponible.' ); }
         $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote_id ) );
         $body = '<p>Hola ' . esc_html( $customer->first_name ?: $customer->display_name ) . ',</p><p>Podés volver a revisar tu presupuesto de Graph Express.</p><p><a href="' . esc_url( $url ) . '">Ver presupuesto ' . esc_html( $quote['number'] ) . '</a></p>';
+        $body .= self::email_summary( $quote['snapshot'] );
         if ( ! GE_WTP_Notifications::send( $customer->user_email, 'Tu presupuesto · ' . $quote['number'], $body, 'commercial_quote_sent', $quote_id ) ) { return new WP_Error( 'ge_quote_email', 'No se pudo reenviar. Revisá Notificaciones.' ); }
         self::event( $quote_id, $quote['version'], 'sent', $actor_id );
         return $quote;
+    }
+
+    public static function email_summary( $snapshot ) {
+        if ( ! isset( $snapshot['total_cents'] ) ) { return '<p>Total pendiente de confirmación.</p>'; }
+        $money = function( $cents ) { return number_format_i18n( $cents / 100, 2 ) . ' ' . ( $snapshot['currency'] ?? 'ARS' ); };
+        $body = '<p>Emisor / Facturación: ' . esc_html( GE_WTP_Billing_Issuers::label( GE_WTP_Billing_Issuers::from_snapshot( $snapshot ) ) ) . '</p>';
+        $body .= '<p>Subtotal / Neto: ' . esc_html( $money( $snapshot['subtotal_cents'] ?? $snapshot['net_cents'] ) ) . '<br>';
+        if ( ! empty( $snapshot['discount_cents'] ) ) { $body .= 'Descuento comercial: −' . esc_html( $money( $snapshot['discount_cents'] ) ) . '<br>Neto imponible: ' . esc_html( $money( $snapshot['net_cents'] ) ) . '<br>'; }
+        $body .= 'IVA: ' . esc_html( $money( $snapshot['tax_cents'] ?? 0 ) ) . '<br><strong>Total final: ' . esc_html( $money( $snapshot['total_cents'] ) ) . '</strong></p>';
+        if ( 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { $body .= '<p>Propuesta comercial. Datos de facturación pendientes de confirmación.</p>'; }
+        return $body;
     }
 
     /** Older drafts must be reviewed before their previous area price is sent. */
@@ -187,8 +220,10 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! empty( $quote['snapshot']['valid_until'] ) && $quote['snapshot']['valid_until'] < wp_date( 'Y-m-d' ) ) {
             return new WP_Error( 'ge_quote_expired', 'El presupuesto venció. Solicitá una actualización.' );
         }
-        $billing = self::check_billing_snapshot( $quote );
-        if ( is_wp_error( $billing ) ) { return $billing; }
+        if ( 'pending' !== ( $quote['snapshot']['fiscal_status'] ?? '' ) || empty( $quote['snapshot']['commercial_tax_policy'] ) ) {
+            $billing = self::check_billing_snapshot( $quote );
+            if ( is_wp_error( $billing ) ) { return $billing; }
+        }
         $lock = 'ge_commercial_quote_accept_' . $quote_id;
         if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'Estamos procesando el presupuesto. Volvé a intentar.' ); }
         try {
@@ -229,7 +264,7 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! is_array( $lines ) || ! $lines || count( $lines ) > 30 ) {
             return new WP_Error( 'ge_quote_lines', 'Agregá entre 1 y 30 ítems.' );
         }
-        $items = array(); $net = 0; $seen_line_ids = array();
+        $items = array(); $net = 0; $discounts = array(); $item_discount = 0; $seen_line_ids = array();
         foreach ( $lines as $line ) {
             if ( ! is_array( $line ) ) { return new WP_Error( 'ge_quote_line', 'Ítem inválido.' ); }
             $product_id = absint( $line['product_id'] ?? 0 );
@@ -265,6 +300,9 @@ final class GE_WTP_Commercial_Quotes {
             catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_quote_price', 'Precio unitario inválido.' ); }
             $line_cents = $unit_cents * $quantity;
             if ( $line_cents < 0 || $line_cents > 999999999999 ) { return new WP_Error( 'ge_quote_price', 'Importe de ítem fuera de rango.' ); }
+            $discount = self::discount( $line, $line_cents, 'item', $args['applied_by'] ?? 0 );
+            if ( is_wp_error( $discount ) ) { return $discount; }
+            if ( $discount ) { $discount['item_index'] = count( $items ); $discounts[] = $discount; $item_discount += $discount['amount_cents']; }
             $line_uuid = $line['line_uuid'] ?? wp_generate_uuid4();
             if (!GE_WTP_Quote_Artwork_V2::uuid($line_uuid) || isset($seen_line_ids[$line_uuid])) { return new WP_Error('ge_quote_line_uuid', 'Identificador de ítem inválido o duplicado.'); }
             $seen_line_ids[$line_uuid] = true;
@@ -278,6 +316,9 @@ final class GE_WTP_Commercial_Quotes {
                 'unit' => $unit,
                 'unit_net_cents' => $unit_cents,
                 'net_cents' => $line_cents,
+                'discount_cents' => $discount ? $discount['amount_cents'] : 0,
+                'discount' => $discount,
+                'taxable_base_cents' => $line_cents - ( $discount ? $discount['amount_cents'] : 0 ),
                 'details' => sanitize_textarea_field( $line['details'] ?? '' ),
                 'notes' => sanitize_textarea_field( $line['notes'] ?? '' ),
                 'configuration' => $configuration,
@@ -288,6 +329,18 @@ final class GE_WTP_Commercial_Quotes {
             $net += $line_cents;
             if ( $net > 999999999999 ) { return new WP_Error( 'ge_quote_price', 'Total fuera de rango.' ); }
         }
+        $discount = self::discount( $args, $net - $item_discount, 'quote', $args['applied_by'] ?? 0 );
+        if ( is_wp_error( $discount ) ) { return $discount; }
+        $quote_discount = $discount ? $discount['amount_cents'] : 0;
+        if ( $discount ) { $discounts[] = $discount; }
+        $remaining_base = $net - $item_discount; $remaining_discount = $quote_discount;
+        foreach ( $items as &$item ) {
+            $base = $item['taxable_base_cents'];
+            $share = $remaining_base > 0 ? intdiv( $remaining_discount * $base, $remaining_base ) : 0;
+            $item['discount_cents'] += $share; $item['taxable_base_cents'] -= $share;
+            $remaining_base -= $base; $remaining_discount -= $share;
+        }
+        unset( $item );
         $valid_until = sanitize_text_field( $args['valid_until'] ?? wp_date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) ) );
         if ( $valid_until && ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/D', $valid_until ) || $valid_until < wp_date( 'Y-m-d' ) ) ) {
             return new WP_Error( 'ge_quote_validity', 'Fecha de validez inválida.' );
@@ -297,7 +350,13 @@ final class GE_WTP_Commercial_Quotes {
         return array(
             'items' => $items,
             'currency' => 'ARS',
-            'net_cents' => $net,
+            'subtotal_cents' => $net,
+            'discount_cents' => $item_discount + $quote_discount,
+            'discounts' => $discounts,
+            'taxable_base_cents' => $net - $item_discount - $quote_discount,
+            'net_cents' => $net - $item_discount - $quote_discount,
+            'schema_version' => 2,
+            'commercial_tax_policy' => get_option( 'ge_commercial_tax_policy', array() ),
             'valid_until' => $valid_until,
             'deposit_percent' => $deposit_percent,
             'notes_customer' => sanitize_textarea_field( $args['notes_customer'] ?? '' ),
@@ -309,11 +368,77 @@ final class GE_WTP_Commercial_Quotes {
         );
     }
 
+    /** Commercial reductions are independent of document type and fiscal policy. */
+    public static function discount( $input, $base, $scope, $actor_id ) {
+        $type = sanitize_key( $input['discount_type'] ?? 'percent' );
+        $raw = (string) ( $input['discount_value'] ?? '0' );
+        if ( ! in_array( $type, array( 'percent', 'fixed' ), true ) || ! preg_match( '/^[0-9]{1,10}(\.[0-9]{1,2})?$/D', $raw ) ) { return new WP_Error( 'ge_quote_discount', 'Descuento inválido.' ); }
+        try { $value = GE_WTP_Quote_Balance::cents( $raw ); }
+        catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_quote_discount', 'Descuento inválido.' ); }
+        if ( 'percent' === $type && $value > 10000 ) { return new WP_Error( 'ge_quote_discount', 'El porcentaje no puede superar 100%.' ); }
+        if ( $value > 999999999999 ) { return new WP_Error( 'ge_quote_discount', 'Descuento fuera de rango.' ); }
+        $amount = 'percent' === $type ? intdiv( $base * $value + 5000, 10000 ) : $value;
+        if ( $amount > $base ) { return new WP_Error( 'ge_quote_discount', 'El descuento supera el importe disponible.' ); }
+        if ( ! $amount ) { return null; }
+        $reason = sanitize_textarea_field( $input['discount_reason'] ?? '' );
+        if ( ! $reason ) { return new WP_Error( 'ge_quote_discount_reason', 'Indicá el motivo del descuento comercial.' ); }
+        return array( 'discount_type' => $type, 'discount_value' => GE_WTP_Quote_Balance::decimal( $value ), 'discount_reason' => $reason, 'discount_scope' => $scope, 'amount_cents' => $amount, 'applied_by' => (int) $actor_id, 'applied_at' => gmdate( 'c' ) );
+    }
+
+    /** A draft may be saved with pending fiscal data; no guessed tax or total. */
+    public static function preview_billing( $customer_id, $snapshot ) {
+        $snapshot['customer_billing_profile'] = GE_WTP_Customer_Branches::find( $customer_id, $snapshot['billing_profile_id'] ?? 'default' );
+        if ( empty( $snapshot['issuer_snapshot'] ) ) {
+            $chosen = GE_WTP_Billing_Issuers::choose( (array) $snapshot['customer_billing_profile'], array(), get_current_user_id() );
+            $snapshot['issuer_snapshot'] = is_wp_error( $chosen ) ? GE_WTP_Billing_Issuers::unknown() : $chosen['issuer'];
+            $snapshot['issuer_profile_id'] = $snapshot['issuer_snapshot']['id'];
+            $snapshot['issuer_suggestion'] = is_wp_error( $chosen ) ? array() : $chosen['suggestion'];
+        }
+        $snapshot['issuer_fiscal_snapshot'] = GE_WTP_Billing_Issuers::entity( $snapshot['issuer_snapshot'] );
+        $resolved = self::resolve_billing( $customer_id, $snapshot );
+        $policy = $snapshot['commercial_tax_policy'] ?? array();
+        if ( 'net_plus_tax' === ( $policy['mode'] ?? '' ) && isset( $policy['tax_rate_basis_points'] ) ) {
+            $rate = (int) $policy['tax_rate_basis_points'];
+            if ( $rate < 0 || $rate > 10000 ) { $snapshot['fiscal_status'] = 'pending'; return $snapshot; }
+            if ( is_wp_error( $resolved ) || (int) ( $resolved['billing']['resolution']['tax_rate_basis_points'] ?? 0 ) !== $rate ) {
+                $snapshot['fiscal_status'] = 'pending';
+                $snapshot['fiscal_blockers'] = array( 'commercial_issuer_reconciliation_pending' );
+                $snapshot['billing'] = null;
+                $snapshot['tax_rule_version'] = 'commercial-net-plus-tax-v2';
+                $snapshot['tax_rates'] = array( $rate );
+                $snapshot['tax_cents'] = intdiv( $snapshot['net_cents'] * $rate + 5000, 10000 );
+                $snapshot['total_cents'] = $snapshot['net_cents'] + $snapshot['tax_cents'];
+                self::allocate_tax( $snapshot );
+                unset( $snapshot['snapshot_hash'] );
+                $snapshot['snapshot_hash'] = hash( 'sha256', wp_json_encode( $snapshot ) );
+                return $snapshot;
+            }
+        }
+        if ( ! is_wp_error( $resolved ) ) { return $resolved; }
+        $snapshot['fiscal_status'] = 'pending';
+        $snapshot['fiscal_blockers'] = array( $resolved->get_error_code() );
+        return $snapshot;
+    }
+
+    private static function allocate_tax( &$snapshot ) {
+        $allocated_tax = 0; $remaining_net = (int) $snapshot['net_cents'];
+        foreach ( $snapshot['items'] as &$item ) {
+            $base = (int) ( $item['taxable_base_cents'] ?? $item['net_cents'] );
+            $tax = $remaining_net > 0 ? intdiv( ( $snapshot['tax_cents'] - $allocated_tax ) * $base, $remaining_net ) : 0;
+            $item['tax_cents'] = $tax; $item['total_cents'] = $base + $tax;
+            $allocated_tax += $tax; $remaining_net -= $base;
+        }
+        unset( $item );
+    }
+
     private static function resolve_billing( $customer_id, $snapshot ) {
         if ( ! class_exists( 'GE_WTP_Billing' ) ) {
             return new WP_Error( 'ge_quote_billing_unavailable', 'Falta configurar el perfil fiscal antes de enviar presupuestos.' );
         }
-        $entity = GE_WTP_Billing::entity();
+        $issuer = GE_WTP_Billing_Issuers::from_snapshot( $snapshot );
+        if ( ! GE_WTP_Billing_Issuers::ready( $issuer ) ) { return new WP_Error( 'ge_issuer_pending', 'Verificá el emisor real antes de habilitar operaciones fiscales.' ); }
+        $valid = GE_WTP_Billing_Issuers::validate_current( $issuer ); if ( is_wp_error( $valid ) ) { return $valid; }
+        $entity = GE_WTP_Billing_Issuers::entity( $issuer );
         $profile = GE_WTP_Customer_Branches::find( $customer_id, $snapshot['billing_profile_id'] ?? 'default' );
         if ( ! $profile ) { return new WP_Error( 'ge_quote_profile', 'Seleccioná un perfil de facturación activo del cliente.' ); }
         $delivery_id = $snapshot['delivery_address_id'] ?? '';
@@ -326,17 +451,27 @@ final class GE_WTP_Commercial_Quotes {
         if ( 'tax_exclusive' !== $resolution['tax_treatment'] ) {
             return new WP_Error( 'ge_quote_billing_policy', 'El presupuesto requiere precios de entrada antes de IVA.' );
         }
+        $resolution['resolver_version'] = 'ge-billing-v1/quote-v2';
+        $resolution['tax_rate_basis_points'] = (int) ( $entity['tax_rate_basis_points'] ?? 0 );
+        $snapshot['fiscal_status'] = 'resolved';
+        $snapshot['tax_rule_version'] = $resolution['resolver_version'];
+        $snapshot['tax_rates'] = array( $resolution['tax_rate_basis_points'] );
         $snapshot['billing'] = GE_WTP_Billing::snapshot( $entity, $profile, $resolution );
         $snapshot['delivery'] = $delivery;
         $snapshot['tax_cents'] = (int) $resolution['tax_cents'];
         $snapshot['total_cents'] = (int) $resolution['total_cents'];
+        self::allocate_tax( $snapshot );
+        unset( $snapshot['snapshot_hash'], $snapshot['fiscal_blockers'] );
         $snapshot['snapshot_hash'] = hash( 'sha256', wp_json_encode( $snapshot ) );
         return $snapshot;
     }
 
     public static function check_billing_snapshot( $quote ) {
+        if ( 'pending' === ( $quote['snapshot']['fiscal_status'] ?? '' ) ) { return new WP_Error( 'ge_quote_fiscal_pending', 'El presupuesto comercial requiere verificar el emisor fiscal antes de cobrar o convertir.' ); }
         $billing = $quote['snapshot']['billing'] ?? array();
-        try { GE_WTP_Billing::assert_can_accept_or_pay( $billing, GE_WTP_Billing::entity() ); }
+        $issuer = GE_WTP_Billing_Issuers::from_snapshot( $quote['snapshot'] );
+        $valid = GE_WTP_Billing_Issuers::validate_current( $issuer ); if ( is_wp_error( $valid ) ) { return $valid; }
+        try { GE_WTP_Billing::assert_can_accept_or_pay( $billing, GE_WTP_Billing_Issuers::entity( $issuer ) ); }
         catch ( DomainException $error ) { return new WP_Error( 'ge_quote_billing_changed', 'Los datos fiscales requieren una nueva versión del presupuesto.' ); }
         $current = GE_WTP_Customer_Branches::find( $quote['customer_id'], $quote['snapshot']['billing_profile_id'] ?? 'default' );
         if ( ! $current ) { return new WP_Error( 'ge_quote_billing_changed', 'El perfil fiscal seleccionado ya no está activo; hace falta una nueva versión.' ); }
@@ -353,7 +488,10 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
-        if ( ! empty( $quote['snapshot']['total_cents'] ) ) { return $quote; }
+        if ( isset( $quote['snapshot']['total_cents'] ) ) {
+            $valid = self::check_billing_snapshot( $quote );
+            return is_wp_error( $valid ) ? $valid : $quote;
+        }
         if ( 'draft' !== $quote['status'] ) { return new WP_Error( 'ge_quote_total', 'El presupuesto no tiene un total fiscal válido.' ); }
         if ( self::needs_roll_reprice( $quote['snapshot'] ) ) { return new WP_Error( 'ge_quote_roll_reprice', 'Revisá y guardá el precio del vinilo antes de convertir.' ); }
         $resolved = self::resolve_billing( $quote['customer_id'], $quote['snapshot'] );

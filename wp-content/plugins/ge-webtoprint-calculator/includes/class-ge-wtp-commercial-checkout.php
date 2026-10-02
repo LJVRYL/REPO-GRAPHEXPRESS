@@ -1,6 +1,7 @@
 <?php
 
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
 
 /** Financial payment orders for accepted commercial quote snapshots. */
 final class GE_WTP_Commercial_Checkout {
@@ -48,7 +49,7 @@ final class GE_WTP_Commercial_Checkout {
     public static function render_quote_checkout( $quote ) {
         if ( ! is_array( $quote ) || ! in_array( $quote['status'], array( 'sent', 'viewed', 'accepted', 'converted' ), true ) ) { return; }
         $snapshot = $quote['snapshot'];
-        if ( empty( $snapshot['total_cents'] ) ) { return; }
+        if ( empty( $snapshot['total_cents'] ) || 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { return; }
         if ( 'converted' === $quote['status'] ) {
             $order = $quote['converted_order_id'] ? wc_get_order( $quote['converted_order_id'] ) : false;
             if ( $order && (int) $order->get_meta( '_ge_amount_paid_cents', true ) > 0 ) { self::render_order_balance( $order ); return; }
@@ -337,6 +338,7 @@ final class GE_WTP_Commercial_Checkout {
         if ( is_wp_error( $order ) ) { return $order; }
         $order->set_currency( 'ARS' );
         $order->set_created_via( 'ge_commercial_quote_payment' );
+        GE_WTP_Billing_Issuers::inherit( $order, $quote['snapshot'] );
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
         $order->set_billing_last_name( $customer->last_name );
@@ -582,9 +584,9 @@ final class GE_WTP_Commercial_Checkout {
             $item->set_name( $line['name'] );
             $item->set_quantity( $line['quantity'] );
             $item->set_subtotal( GE_WTP_Quote_Balance::decimal( $line['net_cents'] ) );
-            $item->set_total( GE_WTP_Quote_Balance::decimal( $line['net_cents'] ) );
+            $item->set_total( GE_WTP_Quote_Balance::decimal( $line['taxable_base_cents'] ?? $line['net_cents'] ) );
             if ( $tax_total > 0 ) {
-                $line_tax = $index === $line_count - 1 ? $tax_total - $allocated_tax : intdiv( $tax_total * $line['net_cents'] + intdiv( $snapshot['net_cents'], 2 ), $snapshot['net_cents'] );
+                $line_tax = isset( $line['tax_cents'] ) ? (int) $line['tax_cents'] : ( $index === $line_count - 1 ? $tax_total - $allocated_tax : intdiv( $tax_total * $line['net_cents'] + intdiv( $snapshot['net_cents'], 2 ), $snapshot['net_cents'] ) );
                 $allocated_tax += $line_tax;
                 $item->set_taxes( array( 'total' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ), 'subtotal' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ) ) );
             }
@@ -619,6 +621,9 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( self::QUOTE_META, $quote['id'] );
         $order->update_meta_data( '_ge_source_quote_id', $quote['id'] );
         $order->update_meta_data( '_ge_commercial_quote_version', $quote['version'] );
+        GE_WTP_Billing_Issuers::inherit( $order, $snapshot );
+        $order->update_meta_data( '_ge_commercial_quote_snapshot', $snapshot );
+        $order->update_meta_data( '_ge_commercial_discounts', $snapshot['discounts'] ?? array() );
         $order->update_meta_data( '_ge_commercial_snapshot_hash', $snapshot['snapshot_hash'] ?? '' );
         $order->update_meta_data( '_ge_commercial_billing_snapshot', $snapshot['billing'] );
         $order->update_meta_data( '_ge_billing_profile_snapshot', $billing_profile );
