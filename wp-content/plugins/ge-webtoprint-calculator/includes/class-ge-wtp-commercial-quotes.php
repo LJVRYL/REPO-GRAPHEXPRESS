@@ -229,7 +229,7 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! is_array( $lines ) || ! $lines || count( $lines ) > 30 ) {
             return new WP_Error( 'ge_quote_lines', 'Agregá entre 1 y 30 ítems.' );
         }
-        $items = array(); $net = 0;
+        $items = array(); $net = 0; $seen_line_ids = array();
         foreach ( $lines as $line ) {
             if ( ! is_array( $line ) ) { return new WP_Error( 'ge_quote_line', 'Ítem inválido.' ); }
             $product_id = absint( $line['product_id'] ?? 0 );
@@ -265,7 +265,11 @@ final class GE_WTP_Commercial_Quotes {
             catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_quote_price', 'Precio unitario inválido.' ); }
             $line_cents = $unit_cents * $quantity;
             if ( $line_cents < 0 || $line_cents > 999999999999 ) { return new WP_Error( 'ge_quote_price', 'Importe de ítem fuera de rango.' ); }
+            $line_uuid = $line['line_uuid'] ?? wp_generate_uuid4();
+            if (!GE_WTP_Quote_Artwork_V2::uuid($line_uuid) || isset($seen_line_ids[$line_uuid])) { return new WP_Error('ge_quote_line_uuid', 'Identificador de ítem inválido o duplicado.'); }
+            $seen_line_ids[$line_uuid] = true;
             $items[] = array(
+                'line_uuid' => $line_uuid,
                 'source_type' => $source_type,
                 'product_id' => $product_id ?: null,
                 'sku' => $product ? $product->get_sku() : '',

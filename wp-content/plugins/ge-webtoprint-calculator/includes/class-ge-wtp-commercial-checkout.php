@@ -591,6 +591,7 @@ final class GE_WTP_Commercial_Checkout {
             $specifications = implode( ' · ', array_filter( array( GE_WTP_Commercial_Quote_UI::customer_configuration_label( $line ), $line['details'] ?? '', $line['notes'] ?? '' ) ) );
             if ( $specifications ) { $item->add_meta_data( 'Especificaciones', $specifications, true ); }
             if ( 'u' !== ( $line['unit'] ?? 'u' ) ) { $item->add_meta_data( 'Unidad', $line['unit'], true ); }
+            $item->update_meta_data('_ge_quote_line_uuid', GE_WTP_Quote_Artwork_V2::line_id($quote['id'], $index, $line));
             $item->update_meta_data( '_ge_quote_source_type', $line['source_type'] ?? ( ! empty( $line['product_id'] ) ? 'catalog_product' : 'custom' ) );
             $item->update_meta_data( '_ge_quote_unit', $line['unit'] ?? 'u' );
             $item->update_meta_data( '_ge_quote_unit_net_cents', (int) $line['unit_net_cents'] );

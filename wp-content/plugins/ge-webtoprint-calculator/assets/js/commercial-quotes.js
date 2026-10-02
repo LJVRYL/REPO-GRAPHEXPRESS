@@ -221,6 +221,12 @@
       var oldIndex = line.getAttribute('data-ge-index');
       var newIndex = String(nextIndex++);
       copy.setAttribute('data-ge-index', newIndex);
+      copy.querySelector('[data-ge-line-uuid]').value = '';
+      copy.querySelector('[data-ge-artwork-list]').replaceChildren();
+      copy.querySelector('[data-ge-artwork]').dataset.field = 'lines[' + newIndex + '][artwork_refs][]';
+      copy.querySelector('[data-ge-artwork-select]').value = '';
+      copy.querySelector('[data-ge-artwork-notice]').textContent = '';
+      delete copy.querySelector('[data-ge-artwork]').dataset.connected;
       copy.querySelectorAll('[name]').forEach(function (input) { input.name = input.name.replace('lines[' + oldIndex + ']', 'lines[' + newIndex + ']'); });
       copy.setAttribute('data-ge-saved-config', '{}');
       line.after(copy); connect(copy); copy.querySelector('input[type="search"]').focus();
