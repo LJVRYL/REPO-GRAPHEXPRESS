@@ -17,7 +17,12 @@ final class GE_WTP_Payments {
     public static function init() {
         add_filter( 'woocommerce_payment_gateways', array( __CLASS__, 'register_paypal_gateway' ) );
         add_action( 'woocommerce_checkout_update_order_review', array( __CLASS__, 'remember_payment_method' ) );
-        add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'bank_transfer_discount' ), 30 );
+        add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'checkout_payment_adjustment' ), 30 );
+        add_action( 'woocommerce_blocks_loaded', array( __CLASS__, 'register_checkout_update_callback' ) );
+        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_checkout_script' ) );
+        add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'finalize_store_api_checkout_payment_adjustment' ), 40 );
+        add_action( 'woocommerce_checkout_order_processed', array( __CLASS__, 'finalize_classic_checkout_payment_adjustment' ), 40, 3 );
+        add_action( 'woocommerce_order_details_after_order_table', array( __CLASS__, 'render_customer_receipt_upload' ), 26 );
         add_filter( 'woocommerce_gateway_title', array( __CLASS__, 'gateway_title' ), 20, 2 );
         add_filter( 'woocommerce_gateway_description', array( __CLASS__, 'gateway_description' ), 20, 2 );
         add_action( 'woocommerce_thankyou_' . self::PAYPAL_GATEWAY, array( __CLASS__, 'paypal_instructions' ) );
@@ -29,6 +34,8 @@ final class GE_WTP_Payments {
         add_filter( 'woocommerce_payment_complete_order_status', array( __CLASS__, 'preserve_production_status_after_payment' ), 20, 3 );
         add_action( 'woocommerce_payment_complete', array( __CLASS__, 'record_completed_payment' ), 20 );
         add_action( 'admin_post_ge_portal_upload_receipt', array( __CLASS__, 'handle_receipt_upload' ) );
+        add_action( 'admin_post_ge_staff_upload_receipt', array( __CLASS__, 'handle_staff_receipt_upload' ) );
+        add_action( 'admin_post_ge_staff_mark_paid', array( __CLASS__, 'handle_staff_mark_paid' ) );
         add_action( 'admin_post_ge_staff_confirm_transfer', array( __CLASS__, 'handle_staff_confirm_transfer' ) );
         add_action( 'admin_post_ge_staff_send_payment_instructions', array( __CLASS__, 'handle_staff_send_payment_instructions' ) );
     }
@@ -48,14 +55,78 @@ final class GE_WTP_Payments {
         }
     }
 
-    public static function bank_transfer_discount( $cart ) {
+    public static function checkout_payment_adjustment( $cart ) {
         if ( ( is_admin() && ! wp_doing_ajax() ) || ! $cart || $cart->is_empty() ) { return; }
         $method = function_exists( 'WC' ) && WC()->session ? WC()->session->get( 'chosen_payment_method' ) : '';
-        if ( 'bacs' !== $method ) { return; }
-        $base = max( 0, (float) $cart->get_cart_contents_total() );
-        if ( $base > 0 ) {
+        $base = max( 0, (float) $cart->get_cart_contents_total() + (float) $cart->get_shipping_total() );
+        if ( 'bacs' === $method && $base > 0 ) {
             $cart->add_fee( 'Descuento por transferencia (10%)', -round( $base * self::BANK_DISCOUNT / 100, wc_get_price_decimals() ), false );
+        } elseif ( self::is_mercadopago_gateway( $method ) && $base > 0 ) {
+            $cart->add_fee( 'Recargo Mercado Pago (10%)', round( $base * self::MP_SURCHARGE / 100, wc_get_price_decimals() ), false );
         }
+    }
+
+    private static function is_mercadopago_gateway( $method ) {
+        return 0 === strpos( (string) $method, 'woo-mercado-pago-' );
+    }
+
+    public static function register_checkout_update_callback() {
+        if ( ! function_exists( 'woocommerce_store_api_register_update_callback' ) ) { return; }
+        woocommerce_store_api_register_update_callback( array(
+            'namespace' => 'ge-payment-choice',
+            'callback' => array( __CLASS__, 'update_checkout_payment_method' ),
+        ) );
+    }
+
+    public static function update_checkout_payment_method( $data ) {
+        if ( ! function_exists( 'WC' ) || ! WC()->session ) { return; }
+        $method = sanitize_key( $data['payment_method'] ?? '' );
+        if ( 'bacs' === $method || self::is_mercadopago_gateway( $method ) ) {
+            WC()->session->set( 'chosen_payment_method', $method );
+        }
+    }
+
+    public static function enqueue_checkout_script() {
+        if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || ( function_exists( 'is_order_received_page' ) && is_order_received_page() ) ) { return; }
+        $file = GE_WTP_PLUGIN_DIR . 'assets/js/checkout-payment-choice.js';
+        wp_enqueue_script( 'ge-checkout-payment-choice', GE_WTP_PLUGIN_URL . 'assets/js/checkout-payment-choice.js', array( 'wp-data', 'wc-blocks-data-store', 'wc-blocks-checkout' ), is_file( $file ) ? (string) filemtime( $file ) : GE_WTP_VERSION, true );
+    }
+
+    public static function finalize_classic_checkout_payment_adjustment( $order_id, $posted_data, $order ) {
+        if ( $order instanceof WC_Order ) { self::finalize_checkout_payment_adjustment( $order ); }
+    }
+
+    public static function finalize_store_api_checkout_payment_adjustment( $order ) {
+        // The same Woo hook also fires on order-pay for existing orders. Never
+        // rewrite an already placed order merely because its payment page opens.
+        $path = parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
+        $rest_route = isset( $_GET['rest_route'] ) ? (string) wp_unslash( $_GET['rest_route'] ) : '';
+        if ( ! preg_match( '~/(?:wp-json/)?wc/store/v[0-9]+/checkout/?$~', (string) $path ) && ! preg_match( '~^/wc/store/v[0-9]+/checkout/?$~', $rest_route ) ) { return; }
+        self::finalize_checkout_payment_adjustment( $order );
+    }
+
+    public static function finalize_checkout_payment_adjustment( $order ) {
+        if ( ! $order instanceof WC_Order ) { return; }
+        $method = $order->get_payment_method();
+        if ( 'bacs' !== $method && ! self::is_mercadopago_gateway( $method ) ) { return; }
+        foreach ( $order->get_items( 'fee' ) as $item_id => $fee ) {
+            if ( in_array( $fee->get_name(), array( 'Descuento por transferencia (10%)', 'Recargo Mercado Pago (10%)' ), true ) ) {
+                $order->remove_item( $item_id );
+            }
+        }
+        $order->calculate_totals( false );
+        $base = max( 0, (float) $order->get_total() );
+        if ( $base <= 0 ) { $order->save(); return; }
+        $fee = new WC_Order_Item_Fee();
+        $is_bank = 'bacs' === $method;
+        $fee->set_name( $is_bank ? 'Descuento por transferencia (10%)' : 'Recargo Mercado Pago (10%)' );
+        $amount = round( $base * ( $is_bank ? -self::BANK_DISCOUNT : self::MP_SURCHARGE ) / 100, wc_get_price_decimals() );
+        $fee->set_amount( $amount );
+        $fee->set_total( $amount );
+        $fee->add_meta_data( '_ge_checkout_payment_adjustment', 'yes', true );
+        $order->add_item( $fee );
+        $order->calculate_totals( false );
+        $order->save();
     }
 
     public static function gateway_title( $title, $gateway_id ) {
@@ -64,7 +135,8 @@ final class GE_WTP_Payments {
 
     public static function gateway_description( $description, $gateway_id ) {
         if ( 'bacs' === $gateway_id ) {
-            return 'Recibís un 10% de descuento automático sobre los productos. Los datos del Banco Ciudad aparecen al finalizar el pedido y en el correo de confirmación.';
+            $bank = self::bank_details();
+            return '10% de descuento. El pedido queda pendiente hasta verificar la transferencia. ' . esc_html( $bank['bank'] . ' · Titular: ' . $bank['holder'] . ' · CBU: ' . $bank['cbu'] . ' · Alias: ' . $bank['alias'] ) . '. Podés adjuntar el comprobante desde Mi Cuenta o el portal.';
         }
         return $description;
     }
@@ -95,7 +167,7 @@ final class GE_WTP_Payments {
     }
 
     public static function render_portal_order_payment( $order ) {
-        if ( ! $order instanceof WC_Order || ! class_exists( 'GE_WTP_Documents' ) || ! GE_WTP_Documents::can_access_order( $order ) ) { return; }
+        if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_commercial_quote_id', true ) || ! class_exists( 'GE_WTP_Documents' ) || ! GE_WTP_Documents::can_access_order( $order ) ) { return; }
         $payment_state = sanitize_key( (string) $order->get_meta( '_ge_payment_state' ) );
         $is_paid = $order->is_paid() || 'paid' === $payment_state;
         $base_total = self::base_total( $order );
@@ -136,7 +208,7 @@ final class GE_WTP_Payments {
     }
 
     public static function render_staff_order_payment( $order ) {
-        if ( ! $order instanceof WC_Order || ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
+        if ( ! $order instanceof WC_Order || $order->get_meta( '_ge_commercial_quote_id', true ) || ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
         $state = sanitize_key( (string) $order->get_meta( '_ge_payment_state' ) );
         $paid = $order->is_paid() || 'paid' === $state;
         $labels = array( 'receipt_uploaded' => 'Comprobante recibido · pendiente de verificación', 'paid' => 'Pago confirmado' );
@@ -146,14 +218,31 @@ final class GE_WTP_Payments {
         ?>
         <section class="ge-admin-panel ge-staff-payment">
             <div class="ge-admin-panel-head"><div><span>Cobranza</span><h2>Pago del pedido</h2></div><strong><?php echo esc_html( $paid ? 'Pagado' : ( $labels[ $state ] ?? 'Pendiente' ) ); ?></strong></div>
-            <?php if ( 'confirmed' === $status ) : ?><div class="ge-order-notice">Transferencia confirmada y cliente notificado.</div><?php elseif ( 'instructions-sent' === $status ) : ?><div class="ge-order-notice">Instrucciones de pago enviadas al cliente.</div><?php elseif ( 'failed' === $status ) : ?><div class="ge-order-notice is-error">No se pudo completar la acción. Revisá el correo y volvé a intentar.</div><?php endif; ?>
+            <?php if ( 'confirmed' === $status ) : ?><div class="ge-order-notice">Transferencia confirmada y cliente notificado.</div><?php elseif ( 'marked-paid' === $status ) : ?><div class="ge-order-notice">Pago registrado por el equipo.</div><?php elseif ( 'receipt-saved' === $status ) : ?><div class="ge-order-notice">Comprobante guardado en este pedido.</div><?php elseif ( 'instructions-sent' === $status ) : ?><div class="ge-order-notice">Instrucciones de pago enviadas al cliente.</div><?php elseif ( 'failed' === $status ) : ?><div class="ge-order-notice is-error">No se pudo completar la acción. Revisá los datos y volvé a intentar.</div><?php endif; ?>
             <div class="ge-admin-meta"><div><small>Total base</small><strong><?php echo wp_kses_post( wc_price( self::base_total( $order ), array( 'currency' => $order->get_currency() ) ) ); ?></strong></div><div><small>Medio</small><strong><?php echo esc_html( $order->get_payment_method_title() ?: 'Sin definir' ); ?></strong></div><div><small>Comprobantes</small><strong><?php echo esc_html( count( $receipts ) ); ?></strong></div></div>
+            <?php if ( $receipts ) : ?><div class="ge-payment-receipts"><strong>Comprobantes del pedido</strong><?php foreach ( $receipts as $receipt ) : ?><a href="<?php echo esc_url( GE_WTP_Documents::download_url( $order->get_id(), $receipt['id'] ) ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $receipt['name'] ); ?></a><?php endforeach; ?></div><?php else : ?><p>Aún no hay comprobantes adjuntos por el cliente ni por el equipo.</p><?php endif; ?>
+            <form class="ge-admin-form ge-staff-receipt-upload" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_staff_upload_receipt"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_staff_upload_receipt_' . $order->get_id() ); ?><label>Adjuntar comprobante (PDF, JPG o PNG)<input type="file" name="ge_staff_receipt" accept=".pdf,.jpg,.jpeg,.png" required></label><button class="ge-staff-button" type="submit">Guardar comprobante</button></form>
+            <?php if ( ! $paid && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) && in_array( $order->get_payment_method(), array( '', 'bacs', 'cod' ), true ) ) : ?><form class="ge-admin-form ge-staff-mark-paid" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_staff_mark_paid"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_staff_mark_paid_' . $order->get_id() ); ?><label>Pago recibido por<select name="paid_method" required><option value="">Elegir medio</option><option value="cash">Efectivo</option><option value="transfer">Transferencia verificada</option></select></label><button class="ge-staff-button" type="submit">Marcar como pagado</button></form><?php endif; ?>
             <div class="ge-staff-payment-actions">
                 <?php if ( ! $paid && is_email( $order->get_billing_email() ) ) : ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_staff_send_payment_instructions"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_staff_send_payment_instructions_' . $order->get_id() ); ?><button class="ge-staff-button" type="submit">Enviar instrucciones de pago</button></form><?php endif; ?>
                 <?php if ( ! $paid && 'receipt_uploaded' === $state ) : ?><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_staff_confirm_transfer"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_staff_confirm_transfer_' . $order->get_id() ); ?><button class="ge-staff-button" type="submit">Confirmar transferencia y avisar</button></form><?php endif; ?>
             </div>
         </section>
         <?php
+    }
+
+    public static function render_customer_receipt_upload( $order ) {
+        if ( ! $order instanceof WC_Order || 'bacs' !== $order->get_payment_method() || $order->is_paid() || ! GE_WTP_Documents::can_access_order( $order ) ) { return; }
+        if ( in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed', 'checkout-draft' ), true ) ) { return; }
+        $bank = self::bank_details();
+        $documents = GE_WTP_Documents::get_documents( $order->get_id() );
+        $receipts = array_filter( $documents, function ( $document ) { return 'comprobante' === ( $document['category'] ?? '' ); } );
+        echo '<section class="ge-customer-transfer"><h2>Transferencia pendiente de validación</h2>';
+        echo '<p>Transferí el total del pedido a ' . esc_html( $bank['bank'] . ' · ' . $bank['holder'] ) . '. CBU: <strong>' . esc_html( $bank['cbu'] ) . '</strong> · Alias: <strong>' . esc_html( $bank['alias'] ) . '</strong>.</p>';
+        if ( $receipts ) { echo '<p>Comprobante recibido. Graph Express verificará la transferencia. Podés consultarlo en «Archivos del pedido».</p>'; }
+        echo '<form method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_portal_upload_receipt"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
+        wp_nonce_field( 'ge_portal_upload_receipt_' . $order->get_id() );
+        echo '<label>Adjuntar comprobante (PDF, JPG o PNG) <input type="file" name="ge_payment_receipt" accept=".pdf,.jpg,.jpeg,.png" required></label> <button type="submit">Cargar comprobante</button></form></section>';
     }
 
     public static function allow_portal_order_payment( $statuses, $order ) {
@@ -213,16 +302,48 @@ final class GE_WTP_Payments {
         check_admin_referer( 'ge_portal_upload_receipt_' . $order_id );
         $order = $order_id ? wc_get_order( $order_id ) : false;
         if ( ! $order || ! GE_WTP_Documents::can_access_order( $order ) ) { wp_die( 'Acceso denegado.', 403 ); }
-        self::remove_mercadopago_surcharge( $order );
+        $manual = 'yes' === $order->get_meta( '_ge_manual_order' ) || 'yes' === $order->get_meta( '_ge_markcom_order' );
+        if ( $order->is_paid() || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed', 'checkout-draft' ), true ) || ( ! $manual && 'bacs' !== $order->get_payment_method() ) ) { wp_die( 'Este pedido no admite comprobantes de transferencia.', 403 ); }
         $saved = GE_WTP_Documents::handle_uploaded_files( $order_id, 'ge_payment_receipt', 'comprobante' );
         if ( is_wp_error( $saved ) || ! $saved ) { self::payment_redirect( $order, 'receipt-error' ); }
-        $order->set_payment_method( 'bacs' );
-        $order->set_payment_method_title( 'Transferencia bancaria' );
+        if ( $manual ) {
+            self::remove_mercadopago_surcharge( $order );
+            $order->set_payment_method( 'bacs' );
+            $order->set_payment_method_title( 'Transferencia bancaria' );
+        }
         $order->update_meta_data( '_ge_payment_state', 'receipt_uploaded' );
         $order->update_meta_data( '_ge_payment_receipt_uploaded_at', current_time( 'mysql' ) );
         $order->add_order_note( 'El cliente cargó un comprobante de transferencia. Pendiente de verificación.' );
         $order->save();
         self::payment_redirect( $order, 'receipt-uploaded' );
+    }
+
+    public static function handle_staff_receipt_upload() {
+        self::require_staff();
+        $order_id = absint( $_POST['order_id'] ?? 0 ); check_admin_referer( 'ge_staff_upload_receipt_' . $order_id );
+        $order = wc_get_order( $order_id ); if ( ! $order ) { wp_die( 'Pedido inválido.', 404 ); }
+        $saved = GE_WTP_Documents::handle_uploaded_files( $order_id, 'ge_staff_receipt', 'comprobante', array( 'allowed_extensions' => array( 'pdf', 'jpg', 'jpeg', 'png' ) ) );
+        if ( is_wp_error( $saved ) || ! $saved ) { self::staff_redirect( $order, 'failed' ); }
+        $order->add_order_note( 'Comprobante adjuntado por Gestión.' ); $order->save();
+        self::staff_redirect( $order, 'receipt-saved' );
+    }
+
+    public static function handle_staff_mark_paid() {
+        self::require_staff();
+        $order_id = absint( $_POST['order_id'] ?? 0 ); check_admin_referer( 'ge_staff_mark_paid_' . $order_id );
+        $order = wc_get_order( $order_id ); if ( ! $order ) { wp_die( 'Pedido inválido.', 404 ); }
+        $method = sanitize_key( wp_unslash( $_POST['paid_method'] ?? '' ) );
+        if ( ! in_array( $method, array( 'cash', 'transfer' ), true ) || ! in_array( $order->get_payment_method(), array( '', 'bacs', 'cod' ), true ) || $order->is_paid() || 'paid' === $order->get_meta( '_ge_payment_state', true ) || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { wp_die( 'Este pedido no admite la confirmación manual del pago.', 409 ); }
+        $order->set_payment_method( 'cash' === $method ? 'cod' : 'bacs' );
+        $order->set_payment_method_title( 'cash' === $method ? 'Efectivo en Graph Express' : 'Transferencia verificada' );
+        $order->set_date_paid( current_time( 'timestamp', true ) );
+        $order->update_meta_data( '_ge_payment_state', 'paid' );
+        $order->update_meta_data( '_ge_payment_confirmed_at', current_time( 'mysql' ) );
+        $order->update_meta_data( '_ge_payment_confirmed_total', $order->get_total() );
+        $order->update_meta_data( '_ge_payment_confirmed_by', get_current_user_id() );
+        $order->add_order_note( 'Pago ' . ( 'cash' === $method ? 'en efectivo' : 'por transferencia' ) . ' verificado por Gestión.' );
+        $order->save();
+        self::staff_redirect( $order, 'marked-paid' );
     }
 
     public static function handle_staff_confirm_transfer() {

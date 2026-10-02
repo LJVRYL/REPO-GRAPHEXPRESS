@@ -3,7 +3,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 final class GE_WTP_Product_Images {
-    const VERSION = '3';
+    const VERSION = '16';
     const OPTION = 'ge_wtp_product_reference_images_version';
     const META_ASSET = '_ge_product_reference_asset';
 
@@ -58,7 +58,6 @@ final class GE_WTP_Product_Images {
             'vinilo-esmerilado-impreso.png' => 'Vinilo esmerilado impreso',
             'vinilo-de-corte.png' => 'Vinilo de corte',
             'vinilo-esmerilado-corte.png' => 'Vinilo esmerilado de corte',
-            'vinilo-impreso-troquelado.png' => 'Vinilo impreso y troquelado',
             'papel-fotografico-260g.png' => 'Papel fotográfico 260 g',
             'papel-blueback-150g.png' => 'Papel blueback 150 g',
             'cuerina-plavinil.png' => 'Cuerina Plavinil impresa',
@@ -80,32 +79,35 @@ final class GE_WTP_Product_Images {
             'plastico-corrugado-22mm.png' => 'Plástico corrugado 2,2 mm impreso',
             'plastico-corrugado-4mm.png' => 'Plástico corrugado 4 mm impreso',
             'cartulina-270g.png' => 'Cartulina 270 g impresa',
-            'tickets-lavadero.png' => 'Tickets de lavadero',
-            'talonarios-afip.png' => 'Talonarios AFIP',
+            'tickets-talonarios-troquelados-numerados-v2.png' => 'Tickets · Talonarios troquelados y numerados',
+            'talonarios-afip-graph-v2.png' => 'Talonarios ARCA (AFIP)',
             'presupuestos-comandas-anotadores.png' => 'Presupuestos, comandas y anotadores',
-            'tarjetas-personales.png' => 'Tarjetas personales',
             'etiquetas-impresas.png' => 'Etiquetas impresas',
-            'volantes-blanco-negro.png' => 'Volantes blanco y negro',
-            'volantes-full-color.png' => 'Volantes full color',
             'imanes-publicitarios.png' => 'Imanes publicitarios',
-            'tarjetas-express.png' => 'Tarjetas Express 24–48 h',
-            'folletos-express.png' => 'Folletos Express 24–48 h',
-            'stickers-publicitarios.png' => 'Stickers publicitarios',
-            'bajadas-digitales-color.png' => 'Bajadas digitales color',
+            'tarjetas-express-v3-blanca.png' => array('Tarjetas personales', 'Tarjetas Express 24–48 h'),
+            'folletos-express-v2-graph.png' => 'Folletos Express 24–48 h',
+            'stickers-publicitarios-v2-graph.png' => 'Stickers en papel',
+            'stickers-vinilo-referencia.webp' => 'Stickers en vinilo',
+            'bajadas-digitales-color-v3.png' => array('Bajadas digitales color', 'Volantes full color'),
+            'bajadas-digitales-blanco-negro-v2.png' => array('Bajadas digitales blanco y negro', 'Volantes blanco y negro'),
+            'sobres-papel-impresion-digital.png' => 'Sobres de papel · Impresión digital',
         );
     }
 
     private static function sync() {
-        foreach ( self::products() as $filename => $title ) {
-            $attachment_id = self::attachment_id( $filename, $title );
+        foreach ( self::products() as $filename => $titles ) {
+            $titles = (array) $titles;
+            $attachment_id = self::attachment_id( $filename, reset( $titles ) );
             if ( ! $attachment_id ) { return false; }
 
-            $product_id = self::product_id( $title );
-            if ( ! $product_id ) { continue; }
+            foreach ( $titles as $title ) {
+                $product_id = self::product_id( $title );
+                if ( ! $product_id ) { continue; }
 
-            $current_id = (int) get_post_thumbnail_id( $product_id );
-            $is_managed = $current_id && (bool) get_post_meta( $current_id, self::META_ASSET, true );
-            if ( ! $current_id || $is_managed ) { set_post_thumbnail( $product_id, $attachment_id ); }
+                $current_id = (int) get_post_thumbnail_id( $product_id );
+                $is_managed = $current_id && (bool) get_post_meta( $current_id, self::META_ASSET, true );
+                if ( ! $current_id || $is_managed ) { set_post_thumbnail( $product_id, $attachment_id ); }
+            }
         }
         return true;
     }

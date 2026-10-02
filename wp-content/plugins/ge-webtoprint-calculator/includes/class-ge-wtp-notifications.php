@@ -51,6 +51,13 @@ final class GE_WTP_Notifications {
         return self::send( $email, ( $welcome ? 'Bienvenido a Graph Express' : 'Verificá tu email' ) . ' · confirmación requerida', self::basic_email( $welcome ? 'Tu cuenta está lista' : 'Verificá tu email', $content ), $welcome ? 'customer_welcome_verification' : 'customer_email_verification', $user->ID );
     }
 
+    public static function send_customer_portal_invitation( $user, $reset_url ) {
+        if ( ! $user instanceof WP_User || ! is_email( $user->user_email ) ) { return false; }
+        $name = $user->first_name ?: $user->display_name;
+        $content = '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>Ya tenés acceso a tu portal de Graph Express. Para ingresar, definí tu contraseña desde este enlace privado:</p><p style="margin:26px 0"><a href="' . esc_url( $reset_url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Definir mi contraseña</a></p><p>Después podés ingresar en <a href="' . esc_url( GE_WTP_Portal::portal_url() ) . '">tu portal</a> con este email.</p><p style="color:#777382;font-size:13px">El enlace vence en 24 horas. Si no esperabas esta invitación, podés ignorarla.</p>';
+        return self::send( $user->user_email, 'Acceso a tu portal · Graph Express', self::basic_email( 'Tu acceso a Graph Express', $content ), 'customer_portal_invite', $user->ID );
+    }
+
     public static function send_new_customer_admin( $user ) {
         if ( ! $user instanceof WP_User ) { return false; }
         $url = class_exists( 'GE_WTP_Staff_Portal' ) ? GE_WTP_Staff_Portal::portal_url( 'customers', array( 'customer_id' => $user->ID ) ) : admin_url( 'user-edit.php?user_id=' . $user->ID );
@@ -61,7 +68,7 @@ final class GE_WTP_Notifications {
 
     public static function handle_order_status_changed( $order_id, $old_status, $new_status, $order ) {
         if ( ! $order instanceof WC_Order || $old_status === $new_status ) { return; }
-        if ( 'yes' === $order->get_meta( '_ge_work_order' ) ) { return; }
+        if ( 'yes' === $order->get_meta( '_ge_work_order' ) || 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) ) { return; }
         $production_statuses = array( 'ge-confirmado', 'ge-produccion', 'ge-listo', 'ge-entregado' );
         $is_portal_order = 'yes' === $order->get_meta( '_ge_markcom_order' ) && $order->get_meta( '_ge_markcom_reference' );
         if ( ! $is_portal_order && ! in_array( $new_status, $production_statuses, true ) ) { return; }
@@ -136,10 +143,13 @@ final class GE_WTP_Notifications {
             return false;
         }
         $reference = class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : ( $order->get_meta( '_ge_markcom_reference' ) ?: '#' . $order->get_id() );
-        $status = wc_get_order_status_name( $order->get_status() );
+        $status = GE_WTP_Order_Lifecycle::label( $order );
         $message = 'Tu pedido <strong>' . esc_html( $reference ) . '</strong> ahora está en la etapa <strong>' . esc_html( $status ) . '</strong>.';
-        if ( 'ge-listo' === $order->get_status() ) {
-            $message .= ' Nos comunicaremos para coordinar la entrega o el retiro.';
+        if ( 'listo' === GE_WTP_Order_Lifecycle::stage( $order ) ) {
+            $due = (int) $order->get_meta( '_ge_amount_due_cents', true );
+            if ( $order->get_meta( '_ge_commercial_quote_id', true ) && $due > 0 ) {
+                $message .= ' Tu trabajo está listo para entregar. El saldo pendiente es <strong>' . esc_html( GE_WTP_Quote_Balance::decimal( $due ) ) . ' ARS</strong>. Podés abonarlo al recibirlo o coordinar el pago desde tu portal.';
+            } else { $message .= ' Nos comunicaremos para coordinar la entrega o el retiro.'; }
         }
         $body = self::order_email_body( $order, 'Actualización de tu pedido', $message, GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order->get_id() ) ), 'Ver pedido' );
         $ok = self::send( $order->get_billing_email(), 'Tu pedido avanzó · ' . $reference, $body, 'order_status_' . $order->get_status(), $order->get_id() );
@@ -193,9 +203,27 @@ final class GE_WTP_Notifications {
         }
         self::$last_mail_error = '';
         $headers = array_merge( array( 'Content-Type: text/html; charset=UTF-8' ), is_array( $extra_headers ) ? $extra_headers : array() );
-        $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers );
+        $attachment = null;
+        if ( 'commercial_quote_sent' === $context ) {
+            $attachment = GE_WTP_Commercial_Quote_PDF::attachment( $object_id );
+            if ( is_wp_error( $attachment ) ) {
+                self::log( $to, $subject, $html, $context, $object_id, 'failed', $attachment->get_error_message() );
+                return false; // A quote is never sent without its commercial PDF.
+            }
+            $html .= '<p>Adjuntamos el PDF comercial de tu presupuesto (versión ' . absint( $attachment['version'] ) . '). Podés revisarlo y aceptarlo desde el portal.</p>';
+        }
+        try {
+            $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : array() );
+        } finally {
+            if ( $attachment && is_file( $attachment['path'] ) ) { unlink( $attachment['path'] ); }
+        }
         $result = self::is_local_environment() ? 'simulated' : ( $ok ? 'sent' : 'failed' );
-        self::log( $to, $subject, $html, $context, $object_id, $result, self::$last_mail_error );
+        $logged_html = 'customer_portal_invite' === $context ? '<p>Invitación con enlace privado para definir contraseña. El enlace se omitió del historial.</p>' : $html;
+        if ( 'workflow_supplier_portal' === $context ) { $logged_html = '<p>Orden técnica enviada al proveedor. El enlace privado se omite del historial. Consultá la versión y el detalle en Producción.</p>'; }
+        self::log( $to, $subject, $logged_html, $context, $object_id, $result, self::$last_mail_error );
+        if ( $attachment && $ok ) {
+            GE_WTP_Commercial_Quotes::record_event( $object_id, 'pdf_attached', get_current_user_id(), array( 'pdf_version' => $attachment['version'], 'pdf_sha256' => $attachment['sha256'] ) );
+        }
         return $ok;
     }
 
