@@ -10,7 +10,10 @@
   "polish_commit": "1865ea5",
   "live_baseline_commit": "1c7b766",
   "source_base_release": "1b9ed9e",
-  "graph_main_head": "cf8c5f4",
+  "graph_main_head": null,
+  "graph_default_branch": "master",
+  "graph_default_head": "2ef226c",
+  "graph_checkout_head": "cf8c5f4",
   "ai_grupo_main_head": "661ef1f",
   "main_merged": false,
   "nav": [
