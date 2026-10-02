@@ -203,11 +203,27 @@ final class GE_WTP_Notifications {
         }
         self::$last_mail_error = '';
         $headers = array_merge( array( 'Content-Type: text/html; charset=UTF-8' ), is_array( $extra_headers ) ? $extra_headers : array() );
-        $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers );
+        $attachment = null;
+        if ( 'commercial_quote_sent' === $context ) {
+            $attachment = GE_WTP_Commercial_Quote_PDF::attachment( $object_id );
+            if ( is_wp_error( $attachment ) ) {
+                self::log( $to, $subject, $html, $context, $object_id, 'failed', $attachment->get_error_message() );
+                return false; // A quote is never sent without its commercial PDF.
+            }
+            $html .= '<p>Adjuntamos el PDF comercial de tu presupuesto (versión ' . absint( $attachment['version'] ) . '). Podés revisarlo y aceptarlo desde el portal.</p>';
+        }
+        try {
+            $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : array() );
+        } finally {
+            if ( $attachment && is_file( $attachment['path'] ) ) { unlink( $attachment['path'] ); }
+        }
         $result = self::is_local_environment() ? 'simulated' : ( $ok ? 'sent' : 'failed' );
         $logged_html = 'customer_portal_invite' === $context ? '<p>Invitación con enlace privado para definir contraseña. El enlace se omitió del historial.</p>' : $html;
         if ( 'workflow_supplier_portal' === $context ) { $logged_html = '<p>Orden técnica enviada al proveedor. El enlace privado se omite del historial. Consultá la versión y el detalle en Producción.</p>'; }
         self::log( $to, $subject, $logged_html, $context, $object_id, $result, self::$last_mail_error );
+        if ( $attachment && $ok ) {
+            GE_WTP_Commercial_Quotes::record_event( $object_id, 'pdf_attached', get_current_user_id(), array( 'pdf_version' => $attachment['version'], 'pdf_sha256' => $attachment['sha256'] ) );
+        }
         return $ok;
     }
 
