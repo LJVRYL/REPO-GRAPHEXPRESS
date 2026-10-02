@@ -2,6 +2,9 @@
 
 defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+require_once __DIR__ . '/class-ge-wtp-customer-tax.php';
+require_once __DIR__ . '/class-ge-wtp-arca-lookup.php';
+require_once __DIR__ . '/class-ge-wtp-customer-tax-ui.php';
 
 /** Billing profile and fiscal decision for commercial quotes. Amounts are centavos. */
 final class GE_WTP_Billing {
@@ -10,6 +13,7 @@ final class GE_WTP_Billing {
 
     public static function init() {
         GE_WTP_Billing_Issuers::init();
+        GE_WTP_Customer_Tax_UI::init();
         add_action( 'admin_post_ge_save_billing_entity', array( __CLASS__, 'save_entity' ) );
     }
 
@@ -23,7 +27,7 @@ final class GE_WTP_Billing {
             'vat_status' => '',
             'billing_email' => '',
             'fiscal_address' => '',
-            'verified_at' => '',
+            'verified_at' => '', 'verification_status' => 'pending', 'source' => 'manual', 'checked_at' => '',
         ), $stored );
     }
 
@@ -86,20 +90,24 @@ final class GE_WTP_Billing {
     public static function save_profile( $user_id, $input, $actor_id, $verify = false ) {
         $profile = self::normalize_profile( $input );
         $old = self::profile( $user_id );
+        $trusted = GE_WTP_Customer_Tax_UI::metadata( $user_id, 'default', array_merge( $profile, array( 'tax_preview_token' => $input['tax_preview_token'] ?? '' ) ), $old, $actor_id );
+        $profile = array_merge( $profile, $trusted );
         $old_fields = $old;
         unset( $old_fields['verified_at'] );
         $new_fields = $profile;
         unset( $new_fields['verified_at'] );
         $changed = $old_fields !== $new_fields;
-        $profile['verified_at'] = $verify ? gmdate( 'c' ) : ( $changed ? '' : ( $old['verified_at'] ?? '' ) );
+        $profile['verified_at'] = $trusted['verified_at']; // Form flags never establish official verification.
         if ( ! $changed && $old['verified_at'] === $profile['verified_at'] ) { return $old; }
         update_user_meta( $user_id, self::PROFILE_META, $profile );
         update_user_meta( $user_id, '_ge_cuit', $profile['cuit'] );
         update_user_meta( $user_id, 'billing_company', $profile['legal_name'] );
         update_user_meta( $user_id, 'billing_email', $profile['billing_email'] );
+        $changed_fields = array();
+        foreach ( array_unique( array_merge( array_keys( $profile ), array_keys( $old ) ) ) as $key ) { if ( ( $profile[$key] ?? null ) !== ( $old[$key] ?? null ) ) { $changed_fields[] = $key; } }
         add_user_meta( $user_id, '_ge_billing_audit', array(
             'at' => gmdate( 'c' ), 'actor_id' => (int) $actor_id,
-            'changed_fields' => array_values( array_keys( array_diff_assoc( $profile, $old ) ) ),
+            'changed_fields' => $changed_fields,
         ) );
         return $profile;
     }
@@ -165,10 +173,13 @@ final class GE_WTP_Billing {
             throw new InvalidArgumentException( 'Base o tasa fiscal inválida.' );
         }
         $mode = $profile['billing_mode'] ?? 'common';
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 2 ) {
+            $mode = 'registered' === ( $entity['vat_status'] ?? '' ) && in_array( $profile['vat_status'] ?? '', array( 'registered', 'monotributo' ), true ) ? 'invoice_a' : 'common';
+        }
         $blockers = array();
         if ( ! in_array( $mode, array( 'common', 'invoice_a' ), true ) ) { $blockers[] = 'billing_mode_invalid'; }
         if ( 'invoice_a' === $mode ) {
-            $blockers = self::missing_fields( $profile );
+            $blockers = self::missing_fields( array_merge( $profile, array( 'billing_mode' => $mode ) ) );
             if ( 'registered' !== ( $entity['vat_status'] ?? '' ) || ! in_array( 'A', (array) ( $entity['document_capabilities'] ?? array() ), true ) ) {
                 $blockers[] = 'issuer_cannot_invoice_a';
             }
@@ -180,7 +191,11 @@ final class GE_WTP_Billing {
         if ( ! $blockers ) {
             if ( 'invoice_a' === $mode ) { $document = 'A'; }
             elseif ( in_array( $entity['vat_status'] ?? '', array( 'monotributo', 'exempt' ), true ) ) { $document = 'C'; }
-            elseif ( 'registered' === ( $entity['vat_status'] ?? '' ) ) { $document = in_array( $profile['vat_status'] ?? '', array( 'registered', 'monotributo' ), true ) ? 'A' : 'B'; }
+            elseif ( 'registered' === ( $entity['vat_status'] ?? '' ) ) {
+                $vat = $profile['vat_status'] ?? '';
+                $document = in_array( $vat, array( 'registered', 'monotributo' ), true ) ? 'A' : ( in_array( $vat, array( 'exempt', 'final_consumer' ), true ) ? 'B' : null );
+                if ( null === $document ) { $blockers[] = 'recipient_condition_unknown'; }
+            }
             if ( 'A' === $document && ( empty( $profile['cuit'] ) || empty( $profile['legal_name'] ) ) ) { $blockers[] = 'recipient_fiscal_data_missing'; }
             if ( ! $document || ! in_array( $document, (array) ( $entity['document_capabilities'] ?? array() ), true ) ) { $blockers[] = 'document_not_enabled'; }
         }
@@ -204,6 +219,7 @@ final class GE_WTP_Billing {
             'total_cents' => $base + $tax,
             'document_type' => $blockers ? null : $document,
             'blockers' => array_values( array_unique( $blockers ) ),
+            'customer_tax' => GE_WTP_Customer_Tax::resolve( $entity, $profile ),
         );
     }
 

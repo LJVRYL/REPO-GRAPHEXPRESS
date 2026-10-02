@@ -44,7 +44,7 @@ final class GE_WTP_Customer_Branches {
     }
 
     public static function save( $customer_id, $input, $actor_id ) {
-        if ( ! user_can( $actor_id, 'manage_woocommerce' ) && ! user_can( $actor_id, 'ge_manage_operations' ) ) { return new WP_Error( 'ge_profile_forbidden', 'Acceso denegado.' ); }
+        if ( ! GE_WTP_Customer_Tax_UI::can_edit( $customer_id, $actor_id ) ) { return new WP_Error( 'ge_profile_forbidden', 'Acceso denegado.' ); }
         if ( ! get_userdata( $customer_id ) ) { return new WP_Error( 'ge_profile_customer', 'Cliente inexistente.' ); }
         $id = sanitize_text_field( $input['id'] ?? '' );
         if ( 'default' === $id ) { return new WP_Error( 'ge_profile_default', 'Editá el perfil principal en la ficha.' ); }
@@ -60,6 +60,7 @@ final class GE_WTP_Customer_Branches {
         } else {
             try { $profile = GE_WTP_Billing::normalize_profile( $input ); }
             catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_profile_invalid', $error->getMessage() ); }
+            $profile = array_merge( $profile, GE_WTP_Customer_Tax_UI::metadata( $customer_id, $id, array_merge( $profile, array( 'tax_preview_token' => $input['tax_preview_token'] ?? '' ) ), $old, $actor_id ) );
             $profile['id'] = $id ?: wp_generate_uuid4();
             $profile['label'] = sanitize_text_field( $input['label'] ?? '' );
             if ( ! $profile['label'] ) { return new WP_Error( 'ge_profile_label', 'Indicá la sucursal o el nombre del perfil.' ); }
@@ -82,8 +83,10 @@ final class GE_WTP_Customer_Branches {
     public static function handle_save() {
         $customer_id = absint( $_POST['customer_id'] ?? 0 );
         check_admin_referer( 'ge_customer_billing_profile_' . $customer_id );
-        $result = self::save( $customer_id, wp_unslash( $_POST ), get_current_user_id() );
-        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'customers', array( 'customer_id' => $customer_id, 'billing_status' => is_wp_error( $result ) ? $result->get_error_code() : 'saved' ) ) );
+        try { $result = self::save( $customer_id, wp_unslash( $_POST ), get_current_user_id() ); } catch ( InvalidArgumentException $error ) { $result = new WP_Error( 'ge_profile_invalid', $error->getMessage() ); }
+        if ( is_wp_error( $result ) ) { wp_die( esc_html( $result->get_error_message() ), '', array( 'response' => 422 ) ); }
+        $url = (int) get_current_user_id() === (int) $customer_id ? GE_WTP_Portal::portal_url( 'perfil' ) : GE_WTP_Staff_Portal::portal_url( 'customers', array( 'customer_id' => $customer_id, 'billing_status' => is_wp_error( $result ) ? $result->get_error_code() : 'saved' ) );
+        wp_safe_redirect( $url );
         exit;
     }
 
@@ -116,6 +119,8 @@ final class GE_WTP_Customer_Branches {
             $billing = $order->get_meta( '_ge_commercial_billing_snapshot', true );
             $profile = is_array( $billing ) ? ( $billing['profile'] ?? array() ) : array();
         }
+        $tax = $order->get_meta( '_ge_customer_tax_decision', true );
+        if ( is_array( $tax ) && $tax ) { echo '<p>' . esc_html( GE_WTP_Customer_Tax_UI::decision_label( array( 'customer_tax_decision' => $tax, 'customer_billing_profile' => $profile ) ) ) . '</p>'; }
         $delivery = $order->get_meta( '_ge_delivery_snapshot', true );
         $delivery = is_array( $delivery ) ? $delivery : array();
         $customer = get_userdata( $order->get_customer_id() );
@@ -131,10 +136,15 @@ final class GE_WTP_Customer_Branches {
         echo '<form class="ge-profile-fields ge-workspace-form" data-ge-workspace-form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_customer_billing_profile"><input type="hidden" name="customer_id" value="' . esc_attr( $customer_id ) . '"><input type="hidden" name="id" value="' . esc_attr( $profile['id'] ?? '' ) . '">';
         wp_nonce_field( 'ge_customer_billing_profile_' . $customer_id );
         foreach ( array( 'label' => 'Sucursal / perfil', 'branch' => 'Sede', 'legal_name' => 'Razón social', 'cuit' => 'CUIT', 'fiscal_address' => 'Domicilio fiscal', 'billing_email' => 'Email de facturación', 'contact_name' => 'Contacto', 'contact_phone' => 'Teléfono' ) as $key => $label ) { echo '<label>' . esc_html( $label ) . '<input name="' . esc_attr( $key ) . '" value="' . esc_attr( $profile[ $key ] ?? '' ) . '" maxlength="220"></label>'; }
+        GE_WTP_Customer_Tax_UI::controls( $customer_id, $profile['id'] ?? '', $profile );
         echo '<label><input type="checkbox" name="is_default" value="1"' . checked( ! empty( $profile['is_default'] ), true, false ) . '> Usar por defecto</label>';
         echo '<label>Condición fiscal<select name="vat_status">';
         foreach ( array( '' => 'Seleccionar', 'registered' => 'Responsable inscripto', 'monotributo' => 'Monotributista', 'exempt' => 'Exento', 'final_consumer' => 'Consumidor final' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '"' . selected( $profile['vat_status'] ?? '', $value, false ) . '>' . esc_html( $label ) . '</option>'; }
-        echo '</select></label><label>Modalidad<select name="billing_mode"><option value="common">Común</option><option value="invoice_a"' . selected( $profile['billing_mode'] ?? '', 'invoice_a', false ) . '>Requiere A si el emisor puede emitirla</option></select></label><div class="ge-workspace-save"><span data-ge-save-state aria-live="polite">Sin cambios</span><button type="submit">' . ( $existing ? 'Guardar' : 'Agregar perfil' ) . '</button></div>';
+        echo '</select></label>';
+        if ( GE_WTP_Customer_Tax_UI::stage() < 2 ) {
+            echo '<label>Modalidad<select name="billing_mode"><option value="common">Común</option><option value="invoice_a"' . selected( $profile['billing_mode'] ?? '', 'invoice_a', false ) . '>Requiere A si el emisor puede emitirla</option></select></label>';
+        } else { echo '<input type="hidden" name="billing_mode" value="' . esc_attr( $profile['billing_mode'] ?? 'common' ) . '"><p>El comprobante se sugiere según el emisor y la condición fiscal; requiere revisión del personal.</p>'; }
+        echo '<div class="ge-workspace-save"><span data-ge-save-state aria-live="polite">Sin cambios</span><button type="submit">' . ( $existing ? 'Guardar' : 'Agregar perfil' ) . '</button></div>';
         if ( $existing ) { echo '<button type="submit" name="archive" value="1" onclick="return confirm(\'¿Archivar este perfil?\')">Desactivar perfil</button>'; }
         echo '</form>';
     }

@@ -73,6 +73,8 @@ final class GE_WTP_Commercial_Quote_PDF {
         $customer = get_userdata( $quote['customer_id'] );
         // Fiscal identity is frozen in the version; contact fallback follows the existing portal.
         $client = array_filter( array( ( $profile['legal_name'] ?? '' ) ?: ( $customer ? $customer->display_name : '' ), ! empty( $profile['cuit'] ) ? 'CUIT ' . $profile['cuit'] : '', $profile['contact_name'] ?? '', ( $profile['billing_email'] ?? '' ) ?: ( $customer ? $customer->user_email : '' ), $profile['contact_phone'] ?? '', $profile['fiscal_address'] ?? '' ) );
+        $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $s );
+        if ( $tax_label ) { $client[] = $tax_label; }
         $address = array_filter( array( $profile['street'] ?? $profile['address_1'] ?? '', $profile['city'] ?? '', $profile['postcode'] ?? '' ) );
         if ( $address ) { $client[] = implode( ', ', $address ); }
         $rows = array();

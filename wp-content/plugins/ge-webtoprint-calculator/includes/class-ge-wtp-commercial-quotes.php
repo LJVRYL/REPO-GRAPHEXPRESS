@@ -70,8 +70,10 @@ final class GE_WTP_Commercial_Quotes {
             return new WP_Error( 'ge_quote_customer', 'El cliente necesita una ficha con email válido.' );
         }
         $args['applied_by'] = $actor_id;
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && empty( $args['billing_profile_id'] ) ) { $args['billing_profile_id'] = GE_WTP_Customer_Branches::default_profile_id( $customer_id ?? $quote['customer_id'] ); }
         $snapshot = self::build_snapshot( $lines, $args );
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
+        if ( ! GE_WTP_Customer_Branches::find( $customer->ID, $snapshot['billing_profile_id'] ) ) { return new WP_Error( 'ge_quote_profile', 'Seleccioná un perfil activo de este cliente.' ); }
         $chosen = GE_WTP_Billing_Issuers::choose( GE_WTP_Customer_Branches::find( $customer->ID, $snapshot['billing_profile_id'] ), $args, $actor_id );
         if ( is_wp_error( $chosen ) ) { return $chosen; }
         $snapshot['issuer_profile_id'] = $chosen['issuer']['id']; $snapshot['issuer_snapshot'] = $chosen['issuer']; $snapshot['issuer_suggestion'] = $chosen['suggestion'];
@@ -114,8 +116,10 @@ final class GE_WTP_Commercial_Quotes {
             return new WP_Error( 'ge_quote_payment_locked', 'Hay un cobro iniciado. Revisá su estado antes de editar la propuesta.' );
         }
         $args['applied_by'] = $actor_id;
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && empty( $args['billing_profile_id'] ) ) { $args['billing_profile_id'] = GE_WTP_Customer_Branches::default_profile_id( $customer_id ?? $quote['customer_id'] ); }
         $snapshot = self::build_snapshot( $lines, $args );
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
+        if ( ! GE_WTP_Customer_Branches::find( $quote['customer_id'], $snapshot['billing_profile_id'] ) ) { return new WP_Error( 'ge_quote_profile', 'Seleccioná un perfil activo de este cliente.' ); }
         $chosen = GE_WTP_Billing_Issuers::choose( GE_WTP_Customer_Branches::find( $quote['customer_id'], $snapshot['billing_profile_id'] ), $args, $actor_id, $quote['snapshot'] );
         if ( is_wp_error( $chosen ) ) { return $chosen; }
         $snapshot['issuer_profile_id'] = $chosen['issuer']['id']; $snapshot['issuer_snapshot'] = $chosen['issuer']; $snapshot['issuer_suggestion'] = $chosen['suggestion'];
@@ -185,14 +189,16 @@ final class GE_WTP_Commercial_Quotes {
     }
 
     public static function email_summary( $snapshot ) {
-        if ( ! isset( $snapshot['total_cents'] ) ) { return '<p>Total pendiente de confirmación.</p>'; }
+        $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $snapshot );
+        $tax_body = $tax_label ? '<p>' . esc_html( $tax_label ) . '</p>' : '';
+        if ( ! isset( $snapshot['total_cents'] ) ) { return $tax_body . '<p>Total pendiente de confirmación.</p>'; }
         $money = function( $cents ) { return number_format_i18n( $cents / 100, 2 ) . ' ' . ( $snapshot['currency'] ?? 'ARS' ); };
         $body = '<p>Emisor / Facturación: ' . esc_html( GE_WTP_Billing_Issuers::label( GE_WTP_Billing_Issuers::from_snapshot( $snapshot ) ) ) . '</p>';
         $body .= '<p>Subtotal / Neto: ' . esc_html( $money( $snapshot['subtotal_cents'] ?? $snapshot['net_cents'] ) ) . '<br>';
         if ( ! empty( $snapshot['discount_cents'] ) ) { $body .= 'Descuento comercial: −' . esc_html( $money( $snapshot['discount_cents'] ) ) . '<br>Neto imponible: ' . esc_html( $money( $snapshot['net_cents'] ) ) . '<br>'; }
         $body .= 'IVA: ' . esc_html( $money( $snapshot['tax_cents'] ?? 0 ) ) . '<br><strong>Total final: ' . esc_html( $money( $snapshot['total_cents'] ) ) . '</strong></p>';
         if ( 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { $body .= '<p>Propuesta comercial. Datos de facturación pendientes de confirmación.</p>'; }
-        return $body;
+        return $tax_body . $body;
     }
 
     /** Older drafts must be reviewed before their previous area price is sent. */
@@ -387,12 +393,17 @@ final class GE_WTP_Commercial_Quotes {
 
     /** A draft may be saved with pending fiscal data; no guessed tax or total. */
     public static function preview_billing( $customer_id, $snapshot ) {
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && empty( $snapshot['billing_profile_id'] ) ) { $snapshot['billing_profile_id'] = GE_WTP_Customer_Branches::default_profile_id( $customer_id ); }
         $snapshot['customer_billing_profile'] = GE_WTP_Customer_Branches::find( $customer_id, $snapshot['billing_profile_id'] ?? 'default' );
         if ( empty( $snapshot['issuer_snapshot'] ) ) {
-            $chosen = GE_WTP_Billing_Issuers::choose( (array) $snapshot['customer_billing_profile'], array(), get_current_user_id() );
+            $chosen = GE_WTP_Billing_Issuers::choose( (array) $snapshot['customer_billing_profile'], array(), get_current_user_id(), null, false );
             $snapshot['issuer_snapshot'] = is_wp_error( $chosen ) ? GE_WTP_Billing_Issuers::unknown() : $chosen['issuer'];
             $snapshot['issuer_profile_id'] = $snapshot['issuer_snapshot']['id'];
             $snapshot['issuer_suggestion'] = is_wp_error( $chosen ) ? array() : $chosen['suggestion'];
+        }
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 ) {
+            $snapshot['customer_tax_decision'] = GE_WTP_Customer_Tax::resolve( $snapshot['issuer_snapshot'], (array) $snapshot['customer_billing_profile'] );
+            foreach ( array( 'reviewed_by', 'reviewed_at', 'override_reason' ) as $key ) { $snapshot['customer_tax_decision'][$key] = $snapshot['issuer_suggestion'][$key] ?? ''; }
         }
         $snapshot['issuer_fiscal_snapshot'] = GE_WTP_Billing_Issuers::entity( $snapshot['issuer_snapshot'] );
         $resolved = self::resolve_billing( $customer_id, $snapshot );
@@ -417,6 +428,8 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! is_wp_error( $resolved ) ) { return $resolved; }
         $snapshot['fiscal_status'] = 'pending';
         $snapshot['fiscal_blockers'] = array( $resolved->get_error_code() );
+        unset( $snapshot['snapshot_hash'] );
+        $snapshot['snapshot_hash'] = hash( 'sha256', wp_json_encode( $snapshot ) );
         return $snapshot;
     }
 

@@ -266,6 +266,11 @@ final class GE_WTP_Notifications {
     }
 
     private static function order_email_body( $order, $heading, $intro, $button_url = '', $button_label = '' ) {
+        $tax = $order->get_meta( '_ge_customer_tax_decision', true );
+        if ( is_array( $tax ) && $tax ) {
+            $label = GE_WTP_Customer_Tax_UI::decision_label( array( 'customer_tax_decision' => $tax, 'customer_billing_profile' => (array) $order->get_meta( '_ge_billing_profile_snapshot', true ) ) );
+            $intro .= '<p>' . esc_html( $label ) . '</p>';
+        }
         $intro .= '<p>Emisor / Facturación: ' . esc_html( GE_WTP_Billing_Issuers::label( GE_WTP_Billing_Issuers::order_snapshot( $order ) ) ) . '</p>';
         $items = '';
         foreach ( $order->get_items() as $item ) {

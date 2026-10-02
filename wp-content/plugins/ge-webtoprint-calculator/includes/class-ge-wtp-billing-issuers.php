@@ -100,6 +100,11 @@ final class GE_WTP_Billing_Issuers {
         return true;
     }
     public static function suggestion( $customer_profile, $net = 0 ) {
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 2 ) {
+            $tax = GE_WTP_Customer_Tax::suggestion( $customer_profile );
+            $tax['resolver'] = GE_WTP_Billing::resolve_net_quote( self::entity( self::get( $tax['issuer_profile_id'] ) ?: array() ), (array) $customer_profile, (int) $net );
+            return $tax;
+        }
         $scenario = 'invoice_a' === ( $customer_profile['billing_mode'] ?? '' ) || in_array( $customer_profile['vat_status'] ?? '', array( 'registered','monotributo' ), true ) ? 'invoice_a' : 'common';
         foreach ( self::all() as $p ) {
             if ( ! empty( $p['active'] ) && in_array( $scenario, $p['default_for_scenarios'], true ) ) {
@@ -116,12 +121,20 @@ final class GE_WTP_Billing_Issuers {
     }
     public static function unknown() { return array( 'id' => 'unknown', 'status' => 'legacy_unknown', 'legal_name' => '', 'schema_version' => 1 ); }
     public static function from_snapshot( $s ) { return ! empty( $s['issuer_snapshot'] ) ? $s['issuer_snapshot'] : self::unknown(); }
-    public static function choose( $profile, $args, $actor, $previous = null ) {
+    public static function choose( $profile, $args, $actor, $previous = null, $require_review = true ) {
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && $require_review && ! user_can( $actor, 'manage_woocommerce' ) && ! user_can( $actor, 'ge_manage_operations' ) ) { return new WP_Error( 'ge_tax_review_forbidden', 'La revisión fiscal requiere personal autorizado.' ); }
         $suggestion = self::suggestion( $profile );
         $old = is_array( $previous ) ? self::from_snapshot( $previous ) : null;
         $requested = sanitize_key( $args['issuer_profile_id'] ?? '' );
         // Ordinary revisions retain the exact issuer data; choosing a new ID or refresh requires permission and a reason.
-        if ( $old && ( ! $requested || $requested === $old['id'] ) && empty( $args['issuer_refresh'] ) ) { return array( 'issuer' => $old, 'suggestion' => $previous['issuer_suggestion'] ?? $suggestion ); }
+        if ( $old && ( ! $requested || $requested === $old['id'] ) && empty( $args['issuer_refresh'] ) ) {
+            $prior_profile = $previous['customer_billing_profile'] ?? $previous['billing']['profile'] ?? null;
+            $changed_profile = null !== $prior_profile && $prior_profile !== $profile;
+            if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && $require_review && $changed_profile && empty( $args['customer_tax_confirm'] ) ) { return new WP_Error( 'ge_tax_review', 'El perfil fiscal cambió. Confirmá la revisión del comprobante previsto.' ); }
+            $review = $previous['issuer_suggestion'] ?? $suggestion;
+            if ( $changed_profile || ! empty( $args['customer_tax_confirm'] ) ) { $review['reviewed_by'] = (int) $actor; $review['reviewed_at'] = gmdate( 'c' ); }
+            return array( 'issuer' => $old, 'suggestion' => $review );
+        }
         $id = $requested ?: $suggestion['issuer_profile_id'];
         if ( $old || $id !== $suggestion['issuer_profile_id'] ) {
             if ( ! self::can_manage( $actor ) ) { return new WP_Error( 'ge_issuer_forbidden', 'Sólo un rol autorizado puede cambiar o reemplazar el emisor.' ); }
@@ -129,10 +142,14 @@ final class GE_WTP_Billing_Issuers {
         }
         $p = self::get( $id );
         if ( ! $p || empty( $p['active'] ) ) { return new WP_Error( 'ge_issuer_missing', 'Seleccioná un emisor activo.' ); }
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && $require_review && empty( $args['customer_tax_confirm'] ) ) { return new WP_Error( 'ge_tax_review', 'Confirmá la revisión del emisor y comprobante sugerido.' ); }
+        $suggestion['reviewed_by'] = (int) $actor; $suggestion['reviewed_at'] = gmdate( 'c' );
+        $suggestion['override_reason'] = sanitize_textarea_field( $args['issuer_change_reason'] ?? '' );
+        $suggestion['selected_issuer_id'] = $p['id'];
         return array( 'issuer' => self::capture( $p ), 'suggestion' => $suggestion );
     }
     public static function entity( $p ) {
-        return array( 'legal_name' => $p['legal_name'] ?? '', 'cuit' => $p['cuit'] ?? '', 'vat_status' => $p['vat_status'] ?? '', 'point_of_sale' => $p['point_of_sale'] ?? '', 'document_capabilities' => $p['invoice_types_allowed'] ?? array(), 'common_price_policy' => $p['common_price_policy'] ?? '', 'invoice_a_price_policy' => $p['invoice_a_price_policy'] ?? '', 'tax_rate_basis_points' => (int) ( $p['tax_rate_basis_points'] ?? 0 ) );
+        return array( 'id' => $p['id'] ?? '', 'active' => $p['active'] ?? false, 'verification_status' => $p['verification_status'] ?? 'pending', 'relationship_confirmed' => $p['relationship_confirmed'] ?? false, 'legal_name' => $p['legal_name'] ?? '', 'cuit' => $p['cuit'] ?? '', 'vat_status' => $p['vat_status'] ?? '', 'point_of_sale' => $p['point_of_sale'] ?? '', 'document_capabilities' => $p['invoice_types_allowed'] ?? array(), 'common_price_policy' => $p['common_price_policy'] ?? '', 'invoice_a_price_policy' => $p['invoice_a_price_policy'] ?? '', 'tax_rate_basis_points' => (int) ( $p['tax_rate_basis_points'] ?? 0 ) );
     }
     public static function ready( $s ) {
         return 'selected' === ( $s['status'] ?? '' ) && 'verified' === ( $s['verification_status'] ?? '' ) && ! empty( $s['relationship_confirmed'] );
@@ -155,16 +172,17 @@ final class GE_WTP_Billing_Issuers {
     public static function render_picker( $s = array() ) {
         $old = self::from_snapshot( $s ); $can = self::can_manage( get_current_user_id() );
         echo '<section class="ge-production-card ge-billing-issuer-picker"><h2>Emisor / Facturación</h2><label>Emisor seleccionado<select name="issuer_profile_id"' . ( ! $can ? ' disabled' : '' ) . '><option value="">' . esc_html( $s ? 'Conservar emisor registrado' : 'Sugerir según perfil fiscal del cliente' ) . '</option>';
-        foreach ( self::all() as $p ) { if ( $p['active'] ) { echo '<option value="' . esc_attr( $p['id'] ) . '"' . selected( $old['id'], $p['id'], false ) . '>' . esc_html( $p['display_name'] . ' · ' . self::vat_label( $p ) . ' · previsto ' . implode( '/', $p['invoice_types_allowed'] ) ) . '</option>'; } }
+        foreach ( self::all() as $p ) { if ( $p['active'] ) { echo '<option value="' . esc_attr( $p['id'] ) . '"' . selected( $old['id'], $p['id'], false ) . '>' . esc_html( ( $p['display_name'] ?? $p['legal_name'] ) . ' · ' . self::vat_label( $p ) . ' · previsto ' . implode( '/', $p['invoice_types_allowed'] ) ) . '</option>'; } }
         echo '</select></label><p>La sugerencia es comercial y requiere revisión. El emisor debe corresponder a quien realmente facture.</p>';
         if ( $can ) { echo '<label>Motivo del cambio / selección manual<input name="issuer_change_reason" maxlength="500"></label>'; if ( $s ) { echo '<label><input type="checkbox" name="issuer_refresh" value="1"> Actualizar expresamente los datos del emisor en una nueva versión</label>'; } }
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 ) { echo '<label><input type="checkbox" name="customer_tax_confirm" value="1"> Revisé el emisor real y el comprobante sugerido</label>'; }
         if ( $s ) { self::render_summary( $s ); } echo '</section>';
     }
     public static function render_settings() {
         echo '<section class="ge-admin-panel ge-billing-issuers-settings"><h2>Perfiles emisores</h2><p>Datos aportados y configuración verificada se distinguen. Cada operación conserva su emisor; editar estos perfiles no modifica los históricos.</p>';
         if ( ! self::can_manage( get_current_user_id() ) ) { echo '<p>Sólo roles autorizados pueden editar emisores.</p></section>'; return; }
         foreach ( self::all() as $p ) {
-            echo '<details><summary>' . esc_html( $p['display_name'] . ' · ' . $p['verification_status'] ) . '</summary><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_save_issuer_profile"><input type="hidden" name="issuer_id" value="' . esc_attr( $p['id'] ) . '"><input type="hidden" name="expected_revision" value="' . esc_attr( $p['revision'] ) . '">'; wp_nonce_field( 'ge_save_issuer_profile' );
+            echo '<details><summary>' . esc_html( ( $p['display_name'] ?? $p['legal_name'] ) . ' · ' . $p['verification_status'] ) . '</summary><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_save_issuer_profile"><input type="hidden" name="issuer_id" value="' . esc_attr( $p['id'] ) . '"><input type="hidden" name="expected_revision" value="' . esc_attr( $p['revision'] ) . '">'; wp_nonce_field( 'ge_save_issuer_profile' );
             foreach ( array( 'display_name' => 'Nombre visible','legal_name' => 'Razón social','cuit' => 'CUIT','iibb' => 'IIBB','fiscal_address' => 'Domicilio fiscal','locality' => 'Localidad','province' => 'Provincia','postal_code' => 'Código postal','country' => 'País','contact_email' => 'Email','contact_phone' => 'Teléfono','commercial_brand' => 'Marca comercial','point_of_sale' => 'Punto de venta','tax_rate_basis_points' => 'Tasa IVA en puntos básicos','credentials_ref' => 'Referencia segura ARCA','cert_ref' => 'Referencia segura certificado' ) as $key => $label ) { echo '<p><label>' . esc_html( $label ) . '<input name="profile[' . esc_attr( $key ) . ']" maxlength="220" value="' . esc_attr( $p[$key] ?? '' ) . '"></label></p>'; }
             foreach ( array( 'vat_status' => array( '' => 'Pendiente', 'registered' => 'IVA Responsable Inscripto','monotributo' => 'Monotributista','exempt' => 'Exento' ), 'verification_status' => array( 'pending' => 'Pendiente','verified' => 'Verificado oficialmente' ), 'common_price_policy' => array( '' => 'Pendiente','tax_exclusive' => 'Neto + impuesto','tax_inclusive' => 'Impuesto incluido' ), 'invoice_a_price_policy' => array( '' => 'Pendiente','tax_exclusive' => 'Neto + impuesto','tax_inclusive' => 'Impuesto incluido' ) ) as $key => $choices ) {
                 echo '<p><label>' . esc_html( array( 'vat_status' => 'Condición fiscal','verification_status' => 'Verificación','common_price_policy' => 'Política cliente común','invoice_a_price_policy' => 'Política cliente A' )[$key] ) . '<select name="profile[' . esc_attr( $key ) . ']">'; foreach ( $choices as $v => $label ) { echo '<option value="' . esc_attr( $v ) . '"' . selected( $p[$key], $v, false ) . '>' . esc_html( $label ) . '</option>'; } echo '</select></label></p>';
@@ -182,7 +200,7 @@ final class GE_WTP_Billing_Issuers {
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'settings', array( 'category' => 'billing', 'saved' => '1' ) ) ); exit;
     }
     public static function order_snapshot( $order ) { $s = $order->get_meta( self::ORDER_META, true ); return is_array( $s ) && $s ? $s : self::unknown(); }
-    public static function inherit( $order, $snapshot ) { $s = self::from_snapshot( $snapshot ); $order->update_meta_data( self::ORDER_META, $s ); $order->update_meta_data( '_ge_billing_issuer_profile_id', $s['id'] ); }
+    public static function inherit( $order, $snapshot ) { if ( ! empty( $snapshot['customer_tax_decision'] ) ) { $order->update_meta_data( '_ge_customer_tax_decision', $snapshot['customer_tax_decision'] ); } $s = self::from_snapshot( $snapshot ); $order->update_meta_data( self::ORDER_META, $s ); $order->update_meta_data( '_ge_billing_issuer_profile_id', $s['id'] ); }
     public static function render_order( $order, $staff ) {
         self::render_summary( array( 'issuer_snapshot' => self::order_snapshot( $order ) ) );
         if ( ! $staff || ! self::can_manage( get_current_user_id() ) ) { return; }
