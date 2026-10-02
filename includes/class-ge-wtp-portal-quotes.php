@@ -33,6 +33,15 @@ final class GE_WTP_Portal_Quotes {
             $pending = self::pending( $quote );
             $status = $pending ? 'pendiente de aprobación' : ( $labels[ $last['event'] ?? '' ] ?? array( 'accepted' => 'aprobado', 'converted' => 'convertido a pedido', 'expired' => 'vencido', 'rejected' => 'rechazado' )[ $quote['status'] ] ?? 'disponible' );
             $entries[] = array( 'title' => 'Presupuesto ' . $quote['number'] . ' ' . $status, 'at' => strtotime( $last['at'] ?? $quote['snapshot']['created_at'] ?? '' ) ?: 0, 'pending' => $pending, 'url' => GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote['id'] ) ), 'cta' => $pending ? 'Revisar presupuesto' : 'Ver presupuesto' );
+            // One earlier milestone preserves the timeline without repeating resend notices.
+            $seen = array( $last['event'] ?? '' );
+            if ( $pending ) { $seen[] = 'sent'; }
+            foreach ( array_reverse( $visible ) as $event ) {
+                $name = $event['event'];
+                if ( in_array( $name, $seen, true ) || empty( $event['at'] ) ) { continue; }
+                $entries[] = array( 'title' => 'Presupuesto ' . $quote['number'] . ' ' . $labels[ $name ], 'at' => strtotime( $event['at'] ) ?: 0, 'pending' => false, 'url' => GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote['id'] ) ), 'cta' => 'Ver presupuesto' );
+                break;
+            }
         }
         foreach ( array_slice( $orders, 0, 6 ) as $order ) {
             $date = $order->get_date_modified() ?: $order->get_date_created();
