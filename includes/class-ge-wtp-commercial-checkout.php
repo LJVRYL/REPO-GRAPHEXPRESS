@@ -48,7 +48,7 @@ final class GE_WTP_Commercial_Checkout {
     public static function render_quote_checkout( $quote ) {
         if ( ! is_array( $quote ) || ! in_array( $quote['status'], array( 'sent', 'viewed', 'accepted', 'converted' ), true ) ) { return; }
         $snapshot = $quote['snapshot'];
-        if ( empty( $snapshot['total_cents'] ) ) { return; }
+        if ( empty( $snapshot['total_cents'] ) || 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { return; }
         if ( 'converted' === $quote['status'] ) {
             $order = $quote['converted_order_id'] ? wc_get_order( $quote['converted_order_id'] ) : false;
             if ( $order && (int) $order->get_meta( '_ge_amount_paid_cents', true ) > 0 ) { self::render_order_balance( $order ); return; }
@@ -582,15 +582,16 @@ final class GE_WTP_Commercial_Checkout {
             $item->set_name( $line['name'] );
             $item->set_quantity( $line['quantity'] );
             $item->set_subtotal( GE_WTP_Quote_Balance::decimal( $line['net_cents'] ) );
-            $item->set_total( GE_WTP_Quote_Balance::decimal( $line['net_cents'] ) );
+            $item->set_total( GE_WTP_Quote_Balance::decimal( $line['taxable_base_cents'] ?? $line['net_cents'] ) );
             if ( $tax_total > 0 ) {
-                $line_tax = $index === $line_count - 1 ? $tax_total - $allocated_tax : intdiv( $tax_total * $line['net_cents'] + intdiv( $snapshot['net_cents'], 2 ), $snapshot['net_cents'] );
+                $line_tax = isset( $line['tax_cents'] ) ? (int) $line['tax_cents'] : ( $index === $line_count - 1 ? $tax_total - $allocated_tax : intdiv( $tax_total * $line['net_cents'] + intdiv( $snapshot['net_cents'], 2 ), $snapshot['net_cents'] ) );
                 $allocated_tax += $line_tax;
                 $item->set_taxes( array( 'total' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ), 'subtotal' => array( $rate_id => GE_WTP_Quote_Balance::decimal( $line_tax ) ) ) );
             }
             $specifications = implode( ' · ', array_filter( array( GE_WTP_Commercial_Quote_UI::customer_configuration_label( $line ), $line['details'] ?? '', $line['notes'] ?? '' ) ) );
             if ( $specifications ) { $item->add_meta_data( 'Especificaciones', $specifications, true ); }
             if ( 'u' !== ( $line['unit'] ?? 'u' ) ) { $item->add_meta_data( 'Unidad', $line['unit'], true ); }
+            $item->update_meta_data('_ge_quote_line_uuid', GE_WTP_Quote_Artwork_V2::line_id($quote['id'], $index, $line));
             $item->update_meta_data( '_ge_quote_source_type', $line['source_type'] ?? ( ! empty( $line['product_id'] ) ? 'catalog_product' : 'custom' ) );
             $item->update_meta_data( '_ge_quote_unit', $line['unit'] ?? 'u' );
             $item->update_meta_data( '_ge_quote_unit_net_cents', (int) $line['unit_net_cents'] );
@@ -618,6 +619,8 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( self::QUOTE_META, $quote['id'] );
         $order->update_meta_data( '_ge_source_quote_id', $quote['id'] );
         $order->update_meta_data( '_ge_commercial_quote_version', $quote['version'] );
+        $order->update_meta_data( '_ge_commercial_quote_snapshot', $snapshot );
+        $order->update_meta_data( '_ge_commercial_discounts', $snapshot['discounts'] ?? array() );
         $order->update_meta_data( '_ge_commercial_snapshot_hash', $snapshot['snapshot_hash'] ?? '' );
         $order->update_meta_data( '_ge_commercial_billing_snapshot', $snapshot['billing'] );
         $order->update_meta_data( '_ge_billing_profile_snapshot', $billing_profile );

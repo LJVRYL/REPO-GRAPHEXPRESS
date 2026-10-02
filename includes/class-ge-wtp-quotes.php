@@ -1,6 +1,8 @@
 <?php
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
+require_once __DIR__ . '/class-ge-wtp-commercial-quote-pdf.php';
+require_once __DIR__ . '/class-ge-wtp-portal-quotes.php';
 
 /** Presupuestos PDF descargables para carritos y pedidos, sin dependencias externas. */
 final class GE_WTP_Quotes {
@@ -9,6 +11,7 @@ final class GE_WTP_Quotes {
     const ORDER_ACTION = 'ge_quote_order_pdf';
 
     public static function init() {
+        GE_WTP_Commercial_Quote_PDF::init();
         add_action( 'admin_post_' . self::CART_ACTION, array( __CLASS__, 'download_cart' ) );
         add_action( 'admin_post_' . self::STORE_ACTION, array( __CLASS__, 'download_store_cart' ) );
         add_action( 'admin_post_' . self::ORDER_ACTION, array( __CLASS__, 'download_order' ) );
@@ -211,11 +214,35 @@ final class GE_WTP_Quotes {
 }
 
 final class GE_WTP_Simple_PDF {
+    /** Exact silhouette from assets/images/graphex-simbolo.svg, clipped spectrum fill. */
+    public function brand_symbol( $x, $top, $size ) {
+        $this->commands[] = sprintf( 'q %.5F 0 0 %.5F %.2F %.2F cm', $size / 256, -$size / 256, $x, 842 - $top );
+        $this->commands[] = '233 2 m 233 25 230 52 230 76 c 230 96 l 177 96 l 166 78 148 69 128 69 c 94 69 67 97 67 131 c 67 166 94 193 128 193 c 152 193 172 181 182 160 c 128 160 l 128 121 l 230 121 l 230 139 l 226 194 184 235 128 235 c 69 235 23 190 23 132 c 23 74 68 29 127 29 c 190 29 l 211 29 225 18 233 2 c h W n';
+        $stops = array( array( 0, 0, 200, 245 ), array( .34, 91, 81, 245 ), array( .68, 243, 38, 146 ), array( 1, 255, 212, 71 ) );
+        // Coordinate t=(110*(x-66)+168*(y-46))/(110²+168²), matching the SVG gradient.
+        for ( $i = -40; $i < 180; $i++ ) {
+            $t = max( 0, min( 1, $i / 100 ) ); $a = $stops[0]; $b = $stops[1];
+            for ( $j = 1; $j < count( $stops ); $j++ ) { $b = $stops[ $j ]; $a = $stops[ $j - 1 ]; if ( $t <= $b[0] ) { break; } }
+            $f = ( $t - $a[0] ) / ( $b[0] - $a[0] );
+            $y = ( $i / 100 * 40324 + 14988 ) / 168; $next = $y + 403.24 / 168;
+            $this->commands[] = sprintf( '%.3F %.3F %.3F rg 0 %.3F m 256 %.3F l 256 %.3F l 0 %.3F l h f', ( $a[1] + $f * ( $b[1] - $a[1] ) ) / 255, ( $a[2] + $f * ( $b[2] - $a[2] ) ) / 255, ( $a[3] + $f * ( $b[3] - $a[3] ) ) / 255, $y, $y - 256 * 110 / 168, $next - 256 * 110 / 168, $next );
+        }
+        $this->commands[] = 'Q';
+    }
     private $commands = array();
     public function begin_page() { $this->commands = array(); }
     public function end_page() { return implode( "\n", $this->commands ); }
     public function text( $x, $top, $size, $text, $bold = false, $r = 0, $g = 0, $b = 0 ) { $encoded = $this->encode( $text ); $this->commands[] = sprintf( 'BT /%s %.2F Tf %.3F %.3F %.3F rg 1 0 0 1 %.2F %.2F Tm (%s) Tj ET', $bold ? 'F2' : 'F1', $size, $r / 255, $g / 255, $b / 255, $x, 842 - $top, $encoded ); }
-    public function text_right( $right, $top, $size, $text, $bold = false, $r = 0, $g = 0, $b = 0 ) { $width = strlen( $this->encode( $text ) ) * $size * ( $bold ? 0.57 : 0.50 ); $this->text( $right - $width, $top, $size, $text, $bold, $r, $g, $b ); }
+    public static function width( $text, $size, $bold = false ) {
+        static $metrics = null;
+        if ( null === $metrics ) { $metrics = require __DIR__ . '/quote-font-widths.php'; }
+        $text = html_entity_decode( wp_strip_all_tags( (string) $text ), ENT_QUOTES, 'UTF-8' );
+        $encoded = iconv( 'UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $text );
+        $width = 0;
+        foreach ( unpack( 'C*', $encoded ?: '' ) as $char ) { $width += $metrics[ $bold ? 1 : 0 ][ $char ]; }
+        return $width * $size / 1000;
+    }
+    public function text_right( $right, $top, $size, $text, $bold = false, $r = 0, $g = 0, $b = 0 ) { $this->text( $right - self::width( $text, $size, $bold ), $top, $size, $text, $bold, $r, $g, $b ); }
     public function fill_rect( $x, $top, $width, $height, $r, $g, $b ) { $this->commands[] = sprintf( '%.3F %.3F %.3F rg %.2F %.2F %.2F %.2F re f', $r / 255, $g / 255, $b / 255, $x, 842 - $top - $height, $width, $height ); }
     public function stroke_rect( $x, $top, $width, $height, $r, $g, $b ) { $this->commands[] = sprintf( '%.3F %.3F %.3F RG 0.6 w %.2F %.2F %.2F %.2F re S', $r / 255, $g / 255, $b / 255, $x, 842 - $top - $height, $width, $height ); }
     public function line( $x1, $top1, $x2, $top2, $r, $g, $b, $width = 1 ) { $this->commands[] = sprintf( '%.3F %.3F %.3F RG %.2F w %.2F %.2F m %.2F %.2F l S', $r / 255, $g / 255, $b / 255, $width, $x1, 842 - $top1, $x2, 842 - $top2 ); }

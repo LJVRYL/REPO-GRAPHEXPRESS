@@ -12,6 +12,21 @@
     --ge-shadow: 0 18px 50px rgba(17, 24, 39, .08);
 }
 
+.ge-stats.ge-stats-with-quotes { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.ge-quote-stat a { display:flex; align-items:center; gap:8px; width:fit-content; min-height:44px; margin-top:10px; color:var(--ge-violet-dark); font-weight:600; }
+.ge-quote-stat a span { color:inherit; }
+.ge-commercial-activity { list-style:none; margin:0; padding:0; }
+.ge-commercial-activity li { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0; border-bottom:1px solid var(--ge-line); }
+.ge-commercial-activity li:last-child { border-bottom:0; }
+.ge-commercial-activity li.is-pending { border-left:3px solid var(--ge-violet); padding-left:14px; }
+.ge-commercial-activity strong { display:block; font-size:15px; line-height:1.5; overflow-wrap:anywhere; }
+.ge-commercial-activity time { display:block; margin-top:4px; color:var(--ge-muted); font-size:12px; }
+.ge-commercial-activity a { display:inline-flex; align-items:center; min-height:44px; color:var(--ge-violet-dark); font-weight:600; font-size:14px; flex-shrink:0; }
+.ge-quote-pdf-download { display:inline-flex; align-items:center; gap:8px; min-height:44px; margin:16px 0; }
+.ge-quote-stat a:focus-visible,.ge-commercial-activity a:focus-visible,.ge-quote-pdf-download:focus-visible { outline:3px solid var(--ge-violet); outline-offset:3px; }
+@media(max-width:1100px) { .ge-stats.ge-stats-with-quotes { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:600px) { .ge-stats.ge-stats-with-quotes { grid-template-columns:1fr; } .ge-commercial-activity li { align-items:flex-start; flex-direction:column; gap:4px; } }
+
 body.ge-markcom-standalone { margin: 0; background: var(--ge-soft); }
 #ge-markcom-app { min-height: 100vh; }
 

@@ -8,6 +8,8 @@ final class GE_WTP_Commercial_Quote_Files {
     const RECEIPT_META = '_ge_commercial_receipt_files';
 
     public static function init() {
+        require_once __DIR__ . '/class-ge-wtp-quote-artwork-v2.php';
+        GE_WTP_Quote_Artwork_V2::init();
         add_action( 'admin_post_ge_commercial_quote_approve_file', array( __CLASS__, 'handle_approve_file' ) );
         add_action( 'admin_post_ge_commercial_quote_file', array( __CLASS__, 'handle_upload' ) );
         add_action( 'admin_post_ge_commercial_quote_receipt', array( __CLASS__, 'handle_receipt' ) );
@@ -53,6 +55,7 @@ final class GE_WTP_Commercial_Quote_Files {
         $staff = GE_WTP_Staff_Portal::can_access();
         if ( ! $staff && (int) $actor_id !== (int) $quote['customer_id'] ) { return new WP_Error( 'ge_quote_file_access', 'Acceso denegado.' ); }
         if ( ! $staff && in_array( $quote['status'], array( 'draft', 'rejected', 'cancelled' ), true ) ) { return new WP_Error( 'ge_quote_file_state', 'No se pueden adjuntar archivos a este presupuesto.' ); }
+        if (is_array($file) && in_array((int)($file['error'] ?? 0), array(UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE), true)) { return new WP_Error('ge_quote_file_limit', 'El archivo supera el límite de esta carga. Para artes grandes, usá Editar presupuesto y Archivos / Arte.'); }
         if ( ! is_array( $file ) || empty( $file['name'] ) || UPLOAD_ERR_OK !== (int) ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) || ! is_uploaded_file( $file['tmp_name'] ?? '' ) ) { return new WP_Error( 'ge_quote_file_missing', 'Seleccioná un archivo válido.' ); }
         $size = (int) ( $file['size'] ?? 0 );
         if ( $size < 1 || $size > ( 'comprobante' === $category ? 20 : 250 ) * MB_IN_BYTES || count( self::all( $quote_id, $category ) ) >= 30 ) { return new WP_Error( 'ge_quote_file_limit', 'Revisá el tamaño o la cantidad de archivos.' ); }
@@ -92,15 +95,25 @@ final class GE_WTP_Commercial_Quote_Files {
         $documents = GE_WTP_Documents::get_documents( $order->get_id() );
         $ids = array_column( $documents, 'id' );
         $added = false;
+        $quote = GE_WTP_Commercial_Quotes::get( $quote_id );
+        $item_map = array();
+        foreach ( $order->get_items('line_item') as $order_item ) { $key = $order_item->get_meta('_ge_quote_line_uuid', true); if ($key) { $item_map[$key] = $order_item->get_id(); } }
         foreach ( self::all( $quote_id ) as $file ) {
+            if ( 'detached' === ($file['association_status'] ?? '') ) { continue; }
             if ( empty( $file['id'] ) || in_array( $file['id'], $ids, true ) ) { continue; }
             $file['source_quote_id'] = (int) $quote_id;
+            $line_key = $file['quote_item_id'] ?? '';
+            if ($line_key && isset($item_map[$line_key])) { $file['order_item_id'] = $item_map[$line_key]; $file['artwork_side'] = 'general'; }
+            else { unset($file['order_item_id'], $file['artwork_side']); }
             $documents[] = $file;
             $added = true;
         }
         if ( ! $added ) { return; }
         $order->update_meta_data( GE_WTP_Documents::META_KEY, $documents );
         $order->save();
+        foreach ( $documents as $document ) {
+            if (($document['source_quote_id'] ?? 0) === (int)$quote_id && !empty($document['quote_item_id']) && !empty($document['order_item_id'])) { self::attach_to_item($order->get_id(), $document['order_item_id'], $document['id'], get_current_user_id()); }
+        }
         foreach ( $order->get_items( 'line_item' ) as $item ) {
             $item->delete_meta_data( '_ge_item_artwork_customer_approval' );
             $item->delete_meta_data( '_ge_item_artwork_staff_approval' );
@@ -113,6 +126,7 @@ final class GE_WTP_Commercial_Quote_Files {
         $items = array_values( $order->get_items( 'line_item' ) );
         $latest = array();
         foreach ( self::all( $quote_id ) as $file ) {
+            if (isset($file['association_status'])) { continue; } // V2 assignments never imply approval.
             $approval = $file['staff_approval'] ?? array();
             if ( empty( $approval['approved'] ) || (int) ( $approval['quote_version'] ?? 0 ) !== (int) $quote['version'] || ! hash_equals( (string) ( $file['analysis']['sha256'] ?? '' ), (string) ( $approval['checksum'] ?? '' ) ) ) { continue; }
             $latest[ (int) $approval['item_index'] ] = $file;

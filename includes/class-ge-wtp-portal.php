@@ -383,6 +383,7 @@ final class GE_WTP_Portal {
     }
 
     private static function render_dashboard() {
+        $commercial_quotes = GE_WTP_Portal_Quotes::customer_quotes();
         $markcom = self::portal_is_markcom();
         $orders = self::portal_orders( 100 );
         $portal_user = self::portal_user();
@@ -413,15 +414,16 @@ final class GE_WTP_Portal {
             </div><?php else : ?><div class="ge-rate-card"><span class="ge-rate-label">Tu cuenta</span><strong><?php echo esc_html( $portal_user->display_name ); ?></strong><span><?php echo esc_html( $portal_user->user_email ); ?></span><small>Datos y trabajos visibles sólo para vos.</small></div><?php endif; ?>
         </section>
         <?php GE_WTP_Customer_Quotes::render_dashboard(); ?>
-        <section class="ge-stats">
+        <section class="ge-stats ge-stats-with-quotes">
             <article><span><?php echo esc_html( $markcom ? 'Productos disponibles' : 'Pedidos totales' ); ?></span><strong><?php echo esc_html( $markcom ? 9 : count( $orders ) ); ?></strong><small><?php echo esc_html( $markcom ? count( GE_WTP_Catalog::products() ) . ' presentaciones' : 'En tu historial' ); ?></small></article>
             <article><span>Pedidos activos</span><strong><?php echo esc_html( count( $active_orders ) ); ?></strong><small>En seguimiento</small></article>
             <article><span>Documentos</span><strong><?php echo esc_html( $documents ); ?></strong><small>Archivos centralizados</small></article>
+            <?php GE_WTP_Portal_Quotes::card( $commercial_quotes ); ?>
         </section>
         <section class="ge-dashboard-grid">
             <div class="ge-panel">
-                <div class="ge-panel-heading"><div><span class="ge-eyebrow">Actividad</span><h2>Últimos pedidos</h2></div><a href="<?php echo esc_url( self::portal_url( 'pedidos' ) ); ?>">Ver todos</a></div>
-                <?php self::render_order_rows( array_slice( $orders, 0, 4 ) ); ?>
+                <div class="ge-panel-heading"><div><span class="ge-eyebrow">Actividad</span><h2>Tu actividad comercial</h2></div><a href="<?php echo esc_url( self::portal_url( 'presupuestos' ) ); ?>">Ver presupuestos</a></div>
+                <?php GE_WTP_Portal_Quotes::activity( $commercial_quotes, $orders ); ?>
             </div>
             <aside class="ge-panel ge-process-card">
                 <span class="ge-eyebrow">Modalidad de trabajo</span>
