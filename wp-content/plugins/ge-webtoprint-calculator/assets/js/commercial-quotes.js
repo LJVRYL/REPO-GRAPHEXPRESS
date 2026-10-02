@@ -31,19 +31,17 @@
       var query = new URLSearchParams({ action: 'ge_customer_branch_options', _ajax_nonce: branchPicker.dataset.nonce, email: emailInput.value });
       fetch(branchPicker.dataset.ajax + '?' + query.toString(), { credentials: 'same-origin' }).then(function (response) { return response.json(); }).then(function (result) {
         if (number !== requestNumber || !result.success) return;
-        var previousProfile = billingSelect.value || selected.profile || 'default';
+        var previousProfile = billingSelect.value || selected.profile || '';
         var previousDelivery = deliverySelect.value || selected.delivery || '';
         billingSelect.replaceChildren(); deliverySelect.replaceChildren();
         addOption(deliverySelect, '', 'A coordinar');
+        addOption(billingSelect, '', 'Elegí receptor');
         (result.data.profiles || []).forEach(function (profile) { addOption(billingSelect, profile.id, profile.label + (profile.cuit ? ' · CUIT ' + profile.cuit : '')); });
-        if (!billingSelect.options.length) addOption(billingSelect, 'default', 'Perfil principal');
+        if (!(result.data.profiles || []).length) addOption(billingSelect, 'default', 'Perfil principal');
         (result.data.addresses || []).forEach(function (address) { addOption(deliverySelect, address.id, address.label + ' · ' + address.street); });
         billingSelect.value = previousProfile;
-        if (billingSelect.selectedIndex < 0) billingSelect.selectedIndex = 0;
-        if (!document.querySelector('input[name="quote_id"]') && previousProfile === 'default') {
-          var preferred = (result.data.profiles || []).find(function (profile) { return profile.is_default; });
-          if (preferred) billingSelect.value = preferred.id;
-        }
+        if (billingSelect.selectedIndex < 0) billingSelect.value = '';
+        if (!previousProfile && (result.data.profiles || []).length === 1) billingSelect.value = result.data.profiles[0].id;
         deliverySelect.value = previousDelivery;
         if (deliverySelect.selectedIndex < 0) deliverySelect.value = '';
         if (!previousDelivery && deliverySelect.options.length === 2) deliverySelect.selectedIndex = 1;
