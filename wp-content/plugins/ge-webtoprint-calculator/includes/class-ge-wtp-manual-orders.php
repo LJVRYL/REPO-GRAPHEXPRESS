@@ -38,6 +38,7 @@ final class GE_WTP_Manual_Orders {
 
     public static function reference( $order ) {
         if ( ! $order instanceof WC_Order ) { return ''; }
+        if ( class_exists( 'GE_WTP_Gestion_V3' ) && GE_WTP_Gestion_V3::lookup( 'order_id', $order->get_id() ) ) { return '#' . $order->get_order_number(); }
         return $order->get_meta( '_ge_markcom_reference' ) ?: ( $order->get_meta( '_ge_manual_reference' ) ?: '#' . $order->get_id() );
     }
 

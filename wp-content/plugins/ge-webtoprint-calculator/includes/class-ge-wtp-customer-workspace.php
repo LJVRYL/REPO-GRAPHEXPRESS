@@ -105,7 +105,7 @@ final class GE_WTP_Customer_Workspace {
             foreach ( $rows as $row ) {
                 $document = $row['document']; $order = $row['order'];
                 $label = GE_WTP_Documents::categories()[ $document['category'] ?? '' ] ?? 'Documento';
-                echo '<a class="ge-workspace-row" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ) . '"><div><strong>' . esc_html( $label . ' ' . ( $document['document_number'] ?? $document['name'] ?? '' ) ) . '</strong><small>Pedido #' . esc_html( $order->get_id() ) . ' · ' . esc_html( $document['issue_date'] ?? $document['uploaded_at'] ?? '' ) . '</small></div><span>Ver pedido ↗</span></a>';
+                echo '<a class="ge-workspace-row" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ) . '"><div><strong>' . esc_html( $label . ' ' . ( $document['document_number'] ?? $document['name'] ?? '' ) ) . '</strong><small>Pedido #' . esc_html( $order->get_order_number() ) . ' · ' . esc_html( $document['issue_date'] ?? $document['uploaded_at'] ?? '' ) . '</small></div><span>Ver pedido ↗</span></a>';
             }
         }
     }
@@ -122,8 +122,8 @@ final class GE_WTP_Customer_Workspace {
             }
         }
         foreach ( $orders as $order ) {
-            $events[] = array( 'at' => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '', 'title' => 'Pedido #' . $order->get_id(), 'detail' => GE_WTP_Order_Lifecycle::label( $order ) );
-            foreach ( GE_WTP_Documents::issued_documents( $order->get_id() ) as $document ) { $events[] = array( 'at' => $document['uploaded_at'] ?? '', 'title' => 'Documento emitido · pedido #' . $order->get_id(), 'detail' => $document['document_number'] ?? '' ); }
+            $events[] = array( 'at' => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '', 'title' => 'Pedido #' . $order->get_order_number(), 'detail' => GE_WTP_Order_Lifecycle::label( $order ) );
+            foreach ( GE_WTP_Documents::issued_documents( $order->get_id() ) as $document ) { $events[] = array( 'at' => $document['uploaded_at'] ?? '', 'title' => 'Documento emitido · pedido #' . $order->get_order_number(), 'detail' => $document['document_number'] ?? '' ); }
         }
         foreach ( $logs as $log ) { $events[] = array( 'at' => get_post_time( 'Y-m-d H:i:s', false, $log ), 'title' => 'Comunicación · ' . $log->post_title, 'detail' => 'sent' === get_post_meta( $log->ID, '_ge_email_result', true ) ? 'Enviado' : 'No enviado' ); }
         usort( $events, function ( $a, $b ) { return strcmp( $b['at'], $a['at'] ); } );
@@ -147,7 +147,7 @@ final class GE_WTP_Customer_Workspace {
             if ( is_wp_error( $current ) ) { continue; }
             $quotes[] = array(
                 'title' => $current['number'], 'reference' => 'Presupuesto actual', 'captured_at' => $post->post_date, '_quote_id' => $current['id'],
-                'status' => $current['status'], '_url' => GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $current['id'] ) ),
+                'status' => class_exists('GE_WTP_Gestion_V3') ? GE_WTP_Gestion_V3::status_label($current['status']) : $current['status'], '_url' => GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $current['id'] ) ),
                 '_amount' => isset( $current['snapshot']['total_cents'] ) ? wp_strip_all_tags( wc_price( $current['snapshot']['total_cents'] / 100 ) ) : '',
             );
         }

@@ -38,7 +38,8 @@ final class GE_WTP_Commercial_Quotes {
         $version = absint( get_post_meta( $post->ID, self::CURRENT_META, true ) );
         return array(
             'id' => (int) $post->ID,
-            'number' => 'GE-PRE-' . $post->ID,
+            'number' => class_exists( 'GE_WTP_Gestion_V3' ) ? GE_WTP_Gestion_V3::quote_number( $post->ID ) : 'GE-PRE-' . $post->ID,
+            'work_number' => class_exists( 'GE_WTP_Gestion_V3' ) ? GE_WTP_Gestion_V3::lookup( 'quote_id', $post->ID ) : 0,
             'customer_id' => absint( get_post_meta( $post->ID, self::CUSTOMER_META, true ) ),
             'status' => (string) get_post_meta( $post->ID, self::STATUS_META, true ),
             'version' => $version,
