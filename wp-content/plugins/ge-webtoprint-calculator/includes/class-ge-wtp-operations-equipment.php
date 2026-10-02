@@ -61,7 +61,7 @@ class GE_WTP_Operations_Equipment {
     public static function recipes() {
         global $wpdb;
         if (!GE_WTP_Operations::permission('stock')) GE_WTP_Operations::error('forbidden','Sin permiso de stock.');
-        $rows=$wpdb->get_results('SELECT id,name,parent_id,lines_json,updated_at FROM '.GE_WTP_Operations::table('recipes').' ORDER BY id DESC LIMIT 500',ARRAY_A);
+        $rows=$wpdb->get_results('SELECT id,name,parent_id,lines_json,updated_at FROM '.GE_WTP_Operations::table('recipes')." WHERE lines_json<>'[]' ORDER BY id DESC LIMIT 500",ARRAY_A);
         foreach ($rows as &$row) { $row['lines']=json_decode($row['lines_json'],true); unset($row['lines_json']); }
         return $rows;
     }
@@ -189,7 +189,7 @@ class GE_WTP_Operations_Equipment {
         $row=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.GE_WTP_Operations::table('recipes').' WHERE id=%d',$id),ARRAY_A);
         if (!$row) GE_WTP_Operations::error('equipment_invalid', 'Receta inexistente.');
         $lines=json_decode($row['lines_json'],true); $result=array();
-        if (!is_array($lines)) GE_WTP_Operations::error('equipment_invalid', 'Receta dañada.');
+        if (!is_array($lines) || !$lines) GE_WTP_Operations::error('equipment_invalid', 'Receta dañada.');
         foreach ($lines as $line) {
             $base=$outputs;
             if ($line['basis']==='sheet') $base=self::ratio_ceil(array($outputs,10000),array(self::fixed4($line['outputs_per_sheet'],'rendimiento'),(int)$duplex));

@@ -77,6 +77,9 @@ require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-admin.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-plugin.php';
 foreach(array('operations','operations-stock','operations-finance','operations-equipment','operations-ui') as $module) require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-'.$module.'.php';
 GE_WTP_Operations::init();
+foreach(array('cost-math','cost-engine','cost-products','cost-ui','cost-assist','cost-quotes','cost-legacy') as $module) require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-'.$module.'.php';
+GE_WTP_Cost_Engine::init();GE_WTP_Cost_Quotes::init();
+GE_WTP_Cost_UI::init();
 
 register_activation_hook( __FILE__, array( 'GE_WTP_Plugin', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'GE_WTP_Plugin', 'deactivate' ) );

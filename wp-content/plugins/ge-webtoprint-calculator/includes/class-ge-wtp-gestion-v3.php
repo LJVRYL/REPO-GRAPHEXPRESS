@@ -140,7 +140,7 @@ final class GE_WTP_Gestion_V3 {
         return self::shell_enabled() && is_page( 'gestion' ) && GE_WTP_Staff_Portal::can_access() ? GE_WTP_PLUGIN_DIR . 'templates/gestion-v3.php' : $original;
     }
 
-    public static function nav() { $nav=array('dashboard'=>'Inicio','customers'=>'Clientes','quotes'=>'Presupuestos','orders'=>'Pedidos','production'=>'Producción'); if(GE_WTP_Operations::enabled()) { if(GE_WTP_Operations::module_enabled('suppliers')) $nav['suppliers']='Proveedores'; if(GE_WTP_Operations::module_enabled('stock')&&(current_user_can('ge_manage_inventory')||current_user_can('manage_options'))) $nav['stock']='Stock'; if(GE_WTP_Operations::module_enabled('administration')&&(current_user_can('ge_view_finance')||current_user_can('manage_options'))) $nav['administration']='Administración'; } $nav['communications']='Comunicaciones'; return $nav; }
+    public static function nav() { $nav=array('dashboard'=>'Inicio','customers'=>'Clientes','quotes'=>'Presupuestos','orders'=>'Pedidos','production'=>'Producción'); if(GE_WTP_Operations::enabled()) { if(GE_WTP_Operations::module_enabled('suppliers')) $nav['suppliers']='Proveedores'; if(GE_WTP_Operations::module_enabled('stock')&&(current_user_can('ge_manage_inventory')||current_user_can('manage_options'))) $nav['stock']='Stock'; if(GE_WTP_Operations::module_enabled('administration')&&(current_user_can('ge_view_finance')||current_user_can('manage_options'))) $nav['administration']='Administración'; } if(GE_WTP_Cost_Engine::enabled()&&(current_user_can('ge_view_costs')||current_user_can('manage_options'))) $nav['costs']='Costos y Productos'; $nav['communications']='Comunicaciones'; return $nav; }
     public static function status_label( $key ) {
         $labels=array('draft'=>'Borrador','sent'=>'Enviado','viewed'=>'Visto','accepted'=>'Aceptado','converted'=>'Convertido','rejected'=>'Rechazado','expired'=>'Vencido','cancelled'=>'Cancelado');
         return $labels[$key]??ucfirst(str_replace('_',' ',$key));
@@ -149,7 +149,7 @@ final class GE_WTP_Gestion_V3 {
 
     public static function icon( $name ) {
         $paths = array(
-            'stock'=>'M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10', 'suppliers'=>'M3 21V7l9-4 9 4v14z M7 10h2 M15 10h2 M10 21v-4h4v4', 'administration'=>'M3 5h18v14H3z M16 12h5 M7 9h3 M7 15h6',
+            'costs'=>'M4 3h16v18H4z M8 7h8 M8 11h2 M14 11h2 M8 15h2 M14 15h2', 'stock'=>'M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10', 'suppliers'=>'M3 21V7l9-4 9 4v14z M7 10h2 M15 10h2 M10 21v-4h4v4', 'administration'=>'M3 5h18v14H3z M16 12h5 M7 9h3 M7 15h6',
             'dashboard'=>'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
             'customers'=>'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
             'quotes'=>'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5',

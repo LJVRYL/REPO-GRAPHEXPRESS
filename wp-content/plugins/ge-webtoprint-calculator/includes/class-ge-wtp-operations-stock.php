@@ -95,6 +95,8 @@ final class GE_WTP_Operations_Stock {
             if(isset($d['active'])) { $data['active']=empty($d['active'])?0:1; }
             if(isset($d['metadata'])) {
                 $meta=array();
+                // Preserve cost policy written by the cost service on unrelated stock edits.
+                if(!empty($d['id'])){$existing=$wpdb->get_var($wpdb->prepare('SELECT metadata FROM '.self::t('stock_items').' WHERE id=%d',$d['id']));$old_meta=json_decode($existing??'',true)?:array();foreach(array('cost_tax_treatment','cost_tax_percent') as $key)if(isset($old_meta[$key]))$meta[$key]=$old_meta[$key];}
                 foreach(array('location','reorder','notes') as $key) { if(isset($d['metadata'][$key])) { $meta[$key]=sanitize_textarea_field($d['metadata'][$key]); } }
                 if(array_key_exists('reorder',$d['metadata'])) {
                     $reorder=$d['metadata']['reorder'];

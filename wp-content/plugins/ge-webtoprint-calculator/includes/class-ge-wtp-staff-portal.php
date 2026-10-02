@@ -107,7 +107,9 @@ final class GE_WTP_Staff_Portal {
             return;
         }
         $section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : 'dashboard';
-        if ( GE_WTP_Operations::enabled() && in_array($section,array('stock','administration','suppliers'),true) ) {
+        if ( 'costs' === $section && GE_WTP_Cost_Engine::enabled() ) {
+            GE_WTP_Cost_UI::render();
+        } elseif ( GE_WTP_Operations::enabled() && in_array($section,array('stock','administration','suppliers'),true) ) {
             GE_WTP_Operations_UI::render($section);
         } elseif ( 'quotes' === $section ) {
             GE_WTP_Commercial_Quote_UI::render_staff();
