@@ -1,6 +1,7 @@
 <?php
 
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
 
 /** Additional fiscal identities under one commercial customer account. */
 final class GE_WTP_Customer_Branches {
@@ -109,6 +110,7 @@ final class GE_WTP_Customer_Branches {
     }
 
     public static function render_order_summary( $order, $staff = false ) {
+        GE_WTP_Billing_Issuers::render_order( $order, $staff );
         $profile = $order->get_meta( '_ge_billing_profile_snapshot', true );
         if ( ! is_array( $profile ) || ! $profile ) {
             $billing = $order->get_meta( '_ge_commercial_billing_snapshot', true );

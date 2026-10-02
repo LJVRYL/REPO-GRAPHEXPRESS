@@ -4,6 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+
 final class GE_WTP_Documents {
     const META_KEY = '_ge_markcom_documents';
 
@@ -190,6 +192,7 @@ final class GE_WTP_Documents {
                 $record['issue_date'] = sanitize_text_field( $context['issue_date'] ?? '' );
                 $record['replaces_id'] = sanitize_text_field( $context['replaces_id'] ?? '' );
                 $record['billing_profile_snapshot'] = $context['billing_profile_snapshot'] ?? array();
+                $record['issuer_snapshot'] = $context['issuer_snapshot'] ?? GE_WTP_Billing_Issuers::unknown();
             }
             $record = GE_WTP_File_Analysis::record( $record, self::private_directory() );
             $saved[] = $record;
@@ -239,7 +242,7 @@ final class GE_WTP_Documents {
     }
 
     /** Keep every fiscal file immutable. A replacement only supersedes its predecessor. */
-    public static function attach_issued( $order_id, $type, $number, $issue_date, $replaces_id = '' ) {
+    public static function attach_issued( $order_id, $type, $number, $issue_date, $replaces_id = '', $issuer_confirmation_hash = '' ) {
         $types = array( 'factura', 'nota_credito', 'nota_debito', 'presupuesto_emitido', 'otro' );
         if ( ! in_array( $type, $types, true ) ) { return new WP_Error( 'ge_issued_type', 'Tipo de documento inválido.' ); }
         if ( $issue_date && ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $issue_date ) || gmdate( 'Y-m-d', strtotime( $issue_date ) ) !== $issue_date ) ) {
@@ -247,6 +250,8 @@ final class GE_WTP_Documents {
         }
         $order = wc_get_order( $order_id );
         if ( ! $order ) { return new WP_Error( 'ge_issued_order', 'Pedido inválido.' ); }
+        $issuer = GE_WTP_Billing_Issuers::order_snapshot( $order );
+        if ( ! hash_equals( hash( 'sha256', wp_json_encode( $issuer ) ), (string) $issuer_confirmation_hash ) ) { return new WP_Error( 'ge_issued_issuer_confirmation', 'Confirmá el emisor del archivo exacto antes de adjuntarlo; el pedido puede haber cambiado.' ); }
         $documents = self::get_documents( $order_id );
         $previous = null;
         if ( $replaces_id ) {
@@ -262,6 +267,7 @@ final class GE_WTP_Documents {
             'allowed_extensions' => array( 'pdf' ), 'issued_document' => true,
             'document_number' => $number, 'issue_date' => $issue_date, 'replaces_id' => $replaces_id,
             'billing_profile_snapshot' => is_array( $snapshot ) ? $snapshot : array(),
+            'issuer_snapshot' => GE_WTP_Billing_Issuers::order_snapshot( $order ),
         ) );
         if ( is_wp_error( $saved ) ) { return $saved; }
         if ( count( $saved ) !== 1 ) { return new WP_Error( 'ge_issued_upload', 'No se pudo guardar el PDF.' ); }

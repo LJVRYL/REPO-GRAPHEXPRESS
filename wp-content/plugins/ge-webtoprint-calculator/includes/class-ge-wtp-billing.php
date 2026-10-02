@@ -1,6 +1,7 @@
 <?php
 
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
 
 /** Billing profile and fiscal decision for commercial quotes. Amounts are centavos. */
 final class GE_WTP_Billing {
@@ -8,6 +9,7 @@ final class GE_WTP_Billing {
     const PROFILE_META = '_ge_billing_profile';
 
     public static function init() {
+        GE_WTP_Billing_Issuers::init();
         add_action( 'admin_post_ge_save_billing_entity', array( __CLASS__, 'save_entity' ) );
     }
 
@@ -133,6 +135,7 @@ final class GE_WTP_Billing {
     }
 
     public static function render_settings() {
+        GE_WTP_Billing_Issuers::render_settings();
         $entity = self::entity();
         echo '<section class="ge-admin-panel"><h2>Emisor y política de facturación</h2><p>Configurá los datos verificados del emisor. El cobro de Factura A se bloquea si faltan datos o si el emisor no está habilitado.</p>';
         if ( ! current_user_can( 'manage_options' ) ) { echo '<p>Solo un administrador puede modificar esta configuración.</p></section>'; return; }

@@ -1,0 +1,53 @@
+GRAPHEX BILLING ISSUER PROFILES v1 — CONTRATO Y RUNBOOK
+
+Project: graph-express. Resource: graph-wordpress-prod / ferozo.
+Integration: WordPress/WooCommerce; ARCA futura, sin emisión habilitada.
+Fuente actual: producción. El checkout canónico puede diferir del despliegue.
+
+Persistencia
+- ge_billing_issuer_profiles_v1: catálogo independiente de Customer Billing Profile y Customer Branches.
+- ge_issuer_audit: CPT privado, no REST/UI pública; actor, fecha, motivo, antes/después.
+- quote version: issuer_profile_id, issuer_snapshot, issuer_suggestion. La identidad fiscal del resolver se obtiene exclusivamente del snapshot seleccionado.
+- order: _ge_billing_issuer_snapshot, _ge_billing_issuer_profile_id; conversión hereda además todo el snapshot comercial.
+- issued documents: issuer_snapshot fijado al adjuntar el archivo; nunca actualizar el documento histórico al editar catálogo.
+- legacy quotes: _ge_billing_issuer_legacy = unknown; versiones, hashes y precios anteriores intactos.
+
+Perfiles iniciales
+leonardo-c: AYALA LEONARDO JAVIER, CUIT 23336924529, IIBB 23336924529,
+SAN MARTIN AV. 6177 Piso: PB, 1419, CIUDAD AUTONOMA DE BUENOS AIRES, AR.
+Condición fiscal vacía; C previsto; verificación pendiente. Relación propia según identidad aportada por Leo.
+mardones-a: MARDONES ESPINOZA EDUARDO ANDRES, CUIT 20948548934,
+SUCRE 5096 - Piso: P.B., 1882, EZPELETA, AR. Provincia no aportada, vacía.
+IVA Responsable Inscripto aportado; A previsto; verificación y relación comercial pendientes.
+Ningún perfil inicial queda oficialmente habilitado: faltan configuración verificada, punto de venta, políticas y tasa propias.
+
+Reglas y permisos
+default_for_scenarios configura sugerencias únicas por escenario. Perfil invoice_a o VAT registrado/monotributo sugiere el escenario invoice_a; resto common. Cada sugerencia ejecuta el resolver real y registra sus blockers; nunca transforma la sugerencia en autorización fiscal.
+Administrador o capability ge_manage_billing_issuers: editar perfiles, override, cambio/refresh. No se otorgan permisos nuevos durante esta migración.
+Staff operativo: sugerencia automática y conservación del emisor existente. Endpoints exigen autenticación, capability y nonce.
+Tercero sin relationship_confirmed: borrador revisable, envío y creación directa de pedido bloqueados.
+Fiscal pending: envío comercial permitido para emisor con relación real; cobro y conversión fiscal siguen bloqueados.
+
+Inmutabilidad y versiones
+Revisar precios conserva exactamente issuer_snapshot anterior, sin consultar catálogo para sustituirlo.
+Cambiar ID o marcar issuer_refresh exige rol y motivo y crea versión nueva, incluso desde draft.
+Editar catálogo cambia revision; no cambia PDF/email/portal/pedido anteriores. Operaciones fiscales detectan revisión distinta y exigen conciliación explícita.
+En pedido directo sin pagos/documentos/presupuesto: cambio explícito, audit trail, historial y recálculo con tax resolver y centavos; IVA y saldo actualizados.
+Pedido vinculado a presupuesto, cobrado parcial/totalmente, con documento fiscal o cargos/envío: no se cambia aisladamente; requiere flujo de rectificación revisado. No se implementan notas de crédito automáticas.
+
+Presentación
+PDF usa issuer_snapshot y datos aportados, no ge_commercial_document_identity global. Marca comercial Graphex conservada y emisor fiscal visible separado en cada página.
+UI, portal y email usan el mismo snapshot. Email adjunta el renderer PDF existente y conserva la trazabilidad del sitio/remitente operativo; no se usa Gmail.
+IVA v2, descuentos comerciales, UUID de arte, uploads y conversión se preservan.
+Importes del flujo manual anterior no se reinterpretan por cambiar únicamente un selector; el recálculo de pedidos requiere la acción explícita indicada.
+
+ARCA y cliente
+GE_WTP_Billing_Issuers::arca_request(order) prepara issuer_profile_id, snapshot y referencias propias del emisor. execution_enabled=false. No carga claves ni llama ARCA, no produce CAE.
+Referencias con formato simbólico; no se pueden repetir entre emisores. Cambiar CUIT exige retirar referencias anteriores. Snapshot público excluye credentials_ref/cert_ref.
+Customer CUIT/condición/verificación se reutilizan mediante Billing y Customer Branches; no se crea schema fiscal de cliente paralelo. El lookup oficial ARCA sigue pendiente de integración/autenticación oficial.
+
+Operación
+Completar cada perfil en Gestión > Configuración > Facturación con rol autorizado y motivo/documentación de verificación. Confirmar relación real de Mardones antes de enviar. No deducir condición de Leonardo a partir del tipo C previsto.
+Tras verificar catálogo: crear o revisar explícitamente el presupuesto; marcar refresh cuando cambie la configuración del emisor. No habilitar por reinterpretación de snapshots históricos.
+QA: tests/billing-issuer-profiles-v1.php exige GE_ISSUER_QA_WP_LOAD y DB_NAME=graph_billing_issuers_v1; jamás ejecutar sobre producción. Correos interceptados con pre_wp_mail.
+Rollback de código exige hashes vigentes y ausencia de nuevas operaciones con emisor seleccionado. Si ya existen, detener rollback y planificar forward fix/conciliación. Nunca restaurar DB para eliminar pedidos posteriores.

@@ -1,6 +1,7 @@
 <?php
 
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
 
 /** Staff and customer controls for the new commercial quote lifecycle. */
 final class GE_WTP_Commercial_Quote_UI {
@@ -56,6 +57,7 @@ final class GE_WTP_Commercial_Quote_UI {
         if ( $editing ) { echo '<input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="expected_version" value="' . esc_attr( $quote['version'] ) . '">'; }
         $phone = $customer ? ( get_user_meta( $customer->ID, '_ge_whatsapp', true ) ?: get_user_meta( $customer->ID, 'billing_phone', true ) ) : '';
         echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>01 · Cliente</span><h2>Datos de contacto</h2></div></div><div class="ge-manual-contact-grid"><label>Nombre o razón social<input name="customer_name" required maxlength="160" value="' . esc_attr( $customer ? $customer->display_name : '' ) . '"' . ( $editing ? ' readonly' : '' ) . '></label><label>Email<input type="email" name="customer_email" required maxlength="190" value="' . esc_attr( $customer ? $customer->user_email : '' ) . '"' . ( $editing ? ' readonly' : '' ) . '></label><label>WhatsApp / teléfono<input type="tel" name="customer_phone" maxlength="50" autocomplete="tel" value="' . esc_attr( $phone ) . '" placeholder="+54 9 11..."></label></div><p class="ge-manual-help">' . esc_html( $editing ? 'Para cambiar de cliente, creá otro presupuesto.' : 'Si el email ya existe, se usa su ficha. Si es nuevo, se crea una ficha y se prepara el acceso al portal.' ) . '</p></section>';
+        GE_WTP_Billing_Issuers::render_picker( $snapshot );
         $selected_profile = $snapshot['billing_profile_id'] ?? ( $customer ? GE_WTP_Customer_Branches::default_profile_id( $customer->ID ) : 'default' );
         $selected_delivery = $snapshot['delivery_address_id'] ?? '';
         echo '<section class="ge-production-card" data-ge-branch-picker data-ajax="' . esc_url( admin_url( 'admin-ajax.php' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'ge_customer_branch_options' ) ) . '"><div class="ge-production-section-head"><div><span>Facturación y entrega</span><h2>Elegí la sucursal</h2></div></div><div class="ge-manual-contact-grid"><label>Facturar a<select name="billing_profile_id" data-ge-billing-profile>';
@@ -375,6 +377,7 @@ final class GE_WTP_Commercial_Quote_UI {
     }
 
     private static function render_snapshot( $snapshot, $customer = false ) {
+        GE_WTP_Billing_Issuers::render_summary( $snapshot );
         if ( empty( $snapshot['items'] ) ) { return; }
         $profile = $snapshot['billing']['profile'] ?? $snapshot['customer_billing_profile'] ?? array();
         $delivery = $snapshot['delivery'] ?? array();
@@ -425,8 +428,14 @@ final class GE_WTP_Commercial_Quote_UI {
         $args = wp_unslash( $_POST ); $args['applied_by'] = get_current_user_id();
         $snapshot = GE_WTP_Commercial_Quotes::build_snapshot( $lines, $args );
         if ( is_wp_error( $snapshot ) ) { wp_send_json_error( $snapshot->get_error_message(), 422 ); }
+        $previous = null;
+        if ( ! empty( $args['quote_id'] ) ) { $q = GE_WTP_Commercial_Quotes::get( absint( $args['quote_id'] ), get_current_user_id() ); if ( is_wp_error( $q ) ) { wp_send_json_error( $q->get_error_message(), 403 ); } $previous = $q['snapshot']; }
+        $profile = $customer ? GE_WTP_Customer_Branches::find( $customer->ID, $snapshot['billing_profile_id'] ) : array();
+        $chosen = GE_WTP_Billing_Issuers::choose( (array) $profile, $args, get_current_user_id(), $previous );
+        if ( is_wp_error( $chosen ) ) { wp_send_json_error( $chosen->get_error_message(), 422 ); }
+        $snapshot['issuer_snapshot'] = $chosen['issuer']; $snapshot['issuer_profile_id'] = $chosen['issuer']['id']; $snapshot['issuer_suggestion'] = $chosen['suggestion'];
         $snapshot = GE_WTP_Commercial_Quotes::preview_billing( $customer ? $customer->ID : 0, $snapshot );
-        ob_start(); self::render_totals( $snapshot ); $html = ob_get_clean();
+        ob_start(); GE_WTP_Billing_Issuers::render_summary( $snapshot ); self::render_totals( $snapshot ); $html = ob_get_clean();
         wp_send_json_success( array( 'html' => $html ) );
     }
 
@@ -458,7 +467,7 @@ final class GE_WTP_Commercial_Quote_UI {
             if ( ! $label ) { continue; }
             $lines[] = array( 'line_uuid' => sanitize_text_field($line['line_uuid'] ?? wp_generate_uuid4()), 'artwork_refs' => array_map('sanitize_text_field', (array)($line['artwork_refs']??array())), 'source_type' => sanitize_key( $line['source_type'] ?? '' ), 'name' => preg_replace( '/\s*\(#\d+\)$/', '', $label ), 'product_id' => absint( $line['product_id'] ?? 0 ), 'quantity' => sanitize_text_field( wp_unslash( $line['quantity'] ?? '' ) ), 'unit' => sanitize_text_field( wp_unslash( $line['unit'] ?? 'u' ) ), 'unit_net' => sanitize_text_field( wp_unslash( $line['unit_price'] ?? '' ) ), 'discount_type' => sanitize_key( $line['discount_type'] ?? 'percent' ), 'discount_value' => sanitize_text_field( wp_unslash( $line['discount_value'] ?? '0' ) ), 'discount_reason' => sanitize_textarea_field( wp_unslash( $line['discount_reason'] ?? '' ) ), 'configuration' => isset( $line['configuration'] ) && is_array( $line['configuration'] ) ? wp_unslash( $line['configuration'] ) : array(), 'finishes' => isset( $line['finishes'] ) && is_array( $line['finishes'] ) ? wp_unslash( $line['finishes'] ) : array(), 'details' => sanitize_text_field( wp_unslash( $line['details'] ?? '' ) ), 'notes' => sanitize_text_field( wp_unslash( $line['notes'] ?? '' ) ) );
         }
-        $args = array( 'discount_type' => sanitize_key( $_POST['discount_type'] ?? 'percent' ), 'discount_value' => sanitize_text_field( wp_unslash( $_POST['discount_value'] ?? '0' ) ), 'discount_reason' => sanitize_textarea_field( wp_unslash( $_POST['discount_reason'] ?? '' ) ), 'valid_until' => wp_unslash( $_POST['valid_until'] ?? '' ), 'deposit_percent' => wp_unslash( $_POST['deposit_percent'] ?? 50 ), 'notes_customer' => wp_unslash( $_POST['notes_customer'] ?? '' ), 'notes_internal' => wp_unslash( $_POST['notes_internal'] ?? '' ), 'expected_version' => absint( $_POST['expected_version'] ?? 0 ), 'billing_profile_id' => sanitize_text_field( wp_unslash( $_POST['billing_profile_id'] ?? 'default' ) ), 'delivery_address_id' => sanitize_text_field( wp_unslash( $_POST['delivery_address_id'] ?? '' ) ) );
+        $args = array( 'issuer_profile_id' => sanitize_key( $_POST['issuer_profile_id'] ?? '' ), 'issuer_refresh' => ! empty( $_POST['issuer_refresh'] ), 'issuer_change_reason' => sanitize_textarea_field( wp_unslash( $_POST['issuer_change_reason'] ?? '' ) ), 'discount_type' => sanitize_key( $_POST['discount_type'] ?? 'percent' ), 'discount_value' => sanitize_text_field( wp_unslash( $_POST['discount_value'] ?? '0' ) ), 'discount_reason' => sanitize_textarea_field( wp_unslash( $_POST['discount_reason'] ?? '' ) ), 'valid_until' => wp_unslash( $_POST['valid_until'] ?? '' ), 'deposit_percent' => wp_unslash( $_POST['deposit_percent'] ?? 50 ), 'notes_customer' => wp_unslash( $_POST['notes_customer'] ?? '' ), 'notes_internal' => wp_unslash( $_POST['notes_internal'] ?? '' ), 'expected_version' => absint( $_POST['expected_version'] ?? 0 ), 'billing_profile_id' => sanitize_text_field( wp_unslash( $_POST['billing_profile_id'] ?? 'default' ) ), 'delivery_address_id' => sanitize_text_field( wp_unslash( $_POST['delivery_address_id'] ?? '' ) ) );
         if ( is_wp_error( GE_WTP_Commercial_Quotes::build_snapshot( $lines, $args ) ) ) { self::staff_error( 'save' ); }
         $artwork_files = null;
         if (!empty($_POST['artwork_v2'])) {

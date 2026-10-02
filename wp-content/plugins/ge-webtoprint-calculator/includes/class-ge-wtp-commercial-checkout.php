@@ -1,6 +1,7 @@
 <?php
 
 defined( 'ABSPATH' ) || exit;
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
 
 /** Financial payment orders for accepted commercial quote snapshots. */
 final class GE_WTP_Commercial_Checkout {
@@ -337,6 +338,7 @@ final class GE_WTP_Commercial_Checkout {
         if ( is_wp_error( $order ) ) { return $order; }
         $order->set_currency( 'ARS' );
         $order->set_created_via( 'ge_commercial_quote_payment' );
+        GE_WTP_Billing_Issuers::inherit( $order, $quote['snapshot'] );
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
         $order->set_billing_last_name( $customer->last_name );
@@ -619,6 +621,7 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( self::QUOTE_META, $quote['id'] );
         $order->update_meta_data( '_ge_source_quote_id', $quote['id'] );
         $order->update_meta_data( '_ge_commercial_quote_version', $quote['version'] );
+        GE_WTP_Billing_Issuers::inherit( $order, $snapshot );
         $order->update_meta_data( '_ge_commercial_quote_snapshot', $snapshot );
         $order->update_meta_data( '_ge_commercial_discounts', $snapshot['discounts'] ?? array() );
         $order->update_meta_data( '_ge_commercial_snapshot_hash', $snapshot['snapshot_hash'] ?? '' );

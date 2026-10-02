@@ -4,6 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+
 final class GE_WTP_Orders {
     const CART_META = '_ge_markcom_cart';
 
@@ -90,6 +92,7 @@ final class GE_WTP_Orders {
         }
 
         $order->set_currency( 'USD' );
+        GE_WTP_Billing_Issuers::inherit( $order, array() );
         $order->set_billing_first_name( $user->first_name ? $user->first_name : $user->display_name );
         $order->set_billing_last_name( $user->last_name );
         $order->set_billing_email( $user->user_email );

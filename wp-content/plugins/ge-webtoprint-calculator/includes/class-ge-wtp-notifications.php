@@ -4,6 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+
 final class GE_WTP_Notifications {
     const LOG_POST_TYPE = 'ge_email_log';
     private static $last_mail_error = '';
@@ -264,6 +266,7 @@ final class GE_WTP_Notifications {
     }
 
     private static function order_email_body( $order, $heading, $intro, $button_url = '', $button_label = '' ) {
+        $intro .= '<p>Emisor / Facturación: ' . esc_html( GE_WTP_Billing_Issuers::label( GE_WTP_Billing_Issuers::order_snapshot( $order ) ) ) . '</p>';
         $items = '';
         foreach ( $order->get_items() as $item ) {
             $item_status = class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::item_status_label( $item, $order ) : 'Pendiente de aprobación';

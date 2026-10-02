@@ -3,6 +3,8 @@
 defined( 'ABSPATH' ) || exit;
 
 /** Staff-issued commercial documents attached to a WooCommerce order. */
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+
 final class GE_WTP_Issued_Documents {
     public static function init() {
         add_action( 'admin_post_ge_issued_document_attach', array( __CLASS__, 'handle_attach' ) );
@@ -16,7 +18,7 @@ final class GE_WTP_Issued_Documents {
         $number = sanitize_text_field( wp_unslash( $_POST['document_number'] ?? '' ) );
         $date = sanitize_text_field( wp_unslash( $_POST['issue_date'] ?? '' ) );
         $replaces = sanitize_text_field( wp_unslash( $_POST['replaces_id'] ?? '' ) );
-        $result = GE_WTP_Documents::attach_issued( $order_id, $type, $number, $date, $replaces );
+        $result = GE_WTP_Documents::attach_issued( $order_id, $type, $number, $date, $replaces, sanitize_text_field( wp_unslash( $_POST['issuer_confirmation_hash'] ?? '' ) ) );
         $url = GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order_id, 'issued_status' => is_wp_error( $result ) ? $result->get_error_code() : 'saved' ) );
         wp_safe_redirect( $url );
         exit;
@@ -34,6 +36,8 @@ final class GE_WTP_Issued_Documents {
         }
         echo '<form class="ge-admin-form ge-admin-upload" method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_issued_document_attach"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
         wp_nonce_field( 'ge_issued_document_' . $order->get_id() );
+        $issuer = GE_WTP_Billing_Issuers::order_snapshot( $order );
+        echo '<p>Emisor registrado: ' . esc_html( GE_WTP_Billing_Issuers::label( $issuer ) ) . '</p><label><input type="checkbox" name="issuer_confirmation_hash" value="' . esc_attr( hash( 'sha256', wp_json_encode( $issuer ) ) ) . '" required> Revisé que el PDF corresponde al emisor registrado. Si es histórico sin emisor, se conserva como no registrado y requiere revisión.</label>';
         echo '<label>Tipo<select name="document_type"><option value="factura">Factura</option><option value="nota_credito">Nota de crédito</option><option value="nota_debito">Nota de débito</option><option value="presupuesto_emitido">Presupuesto PDF</option><option value="otro">Otro documento comercial</option></select></label>';
         echo '<label>Número (opcional)<input name="document_number" maxlength="80"></label><label>Fecha de emisión (opcional)<input type="date" name="issue_date"></label>';
         echo '<label>Reemplaza versión (opcional)<select name="replaces_id"><option value="">Documento nuevo</option>';
