@@ -11,6 +11,12 @@
 .ge-field-checkbox > span { margin: 0; color: #171b2d; }
 .ge-field-checkbox strong, .ge-field-checkbox small { display: block; }
 .ge-field-checkbox small { margin-top: 3px; color: #697083; font-weight: 500; }
+.ge-digital-offset-callout { margin-top: 18px; padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid #ddd5ff; border-radius: 15px; background: linear-gradient(135deg, #f1edff, #fff); }
+.ge-digital-offset-callout span, .ge-digital-offset-callout strong { display: block; }
+.ge-digital-offset-callout span { margin-bottom: 4px; color: #6d45ef; font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.ge-digital-offset-callout strong { color: #171b2d; font-size: 16px; }
+.ge-digital-offset-callout p { margin: 5px 0 0; color: #697083; font-size: 11px; }
+.ge-digital-offset-callout a { flex: 0 0 auto; padding: 11px 14px; border-radius: 10px; color: #fff !important; background: #171b2d; font-size: 11px; font-weight: 850; text-decoration: none; }
 .ge-digital-upload { margin-top: 16px; padding: 15px; display: block; border: 1px dashed #bfc4d0; border-radius: 12px; background: #fff; }
 .ge-digital-upload > span, .ge-digital-upload small { display: block; }
 .ge-digital-upload > span { margin-bottom: 8px; font-size: 11px; font-weight: 850; }
@@ -21,6 +27,12 @@
 .ge-digital-total strong { margin-top: 4px; font-size: 20px; }
 .ge-digital-total span { margin-top: 4px; color: rgba(255,255,255,.65); font-size: 10px; }
 .ge-digital-warning { margin: 12px 0; color: #8b5a00; font-size: 11px; }
-.ge-digital-submit { padding: 14px 18px; display: block; border-radius: 11px; color: #fff !important; background: #6d45ef; text-align: center; font-size: 12px; font-weight: 850; }
+.ge-digital-submit { width: 100%; padding: 14px 18px; display: block; border: 0; border-radius: 11px; color: #fff !important; background: #6d45ef; text-align: center; font-size: 12px; font-weight: 850; cursor: pointer; }
+.ge-digital-submit:disabled { background: #697083; cursor: not-allowed; }
+.ge-digital-help { display: inline-block; margin-top: 10px; color: #5a3bc5; font-size: 11px; font-weight: 750; text-decoration: underline; }
+.ge-digital-upload input[type="file"] { display: block; max-width: 100%; }
+.ge-digital-upload button { margin-top: 8px; }
+.ge-digital-upload progress { display: block; width: 100%; margin-top: 8px; }
+.ge-digital-upload progress[hidden] { display: none; }
 .ge-digital-notes { margin: 20px 0 0; padding-left: 18px; color: #697083; font-size: 10px; line-height: 1.65; }
-@media (max-width: 520px) { .ge-digital-fields { grid-template-columns: 1fr; } .ge-field-checkbox { grid-column: auto; } .ge-digital-total { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .ge-digital-fields { grid-template-columns: 1fr; } .ge-field-checkbox { grid-column: auto; } .ge-digital-total { grid-template-columns: 1fr; } .ge-digital-offset-callout { align-items: stretch; flex-direction: column; } .ge-digital-offset-callout a { text-align: center; } }

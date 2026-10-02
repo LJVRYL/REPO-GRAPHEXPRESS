@@ -185,10 +185,11 @@ final class GE_WTP_Workflow {
     }
 
     private static function render_sources( $order ) {
+        GE_WTP_AI_Artwork::assets();
         $sources = GE_WTP_Artwork_Library::order_sources( $order );
         echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>Archivos recibidos</span><h2>Originales del pedido</h2></div><strong>' . esc_html( count( $sources ) ) . '</strong></div>';
         if ( ! $sources ) { echo '<p>Aún no hay archivos vinculados a este pedido.</p>'; }
-        else { echo '<ul class="ge-workflow-sources">'; foreach ( $sources as $source ) { echo '<li><a target="_blank" rel="noopener" href="' . esc_url( $source['url'] ) . '">' . esc_html( $source['name'] ) . '</a><span>' . esc_html( $source['code'] ) . '</span></li>'; } echo '</ul><p>Un archivo general puede asignarse al producto en el control siguiente sin volver a subirlo.</p>'; }
+        else { echo '<ul class="ge-workflow-sources">'; foreach ( $sources as $source ) { echo '<li><a target="_blank" rel="noopener" href="' . esc_url( $source['url'] ) . '">' . esc_html( $source['name'] ) . '</a><span>' . esc_html( $source['code'] ) . '</span>'; if ( 0 === strpos( $source['token'] ?? '', 'document:' ) ) { $document = GE_WTP_Documents::find_version( $order->get_id(), substr( $source['token'], 9 ) ); if ( $document ) { GE_WTP_AI_Artwork::render_button( $order, $document ); } } echo '</li>'; } echo '</ul><p>Un archivo general puede asignarse al producto en el control siguiente sin volver a subirlo.</p>'; }
         echo '</section>';
     }
 
@@ -217,13 +218,14 @@ final class GE_WTP_Workflow {
 
     private static function render_production( $order ) {
         if ( ! self::released( $order ) ) { echo '<div class="ge-production-notice is-error">Este pedido aún no fue liberado a producción.</div>'; return; }
+        GE_WTP_AI_Artwork::assets();
         echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>03 · Producción</span><h2>Archivos finales y terminaciones</h2></div></div><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_finishes"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
         wp_nonce_field( 'ge_workflow_finishes_' . $order->get_id() );
         $sources = GE_WTP_Artwork_Library::order_sources( $order ); $catalog = self::finishing_catalog();
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
             if ( 'production' !== GE_WTP_Production::item_status( $item, $order ) ) { continue; }
             $selected = (array) $item->get_meta( self::FINISHES_META, true ); $tokens = (array) $item->get_meta( '_ge_item_artwork_sources', true );
-            echo '<article class="ge-workflow-production-item"><h3>' . esc_html( $item->get_name() ) . '</h3><p>Archivo aprobado: '; foreach ( $tokens as $token ) { if ( isset( $sources[ $token ] ) ) { echo '<a target="_blank" rel="noopener" href="' . esc_url( $sources[ $token ]['url'] ) . '">' . esc_html( $sources[ $token ]['name'] ) . '</a> '; } } echo '</p><fieldset><legend>Terminaciones (opcionales)</legend>';
+            echo '<article class="ge-workflow-production-item"><h3>' . esc_html( $item->get_name() ) . '</h3><p>Archivo aprobado: '; foreach ( $tokens as $token ) { if ( isset( $sources[ $token ] ) ) { echo '<a target="_blank" rel="noopener" href="' . esc_url( $sources[ $token ]['url'] ) . '">' . esc_html( $sources[ $token ]['name'] ) . '</a> '; if ( 0 === strpos( $token, 'document:' ) ) { $document = GE_WTP_Documents::find_version( $order->get_id(), substr( $token, 9 ) ); if ( $document ) { GE_WTP_AI_Artwork::render_button( $order, $document ); } } } } echo '</p><fieldset><legend>Terminaciones (opcionales)</legend>';
             foreach ( $catalog as $key => $label ) { echo '<label><input type="checkbox" name="finishes[' . esc_attr( $item_id ) . '][]" value="' . esc_attr( $key ) . '" ' . checked( in_array( $key, $selected, true ), true, false ) . '> ' . esc_html( $label ) . '</label>'; }
             echo '</fieldset><label>Terminación especial<input type="text" name="custom[' . esc_attr( $item_id ) . ']" maxlength="180" value="' . esc_attr( $item->get_meta( '_ge_item_custom_finish', true ) ) . '" placeholder="Sólo si no figura en el catálogo"></label></article>';
         }
