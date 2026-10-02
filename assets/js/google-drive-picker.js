@@ -63,7 +63,7 @@ window.geAttachAnalysisFile = function(form,file) {
         setField(form, 'external_reference', url);
         setField(form, 'storage_provider', 'drive');
         if (field(form, 'artwork_name') && !field(form, 'artwork_name').value) { field(form, 'artwork_name').value = name; }
-        var save = form.querySelector('[data-ge-drive-save]');
+        var save = form.querySelector('[data-ge-drive-save]') || form.querySelector('button[type="submit"]');
         if (save) { save.disabled = true; }
         status(button, 'Compartiendo “' + name + '” con Graph Express…', false);
         var declaredSize=Number(size || 0);

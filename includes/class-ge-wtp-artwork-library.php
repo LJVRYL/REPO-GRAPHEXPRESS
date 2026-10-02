@@ -101,7 +101,7 @@ final class GE_WTP_Artwork_Library {
         $selected = array(); $source_id = class_exists( 'GE_WTP_Reorders' ) ? GE_WTP_Reorders::source_order_id() : 0;
         if ( $source_id && function_exists( 'wc_get_order' ) ) { $selected = self::get_order_ids( wc_get_order( $source_id ) ); }
         ?>
-        <fieldset class="ge-artwork-picker"><legend>Archivos guardados</legend><small>Vinculá la ficha del arte. El original pesado no se copia al VPS.</small><div><?php foreach ( $items as $item ) : ?><label><input type="checkbox" name="artwork_ids[]" value="<?php echo esc_attr( $item->ID ); ?>" <?php checked( in_array( $item->ID, $selected, true ) ); ?>><span><strong><?php echo esc_html( self::code( $item->ID ) ); ?></strong><?php echo esc_html( $item->post_title ); ?></span></label><?php endforeach; ?></div></fieldset>
+        <fieldset class="ge-artwork-picker"><legend>Archivos guardados</legend><small>Vinculá la versión del arte que corresponde a este pedido.</small><div><?php foreach ( $items as $item ) : ?><label><input type="checkbox" name="artwork_ids[]" value="<?php echo esc_attr( $item->ID ); ?>" <?php checked( in_array( $item->ID, $selected, true ) ); ?>><span><strong><?php echo esc_html( self::code( $item->ID ) ); ?></strong><?php echo esc_html( $item->post_title ); ?></span></label><?php endforeach; ?></div></fieldset>
         <?php
     }
 
@@ -119,7 +119,7 @@ final class GE_WTP_Artwork_Library {
         $items = self::get_items( $user_id );
         $drive_notice = isset( $_GET['drive_notice'] ) ? sanitize_key( wp_unslash( $_GET['drive_notice'] ) ) : '';
         ?>
-        <section class="ge-artwork-library <?php echo $markcom ? 'is-markcom' : ''; ?>"><div class="ge-artwork-heading"><div><span class="ge-eyebrow">Biblioteca de producción</span><h1>Mis archivos</h1><p>Fichas, versiones y previsualizaciones. Los originales se conservan fuera de este servidor.</p></div><span class="ge-artwork-count"><?php echo esc_html( count( $items ) ); ?></span></div>
+        <section class="ge-artwork-library <?php echo $markcom ? 'is-markcom' : ''; ?>"><div class="ge-artwork-heading"><div><span class="ge-eyebrow">Biblioteca de producción</span><h1>Mis archivos</h1><p>Fichas, versiones, previsualizaciones y revisión técnica de archivos recibidos.</p></div><span class="ge-artwork-count"><?php echo esc_html( count( $items ) ); ?></span></div>
         <?php if ( 'saved' === $drive_notice ) : ?><div class="ge-drive-customer-notice">El archivo quedó vinculado a tu biblioteca y, si elegiste un pedido, también a ese trabajo.</div><?php elseif ( 'error' === $drive_notice ) : ?><div class="ge-drive-customer-notice is-error">No pudimos registrar el archivo. Volvé a seleccionarlo desde Drive.</div><?php endif; ?>
         <?php if ( class_exists( 'GE_WTP_Google_Auth' ) && GE_WTP_Google_Auth::drive_enabled() ) { self::render_customer_drive_form( $user_id ); } ?>
         <?php if ( ! $items ) : ?><div class="ge-panel ge-artwork-empty"><strong>Todavía no hay archivos registrados.</strong><p>Graph Express creará una ficha cuando un arte quede aprobado para reutilizar.</p></div><?php else : ?><div class="ge-artwork-grid"><?php foreach ( $items as $item ) { self::render_card( $item ); } ?></div><?php endif; ?></section>
