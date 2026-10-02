@@ -185,7 +185,7 @@ final class GE_WTP_Gestion_V3 {
             array('Candidatos',array_sum((array)wp_count_posts(GE_WTP_Jobs::POST_TYPE)) . ' postulaciones registradas','customers',self::url('candidates'))
         );
         echo '<section class="ge-v3-shortcuts" aria-label="Accesos de gestión">';
-        foreach($items as $item) { echo '<a href="' . esc_url($item[3]) . '">' . self::icon($item[2]) . '<span><strong>' . esc_html($item[0]) . '</strong><small>' . esc_html($item[1]) . '</small></span>' . self::icon('arrow') . '</a>'; }
+        foreach($items as $item) { if(GE_WTP_Operations::module_enabled('suppliers') && $item[0]==='Proveedores') continue; echo '<a href="' . esc_url($item[3]) . '">' . self::icon($item[2]) . '<span><strong>' . esc_html($item[0]) . '</strong><small>' . esc_html($item[1]) . '</small></span>' . self::icon('arrow') . '</a>'; }
         echo '</section>';
     }
 
