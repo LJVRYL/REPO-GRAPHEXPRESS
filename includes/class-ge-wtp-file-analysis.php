@@ -19,6 +19,7 @@ final class GE_WTP_File_Analysis {
     }
 
     public static function safe_path( $path ) {
+        if ( is_string( $path ) ) { clearstatcache( true, $path ); }
         if ( ! is_string( $path ) || is_link( $path ) ) { return ''; }
         $real = realpath( $path );
         if ( ! $real || ! is_file( $real ) ) { return ''; }
@@ -44,7 +45,7 @@ final class GE_WTP_File_Analysis {
         $id = get_option( $index );
         if ( ! $id ) {
             $id = wp_generate_uuid4();
-            $row = array( 'analysis_id' => $id, 'file_id' => hash( 'sha256', $path ), 'version_id' => $version_id, 'path' => $path, 'sha256' => $sha, 'mime_type' => sanitize_mime_type( $mime ), 'file_size' => $size, 'mode' => $mode, 'status' => $size > 250 * MB_IN_BYTES ? 'failed' : 'queued', 'created_at' => gmdate( 'c' ), 'queued_at' => time(), 'attempts' => 0 );
+            $row = array( 'analysis_id' => $id, 'file_id' => hash( 'sha256', $path ), 'version_id' => $version_id, 'path' => $path, 'sha256' => $sha, 'mime_type' => sanitize_mime_type( $mime ), 'file_size' => $size, 'source_mtime' => filemtime( $path ), 'source_inode' => fileinode( $path ), 'mode' => $mode, 'status' => $size > 250 * MB_IN_BYTES ? 'failed' : 'queued', 'created_at' => gmdate( 'c' ), 'queued_at' => time(), 'attempts' => 0 );
             if ( ! add_option( $index, $id, '', false ) ) { $id = get_option( $index ); }
             else {
                 add_option( self::PREFIX . 'analysis_' . $id, $row, '', false );
@@ -52,7 +53,12 @@ final class GE_WTP_File_Analysis {
             }
         }
         $row = self::get( $id );
-        return array( 'sha256' => $sha, 'file_analysis_ref' => self::ref( $id ), 'analysis_status' => $row['status'] ?? 'queued', 'confidence' => 'pending', 'pages' => $row['facts']['page_count'] ?? 0, 'width' => $row['facts']['page_size_mm'][0] ?? $row['facts']['pixel_dimensions'][0] ?? 0, 'height' => $row['facts']['page_size_mm'][1] ?? $row['facts']['pixel_dimensions'][1] ?? 0, 'unit' => ! empty( $row['facts']['page_size_mm'] ) ? 'mm' : 'px', 'warning' => in_array( $row['status'] ?? '', array( 'failed', 'blocker' ), true ) ? 'Hay algo para revisar.' : '' );
+        if ( $row && ! isset( $row['source_mtime'] ) ) { $row['source_mtime'] = filemtime( $path ); $row['source_inode'] = fileinode( $path ); update_option( self::PREFIX . 'analysis_' . $id, $row, false ); }
+        return self::summary( $row );
+    }
+
+    private static function summary( $row ) {
+        return array( 'sha256' => $row['sha256'], 'file_analysis_ref' => self::ref( $row['analysis_id'] ), 'analysis_status' => $row['status'] ?? 'queued', 'confidence' => 'pending', 'pages' => $row['facts']['page_count'] ?? 0, 'width' => $row['facts']['page_size_mm'][0] ?? $row['facts']['pixel_dimensions'][0] ?? 0, 'height' => $row['facts']['page_size_mm'][1] ?? $row['facts']['pixel_dimensions'][1] ?? 0, 'unit' => ! empty( $row['facts']['page_size_mm'] ) ? 'mm' : 'px', 'warning' => in_array( $row['status'] ?? '', array( 'failed', 'blocker' ), true ) ? 'Hay algo para revisar.' : '' );
     }
 
     public static function ref( $id ) { return 'graph://files/' . $id . '/analysis'; }
@@ -71,7 +77,12 @@ final class GE_WTP_File_Analysis {
         elseif ( ! empty( $record['stored_name'] ) ) { $path = trailingslashit( $root ) . wp_basename( $record['stored_name'] ); }
         if ( $path && self::safe_path( $path ) ) {
             $mode = in_array( $record['category'] ?? '', array( 'factura', 'comprobante', 'nota_credito', 'nota_debito', 'presupuesto_emitido' ), true ) ? 'basic' : $mode;
-            $basic = self::ingest( $path, $record['mime'] ?? $record['mime_type'] ?? 'application/octet-stream', $mode, $record['version_id'] ?? $record['id'] ?? $record['stored_name'] ?? '' );
+            $version = $record['version_id'] ?? $record['id'] ?? $record['stored_name'] ?? '';
+            $existing = self::from_ref( $record['file_analysis_ref'] ?? $record['analysis']['file_analysis_ref'] ?? '' );
+            // Originals are immutable. Reuse their measured byte identity on unrelated saves;
+            // changed paths, versions or stat data always re-enter SHA verification.
+            $same = $existing && $existing['path'] === realpath( $path ) && $existing['version_id'] === $version && $existing['mode'] === $mode && (int) $existing['file_size'] === filesize( $path ) && (int) ( $existing['source_mtime'] ?? -1 ) === filemtime( $path ) && (int) ( $existing['source_inode'] ?? -1 ) === fileinode( $path );
+            $basic = $same ? self::summary( $existing ) : self::ingest( $path, $record['mime'] ?? $record['mime_type'] ?? 'application/octet-stream', $mode, $version );
             $record['analysis'] = array_merge( (array) ( $record['analysis'] ?? array() ), $basic );
             $record['file_analysis_ref'] = $basic['file_analysis_ref'] ?? '';
             $record['analysis_status'] = $basic['analysis_status'];
