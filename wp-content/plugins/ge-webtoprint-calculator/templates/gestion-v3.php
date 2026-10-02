@@ -26,8 +26,9 @@ wp_enqueue_style('ge-gestion-v3',GE_WTP_PLUGIN_URL.'assets/css/gestion-v3.css',$
 // keep the operational system after every module and storefront stylesheet.
 add_action('wp_print_styles',static function(){
     $styles=wp_styles();
-    $styles->registered['ge-gestion-v3']->deps=array_values(array_diff($styles->queue,array('ge-gestion-v3')));
+    $styles->registered['ge-gestion-v3']->deps=array_values(array_diff($styles->queue,array('ge-gestion-v3','ge-operations')));
 },999);
+if(GE_WTP_Operations::enabled()) wp_enqueue_style('ge-operations',GE_WTP_PLUGIN_URL.'assets/css/operations.css',array('ge-gestion-v3'),GE_WTP_Operations::VERSION);
 wp_enqueue_script('ge-gestion-v3',GE_WTP_PLUGIN_URL.'assets/js/gestion-v3.js',array(),(string)filemtime(GE_WTP_PLUGIN_DIR.'assets/js/gestion-v3.js'),true);
 ?><!doctype html>
 <html <?php language_attributes(); ?>>

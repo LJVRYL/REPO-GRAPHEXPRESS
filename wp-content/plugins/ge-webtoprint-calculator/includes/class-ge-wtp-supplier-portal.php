@@ -83,6 +83,7 @@ final class GE_WTP_Supplier_Portal {
     }
     public static function set_source( $id, $source, $supplier = '' ) {
         if ( ! GE_WTP_Staff_Portal::can_access() ) { return new WP_Error( 'forbidden', 'Acceso denegado.' ); }
+        if ( 'supplier' === $source && GE_WTP_Operations::enabled() && empty(GE_WTP_Supplier_Workspace::supplier($supplier)['production_eligible']) ) return new WP_Error('supplier_type','Este proveedor no está habilitado para producción.');
         if ( ! in_array( $source, array( 'internal', 'supplier' ), true ) || ( 'supplier' === $source && ! isset( self::profiles()[ $supplier ] ) ) ) { return new WP_Error( 'supplier', 'Seleccioná un proveedor activo.' ); }
         if ( ! self::lock( $id ) ) { return new WP_Error( 'busy', 'Otra operación está en curso.' ); }
         try {
@@ -310,7 +311,7 @@ final class GE_WTP_Supplier_Portal {
     public static function render( $order ) {
         wp_enqueue_style( 'ge-supplier-portal', GE_WTP_PLUGIN_URL . 'assets/css/supplier-portal.css', array(), GE_WTP_VERSION );
         wp_enqueue_script( 'ge-supplier-portal', GE_WTP_PLUGIN_URL . 'assets/js/supplier-portal.js', array(), GE_WTP_VERSION, true );
-        $id = $order->get_id(); $profiles = self::profiles();
+        $id = $order->get_id(); $profiles = self::profiles(); if(GE_WTP_Operations::enabled()) $profiles=array_filter($profiles,function($p){return !empty($p['production_eligible']);});
         $error = get_transient( 'ge_supplier_error_' . get_current_user_id() ); if ( $error ) { echo '<p class="ge-production-notice is-error" role="alert">' . esc_html( $error ) . '</p>'; delete_transient( 'ge_supplier_error_' . get_current_user_id() ); }
         echo '<section class="ge-production-card ge-sp"><span class="ge-sp-eyebrow">Destino de producción</span><h2>¿Quién produce este trabajo?</h2>';
         self::form_start( $id, 'source' ); $internal = 'internal' === $order->get_meta( '_ge_production_supplier', true );

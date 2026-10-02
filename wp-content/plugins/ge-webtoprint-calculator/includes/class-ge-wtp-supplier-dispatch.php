@@ -91,16 +91,16 @@ final class GE_WTP_Supplier_Dispatch {
     public static function handle_profiles() {
         self::guard(); check_admin_referer( 'ge_supplier_profiles_save' ); $incoming = (array) ( $_POST['profiles'] ?? array() ); $allowed = self::profiles(); $clean = array();
         foreach ( $allowed as $key => $profile ) { $row = isset( $incoming[ $key ] ) ? (array) $incoming[ $key ] : array(); $channel = sanitize_key( wp_unslash( $row['channel'] ?? 'manual' ) ); $clean[ $key ] = array( 'name' => sanitize_text_field( wp_unslash( $row['name'] ?? $profile['name'] ) ), 'email' => sanitize_email( wp_unslash( $row['email'] ?? '' ) ), 'whatsapp' => sanitize_text_field( wp_unslash( $row['whatsapp'] ?? '' ) ), 'channel' => in_array( $channel, array( 'manual', 'email', 'whatsapp' ), true ) ? $channel : 'manual', 'auto_email' => ! empty( $row['auto_email'] ) ? 'yes' : 'no', 'notes' => sanitize_textarea_field( wp_unslash( $row['notes'] ?? '' ) ) ); }
-        update_option( self::OPTION, $clean, false ); wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'view' => 'suppliers', 'supplier_saved' => 1 ) ) ); exit;
+        foreach($clean as $key=>$row) $clean[$key]=array_merge($allowed[$key],$row); update_option( self::OPTION, $clean, false ); wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'suppliers', array( 'supplier_saved' => 1 ) ) ); exit;
     }
 
     public static function handle_add() {
         self::guard(); check_admin_referer( 'ge_supplier_add' );
         $profiles = get_option( self::OPTION, array() ); $profiles = is_array( $profiles ) ? $profiles : array();
         $key = 'custom-' . time(); while ( isset( $profiles[ $key ] ) ) { $key .= '-1'; }
-        $profiles[ $key ] = array( 'name' => 'Nuevo proveedor', 'email' => '', 'whatsapp' => '', 'channel' => 'manual', 'auto_email' => 'no', 'notes' => 'Completá acá los productos, tiempos y condiciones de trabajo.' );
-        update_option( self::OPTION, $profiles, false );
-        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'view' => 'suppliers', 'supplier_added' => 1 ) ) ); exit;
+        $profiles[ $key ] = array( 'types'=>array(), 'production_eligible'=>false, 'supplies_provider'=>false, 'name' => 'Nuevo proveedor', 'email' => '', 'whatsapp' => '', 'channel' => 'manual', 'auto_email' => 'no', 'notes' => 'Completá acá los productos, tiempos y condiciones de trabajo.' );
+        update_option( self::OPTION, $profiles, false ); if(GE_WTP_Operations::enabled()) GE_WTP_Operations::supplier_seed();
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'suppliers', array( 'supplier_added' => 1 ) ) ); exit;
     }
 
     public static function handle_email() {
