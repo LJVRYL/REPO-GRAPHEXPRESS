@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img"><title>GRAPHEX · G con gesto de tinta</title><defs>
+<linearGradient id="gx-spectrum" x1="66" y1="46" x2="176" y2="214" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#00C8F5"/><stop offset=".34" stop-color="#5B51F5"/>
+<stop offset=".68" stop-color="#F32692"/><stop offset="1" stop-color="#FFD447"/>
+</linearGradient>
+<linearGradient id="gx-band" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" stop-color="#00C8F5"/><stop offset=".34" stop-color="#5B51F5"/>
+<stop offset=".68" stop-color="#F32692"/><stop offset="1" stop-color="#FFD447"/>
+</linearGradient>
+</defs><g transform="translate(0 0) scale(1.0)"><path d="M233 2 C233 25 230 52 230 76 L230 96 L177 96 C166 78 148 69 128 69 C94 69 67 97 67 131 C67 166 94 193 128 193 C152 193 172 181 182 160 L128 160 L128 121 L230 121 L230 139 C226 194 184 235 128 235 C69 235 23 190 23 132 C23 74 68 29 127 29 L190 29 C211 29 225 18 233 2 Z" fill="url(#gx-spectrum)"/></g></svg>
