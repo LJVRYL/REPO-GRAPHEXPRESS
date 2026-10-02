@@ -1,3 +1,10 @@
+// Keep OAuth tokens only in the existing browser session; ingestion receives bytes only.
+window.geAttachAnalysisFile = function(form,file) {
+    if (!file || file.size > 262144000) { throw new Error('El archivo supera 250 MB. Subí una versión más liviana.'); }
+    var input=form.querySelector('input[name="artwork_original"]');
+    if (!input) { input=document.createElement('input');input.type='file';input.name='artwork_original';input.hidden=true;form.appendChild(input); }
+    var transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;form.enctype='multipart/form-data';
+};
 (function () {
     'use strict';
 
@@ -56,12 +63,19 @@
         setField(form, 'external_reference', url);
         setField(form, 'storage_provider', 'drive');
         if (field(form, 'artwork_name') && !field(form, 'artwork_name').value) { field(form, 'artwork_name').value = name; }
-        var save = form.querySelector('[data-ge-drive-save]');
-        if (save) { save.disabled = false; }
+        var save = form.querySelector('[data-ge-drive-save]') || form.querySelector('button[type="submit"]');
+        if (save) { save.disabled = true; }
         status(button, 'Compartiendo “' + name + '” con Graph Express…', false);
-        shareWithGraphExpress(fileId).then(function (shared) {
+        var declaredSize=Number(size || 0);
+        if (declaredSize > 262144000 || mime.indexOf('application/vnd.google-apps.')===0) { status(button,'Elegí un PDF o una imagen de hasta 250 MB para revisar el archivo.',true);return; }
+        status(button,'Preparando el archivo para su revisión automática…',false);
+        var downloadAbort=new AbortController();var downloadTimeout=setTimeout(function(){downloadAbort.abort();},120000);
+        fetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+'?alt=media', {headers:{Authorization:'Bearer '+accessToken},signal:downloadAbort.signal})
+        .then(function(response){if(!response.ok){throw new Error('No pudimos recibir el archivo. Subilo desde tu computadora.');}return response.blob();})
+        .then(function(blob){window.geAttachAnalysisFile(form,new File([blob],name,{type:mime || blob.type}));if(save){save.disabled=false;}return shareWithGraphExpress(fileId);})
+        .then(function (shared) {
             status(button, shared ? 'Seleccionado y compartido: ' + name + '. Ya podés guardarlo en tu portal.' : 'Seleccionado: ' + name + '. No pudimos compartirlo automáticamente; revisá que Graph Express tenga acceso antes de producir.', !shared);
-        });
+        }).catch(function(error){status(button,error.message || 'No pudimos recibir el archivo para su revisión.',true);}).finally(function(){clearTimeout(downloadTimeout);});
     }
 
     function showPicker(button) {
@@ -236,7 +250,7 @@
         }).then(function (result) {
             var uploaded = result.file; setFormField(form, 'drive_file_id', uploaded.id); setFormField(form, 'drive_file_name', uploaded.name || file.name); setFormField(form, 'drive_mime_type', uploaded.mimeType || file.type); setFormField(form, 'drive_file_url', uploaded.webViewLink || 'https://drive.google.com/open?id=' + encodeURIComponent(uploaded.id)); setFormField(form, 'drive_file_size', uploaded.size || file.size); setFormField(form, 'drive_file_source', 'direct-upload');
             if (formField(form, 'artwork_name') && !formField(form, 'artwork_name').value) { formField(form, 'artwork_name').value = file.name; }
-            var save = form.querySelector('[data-ge-drive-save]'); if (save) { save.disabled = false; }
+            window.geAttachAnalysisFile(form,file);var save = form.querySelector('[data-ge-drive-save]'); if (save) { save.disabled = false; }
             if (progress) { progress.value = 100; }
             setStatus(button, result.shared ? 'Archivo subido y compartido con Graph Express. Ya podés guardarlo en tu portal.' : 'Archivo subido. No pudimos compartirlo automáticamente; revisá el acceso antes de producir.', !result.shared);
         }).catch(function (error) { setStatus(button, error.message || 'No se pudo subir el archivo.', true); });

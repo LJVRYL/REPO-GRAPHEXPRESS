@@ -7,6 +7,7 @@
   function preview(container, file) {
     container.replaceChildren(); container.append(el('strong',file.name));
     if (/^image\/(png|jpeg|webp)$/.test(file.mime)) { const img=el('img'); img.src=file.url; img.alt=file.name; container.append(img); }
+    else if(file.mime==='application/pdf') { const frame=el('iframe');frame.src=file.url;frame.title='Vista previa de '+file.name;frame.loading='lazy';frame.referrerPolicy='no-referrer';container.append(frame); }
     const a=el('a','Abrir archivo exacto'); a.href=file.url; a.target='_blank'; a.rel='noopener'; container.append(a);
     if(file.version_id) container.append(el('small','Versión: '+file.version_id));
     if(file.checksum_sha256) container.append(el('small','SHA-256: '+file.checksum_sha256));
@@ -38,7 +39,7 @@
     modal.innerHTML='<header><div><small>AI-GRUPO · Beta</small><h2>Mejorar con IA</h2></div><button type="button" data-close aria-label="Cerrar">×</button></header><p>El original se conserva. Cada salida será una versión candidata que requiere revisión y aprobación.</p><div class="ge-ai-comparison"><section data-original></section><section data-results hidden><h3>Candidata</h3><div data-candidate></div><p data-analysis></p></section></div><form><label for="ge-ai-instruction">¿Qué querés mejorar?</label><textarea id="ge-ai-instruction" rows="4" minlength="8" maxlength="2000" required placeholder="Describí la corrección y las medidas o márgenes exactos."></textarea><div class="ge-ai-suggestions"></div><button type="submit" data-submit>Solicitar mejora</button></form><p role="status" aria-live="polite" data-status></p><small data-request></small><div class="ge-ai-decisions"><button type="button" data-select>Usar esta versión</button><button type="button" data-again>Pedir otra corrección</button><button type="button" data-discard>Descartar</button></div><p class="ge-ai-note">Usar una candidata no aprueba el diseño ni libera producción. No se envían avisos al cliente automáticamente.</p>';
     document.body.append(modal); preview(modal.querySelector('[data-original]'),current);
     modal.querySelector('h2').id='ge-ai-title';modal.setAttribute('aria-labelledby','ge-ai-title');modal.querySelector('.ge-ai-decisions').hidden=true;
-    const a=current.analysis||{}; modal.querySelector('[data-original]').append(el('small','Analyzer: '+(a.confidence||'pendiente')+(a.warning?' · '+a.warning:'')));
+    const a=current.analysis||{}; modal.querySelector('[data-original]').append(el('small','Analyzer: '+(a.confidence||'pendiente')+(a.warning?' · '+a.warning:'')+' · Preflight: '+(current.preflight_status||'pendiente de revisión humana')));
     const textarea=modal.querySelector('textarea');
     for(const text of ['Agregar sangrado','Ajustar tamaño','Centrar diseño','Mejorar resolución','Quitar fondo','Preparar para impresión','Corregir márgenes','Otro']) {
       const b=el('button',text);b.type='button'; b.addEventListener('click',()=>{textarea.value=text==='Otro'?'':text+': ';textarea.focus();});modal.querySelector('.ge-ai-suggestions').append(b);

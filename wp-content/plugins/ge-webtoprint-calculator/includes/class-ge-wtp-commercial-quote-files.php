@@ -67,7 +67,7 @@ final class GE_WTP_Commercial_Quote_Files {
         $path = trailingslashit( GE_WTP_Documents::private_directory() ) . $stored_name;
         if ( ! move_uploaded_file( $file['tmp_name'], $path ) ) { return new WP_Error( 'ge_quote_file_storage', 'No se pudo guardar el archivo.' ); }
         @chmod( $path, 0600 );
-        $analysis = GE_WTP_Documents::analyze_file( $path, $allowed[ $extension ] );
+        $analysis = GE_WTP_Documents::analyze_file( $path, $allowed[ $extension ], 'comprobante' === $category ? 'basic' : 'technical' );
         $analysis['resolution_dpi'] = null;
         $analysis['colorspace'] = 'unverified';
         $analysis['preflight_state'] = ! empty( $analysis['warning'] ) ? 'warning' : 'unverified';

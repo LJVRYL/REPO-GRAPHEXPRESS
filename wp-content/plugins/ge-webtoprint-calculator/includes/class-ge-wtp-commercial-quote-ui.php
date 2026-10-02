@@ -130,6 +130,7 @@ final class GE_WTP_Commercial_Quote_UI {
         else {
             echo '<div class="ge-quote-file-list">';
             foreach ( $files as $file ) {
+                GE_WTP_File_Analysis::render( $file, ! $customer_view );
                 $analysis = is_array( $file['analysis'] ?? null ) ? $file['analysis'] : array();
                 $details = array( size_format( (int) ( $file['size'] ?? 0 ) ), 'final' === ( $file['source_type'] ?? '' ) ? 'Archivo final' : 'Preliminar' );
                 if ( ! empty( $analysis['pages'] ) ) { $details[] = absint( $analysis['pages'] ) . ' pág.'; }

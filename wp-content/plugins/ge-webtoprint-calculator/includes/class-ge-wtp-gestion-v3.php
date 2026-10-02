@@ -140,7 +140,7 @@ final class GE_WTP_Gestion_V3 {
         return self::shell_enabled() && is_page( 'gestion' ) && GE_WTP_Staff_Portal::can_access() ? GE_WTP_PLUGIN_DIR . 'templates/gestion-v3.php' : $original;
     }
 
-    public static function nav() { return array( 'dashboard'=>'Inicio', 'customers'=>'Clientes', 'quotes'=>'Presupuestos', 'orders'=>'Pedidos', 'production'=>'Producción', 'communications'=>'Comunicaciones' ); }
+    public static function nav() { $nav=array('dashboard'=>'Inicio','customers'=>'Clientes','quotes'=>'Presupuestos','orders'=>'Pedidos','production'=>'Producción'); if(GE_WTP_Operations::enabled()) { if(GE_WTP_Operations::module_enabled('suppliers')) $nav['suppliers']='Proveedores'; if(GE_WTP_Operations::module_enabled('stock')&&(current_user_can('ge_manage_inventory')||current_user_can('manage_options'))) $nav['stock']='Stock'; if(GE_WTP_Operations::module_enabled('administration')&&(current_user_can('ge_view_finance')||current_user_can('manage_options'))) $nav['administration']='Administración'; } $nav['communications']='Comunicaciones'; return $nav; }
     public static function status_label( $key ) {
         $labels=array('draft'=>'Borrador','sent'=>'Enviado','viewed'=>'Visto','accepted'=>'Aceptado','converted'=>'Convertido','rejected'=>'Rechazado','expired'=>'Vencido','cancelled'=>'Cancelado');
         return $labels[$key]??ucfirst(str_replace('_',' ',$key));
@@ -149,6 +149,7 @@ final class GE_WTP_Gestion_V3 {
 
     public static function icon( $name ) {
         $paths = array(
+            'stock'=>'M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10', 'suppliers'=>'M3 21V7l9-4 9 4v14z M7 10h2 M15 10h2 M10 21v-4h4v4', 'administration'=>'M3 5h18v14H3z M16 12h5 M7 9h3 M7 15h6',
             'dashboard'=>'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
             'customers'=>'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
             'quotes'=>'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5',
@@ -176,7 +177,7 @@ final class GE_WTP_Gestion_V3 {
         echo '</nav>';
     }
 
-    public static function secondary_links() {
+    public static function secondary_links() { GE_WTP_Operations_UI::dashboard();
         $items = array(
             array('Archivos','Originales y versiones del trabajo','files',self::url('library')),
             array('Proveedores','Fichas, envíos y saldos','supplier',self::url('production',array('view'=>'suppliers'))),
@@ -184,7 +185,7 @@ final class GE_WTP_Gestion_V3 {
             array('Candidatos',array_sum((array)wp_count_posts(GE_WTP_Jobs::POST_TYPE)) . ' postulaciones registradas','customers',self::url('candidates'))
         );
         echo '<section class="ge-v3-shortcuts" aria-label="Accesos de gestión">';
-        foreach($items as $item) { echo '<a href="' . esc_url($item[3]) . '">' . self::icon($item[2]) . '<span><strong>' . esc_html($item[0]) . '</strong><small>' . esc_html($item[1]) . '</small></span>' . self::icon('arrow') . '</a>'; }
+        foreach($items as $item) { if(GE_WTP_Operations::module_enabled('suppliers') && $item[0]==='Proveedores') continue; echo '<a href="' . esc_url($item[3]) . '">' . self::icon($item[2]) . '<span><strong>' . esc_html($item[0]) . '</strong><small>' . esc_html($item[1]) . '</small></span>' . self::icon('arrow') . '</a>'; }
         echo '</section>';
     }
 

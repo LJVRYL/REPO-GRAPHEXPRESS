@@ -279,7 +279,8 @@ final class GE_WTP_Customers {
         if ( ! isset( $allowed[ $extension ] ) || ! self::ensure_avatar_directory() ) { return new WP_Error( 'avatar_type', 'La imagen no es válida.' ); }
         $stored_name = wp_generate_uuid4() . '.' . $extension;
         if ( ! move_uploaded_file( $file['tmp_name'], trailingslashit( self::avatar_directory() ) . $stored_name ) ) { return new WP_Error( 'avatar_upload', 'No fue posible guardar la imagen.' ); }
-        update_user_meta( $user_id, '_ge_profile_avatar', array( 'stored_name' => $stored_name, 'mime' => $allowed[ $extension ], 'uploaded_at' => current_time( 'mysql' ) ) );
+        $analysis = GE_WTP_File_Analysis::ingest( trailingslashit( self::avatar_directory() ) . $stored_name, $allowed[ $extension ], 'basic' );
+        update_user_meta( $user_id, '_ge_profile_avatar', array( 'file_analysis_ref' => $analysis['file_analysis_ref'] ?? '', 'stored_name' => $stored_name, 'mime' => $allowed[ $extension ], 'uploaded_at' => current_time( 'mysql' ) ) );
         return true;
     }
 

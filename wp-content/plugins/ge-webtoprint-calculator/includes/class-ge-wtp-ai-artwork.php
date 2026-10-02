@@ -69,8 +69,8 @@ final class GE_WTP_AI_Artwork {
     public static function assets() {
         static $done = false;
         if ( $done ) { return; } $done = true;
-        echo '<link rel="stylesheet" href="' . esc_url( GE_WTP_PLUGIN_URL . 'assets/css/ai-artwork.css?v=1' ) . '">';
-        echo '<script defer src="' . esc_url( GE_WTP_PLUGIN_URL . 'assets/js/ai-artwork.js?v=1' ) . '"></script>';
+        echo '<link rel="stylesheet" href="' . esc_url( GE_WTP_PLUGIN_URL . 'assets/css/ai-artwork.css?v=2' ) . '">';
+        echo '<script defer src="' . esc_url( GE_WTP_PLUGIN_URL . 'assets/js/ai-artwork.js?v=2' ) . '"></script>';
     }
 
     public static function runtime( $kind ) {
@@ -90,7 +90,7 @@ final class GE_WTP_AI_Artwork {
         $version = GE_WTP_Documents::version_id( $document );
         $payload = array( 'order_id' => $order->get_id(), 'version_id' => $version, 'name' => $document['name'],
             'mime' => $document['mime'] ?? '', 'url' => html_entity_decode( GE_WTP_Documents::download_url( $order->get_id(), $document['id'], true ), ENT_QUOTES, 'UTF-8' ),
-            'analysis' => $document['analysis'] ?? array(), 'nonce' => wp_create_nonce( 'ge_ai_artwork_' . $order->get_id() ),
+            'analysis' => $document['analysis'] ?? array(), 'preflight_status' => $document['preflight_status'] ?? null, 'nonce' => wp_create_nonce( 'ge_ai_artwork_' . $order->get_id() ),
             'endpoint' => admin_url( 'admin-ajax.php' ) );
         echo '<button type="button" class="ge-ai-open" data-ge-ai="' . esc_attr( wp_json_encode( $payload ) ) . '">Mejorar con IA <small>Beta</small></button>';
     }
@@ -119,6 +119,7 @@ final class GE_WTP_AI_Artwork {
         if ( 'graph.artwork.ai_improve.request' === $action ) {
             $base = GE_WTP_Documents::find_version( $order->get_id(), $input['version_id'] ?? '' );
             if ( ! $base || 'arte' !== ( $base['category'] ?? '' ) || 'discarded' === ( $base['status'] ?? '' ) ) { return new WP_Error( 'version', 'Versión no elegible de este pedido.' ); }
+            $base = GE_WTP_File_Analysis::record( $base, GE_WTP_Documents::private_directory() );
             $instruction = sanitize_textarea_field( $input['instruction'] ?? '' );
             $kind = sanitize_key( $input['kind'] ?? 'design_edit' );
             if ( strlen( $instruction ) < 8 || strlen( $instruction ) > 2000 || ! in_array( $kind, array( 'design_edit', 'resize', 'text_edit', 'file_prepare', 'prepress_check' ), true ) ) { return new WP_Error( 'instruction', 'Describí la mejora (8 a 2000 caracteres).' ); }
@@ -144,7 +145,7 @@ final class GE_WTP_AI_Artwork {
                     'order_item_id' => absint( $base['order_item_id'] ?? 0 ), 'base_version_id' => GE_WTP_Documents::version_id( $base ),
                     'artifact_ref' => 'graph://orders/' . $order->get_id() . '/artwork/' . GE_WTP_Documents::version_id( $base ), 'kind' => $kind, 'instruction' => $instruction );
                 $pack = array_merge( $body, array( 'artwork_id' => $base['id'], 'version_id' => $body['base_version_id'],
-                    'checksum_sha256' => $checksum, 'file_analysis_ref' => $body['artifact_ref'] . '#analysis', 'preflight_summary' => $base['analysis'] ?? array(),
+                    'checksum_sha256' => $checksum, 'file_analysis_ref' => $base['file_analysis_ref'] ?? '', 'preflight_summary' => GE_WTP_File_Analysis::task_summary( $base ),
                     'requested_capability' => $kind, 'requested_skill' => $runtime['skill'], 'output_contract' => 'new_candidate_version', 'runtime' => $runtime ) );
                 $row = array( 'request_id' => $id, 'order_id' => $order->get_id(), 'order_item_id' => $body['order_item_id'],
                     'base_version_id' => $body['base_version_id'], 'base_checksum_sha256' => $checksum, 'instruction' => $instruction, 'kind' => $kind,
@@ -179,7 +180,7 @@ final class GE_WTP_AI_Artwork {
             $decision = $input['decision'] ?? ''; if ( ! in_array( $decision, array( 'select', 'discard' ), true ) ) { return new WP_Error( 'decision', 'Decisión inválida.' ); }
             $item = $order->get_item( absint( $doc['order_item_id'] ?? 0 ) );
             if ( 'select' === $decision ) {
-                if ( ! $item || ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && 'production' === GE_WTP_Production::item_status( $item, $order ) ) ) { return new WP_Error( 'released', 'Asigná el archivo a un producto en revisión antes de usarlo. Un producto liberado debe volver a revisión.' ); }
+                if ( ! $item || in_array( GE_WTP_Production::item_status( $item, $order ), array( 'production', 'ready', 'delivered' ), true ) ) { return new WP_Error( 'released', 'Asigná el archivo a un producto en revisión antes de usarlo. Un producto liberado debe volver a revisión.' ); }
                 $path = self::document_path( $doc ); if ( ! is_file( $path ) || ! hash_equals( $doc['checksum_sha256'], hash_file( 'sha256', $path ) ) ) { return new WP_Error( 'checksum', 'El archivo candidato cambió.' ); }
                 $sources = (array) $item->get_meta( '_ge_item_artwork_sources', true );
                 $sources = array_values( array_filter( $sources, function( $token ) use ( $doc ) { return is_string( $token ) && '' !== $token && $token !== 'document:' . $doc['parent_version_id']; } ) );
@@ -188,7 +189,7 @@ final class GE_WTP_AI_Artwork {
                 $item->update_meta_data( '_ge_item_artwork_version', $doc['version_id'] );
                 $item->update_meta_data( '_ge_item_artwork_client_required', 'yes' );
                 foreach ( array( '_ge_item_artwork_customer_approval', '_ge_item_artwork_staff_approval', '_ge_item_artwork_release_hash', '_ge_item_artwork_released_at', '_ge_item_artwork_released_by' ) as $key ) { $item->delete_meta_data( $key ); }
-                if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { $item->update_meta_data( GE_WTP_Workflow::ITEM_STATE_META, 'review' ); }
+                if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { $item->update_meta_data( GE_WTP_Workflow::ITEM_STATE_META, 'received' ); }
                 $item->save();
             }
             self::update_version( $order, $doc['version_id'], array( 'status' => 'select' === $decision ? 'client_review' : 'discarded', 'reviewed_by' => get_current_user_id(), 'reviewed_at' => gmdate( 'c' ) ) );

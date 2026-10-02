@@ -39,6 +39,8 @@ final class GE_WTP_Plugin {
         GE_WTP_VPS_Storage::init();
         require_once __DIR__ . '/class-ge-wtp-ai-artwork.php';
         GE_WTP_AI_Artwork::init();
+        require_once __DIR__ . '/class-ge-wtp-file-analysis.php';
+        GE_WTP_File_Analysis::init();
         GE_WTP_Documents::init();
         GE_WTP_Issued_Documents::init();
         GE_WTP_Order_Lifecycle::init();

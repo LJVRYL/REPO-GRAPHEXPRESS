@@ -106,6 +106,7 @@ final class GE_WTP_Customer_Workspace {
                 $document = $row['document']; $order = $row['order'];
                 $label = GE_WTP_Documents::categories()[ $document['category'] ?? '' ] ?? 'Documento';
                 echo '<a class="ge-workspace-row" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) ) . '"><div><strong>' . esc_html( $label . ' ' . ( $document['document_number'] ?? $document['name'] ?? '' ) ) . '</strong><small>Pedido #' . esc_html( $order->get_order_number() ) . ' · ' . esc_html( $document['issue_date'] ?? $document['uploaded_at'] ?? '' ) . '</small></div><span>Ver pedido ↗</span></a>';
+                GE_WTP_File_Analysis::render( $document, true );
             }
         }
     }
