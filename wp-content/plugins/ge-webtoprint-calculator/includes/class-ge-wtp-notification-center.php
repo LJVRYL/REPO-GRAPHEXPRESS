@@ -19,7 +19,7 @@ final class GE_WTP_Notification_Center {
     }
 
     public static function defaults() {
-        return array( 'sender_email' => 'servicio@graphexpress.com.ar', 'sender_name' => 'Graph Express', 'recipients' => sanitize_email( get_option( 'admin_email' ) ), 'new_order' => 'yes', 'new_customer' => 'yes', 'new_candidate' => 'yes', 'new_incident' => 'yes', 'supplier_failure' => 'yes', 'production_digest' => 'yes', 'digest_hour' => 8 );
+        return array( 'sender_email' => 'servicio@graphex.ar', 'sender_name' => 'Graph Express', 'recipients' => sanitize_email( get_option( 'admin_email' ) ), 'new_order' => 'yes', 'new_customer' => 'yes', 'new_candidate' => 'yes', 'new_incident' => 'yes', 'supplier_failure' => 'yes', 'production_digest' => 'yes', 'digest_hour' => 8 );
     }
 
     public static function settings() { return wp_parse_args( get_option( self::OPTION, array() ), self::defaults() ); }
@@ -160,8 +160,8 @@ final class GE_WTP_Notification_Center {
     public static function maybe_send_digest() {
         if ( ! self::enabled( 'production_digest' ) ) { return; } $settings = self::settings(); $today = wp_date( 'Y-m-d' );
         if ( (int) wp_date( 'G' ) < (int) $settings['digest_hour'] || get_option( self::LAST_DIGEST ) === $today ) { return; }
-        $orders = function_exists( 'wc_get_orders' ) ? wc_get_orders( array( 'limit' => 300, 'orderby' => 'date', 'order' => 'DESC' ) ) : array(); $active = 0; $due = 0; $delayed = 0; $pending_supplier = 0;
-        foreach ( $orders as $order ) { if ( in_array( $order->get_status(), array( 'completed', 'cancelled', 'refunded', 'failed', 'ge-entregado', 'ge-cobrado' ), true ) || 'ready' === $order->get_meta( '_ge_production_status' ) ) { continue; } $active++; $date = $order->get_meta( '_ge_production_promised_date' ); if ( $date === $today ) { $due++; } elseif ( $date && $date < $today ) { $delayed++; } if ( in_array( $order->get_meta( '_ge_production_supplier' ), array( '', 'pending', 'multiple', 'merch-pending', 'sublimation-pending' ), true ) ) { $pending_supplier++; } }
+        $orders = function_exists( 'wc_get_orders' ) ? wc_get_orders( array( 'limit' => 300, 'orderby' => 'date', 'order' => 'DESC', 'status' => array_values( array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) ) ) ) ) : array(); $active = 0; $due = 0; $delayed = 0; $pending_supplier = 0;
+        foreach ( $orders as $order ) { if ( 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { continue; } $active++; $date = $order->get_meta( '_ge_production_promised_date' ); if ( $date === $today ) { $due++; } elseif ( $date && $date < $today ) { $delayed++; } if ( in_array( $order->get_meta( '_ge_production_supplier' ), array( '', 'pending', 'multiple', 'merch-pending', 'sublimation-pending' ), true ) ) { $pending_supplier++; } }
         if ( ! $active && ! $delayed && ! $due ) { update_option( self::LAST_DIGEST, $today, false ); return; }
         $url = GE_WTP_Staff_Portal::portal_url( 'production' ); $html = '<h2>Resumen de producción</h2><ul><li>Trabajos activos: <strong>' . absint( $active ) . '</strong></li><li>Vencen hoy: <strong>' . absint( $due ) . '</strong></li><li>Demorados: <strong>' . absint( $delayed ) . '</strong></li><li>Proveedor pendiente: <strong>' . absint( $pending_supplier ) . '</strong></li></ul><p><a href="' . esc_url( $url ) . '">Abrir Producción</a></p>';
         self::send_internal( 'production_digest', 'Resumen diario de producción · Graph Express', $html ); update_option( self::LAST_DIGEST, $today, false );

@@ -6,6 +6,10 @@
   var template = form.querySelector('[data-ge-order-template]');
   var add = form.querySelector('[data-ge-order-add]');
   var nextIndex = lines.querySelectorAll('[data-ge-order-line]').length;
+  var details = document.getElementById('editar-pedido');
+  var openLink = document.querySelector('a[href="#editar-pedido"]');
+  if (details && openLink) openLink.addEventListener('click', function () { details.open = true; });
+  if (details && window.location.hash === '#editar-pedido') details.open = true;
 
   function connect(line) {
     var product = line.querySelector('input[type="search"]');

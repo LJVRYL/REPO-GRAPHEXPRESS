@@ -4,6 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+
 final class GE_WTP_Orders {
     const CART_META = '_ge_markcom_cart';
 
@@ -90,6 +92,7 @@ final class GE_WTP_Orders {
         }
 
         $order->set_currency( 'USD' );
+        GE_WTP_Billing_Issuers::inherit( $order, array() );
         $order->set_billing_first_name( $user->first_name ? $user->first_name : $user->display_name );
         $order->set_billing_last_name( $user->last_name );
         $order->set_billing_email( $user->user_email );
@@ -226,6 +229,7 @@ final class GE_WTP_Orders {
             'limit'   => absint( $limit ),
             'orderby' => 'date',
             'order'   => 'DESC',
+            'status'  => array_values( array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) ) ),
         );
         $orders = wc_get_orders( array_merge( $query, array( 'customer_id' => $user_id ) ) );
 
@@ -243,6 +247,7 @@ final class GE_WTP_Orders {
 
         $unique = array();
         foreach ( array_merge( $orders, $guest_orders ) as $order ) {
+            if ( 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) ) { continue; }
             $unique[ $order->get_id() ] = $order;
         }
         usort(
@@ -262,12 +267,14 @@ final class GE_WTP_Orders {
             return array();
         }
 
-        return wc_get_orders(
+        $orders = wc_get_orders(
             array(
                 'limit'   => absint( $limit ),
                 'orderby' => 'date',
                 'order'   => 'DESC',
+                'status'  => array_values( array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) ) ),
             )
         );
+        return array_values( array_filter( $orders, function ( $order ) { return 'yes' !== $order->get_meta( '_ge_commercial_payment_order', true ); } ) );
     }
 }
