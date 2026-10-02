@@ -1,0 +1,39 @@
+.ge-product-card { position: relative; }
+.ge-favorite-form { position: absolute; z-index: 3; top: 14px; right: 14px; margin: 0; }
+.ge-favorite-form button { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid rgba(109,69,239,.18); border-radius: 50%; color: #6d45ef; background: rgba(255,255,255,.94); box-shadow: 0 5px 18px rgba(19,24,43,.1); font-size: 20px; cursor: pointer; }
+.ge-favorite-form button.is-favorite { color: #fff; border-color: #6d45ef; background: #6d45ef; }
+.ge-save-current-form { margin: 3px 0 18px; padding: 15px; border: 1px dashed #cfd3dc; border-radius: 12px; background: #fafbfe; }
+.ge-save-current-form label { display: block; color: #747a89; font-size: 12px; font-weight: 750; }
+.ge-save-current-form input { width: 100%; margin: 6px 0 10px; padding: 10px 12px; border: 1px solid #dfe2e9; border-radius: 9px; font: inherit; }
+.ge-reorder-source { display: block; margin: 0 0 16px; padding: 13px 14px; border-radius: 11px; color: #514014; background: #fff7d6; }
+.ge-reorder-source strong, .ge-reorder-source small { display: block; }
+.ge-reorder-source small { margin-top: 4px; line-height: 1.4; }
+.ge-notice-warning { color: #664c00; background: #fff4c7; }
+.ge-repeat-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7ec; }
+.ge-repeat-actions form { margin: 0; }
+.ge-save-order-form { display: flex; flex: 1; gap: 8px; min-width: 330px; }
+.ge-save-order-form input { min-width: 170px; flex: 1; padding: 10px 12px; border: 1px solid #dfe2e9; border-radius: 10px; font: inherit; }
+.ge-saved-screen { --ge-saved-ink:#181d2d; --ge-saved-muted:#747a89; color: var(--ge-saved-ink); }
+.ge-saved-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 28px; }
+.ge-saved-heading h1 { margin: 2px 0 7px; font-size: clamp(34px,4vw,54px); letter-spacing: -.045em; }
+.ge-saved-heading p { margin: 0; color: var(--ge-saved-muted); }
+.ge-saved-layout { display: grid; grid-template-columns: minmax(0,1.55fr) minmax(280px,.65fr); align-items: start; gap: 24px; }
+.ge-saved-side { display: grid; gap: 24px; }
+.ge-saved-main > .ge-panel-heading { margin-bottom: 8px; }
+.ge-saved-card { display: flex; justify-content: space-between; align-items: center; gap: 22px; padding: 20px 0; border-top: 1px solid #e5e7ec; }
+.ge-saved-card h3 { margin: 3px 0 4px; font-size: 19px; }
+.ge-saved-card p, .ge-saved-card small { margin: 0; color: var(--ge-saved-muted); }
+.ge-price-change { display: inline-block; margin-top: 8px; padding: 5px 8px; border-radius: 7px; color: #765900; background: #fff3bd; font-size: 11px; font-weight: 750; }
+.ge-saved-card-actions { display: flex; align-items: center; gap: 12px; }
+.ge-saved-card-actions form { margin: 0; }
+.ge-link-danger { padding: 7px; border: 0; color: #a43b4a; background: transparent; cursor: pointer; }
+.ge-product-shortcuts a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid #e5e7ec; color: inherit; text-decoration: none; }
+.ge-product-shortcuts strong, .ge-product-shortcuts small { display: block; }
+.ge-product-shortcuts small { margin-top: 3px; color: var(--ge-saved-muted); }
+.ge-product-shortcuts b { color: #6d45ef; }
+.ge-woo-favorite { margin: 10px 0; }
+.ge-woo-favorite button { padding: 8px 12px; border: 1px solid #d9dce4; border-radius: 999px; color: #5a3fc2; background: #fff; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+.woocommerce-account .ge-saved-screen .ge-panel { padding: 24px; border: 1px solid #e5e7ec; border-radius: 18px; background: #fff; }
+.woocommerce-account .ge-saved-screen .ge-eyebrow { color: #6d45ef; font-size: 11px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+@media (max-width:900px) { .ge-saved-layout { grid-template-columns:1fr; } .ge-saved-heading, .ge-saved-card { align-items:flex-start; flex-direction:column; } }
+@media (max-width:560px) { .ge-save-order-form, .ge-saved-card-actions { width:100%; min-width:0; align-items:stretch; flex-direction:column; } .ge-repeat-actions { align-items:stretch; flex-direction:column; } .ge-repeat-actions form, .ge-repeat-actions button { width:100%; } }
