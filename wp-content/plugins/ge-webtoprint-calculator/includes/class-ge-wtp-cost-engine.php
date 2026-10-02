@@ -3,7 +3,7 @@ defined('ABSPATH') || exit;
 
 /** Cost data is a projection of Supplier Workspace, Stock and explicit internal rates. */
 final class GE_WTP_Cost_Engine {
-    const VERSION='1.0.0';
+    const VERSION='1.0.1';
     const LIST_META='_ge_price_normalized';
     const SOURCE='ge_cost_source';
     const CHANGE='ge_cost_change';
