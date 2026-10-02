@@ -70,7 +70,7 @@ final class GE_WTP_Commercial_Quote_PDF {
         $issuer_height = 23 + count( $issuer_rows ) * 13;
         $currency = $s['currency'] ?? 'ARS';
         $profile = GE_WTP_Quote_Billing_Control::receiver( $s );
-        $customer = isset( $s['receiver_snapshot'] ) ? false : get_userdata( $quote['customer_id'] );
+        $customer = isset( $s['receiver_snapshot'] ) || isset( $s['customer_billing_profile'] ) || isset( $s['billing']['profile'] ) ? false : get_userdata( $quote['customer_id'] );
         // Fiscal identity is frozen in the version; contact fallback follows the existing portal.
         $client = array_filter( array( ( $profile['legal_name'] ?? '' ) ?: ( $customer ? $customer->display_name : '' ), ! empty( $profile['cuit'] ) ? 'CUIT ' . $profile['cuit'] : '', $profile['contact_name'] ?? '', ( $profile['billing_email'] ?? '' ) ?: ( $customer ? $customer->user_email : '' ), $profile['contact_phone'] ?? '', $profile['fiscal_address'] ?? '' ) );
         if ( isset( $s['receiver_snapshot'] ) ) { array_unshift( $client, 'RECEPTOR' ); }
