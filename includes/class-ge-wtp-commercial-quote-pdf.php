@@ -57,6 +57,8 @@ final class GE_WTP_Commercial_Quote_PDF {
             return new WP_Error( 'ge_pdf_snapshot', 'El presupuesto necesita un snapshot comercial completo antes de emitir el PDF.' );
         }
         $pdf = new GE_WTP_Simple_PDF();
+        $issuer = (array) get_option( 'ge_commercial_document_identity', array() );
+        $issuer_height = ! empty( $issuer['legal_name'] ) ? 55 : 0;
         $currency = $s['currency'] ?? 'ARS';
         $profile = $s['billing']['profile'] ?? array();
         $customer = get_userdata( $quote['customer_id'] );
@@ -124,7 +126,7 @@ final class GE_WTP_Commercial_Quote_PDF {
         foreach ( $rows as $index => $row ) {
             $reserve = $row['height'];
             if ( in_array( $row['kind'], array( 'heading', 'table', 'amount' ), true ) && isset( $rows[ $index + 1 ] ) ) { $reserve += $rows[ $index + 1 ]['height']; }
-            if ( $height + $reserve > 590 && $current ) {
+            if ( $height + $reserve > 590 - $issuer_height && $current ) {
                 $chunks[] = $current; $current = array(); $height = 0;
                 if ( 'item' === $row['kind'] ) { $current[] = array( 'kind' => 'table', 'height' => 28 ); $height = 28; }
             }
@@ -141,8 +143,17 @@ final class GE_WTP_Commercial_Quote_PDF {
             $date = ! empty( $s['created_at'] ) ? wp_date( 'd/m/Y', strtotime( $s['created_at'] ) ) : '';
             $pdf->text_right( 557, 67, 9, $date . '  ·  Versión ' . $quote['version'], false, 105, 115, 134 );
             $pdf->line( 38, 94, 557, 94, 109, 69, 239, 2 );
-            $pdf->text( 38, 121, 9, $page ? 'PROPUESTA COMERCIAL · CONTINUACIÓN' : 'PROPUESTA COMERCIAL · CLIENTE', true, 109, 69, 239 );
-            $top = 147;
+            if ( $issuer_height ) {
+                $pdf->text( 38, 113, 7.5, 'DATOS FISCALES · GRAPHEX', true, 105, 115, 134 );
+                $pdf->text( 38, 130, 9, $issuer['legal_name'], true, 17, 24, 39 );
+                $tax_ids = array();
+                if ( ! empty( $issuer['cuit'] ) ) { $tax_ids[] = 'CUIT: ' . $issuer['cuit']; }
+                if ( ! empty( $issuer['iibb'] ) ) { $tax_ids[] = 'IIBB: ' . $issuer['iibb']; }
+                $pdf->text_right( 557, 130, 8, implode( ' · ', $tax_ids ), false, 17, 24, 39 );
+                $pdf->text( 38, 147, 8, implode( ' · ', array_filter( array( $issuer['fiscal_address'] ?? '', trim( ( $issuer['postcode'] ?? '' ) . ' - ' . ( $issuer['city'] ?? '' ), ' -' ) ) ) ), false, 105, 115, 134 );
+            }
+            $pdf->text( 38, 121 + $issuer_height, 9, $page ? 'PROPUESTA COMERCIAL · CONTINUACIÓN' : 'PROPUESTA COMERCIAL · CLIENTE', true, 109, 69, 239 );
+            $top = 147 + $issuer_height;
             foreach ( $chunk as $row ) {
                 $kind = $row['kind'];
                 if ( 'table' === $kind ) {
