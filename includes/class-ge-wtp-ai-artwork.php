@@ -119,6 +119,7 @@ final class GE_WTP_AI_Artwork {
         if ( 'graph.artwork.ai_improve.request' === $action ) {
             $base = GE_WTP_Documents::find_version( $order->get_id(), $input['version_id'] ?? '' );
             if ( ! $base || 'arte' !== ( $base['category'] ?? '' ) || 'discarded' === ( $base['status'] ?? '' ) ) { return new WP_Error( 'version', 'Versión no elegible de este pedido.' ); }
+            $base = GE_WTP_File_Analysis::record( $base, GE_WTP_Documents::private_directory() );
             $instruction = sanitize_textarea_field( $input['instruction'] ?? '' );
             $kind = sanitize_key( $input['kind'] ?? 'design_edit' );
             if ( strlen( $instruction ) < 8 || strlen( $instruction ) > 2000 || ! in_array( $kind, array( 'design_edit', 'resize', 'text_edit', 'file_prepare', 'prepress_check' ), true ) ) { return new WP_Error( 'instruction', 'Describí la mejora (8 a 2000 caracteres).' ); }
@@ -144,7 +145,7 @@ final class GE_WTP_AI_Artwork {
                     'order_item_id' => absint( $base['order_item_id'] ?? 0 ), 'base_version_id' => GE_WTP_Documents::version_id( $base ),
                     'artifact_ref' => 'graph://orders/' . $order->get_id() . '/artwork/' . GE_WTP_Documents::version_id( $base ), 'kind' => $kind, 'instruction' => $instruction );
                 $pack = array_merge( $body, array( 'artwork_id' => $base['id'], 'version_id' => $body['base_version_id'],
-                    'checksum_sha256' => $checksum, 'file_analysis_ref' => $body['artifact_ref'] . '#analysis', 'preflight_summary' => $base['analysis'] ?? array(),
+                    'checksum_sha256' => $checksum, 'file_analysis_ref' => $base['file_analysis_ref'] ?? '', 'preflight_summary' => GE_WTP_File_Analysis::task_summary( $base ),
                     'requested_capability' => $kind, 'requested_skill' => $runtime['skill'], 'output_contract' => 'new_candidate_version', 'runtime' => $runtime ) );
                 $row = array( 'request_id' => $id, 'order_id' => $order->get_id(), 'order_item_id' => $body['order_item_id'],
                     'base_version_id' => $body['base_version_id'], 'base_checksum_sha256' => $checksum, 'instruction' => $instruction, 'kind' => $kind,

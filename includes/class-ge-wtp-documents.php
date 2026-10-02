@@ -21,7 +21,9 @@ final class GE_WTP_Documents {
             echo '<ul>';
             foreach ( $documents as $document ) {
                 if ( empty( $document['id'] ) || empty( $document['name'] ) ) { continue; }
-                echo '<li><a href="' . esc_url( self::download_url( $order->get_id(), $document['id'] ) ) . '">' . esc_html( $document['name'] ) . '</a> · ' . esc_html( size_format( (int) ( $document['size'] ?? 0 ) ) ) . '</li>';
+                echo '<li><a href="' . esc_url( self::download_url( $order->get_id(), $document['id'] ) ) . '">' . esc_html( $document['name'] ) . '</a> · ' . esc_html( size_format( (int) ( $document['size'] ?? 0 ) ) );
+                GE_WTP_File_Analysis::render( $document, false );
+                echo '</li>';
             }
             echo '</ul>';
         }
@@ -63,8 +65,8 @@ final class GE_WTP_Documents {
             $saved = self::handle_uploaded_files( $order_id, 'ge_documents', 'arte' );
         }
         $ok = is_array( $saved ) && ! empty( $saved );
-        wc_add_notice( $ok ? 'Archivo vinculado al pedido.' : 'No se pudo cargar el archivo. Revisá el formato y el tamaño.', $ok ? 'success' : 'error' );
-        wp_safe_redirect( $order->get_view_order_url() );
+        if ( function_exists( 'wc_add_notice' ) ) { wc_add_notice( $ok ? 'Archivo recibido. Revisando archivo.' : 'No se pudo cargar el archivo. Revisá el formato y el tamaño.', $ok ? 'success' : 'error' ); }
+        wp_safe_redirect( add_query_arg( 'ge_upload_received', $ok ? '1' : '0', $order->get_view_order_url() ) );
         exit;
     }
 
@@ -143,7 +145,7 @@ final class GE_WTP_Documents {
             if ( UPLOAD_ERR_NO_FILE === (int) $file['error'] ) {
                 continue;
             }
-            if ( UPLOAD_ERR_OK !== (int) $file['error'] || (int) $file['size'] > ( $vps_storage ? GE_WTP_VPS_Storage::limits()['max_file_bytes'] : 1024 * MB_IN_BYTES ) ) {
+            if ( UPLOAD_ERR_OK !== (int) $file['error'] || (int) $file['size'] > ( $vps_storage ? GE_WTP_VPS_Storage::limits()['max_file_bytes'] : 250 * MB_IN_BYTES ) ) {
                 continue;
             }
 
@@ -162,7 +164,7 @@ final class GE_WTP_Documents {
                 $stored_name = wp_generate_uuid4() . '.' . $extension;
                 $destination = trailingslashit( self::private_directory() ) . $stored_name;
                 if ( ! move_uploaded_file( $file['tmp_name'], $destination ) ) { continue; }
-                $analysis = self::analyze_file( $destination, $allowed[ $extension ] );
+                $analysis = self::analyze_file( $destination, $allowed[ $extension ], in_array( $category, array( 'factura', 'comprobante', 'nota_credito', 'nota_debito', 'presupuesto_emitido' ), true ) ? 'basic' : 'technical' );
             }
             $record = array(
                 'id'          => wp_generate_uuid4(),
@@ -189,6 +191,7 @@ final class GE_WTP_Documents {
                 $record['replaces_id'] = sanitize_text_field( $context['replaces_id'] ?? '' );
                 $record['billing_profile_snapshot'] = $context['billing_profile_snapshot'] ?? array();
             }
+            $record = GE_WTP_File_Analysis::record( $record, self::private_directory() );
             $saved[] = $record;
         }
 
@@ -315,54 +318,8 @@ final class GE_WTP_Documents {
         return $documents;
     }
 
-    public static function analyze_file( $path, $mime ) {
-        $analysis = array(
-            'sha256'      => is_file( $path ) ? hash_file( 'sha256', $path ) : '',
-            'pages'       => 0,
-            'width'       => 0,
-            'height'      => 0,
-            'unit'        => '',
-            'orientation' => '',
-            'confidence'  => 'basic',
-            'warning'     => '',
-        );
-        if ( 0 === strpos( (string) $mime, 'image/' ) ) {
-            $size = @getimagesize( $path );
-            if ( $size ) {
-                $analysis['pages'] = 1;
-                $analysis['width'] = absint( $size[0] );
-                $analysis['height'] = absint( $size[1] );
-                $analysis['unit'] = 'px';
-                $analysis['orientation'] = $size[0] === $size[1] ? 'cuadrado' : ( $size[0] > $size[1] ? 'horizontal' : 'vertical' );
-                $analysis['confidence'] = 'high';
-            }
-            return $analysis;
-        }
-        if ( 'application/pdf' !== $mime ) { $analysis['warning'] = 'Formato sin análisis interno automático.'; return $analysis; }
-        $handle = @fopen( $path, 'rb' );
-        if ( ! $handle ) { $analysis['warning'] = 'No se pudo leer el PDF.'; return $analysis; }
-        $carry = ''; $read = 0; $limit = 256 * MB_IN_BYTES; $media_box = array();
-        while ( ! feof( $handle ) && $read < $limit ) {
-            $chunk = fread( $handle, min( MB_IN_BYTES, $limit - $read ) );
-            if ( false === $chunk || '' === $chunk ) { break; }
-            $read += strlen( $chunk ); $carry_length = strlen( $carry ); $scan = $carry . $chunk;
-            if ( preg_match_all( '/\/Type\s*\/Page\b/', $scan, $matches, PREG_OFFSET_CAPTURE ) ) {
-                foreach ( $matches[0] as $match ) { if ( $match[1] + strlen( $match[0] ) > $carry_length ) { $analysis['pages']++; } }
-            }
-            if ( ! $media_box && preg_match( '/\/MediaBox\s*\[\s*[-0-9.]+\s+[-0-9.]+\s+([-0-9.]+)\s+([-0-9.]+)\s*\]/', $scan, $box ) ) { $media_box = array( (float) $box[1], (float) $box[2] ); }
-            $carry = substr( $scan, -256 );
-        }
-        $truncated = ! feof( $handle ); fclose( $handle );
-        if ( $media_box ) {
-            $analysis['width'] = round( $media_box[0] * 25.4 / 72, 1 );
-            $analysis['height'] = round( $media_box[1] * 25.4 / 72, 1 );
-            $analysis['unit'] = 'mm';
-            $analysis['orientation'] = abs( $media_box[0] - $media_box[1] ) < 0.1 ? 'cuadrado' : ( $media_box[0] > $media_box[1] ? 'horizontal' : 'vertical' );
-        }
-        $analysis['confidence'] = $analysis['pages'] && $media_box && ! $truncated ? 'medium' : 'basic';
-        if ( ! $analysis['pages'] || ! $media_box ) { $analysis['warning'] = 'El PDF necesita control visual: parte de sus datos internos no pudo verificarse.'; }
-        elseif ( $truncated ) { $analysis['warning'] = 'PDF muy pesado: el análisis se limitó a los primeros 256 MB.'; }
-        return $analysis;
+    public static function analyze_file( $path, $mime, $mode = 'technical' ) {
+        return GE_WTP_File_Analysis::ingest( $path, $mime, $mode );
     }
 
     public static function can_access_order( $order ) {

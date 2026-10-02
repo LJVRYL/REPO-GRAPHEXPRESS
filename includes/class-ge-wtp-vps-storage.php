@@ -136,6 +136,12 @@ final class GE_WTP_VPS_Storage {
         $target_relative = 'orders/' . absint( $order_id ) . '/' . absint( $item_id ) . '/' . wp_generate_uuid4() . '-' . sanitize_file_name( $descriptor['name'] );
         $target = self::absolute_path( $target_relative, true );
         if ( ! $target || ! wp_mkdir_p( dirname( $target ) ) || ! rename( $source, $target ) ) { return new WP_Error( 'ge_vps_move', 'No se pudo consolidar el archivo privado.' ); }
+        $ref = $descriptor['file_analysis_ref'] ?? $descriptor['analysis']['file_analysis_ref'] ?? '';
+        $analysis = GE_WTP_File_Analysis::from_ref( $ref );
+        if ( $analysis && hash_equals( $analysis['sha256'], hash_file( 'sha256', $target ) ) ) {
+            $analysis['path'] = $target; update_option( GE_WTP_File_Analysis::PREFIX . 'analysis_' . $analysis['analysis_id'], $analysis, false );
+            update_option( GE_WTP_File_Analysis::PREFIX . 'index_' . hash( 'sha256', $target . ':' . $analysis['sha256'] . ':' . $analysis['mode'] . ':' . $analysis['version_id'] ), $analysis['analysis_id'], false );
+        }
         $descriptor['relative_path'] = $target_relative;
         return $descriptor;
     }
@@ -159,6 +165,7 @@ final class GE_WTP_VPS_Storage {
         $destination = self::absolute_path( $relative, true );
         if ( ! $destination || ! wp_mkdir_p( dirname( $destination ) ) || ! move_uploaded_file( $file['tmp_name'], $destination ) ) { return new WP_Error( 'ge_vps_move', 'No se pudo guardar el archivo privado.' ); }
         @chmod( $destination, 0640 );
+        GE_WTP_File_Analysis::ingest( $destination, $manifest[0]['mime'] );
         return array( 'provider' => 'vps', 'relative_path' => $relative, 'name' => $manifest[0]['name'], 'size' => (int) $manifest[0]['size'], 'mime' => $manifest[0]['mime'] );
     }
 
@@ -219,7 +226,8 @@ final class GE_WTP_VPS_Storage {
             wp_send_json_error( array( 'message' => 'El tamaño recibido no coincide con el autorizado.' ), 400 );
         }
         @chmod( $destination, 0640 );
-        wp_send_json_success( array( 'stored' => true ) );
+        $analysis = GE_WTP_File_Analysis::ingest( $destination, $claim['mime'] ?? 'application/octet-stream' );
+        wp_send_json_success( array( 'stored' => true, 'file_analysis_ref' => $analysis['file_analysis_ref'] ?? '', 'analysis_status' => $analysis['analysis_status'] ) );
     }
 
     public static function schedule_cleanup() {

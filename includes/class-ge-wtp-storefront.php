@@ -615,7 +615,7 @@ final class GE_WTP_Storefront {
             $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             $size = (int) ($_FILES[$field]['size'][$index] ?? 0);
             $temp = $_FILES[$field]['tmp_name'][$index] ?? '';
-            if (!in_array($extension, $allowed, true) || !$size || $size > 1024 * MB_IN_BYTES || !is_uploaded_file($temp)) {
+            if (!in_array($extension, $allowed, true) || !$size || $size > 250 * MB_IN_BYTES || !is_uploaded_file($temp)) {
                 return new WP_Error('ge_upload_invalid', 'Revisá el formato y tamaño de los archivos adjuntos.');
             }
             $stored = wp_generate_uuid4() . '.' . $extension;
@@ -623,6 +623,7 @@ final class GE_WTP_Storefront {
             if (!move_uploaded_file($temp, $destination)) {
                 return new WP_Error('ge_upload_move', 'No se pudo guardar uno de los archivos.');
             }
+            GE_WTP_File_Analysis::ingest( $destination, function_exists('mime_content_type') ? mime_content_type($destination) : 'application/octet-stream' );
             $mime = function_exists('mime_content_type') ? (string) mime_content_type($destination) : 'application/octet-stream';
             $saved[] = array('stored_name' => $stored, 'name' => $name, 'mime' => $mime, 'size' => $size);
         }

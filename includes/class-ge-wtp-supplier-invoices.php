@@ -160,9 +160,11 @@ final class GE_WTP_Supplier_Invoices {
         $destination = trailingslashit( self::originals_directory() ) . $stored;
         if ( ! move_uploaded_file( $file['tmp_name'], $destination ) ) { self::fail( 'No se pudo guardar el original.' ); }
         @chmod( $destination, 0600 );
+        $file_analysis = GE_WTP_File_Analysis::ingest( $destination, $allowed[ $ext ], 'basic' );
         $supplier = sanitize_key( wp_unslash( $_POST['supplier'] ?? 'otro' ) );
         $suppliers = self::suppliers();
         $record = self::defaults();
+        $record['file_analysis_ref'] = $file_analysis['file_analysis_ref'] ?? '';
         $record['supplier'] = isset( $suppliers[ $supplier ] ) ? $supplier : 'otro';
         $record['supplier_name'] = $suppliers[ $record['supplier'] ]['name'];
         $record['channel'] = sanitize_key( wp_unslash( $_POST['channel'] ?? 'otro' ) );
@@ -222,7 +224,7 @@ final class GE_WTP_Supplier_Invoices {
         if ( empty( $_FILES['derived_invoice'] ) ) { self::redirect( $id, 'blocked' ); }
         $file = $_FILES['derived_invoice']; $name = sanitize_file_name( wp_basename( $file['name'] ) ); $allowed = array( 'pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png' ); $check = wp_check_filetype_and_ext( $file['tmp_name'], $name, $allowed ); $ext = strtolower( (string) ( $check['ext'] ?? '' ) );
         if ( UPLOAD_ERR_OK !== (int) $file['error'] || ! isset( $allowed[ $ext ] ) || (int) $file['size'] > self::MAX_FILE_SIZE * MB_IN_BYTES ) { self::redirect( $id, 'blocked' ); }
-        $destination = trailingslashit( self::derived_directory() ) . wp_generate_uuid4() . '.' . $ext; if ( ! move_uploaded_file( $file['tmp_name'], $destination ) ) { self::redirect( $id, 'blocked' ); } @chmod( $destination, 0600 ); self::set_derived( $id, $record, $destination, $name ); self::redirect( $id, 'copy-ready' );
+        $destination = trailingslashit( self::derived_directory() ) . wp_generate_uuid4() . '.' . $ext; if ( ! move_uploaded_file( $file['tmp_name'], $destination ) ) { self::redirect( $id, 'blocked' ); } @chmod( $destination, 0600 ); $record['derived_file_analysis_ref'] = GE_WTP_File_Analysis::ingest( $destination, $allowed[ $ext ], 'basic' )['file_analysis_ref'] ?? ''; self::set_derived( $id, $record, $destination, $name ); self::redirect( $id, 'copy-ready' );
     }
 
     public static function handle_approve_copy() {

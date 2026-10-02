@@ -568,6 +568,7 @@ final class GE_WTP_Production {
             <header><div><strong><?php echo esc_html( $title ); ?></strong><small><?php echo esc_html( count( $documents ) ); ?> archivo<?php echo 1 === count( $documents ) ? '' : 's'; ?></small></div></header>
             <?php if ( $documents ) : ?><div class="ge-production-file-list"><?php foreach ( $documents as $document ) :
                 $side = sanitize_key( $document['artwork_side'] ?? 'reference' );
+                GE_WTP_File_Analysis::render( $document );
                 $analysis = is_array( $document['analysis'] ?? null ) ? $document['analysis'] : array();
                 $details = array( $side_labels[ $side ] ?? 'Archivo', size_format( absint( $document['size'] ?? 0 ) ) );
                 if ( ! empty( $analysis['pages'] ) ) { $details[] = absint( $analysis['pages'] ) . ' pág.'; }

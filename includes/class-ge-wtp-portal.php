@@ -656,6 +656,7 @@ final class GE_WTP_Portal {
             echo '<span class="ge-item-artwork-file">ARCHIVO</span>';
         }
         echo '<span><strong>' . esc_html( $document['name'] ) . '</strong><small>Abrir archivo ↗</small></span></a>';
+        GE_WTP_File_Analysis::render( $document, false );
     }
 
     private static function render_item_artwork_uploads( $order, $documents ) {
@@ -728,6 +729,7 @@ final class GE_WTP_Portal {
             if ( ! empty( $document['superseded_at'] ) ) { continue; }
             $categories = GE_WTP_Documents::categories();
             $category = isset( $categories[ $document['category'] ] ) ? $categories[ $document['category'] ] : 'Documento';
+            GE_WTP_File_Analysis::render( $document, false );
             printf( '<a href="%1$s"><span class="ge-doc-icon">↓</span><span><strong>%2$s</strong><small>%3$s · %4$s</small></span></a>', esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ), esc_html( $document['name'] ), esc_html( $category ), esc_html( size_format( $document['size'] ) ) );
         }
         echo '</div>';
