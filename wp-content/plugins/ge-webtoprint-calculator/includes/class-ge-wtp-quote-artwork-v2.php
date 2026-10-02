@@ -140,7 +140,7 @@ final class GE_WTP_Quote_Artwork_V2 {
         foreach($known as $id=>&$file){
             if(array_key_exists($id,$assignments)){
                 $file['quote_item_id']=$assignments[$id];$file['line_uuid']=$assignments[$id];$file['association_status']='active';
-            }elseif(isset($file['association_status'])||!empty($file['quote_item_id'])){$file['association_status']='detached';}
+            }else{$file['association_status']='detached';}
             // Legacy globals remain global unless the user explicitly selects an item.
         }unset($file);
         return array_values($known);

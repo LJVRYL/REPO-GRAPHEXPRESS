@@ -43,6 +43,8 @@ while IFS= read -r rel; do
 done < <(python -c 'import json;print("\n".join(json.load(open("'$stage'/expected.json"))))')
 install -o apache -g webusers -m 0644 "$stage/ge-request-size-guard.php" "$site/wp-content/mu-plugins/ge-request-size-guard.php"
 install -o root -g root -m 0644 "$stage/graphex-artwork-v2.conf" /opt/php7-4/etc/php-fpm.d/graphex-artwork-v2.conf
+test ! -L /opt/php7-4/var/log/graphex-php.log
+if ! test -f /opt/php7-4/var/log/graphex-php.log; then install -o apache -g webusers -m 0600 /dev/null /opt/php7-4/var/log/graphex-php.log; fi
 python - <<'PY'
 from __future__ import print_function
 for path in ['/opt/ferozo/conf/vhosts.d/150-graphexpress.conf','/opt/ferozo/conf/vhosts.d/160-graphex.conf']:
