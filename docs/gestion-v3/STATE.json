@@ -1,0 +1,76 @@
+{
+  "project": "graph-express",
+  "specialist": "product-design-and-engineering",
+  "resource": "graph-wordpress-prod",
+  "integration": "wordpress-woocommerce",
+  "date": "2026-10-02",
+  "status": "deployed",
+  "branch": "feature/graphex-gestion-v3",
+  "implementation_commit": "394e312",
+  "polish_commit": "1865ea5",
+  "live_baseline_commit": "1c7b766",
+  "source_base_release": "1b9ed9e",
+  "graph_main_head": "cf8c5f4",
+  "ai_grupo_main_head": "661ef1f",
+  "main_merged": false,
+  "nav": [
+    "Inicio",
+    "Clientes",
+    "Presupuestos",
+    "Pedidos",
+    "Producción",
+    "Comunicaciones"
+  ],
+  "flags": {
+    "ge_gestion_v3_enabled": "yes",
+    "ge_work_numbers_enabled": "yes"
+  },
+  "numbering": {
+    "table": "{wp_prefix}ge_work_numbers",
+    "engine": "InnoDB",
+    "allocator": "AUTO_INCREMENT + UNIQUE quote_id/order_id; INSERT IGNORE; conditional UPDATE on conversion",
+    "next_at_activation": 10001,
+    "allocated_at_activation": 0,
+    "legacy_quote_floor": 980,
+    "legacy_order_floor": 978,
+    "meta": "_ge_work_number",
+    "technical_ids_changed": false,
+    "reuse": false,
+    "legacy_conversion": "retains legacy references",
+    "excluded": "payment transactions, refunds, technical per-item work orders and old customer quote workflow"
+  },
+  "qa": {
+    "ui_assertions": 78,
+    "numbering_checks": 27,
+    "concurrent_distinct": 12,
+    "concurrent_same_owner": 12,
+    "collisions": 0,
+    "production_lists_desktop_mobile": 11,
+    "production_extra_variants": 8,
+    "production_ai_modal": "opens; no request submitted",
+    "production_file_search": "cartel-lgy-final.pdf found",
+    "production_test_business_records_created": 0
+  },
+  "backup": {
+    "full": "/root/backups/graph-wordpress/20261002T013218Z",
+    "selective": "/root/backups/graph-wordpress/gestion-v3-20261002T0145Z",
+    "validation": "gzip, tar listing, SHA-256, counts; selective file restoration verified in separate directory"
+  },
+  "parallel_work": {
+    "file_analyzer": "active, no claim of completion; separate source files untouched",
+    "ai_improve": "deployed scaffold preserved; actual image executor not certified/connected"
+  },
+  "pending": [
+    "Integrate selective changes into canonical Git release under repository policy; no main merge performed.",
+    "Reconcile the final File Analyzer Result Pack and any later overlapping Customer Workspace publication."
+  ],
+  "limitations": [
+    "Generic free-text order list remains bounded to 250 recent records inherited from original module; exact work_number search uses registry beyond that bound.",
+    "Production generic search remains within current queue page; exact commercial number searches across pages.",
+    "Global search returns up to 10 records/category; historical customer-meta quotes remain accessible through the local unified quote list.",
+    "QA screenshots include isolated fixtures, not production counts. live-* screenshots are real production.",
+    "QA library preview 404s come from excluded uploads in restored environment; no page JavaScript exceptions.",
+    "Server PHP 7.4 CLI emits pre-existing zip.so linking warning; not corrected as part of this UI release.",
+    "No exhaustive screen-reader or all-browser certification; tested keyboard/focus, labels, Chromium desktop/mobile."
+  ]
+}
