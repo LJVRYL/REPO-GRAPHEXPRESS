@@ -200,6 +200,7 @@ final class GE_WTP_Commercial_Quote_UI {
         $events = get_post_meta( $quote['id'], '_ge_commercial_events', true );
         if ( ! is_array( $events ) || ! $events ) { return; }
         $labels = array( 'created' => 'Creado', 'revised' => 'Editado', 'sent' => 'Enviado', 'viewed' => 'Visto por el cliente', 'accepted' => 'Aceptado en portal', 'accepted_staff' => 'Aceptación registrada por staff', 'file_uploaded' => 'Archivo cargado', 'file_attached' => 'Archivo vinculado', 'receipt_uploaded' => 'Comprobante cargado', 'receipt_attached' => 'Comprobante vinculado', 'payment_started' => 'Pago iniciado', 'payment_confirmed' => 'Pago confirmado', 'converted' => 'Convertido a pedido' );
+        $labels['pdf_attached'] = 'PDF comercial adjunto';
         echo '<section class="ge-production-card ge-quote-events"><h3>Actividad del presupuesto</h3><ol>';
         foreach ( array_reverse( $events ) as $event ) {
             echo '<li><strong>' . esc_html( $labels[ $event['event'] ?? '' ] ?? ucfirst( $event['event'] ?? 'Actividad' ) ) . '</strong><time>' . esc_html( ! empty( $event['at'] ) ? wp_date( 'd/m/Y H:i', strtotime( $event['at'] ) ) : '' ) . '</time></li>';
