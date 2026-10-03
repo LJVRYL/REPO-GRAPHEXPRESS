@@ -1,7 +1,11 @@
 <?php
+require_once __DIR__ . '/fixtures/wordpress-defaults.php';
 
 define( 'ABSPATH', __DIR__ );
 $user_meta = array();
+// Actor 9 is QA staff; actor 7 may edit only their own customer profile.
+function user_can($id, $cap) { return $id === 9 && $cap === 'manage_woocommerce'; }
+function sanitize_text_field($value) { return trim(strip_tags((string)$value)); }
 function get_user_meta( $id, $key ) { global $user_meta; return $user_meta[$id][$key] ?? ''; }
 function update_user_meta( $id, $key, $value ) { global $user_meta; $user_meta[$id][$key] = $value; }
 function add_user_meta( $id, $key, $value ) { global $user_meta; $user_meta[$id][$key][] = $value; }
@@ -16,7 +20,7 @@ function blocked( $callback, $label ) {
 blocked( function () { GE_WTP_Billing::assert_can_accept_or_pay( array() ); }, 'Snapshot ausente no autoriza pago' );
 
 $issuer = array( 'legal_name' => 'Graph Test', 'cuit' => '30712345671', 'point_of_sale' => '0001', 'vat_status' => 'registered', 'document_capabilities' => array( 'A', 'B' ), 'common_price_policy' => 'tax_inclusive', 'invoice_a_price_policy' => 'tax_exclusive' );
-$common = GE_WTP_Billing::normalize_profile( array( 'billing_mode' => 'common' ) );
+$common = GE_WTP_Billing::normalize_profile( array( 'billing_mode' => 'common', 'vat_status' => 'final_consumer' ) );
 $common_result = GE_WTP_Billing::resolve( $issuer, $common, 12100, 2100 );
 check( $common_result['blockers'] === array() && $common_result['document_type'] === 'B' && $common_result['total_cents'] === 12100 && $common_result['tax_cents'] === 2100, 'Cliente común sin CUIT y precio final' );
 check( in_array( 'quote_requires_net_price_policy', GE_WTP_Billing::resolve_net_quote( $issuer, $common, 10000, 2100 )['blockers'], true ), 'Presupuesto neto no se reinterpreta como precio final' );

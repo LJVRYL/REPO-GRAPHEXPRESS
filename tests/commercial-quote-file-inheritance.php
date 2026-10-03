@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/fixtures/wordpress-defaults.php';
 
 define( 'ABSPATH', __DIR__ );
 function absint( $value ) { return abs( (int) $value ); }
@@ -6,6 +7,8 @@ function get_post_meta( $id, $key, $single ) { global $quote_files; return $key 
 
 class WC_Order_Item_Product {
     public $meta = array( '_ge_item_artwork_customer_approval' => 1, '_ge_item_artwork_staff_approval' => 1, '_ge_item_artwork_release_hash' => 'old' );
+    public function get_meta( $key, $single = true ) { return $this->meta[$key] ?? ''; }
+    public function get_id() { return 701; }
     public function delete_meta_data( $key ) { unset( $this->meta[ $key ] ); }
     public function save() {}
 }
@@ -26,6 +29,8 @@ class GE_WTP_Documents {
     public static function get_documents( $id ) { return self::$order->meta[ self::META_KEY ] ?? array(); }
 }
 
+class GE_WTP_Commercial_Quotes { public static function get($id) { return array('id'=>$id,'version'=>1,'snapshot'=>array('items'=>array())); } }
+require __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-external-artwork.php';
 require __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-files.php';
 
 $quote_files = array( array( 'id' => 'file-a', 'stored_name' => 'private-a.pdf', 'name' => 'Original.pdf', 'category' => 'arte' ) );

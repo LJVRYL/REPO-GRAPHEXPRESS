@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/fixtures/wordpress-defaults.php';
 
 define( 'ABSPATH', __DIR__ );
 class WP_Error {
@@ -33,6 +34,7 @@ class GE_WTP_Workflow { public static function finishing_catalog() { return arra
 
 require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-balance.php';
 require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-catalog.php';
+require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-artwork-v2.php';
 require_once __DIR__ . '/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quotes.php';
 
 $lines = array(
