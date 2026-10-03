@@ -69,10 +69,11 @@ final class GE_WTP_Commercial_Quote_PDF {
         $issuer_rows = array(); foreach ( $issuer_lines as $line ) { $issuer_rows = array_merge( $issuer_rows, self::wrap( $line, 510, 8 ) ); }
         $issuer_height = 23 + count( $issuer_rows ) * 13;
         $currency = $s['currency'] ?? 'ARS';
-        $profile = $s['billing']['profile'] ?? $s['customer_billing_profile'] ?? array();
-        $customer = get_userdata( $quote['customer_id'] );
+        $profile = GE_WTP_Quote_Billing_Control::receiver( $s );
+        $customer = isset( $s['receiver_snapshot'] ) || isset( $s['customer_billing_profile'] ) || isset( $s['billing']['profile'] ) ? false : get_userdata( $quote['customer_id'] );
         // Fiscal identity is frozen in the version; contact fallback follows the existing portal.
         $client = array_filter( array( ( $profile['legal_name'] ?? '' ) ?: ( $customer ? $customer->display_name : '' ), ! empty( $profile['cuit'] ) ? 'CUIT ' . $profile['cuit'] : '', $profile['contact_name'] ?? '', ( $profile['billing_email'] ?? '' ) ?: ( $customer ? $customer->user_email : '' ), $profile['contact_phone'] ?? '', $profile['fiscal_address'] ?? '' ) );
+        if ( isset( $s['receiver_snapshot'] ) ) { array_unshift( $client, 'RECEPTOR' ); }
         $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $s );
         if ( $tax_label ) { $client[] = $tax_label; }
         $address = array_filter( array( $profile['street'] ?? $profile['address_1'] ?? '', $profile['city'] ?? '', $profile['postcode'] ?? '' ) );

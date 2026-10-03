@@ -200,7 +200,7 @@ final class GE_WTP_Billing_Issuers {
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'settings', array( 'category' => 'billing', 'saved' => '1' ) ) ); exit;
     }
     public static function order_snapshot( $order ) { $s = $order->get_meta( self::ORDER_META, true ); return is_array( $s ) && $s ? $s : self::unknown(); }
-    public static function inherit( $order, $snapshot ) { if ( ! empty( $snapshot['customer_tax_decision'] ) ) { $order->update_meta_data( '_ge_customer_tax_decision', $snapshot['customer_tax_decision'] ); } $s = self::from_snapshot( $snapshot ); $order->update_meta_data( self::ORDER_META, $s ); $order->update_meta_data( '_ge_billing_issuer_profile_id', $s['id'] ); }
+    public static function inherit( $order, $snapshot ) { if ( isset( $snapshot['receiver_snapshot'] ) ) { $order->update_meta_data( '_ge_billing_profile_snapshot', $snapshot['receiver_snapshot'] ); } if ( isset( $snapshot['billing_resolution'] ) ) { $order->update_meta_data( '_ge_quote_billing_resolution', $snapshot['billing_resolution'] ); } if ( ! empty( $snapshot['customer_tax_decision'] ) ) { $order->update_meta_data( '_ge_customer_tax_decision', $snapshot['customer_tax_decision'] ); } $s = self::from_snapshot( $snapshot ); $order->update_meta_data( self::ORDER_META, $s ); $order->update_meta_data( '_ge_billing_issuer_profile_id', $s['id'] ); }
     public static function render_order( $order, $staff ) {
         self::render_summary( array( 'issuer_snapshot' => self::order_snapshot( $order ) ) );
         if ( ! $staff || ! self::can_manage( get_current_user_id() ) ) { return; }

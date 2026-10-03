@@ -470,6 +470,7 @@ final class GE_WTP_Commercial_Checkout {
             if ( $quote['converted_order_id'] ) { return wc_get_order( $quote['converted_order_id'] ); }
             if ( isset( $args['expected_version'] ) && (int) $args['expected_version'] !== (int) $quote['version'] ) { return new WP_Error( 'ge_quote_version_changed', 'El presupuesto cambió. Volvé a abrirlo.' ); }
             if ( in_array( $quote['status'], array( 'rejected', 'cancelled' ), true ) ) { return new WP_Error( 'ge_quote_state', 'Este presupuesto no se puede convertir.' ); }
+            if ( in_array( 'billing_identity_changed_requires_reconciliation', (array) ( $quote['snapshot']['fiscal_blockers'] ?? array() ), true ) ) { return new WP_Error( 'ge_billing_reconcile', 'Revisá expresamente los importes fiscales antes de convertir.' ); }
             if ( empty( $quote['snapshot']['total_cents'] ) ) { return new WP_Error( 'ge_quote_total', 'Falta resolver el total fiscal.' ); }
             $initial = absint( get_post_meta( $quote_id, '_ge_commercial_initial_payment_order', true ) );
             $payment = $initial ? wc_get_order( $initial ) : false;
@@ -561,7 +562,7 @@ final class GE_WTP_Commercial_Checkout {
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
         $order->set_billing_last_name( $customer->last_name );
-        $billing_profile = $snapshot['billing']['profile'] ?? array();
+        $billing_profile = GE_WTP_Quote_Billing_Control::receiver( $snapshot );
         $delivery = $snapshot['delivery'] ?? array();
         if ( ! empty( $billing_profile['legal_name'] ) ) { $order->set_billing_company( $billing_profile['legal_name'] ); }
         if ( ! empty( $billing_profile['fiscal_address'] ) ) { $order->set_billing_address_1( $billing_profile['fiscal_address'] ); }
