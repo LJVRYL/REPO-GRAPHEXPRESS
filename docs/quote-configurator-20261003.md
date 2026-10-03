@@ -9,3 +9,5 @@ QA: 36 combinaciones de seis modelos, tres terminaciones y dos papeles; 278 comp
 Release: allowlist de siete archivos, backup privado con tar/hash verificados y guardas de concurrencia. Desplegar desde master canónico; confirmar manifiesto completo y hashes del presupuesto 986. Configuración operativa de 1002 permanece borrador, precios finales con Factura C, 100 unidades totales; no envío, aceptación, cobro ni liberación de producción.
 
 Private staff preview includes drafts without exposing them to the customer or enabling acceptance. Before selection, payment balance remains undefined; payment/production controls stay gated by acceptance. Additional five preview/balance checks pass.
+
+The existing PDF issuer block displays a recorded fiscal classification when present; unknown classification no longer prints an internal verification warning to the customer. Identity and official verification status remain unchanged. No header/layout/branding redesign.

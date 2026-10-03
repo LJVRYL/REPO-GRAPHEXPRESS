@@ -71,7 +71,7 @@ final class GE_WTP_Commercial_Quote_PDF {
         $issuer_lines = array( 'unknown' === $issuer['id'] ? GE_WTP_Billing_Issuers::label( $issuer ) : $issuer['legal_name'] );
         if ( 'unknown' !== $issuer['id'] ) {
             $issuer_lines[] = 'CUIT: ' . $issuer['cuit'] . ( ! empty( $issuer['iibb'] ) ? ' · IIBB: ' . $issuer['iibb'] : '' );
-            $issuer_lines[] = GE_WTP_Billing_Issuers::vat_label( $issuer );
+            if ( ! empty( $issuer['vat_status'] ) ) { $issuer_lines[] = GE_WTP_Billing_Issuers::vat_label( $issuer ); }
             $issuer_lines[] = implode( ' · ', array_filter( array( $issuer['fiscal_address'], trim( ( $issuer['postal_code'] ?? '' ) . ' - ' . ( $issuer['locality'] ?? '' ), ' -' ), $issuer['province'] ?? '', $issuer['country'] ?? '' ) ) );
             if ( ! empty( $issuer['contact_email'] ) || ! empty( $issuer['contact_phone'] ) ) { $issuer_lines[] = trim( ( $issuer['contact_email'] ?? '' ) . ' · ' . ( $issuer['contact_phone'] ?? '' ), ' ·' ); }
         }
