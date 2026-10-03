@@ -22,18 +22,21 @@ final class GE_WTP_Internal_Alerts {
         update_option($key,$id,false);return $id;
     }
     public static function url($data) {
+        if ( get_post_type($data['entity_ref']) === 'ge_invoice_case' ) { $case=get_post_meta($data['entity_ref'],'_ge_invoice_case',true); return GE_WTP_Customer_Invoices::url($case['ref']??'',true,$case['customer_id']??0); }
         $kind=get_post_type($data['entity_ref']);$section=GE_WTP_Quote_Requests::TYPE===$kind?'requests':(GE_WTP_Commercial_Quotes::POST_TYPE===$kind?'quotes':'orders');
         $arg='requests'===$section?'request_id':('quotes'===$section?'quote_id':'order_id');
         return GE_WTP_Staff_Portal::portal_url($section,array($arg=>$data['entity_ref']));
     }
     public static function unread($actor) {
         if(class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes',false,$actor))return array();
-        return get_posts(array('post_type'=>self::TYPE,'post_status'=>'private','posts_per_page'=>30,'meta_query'=>array(array('key'=>'_ge_read_'.$actor,'compare'=>'NOT EXISTS'))));
+        $rows=get_posts(array('post_type'=>self::TYPE,'post_status'=>'private','posts_per_page'=>30,'meta_query'=>array(array('key'=>'_ge_read_'.$actor,'compare'=>'NOT EXISTS'))));
+        return array_values(array_filter($rows,function($p)use($actor){$d=get_post_meta($p->ID,'_ge_alert',true);if(get_post_type($d['entity_ref']??0)==='ge_invoice_case')return GE_WTP_Customer_Invoices::staff($actor);return true;}));
     }
     public static function read() {
         if(!GE_WTP_Staff_Portal::can_access()) { wp_die('Acceso denegado.','',array('response'=>403)); }
         $id=absint($_POST['notification_id']??0);check_admin_referer('ge_alert_read_'.$id);
         if(self::TYPE!==get_post_type($id)){wp_die('Aviso inexistente.');}
+        $data=get_post_meta($id,'_ge_alert',true);if(get_post_type($data['entity_ref']??0)==='ge_invoice_case' && !GE_WTP_Customer_Invoices::staff(get_current_user_id())){wp_die('Acceso denegado.','',array('response'=>403));}
         update_post_meta($id,'_ge_read_'.get_current_user_id(),gmdate('c'));
         wp_safe_redirect(GE_WTP_Staff_Portal::portal_url('requests'));exit;
     }

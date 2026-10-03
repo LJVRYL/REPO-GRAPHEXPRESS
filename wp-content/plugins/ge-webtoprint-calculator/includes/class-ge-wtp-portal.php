@@ -214,7 +214,7 @@ final class GE_WTP_Portal {
         }
 
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
-        $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil', 'personalizado', 'solicitudes' );
+        $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil', 'personalizado', 'solicitudes', 'facturas' );
         if ( self::portal_is_markcom() ) {
             $allowed[] = 'catalogo';
         }
@@ -247,6 +247,8 @@ final class GE_WTP_Portal {
                     elseif ( self::portal_is_markcom() ) { GE_WTP_Reorders::render_markcom_saved(); } else { GE_WTP_Reorders::render_customer_saved(); }
                 } elseif ( 'documentos' === $section ) {
                     self::render_documents_library();
+                } elseif ( 'facturas' === $section ) {
+                    GE_WTP_Customer_Invoices::render_portal();
                 } elseif ( 'personalizado' === $section ) {
                     GE_WTP_Quote_Requests::form();
                 } elseif ( 'solicitudes' === $section ) {
@@ -344,6 +346,7 @@ final class GE_WTP_Portal {
             'pedidos'    => 'Pedidos',
             'guardados'  => 'Guardados',
             'documentos' => 'Documentos',
+            'facturas' => 'Mis facturas',
             'solicitudes' => 'Mis solicitudes',
             'perfil'     => 'Mi perfil',
         );
@@ -428,6 +431,7 @@ final class GE_WTP_Portal {
             <article><span><?php echo esc_html( $markcom ? 'Productos disponibles' : 'Pedidos totales' ); ?></span><strong><?php echo esc_html( $markcom ? 9 : count( $orders ) ); ?></strong><small><?php echo esc_html( $markcom ? count( GE_WTP_Catalog::products() ) . ' presentaciones' : 'En tu historial' ); ?></small></article>
             <article><span>Pedidos activos</span><strong><?php echo esc_html( count( $active_orders ) ); ?></strong><small>En seguimiento</small></article>
             <article><span>Documentos</span><strong><?php echo esc_html( $documents ); ?></strong><small>Archivos centralizados</small></article>
+            <?php GE_WTP_Customer_Invoices::card(); ?>
             <?php GE_WTP_Portal_Quotes::card( $commercial_quotes ); ?>
         </section>
         <section class="ge-dashboard-grid">

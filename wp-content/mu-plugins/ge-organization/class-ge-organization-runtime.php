@@ -99,6 +99,7 @@ final class GE_Organization_Runtime {
     }
     public static function module_for($name) {
         $n=strtolower($name);
+        if(preg_match('/ge_invoice|customer_invoice/',$n))return 'finance';
         if(preg_match('/organization|billing_issuer|tax_resolver|credential|notification_center|settings|canva_(connect|callback|disconnect)|save_canva|google_auth/',$n))return 'company';
         if(preg_match('/internal_alert/',$n))return 'quotes';
         if(preg_match('/finance|administration|payable|expense|record_payment/',$n))return 'finance';
