@@ -1,5 +1,10 @@
 (function () {
   'use strict';
+  var fiscalLink = document.querySelector('.ge-quote-fiscal-alert a');
+  if (fiscalLink) fiscalLink.addEventListener('click', function () {
+    var section = document.getElementById('ge-quote-fiscal');
+    if (section) { section.open = true; section.querySelector('summary').focus(); }
+  });
   var convertForm = document.querySelector('#ge-quote-convert form');
   if (convertForm) convertForm.addEventListener('submit', function (event) {
     if (convertForm.dataset.submitting) { event.preventDefault(); return; }
