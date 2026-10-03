@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Mantenimiento FTTH</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-body">
+    <main class="shell">
+      <section class="card">
+        <header class="card__header">
+          <div>
+            <p class="eyebrow">Panel admin</p>
+            <h1>Submissions FTTH</h1>
+            <p class="lede">Vista privada. Usa la key de acceso en la URL (?key=...).</p>
+          </div>
+          <div class="badge">BASE_PATH /mantenimientoftth</div>
+        </header>
+
+        <div class="admin-actions">
+          <label class="field admin-key-field">
+            <span>Admin key</span>
+            <input type="text" id="admin-key" placeholder="?key=..." />
+            <small class="hint">Se lee de la URL y se propaga a las llamadas.</small>
+          </label>
+          <button id="reload-btn">Recargar</button>
+          <p id="admin-status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="admin-table" aria-label="Submissions">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Cargo</th>
+                <th>DNI</th>
+                <th>Fecha</th>
+                <th>Foto</th>
+                <th>QR</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body">
+              <tr>
+                <td colspan="7" class="muted">Sin datos</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="admin.js"></script>
+  </body>
+</html>

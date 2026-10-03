@@ -1,0 +1,10 @@
+wp-content/mu-plugins/ge-gestion-v3.php
+wp-content/mu-plugins/ge-organization-foundation.php
+wp-content/mu-plugins/ge-organization/class-ge-organization.php
+wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-staff-portal.php
+wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-customers.php
+wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quotes.php
+wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-checkout.php
+wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-requests.php
+wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-notifications.php
+wp-content/plugins/ge-webtoprint-calculator/templates/staff-shell.php

@@ -1,0 +1,76 @@
+<?php
+$qa_load = getenv('GE_ISSUER_QA_WP_LOAD'); if ( ! $qa_load ) { throw new Exception('GE_ISSUER_QA_WP_LOAD must point to isolated WordPress; DB guard is mandatory.'); }
+require $qa_load;
+if ( DB_NAME !== 'graph_billing_issuers_v1' ) { exit('WRONG_DB'); }
+$checks=0;
+function ok($yes,$name){global $checks;if(!$yes)throw new Exception('FAIL '.$name);$checks++;echo "PASS $name\n";}
+function qline($value='1000'){return array('source_type'=>'custom','name'=>'QA Emisores · NO PRODUCIR','quantity'=>'1','unit_net'=>$value);}
+$staff=get_users(array('role'=>'administrator','number'=>1))[0]->ID;wp_set_current_user($staff);
+add_filter('pre_wp_mail',function(){return true;},999);
+delete_option(GE_WTP_Billing_Issuers::OPTION);
+ok(GE_WTP_Billing_Issuers::seed($staff)===true,'seed two pending profiles');
+$leo=GE_WTP_Billing_Issuers::get('leonardo-c');$mar=GE_WTP_Billing_Issuers::get('mardones-a');
+ok($leo['vat_status']==='' && $leo['verification_status']==='pending','Leonardo condition not invented');
+ok($mar['vat_status']==='registered' && !$mar['relationship_confirmed'],'Mardones provided condition and pending relationship');
+ok(GE_WTP_Billing_Issuers::seed($staff)===true && GE_WTP_Billing_Issuers::get('leonardo-c')['revision']===1,'idempotent migration');
+$customer=email_exists('issuers-qa@example.invalid');if(!$customer)$customer=wp_insert_user(array('user_login'=>'issuers-qa','user_email'=>'issuers-qa@example.invalid','user_pass'=>wp_generate_password(32),'role'=>'customer','display_name'=>'QA Emisores'));
+$unauthorized=email_exists('issuers-staff@example.invalid');if(!$unauthorized)$unauthorized=wp_insert_user(array('user_login'=>'issuers-staff','user_email'=>'issuers-staff@example.invalid','user_pass'=>wp_generate_password(32),'role'=>'customer'));$user=new WP_User($unauthorized);$user->add_cap('ge_manage_operations');
+$common=array('billing_mode'=>'common','cuit'=>'','legal_name'=>'','vat_status'=>'','billing_email'=>'qa@example.invalid','fiscal_address'=>'');
+$a=array('billing_mode'=>'invoice_a','cuit'=>'30710158254','legal_name'=>'QA Customer Fiscal','vat_status'=>'registered','billing_email'=>'qa@example.invalid','fiscal_address'=>'QA Customer address');
+GE_WTP_Billing::save_profile($customer,$common,$staff);
+update_option('ge_commercial_tax_policy',array('mode'=>'net_plus_tax','tax_rate_basis_points'=>2100,'version'=>2));
+ok(GE_WTP_Billing_Issuers::suggestion($common)['issuer_profile_id']==='leonardo-c','no fiscal data suggests C commercially');
+ok(GE_WTP_Billing_Issuers::suggestion($a)['issuer_profile_id']==='mardones-a','customer A suggests Mardones commercially');
+$q=GE_WTP_Commercial_Quotes::create_draft($customer,array(qline()),array(),$staff);ok(!is_wp_error($q),'quote Leonardo created');
+ok($q['snapshot']['issuer_profile_id']==='leonardo-c' && $q['snapshot']['fiscal_status']==='pending' && $q['snapshot']['total_cents']===121000,'pending issuer keeps commercial tax display');
+ok(is_wp_error(GE_WTP_Commercial_Quotes::check_billing_snapshot($q)),'pending issuer blocks fiscal operations');
+ok(is_wp_error(GE_WTP_Billing_Issuers::save('leonardo-c',$leo,$unauthorized,'unauthorized')),'profile write permission enforced');
+ok(is_wp_error(GE_WTP_Billing_Issuers::choose($common,array('issuer_profile_id'=>'mardones-a','issuer_change_reason'=>'test'),$unauthorized)),'manual issuer override permission enforced');
+ok(is_wp_error(GE_WTP_Billing_Issuers::choose($common,array('issuer_profile_id'=>'mardones-a'),$staff)),'manual override requires reason');
+$changed=GE_WTP_Commercial_Quotes::revise($q['id'],array(qline()),array('expected_version'=>1,'issuer_profile_id'=>'mardones-a','issuer_change_reason'=>'QA explicit switch'),$staff);
+ok(!is_wp_error($changed)&&$changed['version']===2&&$changed['snapshot']['issuer_profile_id']==='mardones-a','authorized issuer switch creates version even on draft');
+ok(is_wp_error(GE_WTP_Commercial_Quotes::send($changed['id'],$staff)),'third party proposal blocked until real relationship confirmed');
+$versions=get_post_meta($q['id'],GE_WTP_Commercial_Quotes::VERSIONS_META,true);ok($versions[1]===$q['snapshot'],'old draft issuer snapshot preserved');
+$denied=GE_WTP_Commercial_Quotes::revise($q['id'],array(qline()),array('expected_version'=>2,'issuer_profile_id'=>'leonardo-c','issuer_change_reason'=>'test'),$unauthorized);ok(is_wp_error($denied)&&in_array($denied->get_error_code(),array('ge_issuer_forbidden','ge_org_permission'),true),'quote switch denied without privilege');
+$missing=GE_WTP_Billing_Issuers::save('mardones-a',array_merge($mar,array('verification_status'=>'verified')),$staff,'QA invalid verify',1);ok(is_wp_error($missing),'cannot verify incomplete issuer');
+ok(is_wp_error(GE_WTP_Billing_Issuers::save('mardones-a',array_merge($mar,array('credentials_ref'=>'-----BEGIN PRIVATE KEY-----')),$staff,'QA forbidden material',1)),'secret material rejected in reference field');
+// Only isolated fixtures receive verified fiscal configuration; production seeds stay pending.
+$verified=array_merge($mar,array('verification_status'=>'verified','relationship_confirmed'=>true,'point_of_sale'=>'0001','common_price_policy'=>'tax_exclusive','invoice_a_price_policy'=>'tax_exclusive','tax_rate_basis_points'=>2100));
+$verified=GE_WTP_Billing_Issuers::save('mardones-a',$verified,$staff,'QA ONLY simulated verified configuration',1);ok(!is_wp_error($verified),'isolated verified fixture');
+ok(is_wp_error(GE_WTP_Billing_Issuers::save('mardones-a',$verified,$staff,'stale writer',1)),'catalog stale revision rejected');
+GE_WTP_Billing::save_profile($customer,$a,$staff,true);
+$qa=GE_WTP_Commercial_Quotes::create_draft($customer,array(qline('333.33'),qline('666.67')),array('discount_value'=>'20','discount_reason'=>'QA discount'),$staff);ok(!is_wp_error($qa)&&$qa['snapshot']['fiscal_status']==='resolved','verified customer and issuer resolver');
+$snap=$qa['snapshot'];ok($snap['net_cents']===80000&&$snap['tax_cents']===16800&&$snap['total_cents']===96800,'discount net VAT total consistent');
+ok(array_sum(array_column($snap['items'],'tax_cents'))===$snap['tax_cents'],'exact line tax allocation');
+ok(!isset($snap['issuer_snapshot']['credentials_ref'],$snap['issuer_snapshot']['cert_ref']),'no secure references in public snapshot');
+$captured=array();add_filter('pre_wp_mail',function($pre,$args)use(&$captured){$captured[]=$args;return true;},1000,2);
+$sent=GE_WTP_Commercial_Quotes::send($qa['id'],$staff);ok(!is_wp_error($sent)&&count($captured)===1,'send intercepted without transport');
+ok(strpos($captured[0]['message'],'MARDONES ESPINOZA')!==false&&count($captured[0]['attachments'])===1,'email selected issuer and PDF same version');
+$pdf=GE_WTP_Commercial_Quote_PDF::build($sent);ok(is_string($pdf)&&substr($pdf,0,8)==='%PDF-1.4','Mardones PDF generated');file_put_contents(__DIR__.'/qa-mardones.pdf',$pdf);
+file_put_contents(__DIR__.'/qa-leonardo.pdf',GE_WTP_Commercial_Quote_PDF::build($q));
+$legacy=$q;$legacy['snapshot']=$q['snapshot'];unset($legacy['snapshot']['issuer_snapshot'],$legacy['snapshot']['issuer_profile_id']);
+file_put_contents(__DIR__.'/qa-legacy.pdf',GE_WTP_Commercial_Quote_PDF::build($legacy));ok(GE_WTP_Billing_Issuers::from_snapshot($legacy['snapshot'])['id']==='unknown','legacy unknown no inferred identity');
+ob_start();GE_WTP_Billing_Issuers::render_summary($snap);$html=ob_get_clean();ok(strpos($html,'MARDONES ESPINOZA')!==false,'portal selected issuer');
+ob_start();GE_WTP_Billing_Issuers::render_picker($snap);$form=ob_get_clean();ok(strpos($form,'issuer_change_reason')!==false&&strpos($form,'issuer_refresh')!==false,'staff explicit review controls');file_put_contents(__DIR__.'/qa-picker.html',$form);
+$rate=WC_Tax::get_rates();$rate=$rate?key($rate):WC_Tax::_insert_tax_rate(array('tax_rate_country'=>'AR','tax_rate'=>'21.0000','tax_rate_name'=>'QA IVA','tax_rate_priority'=>1));update_option('ge_commercial_tax_rate_id',(int)$rate);
+$order=GE_WTP_Commercial_Checkout::convert_staff($qa['id'],array('expected_version'=>1,'confirmation_method'=>'staff','confirmation_reason'=>'QA only'),$staff);if(is_wp_error($order))throw new Exception($order->get_error_message());
+ok(GE_WTP_Billing_Issuers::order_snapshot($order)===$snap['issuer_snapshot'],'quote to order exact issuer snapshot');
+ok(GE_WTP_Quote_Balance::cents(wc_format_decimal($order->get_total(),2))===$snap['total_cents'],'order exact same total');
+ok(is_wp_error(GE_WTP_Billing_Issuers::change_order($order,array(),$staff)),'converted order blocks issuer detachment');
+ok(is_wp_error(GE_WTP_Billing_Issuers::arca_request($order)),'ARCA unavailable without issuer secure references');
+$old=GE_WTP_Billing_Issuers::order_snapshot($order);$updated=GE_WTP_Billing_Issuers::save('mardones-a',array_merge($verified,array('fiscal_address'=>'QA Changed address')),$staff,'QA profile change',2);
+ok(!is_wp_error($updated)&&GE_WTP_Billing_Issuers::order_snapshot($order)===$old,'profile edit leaves historic order immutable');
+ok(GE_WTP_Commercial_Quote_PDF::build($sent)===$pdf,'profile edit leaves historic PDF byte identical');
+ok(is_wp_error(GE_WTP_Commercial_Quotes::check_billing_snapshot($sent)),'changed profile blocks fiscal reuse without revision');
+GE_WTP_Commercial_Quotes::revise($changed['id'],array(qline()),array('expected_version'=>2),$staff);
+$preserved=GE_WTP_Commercial_Quotes::get($changed['id']);ok($preserved['snapshot']['issuer_snapshot']===$changed['snapshot']['issuer_snapshot'],'ordinary revision preserves exact old issuer');
+$refresh=GE_WTP_Commercial_Quotes::revise($changed['id'],array(qline()),array('expected_version'=>$preserved['version'],'issuer_refresh'=>1,'issuer_profile_id'=>'mardones-a','issuer_change_reason'=>'QA refresh explicit'),$staff);ok(!is_wp_error($refresh)&&$refresh['version']===$preserved['version']+1&&$refresh['snapshot']['issuer_snapshot']['revision']===3,'refresh explicit new snapshot and version');
+$direct=wc_create_order(array('customer_id'=>$customer));$i=new WC_Order_Item_Product();$i->set_name('QA direct');$i->set_quantity(1);$i->set_subtotal('100');$i->set_total('100');$direct->add_item($i);$direct->update_meta_data('_ge_billing_profile_snapshot',$a);GE_WTP_Billing_Issuers::inherit($direct,array());$direct->calculate_totals(false);$direct->save();
+$args=array('issuer_profile_id'=>'mardones-a','issuer_change_reason'=>'QA direct explicit','issuer_expected_hash'=>hash('sha256',wp_json_encode(GE_WTP_Billing_Issuers::order_snapshot($direct))));
+ok(is_wp_error(GE_WTP_Billing_Issuers::change_order($direct,$args,$unauthorized)),'order change permission enforced');
+$r=GE_WTP_Billing_Issuers::change_order($direct,$args,$staff);if(is_wp_error($r))echo 'ORDER ERROR '.$r->get_error_code().': '.$r->get_error_message()."\n";else echo 'ORDER TOTAL '.$direct->get_total().' TAX '.$direct->get_total_tax()."\n";ok($r===true&&GE_WTP_Quote_Balance::cents(wc_format_decimal($direct->get_total(),2))===12100,'explicit direct order switch recalculates tax');
+ok(count($direct->get_meta('_ge_issuer_history',true))===1,'order issuer change audit and history');
+ok((int)$direct->get_meta('_ge_amount_due_cents',true)===12100&&(int)$direct->get_meta('_ge_final_total_cents',true)===12100,'balance metadata follows explicit recalculation');
+$direct->update_meta_data('_ge_amount_paid_cents',1);$direct->save_meta_data();ok(is_wp_error(GE_WTP_Billing_Issuers::change_order($direct,$args,$staff)),'partial payment blocks issuer change');
+$long=$sent;$long['snapshot']['issuer_snapshot']['fiscal_address']=str_repeat('Domicilio fiscal extenso ',9);$long['snapshot']['items']=array_fill(0,45,$snap['items'][0]);file_put_contents(__DIR__.'/qa-long.pdf',GE_WTP_Commercial_Quote_PDF::build($long));
+echo "CHECKS=$checks\n";

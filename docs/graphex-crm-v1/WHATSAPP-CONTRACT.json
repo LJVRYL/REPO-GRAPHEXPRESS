@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "mode": "staff_review_only",
+  "endpoint": "/wp-json/graphex-crm/v1/command",
+  "authentication": "WordPress authenticated identity, membership, CRM write permission and REST nonce; future connector must provide separately verified authentication",
+  "incoming_example": {
+    "operation": "save", "kind": "thread", "channel": "whatsapp",
+    "external_id": "provider-message-id", "title": "Consulta de stickers",
+    "phone": "CONTACT_PHONE", "intent": "stickers",
+    "customer_id": 0, "lead_id": 0, "opportunity_id": 0,
+    "status": "needs_review"
+  },
+  "contact_resolution": "exact normalized email/phone/CUIT, scoped candidates, human review before customer conversion",
+  "idempotency": "organization + channel + external_id",
+  "review": {
+    "states": ["needs_review", "approved_pending_send", "closed"],
+    "approval_requires": ["write permission", "resolved template variables", "revision match"],
+    "audit": ["actor_id", "approved_by", "approved_at", "before_after_event"],
+    "delivery": "not_sent"
+  },
+  "future_connector_requires": ["credential_ref only", "verified webhook signature", "replay handling", "provider thread mapping", "explicit send authorization", "provider delivery receipt", "communication log linkage"],
+  "ai_gap": "intent classification and reply generation are not connected to an AI service; v1 selects deterministic quick replies"
+}

@@ -1,0 +1,20 @@
+@font-face { font-family:Jost; font-style:normal; font-weight:100 900; font-display:swap; src:url('../fonts/Jost.ttf') format('truetype'); }
+body.login { font-family:Jost,system-ui,sans-serif; color:#f9f8f5; background:radial-gradient(ellipse at 85% 10%,rgba(91,81,245,.2),transparent 46%),radial-gradient(ellipse at 5% 85%,rgba(243,38,146,.12),transparent 44%),#111116; }
+body.login #login { width:min(400px,calc(100% - 36px)); padding-top:clamp(28px,6vh,70px); }
+body.login h1 a { width:76px; height:76px; background-image:url('../images/graphex-simbolo.svg'); background-size:contain; margin-bottom:8px; }
+body.login h1::after { content:'GRAPHEX'; display:block; margin-bottom:28px; color:#f9f8f5; font-family:Jost,sans-serif; font-size:30px; font-weight:700; letter-spacing:.015em; }
+body.login form { padding:30px; border:1px solid #dddcdf; border-radius:20px; color:#111116; background:#f9f8f5; box-shadow:0 24px 65px rgba(0,0,0,.2); }
+body.login :is(input,button,select) { font-family:inherit; }
+body.login :is(input[type=text],input[type=email],input[type=password]) { border:1px solid #a9a7b2; border-radius:9px; color:#111116; background:#fff; box-shadow:none; }
+body.login :is(input,button,a):focus-visible { outline:3px solid #5b51f5; outline-offset:3px; }
+body.login label { color:#34323f; font-weight:500; }
+body.login .button-primary { min-height:40px; padding-inline:20px; color:#111116; background:#ffd447; border:1px solid #ffd447; border-radius:9px; text-shadow:none; box-shadow:none; font-weight:700; }
+body.login .button-primary:hover { color:#111116; background:#ffe078; border-color:#ffe078; }
+body.login .button.wp-hide-pw { color:#443acc; background:transparent; }
+body.login :is(#nav,#backtoblog) a { color:#c0bfcc; }
+body.login :is(#nav,#backtoblog) a:hover { color:#00c8f5; }
+body.login .privacy-policy-page-link a { color:#c0bfcc; }
+body.login .message,body.login .notice { color:#111116; background:#f9f8f5; border-radius:9px; }
+body.login .language-switcher label { color:#c0bfcc; }
+body.login .language-switcher select { color:#111116; background:#f9f8f5; border-radius:8px; }
+body.login .language-switcher .button { color:#111116; background:#ffd447; border-color:#ffd447; border-radius:8px; }

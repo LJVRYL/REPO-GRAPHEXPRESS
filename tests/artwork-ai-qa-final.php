@@ -1,0 +1,11 @@
+<?php
+$site=getenv('GE_QA_WP_ROOT'); if (!$site) { throw new Exception('Set GE_QA_WP_ROOT to an isolated restore'); } require $site.'/wp-load.php';
+if(DB_NAME!=='graph_restore_v2')throw new Exception('isolation');
+add_filter('pre_wp_mail',function(){return true;},100);
+$c=json_decode(file_get_contents(__DIR__.'/qa-context.json'),true);wp_set_current_user($c['staff']);$o=wc_get_order($c['order_id']);$d=GE_WTP_Documents::find_version($c['order_id'],$c['candidate_version_id']);$item=$o->get_item($c['item_id']);
+function check($ok,$msg){if(!$ok)throw new Exception('FAIL '.$msg);echo 'PASS '.$msg."\n";}
+echo 'FIXTURE_SOURCES '.json_encode($item->get_meta('_ge_item_artwork_sources',true))."\n";
+check($d['status']==='client_review','selected requires customer review');check($d['parent_version_id']===$c['version_id'],'parent preserved');check($d['checksum_sha256']===$c['candidate_checksum'],'candidate checksum');check($d['analysis']['width']===2,'analyzer ran on candidate');check($d['preflight_status']==='pending_human_review','not falsely approved by analyzer');check($item->get_meta('_ge_item_artwork_sources',true)===array('document:'.$d['id']),'selection maps exact file');check($item->get_meta('_ge_item_artwork_version',true)===$d['version_id'],'exact version selected');check($item->get_meta('_ge_item_artwork_client_required',true)==='yes','client approval required');check(!$item->get_meta('_ge_item_artwork_customer_approval',true),'customer approval invalidated');check(!$item->get_meta('_ge_item_artwork_staff_approval',true),'technical approval invalidated');check(!$item->get_meta('_ge_item_artwork_release_hash',true),'production release invalidated');check(hash_file('sha256',$c['source_path'])===$c['checksum'],'original intact after select');
+$rows=(array)$o->get_meta(GE_WTP_AI_Artwork::REQUESTS_META,true);$row=$rows[$c['request_id']];$row['request_id']=wp_generate_uuid4();$row['task_id']='TASK-20261001-QAFIX124';$row['status']='queued';unset($row['candidate_version_id']);$rows[$row['request_id']]=$row;$o->update_meta_data(GE_WTP_AI_Artwork::REQUESTS_META,$rows);$o->save();
+$c['request_id']=$row['request_id'];$c['task_id']=$row['task_id'];file_put_contents(__DIR__.'/qa-context.json',json_encode($c));
+echo "SECOND_FIXTURE_READY\n";

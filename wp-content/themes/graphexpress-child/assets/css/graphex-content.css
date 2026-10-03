@@ -1,0 +1,314 @@
+/* GRAPHEX: public guides, careers and customer portal.
+ * Loaded after plugin styles. Status, validation and diagram colors stay owned
+ * by their original components; no WordPress administration selectors.
+ */
+
+/* Knowledge archive and editorial pages. */
+body.gx-brand-active:not(.ge-staff-body).ge-knowledge-page { background: var(--gx-paper); }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero {
+    padding: clamp(60px, 7vw, 104px) 0;
+    color: #fff;
+    background: radial-gradient(ellipse at 100% 0, rgba(0, 200, 245, .16), transparent 45%), var(--gx-ink);
+    border-bottom: 1px solid #34343d;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero .gx-kicker { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero h1 { color: #fff; font-weight: 800; letter-spacing: -.055em; }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero h1 em { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero > div > p { color: #d4d4dd; }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero form {
+    padding: 7px;
+    border: 1px solid #55555f;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: none;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero input { min-width: 0; color: var(--gx-ink); background: #fff; font: inherit; }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero form > span { color: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero button {
+    color: var(--gx-ink);
+    background: var(--gx-yellow);
+    font: inherit;
+    font-weight: 750;
+    cursor: pointer;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-content { padding-top: 42px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-topic-filter { gap: 10px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-topic-filter a {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 16px;
+    color: var(--gx-muted);
+    border-color: var(--gx-line);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 650;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-topic-filter a.is-active,
+body.gx-brand-active:not(.ge-staff-body) .ge-topic-filter a:hover { color: #fff; background: var(--gx-ink); border-color: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-heading h2 { color: var(--gx-ink); font-weight: 750; letter-spacing: -.035em; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-heading span { color: var(--gx-violet); font-size: 11px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card { border-color: var(--gx-line); border-radius: 18px; box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card:hover { border-color: #b4b1c1; box-shadow: 0 16px 32px rgba(17, 17, 22, .07); }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-visual { background: linear-gradient(145deg, #28233e, var(--gx-violet)); }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card.is-green .ge-guide-card-visual { background: linear-gradient(145deg, #103d41, #126249); }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card.is-ink .ge-guide-card-visual { background: linear-gradient(145deg, #32323c, var(--gx-ink)); }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-visual span { color: #fff; border-radius: 12px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-visual small { max-width: 60%; text-align: right; line-height: 1.5; font-size: 10px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-body { padding: 26px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-body h2 { color: var(--gx-ink); font-weight: 750; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-body p { font-size: 14px; line-height: 1.65; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-body > span { color: var(--gx-violet); font-size: 10px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-body > b { color: var(--gx-ink); font-size: 13px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-body > b i { color: var(--gx-violet); }
+body.gx-brand-active:not(.ge-staff-body) .ge-guide-empty { border-color: var(--gx-line); background: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-cta { background: var(--gx-ink); border-top: 1px solid #34343d; }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-cta span { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-cta h2 { color: #fff !important; font-weight: 750; letter-spacing: -.035em; }
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-cta .gx-button-primary { flex-shrink: 0; color: var(--gx-ink); background: var(--gx-yellow); }
+
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero {
+    background: radial-gradient(ellipse at 100% 0, rgba(91, 81, 245, .27), transparent 55%), var(--gx-ink);
+    color: #fff;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero.is-green { background: radial-gradient(ellipse at 100% 0, rgba(0, 200, 245, .17), transparent 55%), var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero.is-ink { background: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero h1 { color: #fff; font-weight: 800; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero p { color: #dedee5; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero small { color: #bfc0ca; font-size: 12px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-topic { color: var(--gx-cyan); font-size: 11px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-breadcrumbs { font-size: 12px; flex-wrap: wrap; row-gap: 8px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-breadcrumbs a { color: #e1e1e9; text-decoration: underline; text-underline-offset: 4px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero-grid > b { color: var(--gx-cyan); border-radius: 20px; border-color: #494852; background: rgba(255, 255, 255, .035); }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-content { color: #36363f; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-content .ge-guide-lead { color: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-content h2,
+body.gx-brand-active:not(.ge-staff-body) .ge-article-content h3 { color: var(--gx-ink); font-weight: 750; letter-spacing: -.025em; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-content > p > a,
+body.gx-brand-active:not(.ge-staff-body) .ge-article-content > ul > li > a { color: #4338cc; text-decoration: underline; text-underline-offset: 3px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-aside > div { border: 1px solid #36363f; border-radius: 18px; background: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-aside span { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-aside h3 { color: #fff; font-weight: 750; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-aside p { color: #d1d1dc; font-size: 14px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-aside > div > a { display: inline-block; padding: 11px 14px; border-radius: 8px; color: var(--gx-ink); background: var(--gx-yellow); font-size: 13px; text-decoration: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-article-aside .ge-all-guides { padding: 10px 0; color: #4338cc; font-size: 13px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-related-guides { background: var(--gx-soft); border-top: 1px solid var(--gx-line); }
+body.gx-brand-active:not(.ge-staff-body) .ge-related-grid > a { border-color: var(--gx-line); border-radius: 12px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-related-grid > a:hover { border-color: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-related-grid > a > b { color: var(--gx-ink); background: #d8f6fd; }
+body.gx-brand-active:not(.ge-staff-body) .ge-related-grid small { color: #4338cc; font-size: 11px; }
+
+/* Careers: retain form structure and all validation feedback. */
+body.gx-brand-active:not(.ge-staff-body).ge-careers-page,
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-main { background: var(--gx-paper); font-family: Jost, Inter, ui-sans-serif, system-ui, sans-serif; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-hero { color: var(--gx-ink); gap: clamp(32px, 5vw, 72px); }
+body.gx-brand-active:not(.ge-staff-body).ge-careers-page .ge-careers-hero h1 { color: var(--gx-ink) !important; font-weight: 800 !important; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-kicker,
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-intro > span { color: var(--gx-violet); }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-hero > div > p { color: var(--gx-muted); }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-points span { color: var(--gx-ink); border-color: var(--gx-line); background: #fff; border-radius: 8px; font-weight: 600; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-hero aside {
+    border: 1px solid #34343d;
+    border-radius: 20px;
+    background: radial-gradient(ellipse at 100% 0, rgba(0, 200, 245, .22), transparent 65%), var(--gx-ink);
+    box-shadow: none;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-hero aside > span { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-hero aside p { color: #d5d5df; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-hero aside i { color: rgba(0, 200, 245, .1); }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form-section { background: var(--gx-soft); border-top: 1px solid var(--gx-line); }
+body.gx-brand-active:not(.ge-staff-body).ge-careers-page .ge-careers-intro h2 { color: var(--gx-ink) !important; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-intro p { color: var(--gx-muted); }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-card { border-color: var(--gx-line); border-radius: 18px; background: #fff; box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form label > span { color: var(--gx-ink); font-size: 14px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form input:not([type="checkbox"]):not([type="radio"]),
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form select,
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form textarea { min-width: 0; border-color: #b8b7c0; border-radius: 9px; background: #fff; color: var(--gx-ink); font-size: 16px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form input[type="checkbox"] { accent-color: var(--gx-violet); }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-consent span { color: var(--gx-muted); }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form button { height: auto; min-height: 52px; line-height: 1.25; align-items: center; padding: 16px 20px; color: var(--gx-ink); border: 1px solid var(--gx-yellow); border-radius: 9px; background: var(--gx-yellow); font-weight: 750; }
+body.gx-brand-active:not(.ge-staff-body) .ge-careers-form button:hover { background: #ffdf75; border-color: #ffdf75; }
+
+/* Customer portal tokens are local so admin and status colors are unaffected. */
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell,
+body.gx-brand-active:not(.ge-staff-body) .ge-login-screen,
+body.gx-brand-active:not(.ge-staff-body) .ge-customer-profile,
+body.gx-brand-active:not(.ge-staff-body) .ge-customer-login {
+    --ge-ink: var(--gx-ink);
+    --ge-muted: var(--gx-muted);
+    --ge-line: var(--gx-line);
+    --ge-soft: var(--gx-soft);
+    --ge-paper: #fff;
+    --ge-violet: var(--gx-violet);
+    --ge-violet-dark: #4338cc;
+    --ge-yellow: var(--gx-yellow);
+    --ge-radius: 16px;
+    --ge-shadow: 0 10px 30px rgba(17, 17, 22, .04);
+    font-family: Jost, Inter, ui-sans-serif, system-ui, sans-serif;
+}
+body.gx-brand-active:not(.ge-staff-body).ge-markcom-standalone { background: var(--gx-paper); }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell { background: var(--gx-paper); }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-header { position: relative; top: auto; background: var(--gx-ink); border-bottom-color: #393940; color: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-logo { color: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-logo small,
+body.gx-brand-active:not(.ge-staff-body) .ge-user-menu small { color: #c3c3ce; }
+body.gx-brand-active:not(.ge-staff-body) .ge-user-menu > a { color: #e3e3eb; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-brand-mark,
+body.gx-brand-active:not(.ge-staff-body) .ge-login-screen .ge-brand-mark { color: var(--gx-ink); background: var(--gx-cyan); box-shadow: none; border-radius: 10px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell img.ge-brand-mark.gx-portal-symbol,
+body.gx-brand-active:not(.ge-staff-body) .ge-login-screen img.ge-brand-mark.gx-portal-symbol { display: block; width: 48px; height: 48px; flex-shrink: 0; padding: 0; border: 0; border-radius: 0; color: inherit; background: none; object-fit: contain; box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-nav { border: 1px solid #45454f; border-radius: 11px; background: #24242d; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-nav a { min-height: 42px; display: inline-flex; align-items: center; color: #e7e7ed; border-radius: 7px; white-space: nowrap; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-nav a:hover { background: #343440; color: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-nav a.is-active { color: var(--gx-ink); background: var(--gx-yellow); box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-user-avatar { color: var(--gx-ink); background: #d8f6fd; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-main { padding-top: 38px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-welcome {
+    border: 1px solid #383842;
+    border-radius: 20px;
+    background: radial-gradient(ellipse at 100% 0, rgba(0, 200, 245, .24), transparent 58%), var(--gx-ink);
+    box-shadow: none;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-welcome h1 { color: #fff; font-weight: 800; }
+body.gx-brand-active:not(.ge-staff-body) .ge-welcome p { color: #d4d4df; }
+body.gx-brand-active:not(.ge-staff-body) .ge-welcome .ge-eyebrow-light { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-rate-card { border-color: #5b5b68; background: rgba(255, 255, 255, .035); backdrop-filter: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-rate-card span,
+body.gx-brand-active:not(.ge-staff-body) .ge-rate-card small { color: #d3d3dc; }
+body.gx-brand-active:not(.ge-staff-body) .ge-rate-card strong { overflow-wrap: anywhere; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-button { min-height: 46px; border-radius: 9px; font-family: inherit; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-button-primary { background: var(--gx-yellow); color: var(--gx-ink); box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-button-primary:hover { background: #ffdf75; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-button-secondary { color: #fff; background: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-panel,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-stats article,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-heading-meta,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-cart-panel { border: 1px solid var(--gx-line); border-radius: 16px; box-shadow: none; background: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-stats article { padding: 25px 28px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-stats strong { color: var(--gx-ink); font-weight: 750; letter-spacing: -.04em; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-page-heading h1,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-panel-heading h2,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-order-title h2 { color: var(--gx-ink); font-weight: 750; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-eyebrow { color: var(--gx-violet); }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-welcome .ge-eyebrow-light { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-panel-heading a,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-back-link { color: #4338cc; text-underline-offset: 3px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-order-list > a:hover { background: var(--gx-paper); }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-document-list a { border-color: var(--gx-line); }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-doc-icon { color: var(--gx-ink); background: #d8f6fd; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-footer { background: var(--gx-ink); color: #d8d8e1; }
+
+/* Login and registration keep Google/Turnstile branding and feedback intact. */
+body.gx-brand-active:not(.ge-staff-body) .ge-login-screen {
+    color: #fff;
+    background: radial-gradient(ellipse at 100% 0, rgba(0, 200, 245, .18), transparent 48%), radial-gradient(ellipse at 0 100%, rgba(91, 81, 245, .2), transparent 55%), var(--gx-ink);
+}
+body.gx-brand-active:not(.ge-staff-body).ge-markcom-standalone .ge-login-brand { display: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-intro h1 { color: #fff; font-weight: 800; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-intro .ge-eyebrow-light { color: var(--gx-cyan); }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-intro > p { color: #d3d3df; line-height: 1.65; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-features span { color: #e5e5ed; border-color: #55555f; border-radius: 8px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card { border: 1px solid var(--gx-line); border-radius: 20px; color: var(--gx-ink); background: var(--gx-paper); box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card h2 { color: var(--gx-ink); font-weight: 750; letter-spacing: -.025em; }
+body.gx-brand-active:not(.ge-staff-body) .ge-auth-tabs { border-radius: 10px; background: #e7e6e9; }
+body.gx-brand-active:not(.ge-staff-body) .ge-auth-tabs a { min-height: 42px; color: #50505b; border-radius: 7px; font-size: 13px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-auth-tabs a.is-active { color: #fff; background: var(--gx-ink); box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card label { color: #484852; font-size: 13px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card input[type="text"],
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card input[type="email"],
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card input[type="tel"],
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card input[type="password"] { min-height: 48px; color: var(--gx-ink); background: #fff; border-color: #b8b7c0; border-radius: 8px; font: inherit; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card input[type="submit"],
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-login-form button { color: var(--gx-ink); background: var(--gx-yellow); border-radius: 9px; min-height: 48px; font: inherit; font-weight: 750; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card input[type="submit"]:hover,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-login-form button:hover { background: #ffdf75; }
+body.gx-brand-active:not(.ge-staff-body) .ge-login-card input[type="checkbox"] { accent-color: var(--gx-violet); }
+body.gx-brand-active:not(.ge-staff-body) .ge-forgot-password { padding: 8px 0; color: #4338cc; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-field-help { font-size: 12px; line-height: 1.5; }
+
+/* Customer profile and upload fields; state badges retain semantic colors. */
+body.gx-brand-active:not(.ge-staff-body) .ge-customer-profile { color: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-heading h1 { color: var(--gx-ink); font-weight: 750; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-heading p { color: var(--gx-muted); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-heading > div > span,
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-heading > a { color: #4338cc; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-card { border-color: var(--gx-line); border-radius: 16px; box-shadow: none; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-card-title > span { color: var(--gx-ink); background: #d8f6fd; border-radius: 8px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-card-title h2 { color: var(--gx-ink); font-weight: 750; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-card-title p { color: var(--gx-muted); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-photo { background: var(--gx-soft); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-avatar { color: var(--gx-ink); background: #d8f6fd; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields label { color: #41414b; font-size: 13px; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields input,
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields select,
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields textarea { border-color: #b8b7c0; border-radius: 8px; color: var(--gx-ink); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields input:disabled { color: var(--gx-muted); background: var(--gx-soft); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-consent { background: var(--gx-paper); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-consent input { accent-color: var(--gx-violet); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-consent small { color: var(--gx-muted); }
+body.gx-brand-active:not(.ge-staff-body) .ge-address-grid fieldset { background: var(--gx-paper); border-color: var(--gx-line); }
+body.gx-brand-active:not(.ge-staff-body) .ge-address-grid legend { color: #4338cc; }
+body.gx-brand-active:not(.ge-staff-body) .ge-add-address { border-color: var(--gx-ink); border-radius: 8px; color: var(--gx-ink); background: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-actions button { color: var(--gx-ink); border-radius: 9px; background: var(--gx-yellow); }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-actions button:hover { background: #ffdf75; }
+body.gx-brand-active:not(.ge-staff-body) .ge-profile-actions span { color: var(--gx-muted); }
+body.gx-brand-active:not(.ge-staff-body) .ge-customer-login { border-color: var(--gx-line); border-radius: 18px; color: var(--gx-ink); background: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-checkout-form input:not([type="checkbox"]):not([type="radio"]),
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-checkout-form textarea,
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-upload-form input:not([type="checkbox"]):not([type="radio"]),
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-upload-form select { border-color: #b8b7c0; border-radius: 8px; color: var(--gx-ink); background: #fff; }
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-item-artwork-slot form button { background: var(--gx-yellow); color: var(--gx-ink); }
+
+/* Visible keyboard focus is separate from validation/error styling. */
+body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero form:focus-within { outline: 3px solid var(--gx-cyan); outline-offset: 4px; }
+body.gx-brand-active:not(.ge-staff-body) :is(.ge-knowledge-content, .ge-article-hero, .ge-article-aside, .ge-related-guides, .ge-careers-main, .ge-portal-shell, .ge-login-screen, .ge-customer-profile, .ge-customer-login) :is(a, button, input, select, textarea, summary):focus-visible {
+    outline: 3px solid var(--gx-violet);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 2px #fff;
+}
+body.gx-brand-active:not(.ge-staff-body) .ge-portal-header :is(a, button):focus-visible,
+body.gx-brand-active:not(.ge-staff-body) .ge-article-hero a:focus-visible { outline-color: var(--gx-cyan); box-shadow: none; }
+
+@media (max-width: 1180px) {
+    body.gx-brand-active:not(.ge-staff-body) .ge-portal-nav { max-width: 100%; }
+}
+@media (max-width: 820px) {
+    body.gx-brand-active:not(.ge-staff-body) .ge-portal-header { gap: 16px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-portal-nav { overflow-x: auto; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-portal-main { padding-top: 26px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-welcome { gap: 28px; border-radius: 16px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-rate-card { padding: 22px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-grid { gap: 38px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-brand { margin-bottom: 44px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-intro h1 { font-size: clamp(38px, 8vw, 62px); }
+}
+@media (max-width: 700px) {
+    body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero { padding: 58px 0; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero h1 { font-size: clamp(38px, 9vw, 54px); }
+    body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-hero form { row-gap: 5px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-guide-card-body { padding: 22px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-article-hero h1 { font-size: clamp(36px, 8vw, 50px); }
+    body.gx-brand-active:not(.ge-staff-body) .ge-article-hero-grid { gap: 24px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-cta h2 { font-size: 29px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-knowledge-cta .gx-button-primary { width: 100%; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-guide-heading { align-items: flex-start; flex-wrap: wrap; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-careers-card { padding: 24px 20px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-card { min-width: 0; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields input,
+    body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields select,
+    body.gx-brand-active:not(.ge-staff-body) .ge-profile-fields textarea { font-size: 16px; }
+}
+@media (max-width: 560px) {
+    body.gx-brand-active:not(.ge-staff-body) .ge-portal-header { padding-left: 16px; padding-right: 16px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-portal-nav a { min-height: 42px; padding: 9px 12px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-portal-shell .ge-panel { padding: 24px 18px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-screen { padding: 28px 20px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-card { padding: 28px 22px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-features { gap: 8px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-login-features span { padding: 8px 10px; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-customer-login { margin: 36px 16px; padding: 26px 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.gx-brand-active:not(.ge-staff-body) .ge-guide-card { transition: none; }
+    body.gx-brand-active:not(.ge-staff-body) .ge-guide-card:hover { transform: none; }
+}

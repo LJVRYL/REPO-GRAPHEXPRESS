@@ -1,0 +1,32 @@
+const fs=require('fs'),path=require('path');
+const {chromium}=require('C:/Users/Leo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const task=path.resolve(__dirname,'..'),fixtures=JSON.parse(fs.readFileSync(path.join(__dirname,'qa/fixtures.json')));
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'chrome'});const page=await browser.newPage({viewport:{width:1440,height:1000}});const checks=[],errors=[];
+ page.on('pageerror',e=>errors.push(e.message)); await page.route('**/*',route=>new URL(route.request().url()).hostname==='localhost'?route.continue():route.abort());
+ const check=(name,v)=>{checks.push({name,passed:!!v});if(!v)throw Error(name);};
+ const url=(s)=>'http://localhost:18820/gestion/?'+s;const leadTitle='Prospecto navegador '+Date.now();
+ await page.goto(url('section=crm&view=pipeline'),{waitUntil:'networkidle'});
+ check('live shell CRM navigation',await page.locator('.ge-v3-nav #ge-crm-nav').count()===1);check('CRM title',await page.locator('h1').filter({hasText:'CRM'}).count()===1);
+ check('pipeline cards',await page.locator('.ge-crm-card').count()>0);
+ await page.screenshot({path:path.join(task,'outputs/crm-pipeline-desktop.png'),fullPage:true});
+ // Real form creation through WordPress admin-post, nonce and database persistence.
+ await page.goto(url('section=crm&view=leads&new=lead'),{waitUntil:'networkidle'});
+ await page.locator('input[name=title]').fill(leadTitle);await page.locator('input[name=email]').fill('browser-'+Date.now()+'@example.test');
+ await page.getByRole('button',{name:'Guardar',exact:true}).click();await page.waitForLoadState('networkidle');check('lead form saves',await page.getByText('Cambios guardados.',{exact:true}).count()===1);check('lead appears in list',await page.getByText(leadTitle,{exact:true}).count()===1);
+ await page.goto(url('section=crm&view=pipeline&record_id='+fixtures.opportunity_id),{waitUntil:'networkidle'});
+ const editor=page.locator('.ge-crm-form').filter({has:page.locator('h2')}).first();await editor.locator('select[name=stage]').selectOption('new');await editor.getByRole('button',{name:'Guardar',exact:true}).click();await page.waitForLoadState('networkidle');
+ check('keyboard-compatible stage form saves',await page.getByText('Cambios guardados.',{exact:true}).count()===1);
+ await page.goto(url('section=crm&view=pipeline'),{waitUntil:'networkidle'});
+ const savedResponse=page.waitForResponse(r=>r.url().includes('/command')&&r.request().method()==='POST'); const reloaded=page.waitForEvent('load'); const card=page.locator('.ge-crm-card').filter({hasText:'Stickers · campaña Aurora'}).first();await card.dragTo(page.locator('.ge-crm-column[data-stage=qualified] h2'),{sourcePosition:{x:15,y:8},targetPosition:{x:30,y:8}});check('drag REST saves successfully',(await savedResponse).status()===200);await reloaded;await page.waitForLoadState('networkidle');
+ check('drag persists via REST',await page.locator('.ge-crm-column[data-stage=qualified] .ge-crm-card').filter({hasText:'Stickers · campaña Aurora'}).count()===1);
+ await page.screenshot({path:path.join(task,'outputs/crm-pipeline-desktop.png'),fullPage:true});
+ await page.goto(url('section=customers&customer_id='+fixtures.customer_id),{waitUntil:'networkidle'});check('Customer Workspace retained',await page.locator('.ge-workspace-header').count()===1);check('360 inserted in workspace',await page.locator('.ge-workspace #ge-crm-customer360').count()===1);
+ await page.screenshot({path:path.join(task,'outputs/crm-customer360-desktop.png'),fullPage:true});
+ await page.goto(url('global_q=Prospecto'),{waitUntil:'networkidle'});check('global search includes CRM',await page.locator('.ge-v3-search-results #ge-crm-search').count()===1);check('global search finds lead',await page.locator('#ge-crm-search').getByText(leadTitle,{exact:true}).count()===1);
+ await page.goto(url('section=crm&view=inbox'),{waitUntil:'networkidle'});check('communications reused',await page.getByRole('link',{name:'Abrir Comunicaciones →'}).count()===1);await page.screenshot({path:path.join(task,'outputs/crm-inbox-desktop.png'),fullPage:true});
+ await page.goto(url('section=crm&view=dashboard'),{waitUntil:'networkidle'});await page.screenshot({path:path.join(task,'outputs/crm-dashboard-desktop.png'),fullPage:true});
+ await page.setViewportSize({width:390,height:844});await page.goto(url('section=crm&view=pipeline'),{waitUntil:'networkidle'});check('mobile no document overflow',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(task,'outputs/crm-pipeline-mobile.png'),fullPage:true});
+ await page.goto(url('section=crm&view=tasks&new=task'),{waitUntil:'networkidle'});check('mobile task form no overflow',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));check('mobile touch controls',await page.locator('.ge-crm-form button').evaluate(x=>x.getBoundingClientRect().height>=44));await page.screenshot({path:path.join(task,'outputs/crm-task-mobile.png'),fullPage:true});
+ check('no browser script errors',errors.length===0);fs.writeFileSync(path.join(task,'outputs/qa-browser.json'),JSON.stringify({checks,passed:checks.length,failed:0,errors,scope:'fresh synthetic QA / full live Gestion v3 shell'},null,2));console.log('PASS '+checks.length+' browser checks');await browser.close();
+})().catch(e=>{console.error(e);process.exit(1);});

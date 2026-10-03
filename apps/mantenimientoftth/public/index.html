@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mantenimiento FTTH</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="styles.css" />
+	</head>
+	<body>
+		<main class="shell">
+			<section class="card">
+				<header class="card__header">
+					<div>
+						<p class="eyebrow">Mantenimiento FTTH</p>
+						<h1>Generar credencial en PDF</h1>
+						<p class="lede">
+							Completa los datos y sube la foto y el QR. Al enviar se descargara un PDF.
+						</p>
+					</div>
+					<div class="badge">BASE_PATH /mantenimientoftth</div>
+				</header>
+
+				<form id="ftth-form" class="form" novalidate>
+					<div class="field-grid">
+						<label class="field">
+							<span>Nombre</span>
+							<input type="text" name="firstName" autocomplete="given-name" required />
+							<small class="hint">Obligatorio</small>
+						</label>
+
+						<label class="field">
+							<span>Apellido</span>
+							<input type="text" name="lastName" autocomplete="family-name" required />
+							<small class="hint">Obligatorio</small>
+						</label>
+					</div>
+
+					<div class="field-grid">
+						<label class="field">
+							<span>Cargo</span>
+							<input type="text" name="role" required />
+							<small class="hint">Ej: Tecnico de campo</small>
+						</label>
+
+						<label class="field">
+							<span>DNI</span>
+							<input type="text" name="dni" inputmode="numeric" required />
+							<small class="hint">Solo numeros, sin puntos</small>
+						</label>
+					</div>
+
+					<div class="field-grid uploads">
+						<label class="field file-field">
+							<div class="label-row">
+								<span>Foto</span>
+								<span class="pill">JPG/PNG</span>
+							</div>
+							<input type="file" name="photo" id="photo" accept="image/*" required />
+							<div class="preview" id="photo-preview" aria-live="polite">Sin imagen</div>
+						</label>
+
+						<label class="field file-field">
+							<div class="label-row">
+								<span>QR</span>
+								<span class="pill">JPG/PNG</span>
+							</div>
+							<input type="file" name="qr" id="qr" accept="image/*" required />
+							<div class="preview" id="qr-preview" aria-live="polite">Sin imagen</div>
+						</label>
+					</div>
+
+					<div class="actions">
+						<button type="submit" id="submit-btn">Generar PDF</button>
+						<p id="form-status" role="status" aria-live="polite"></p>
+					</div>
+				</form>
+			</section>
+		</main>
+
+		<script src="app.js"></script>
+	</body>
+</html>
