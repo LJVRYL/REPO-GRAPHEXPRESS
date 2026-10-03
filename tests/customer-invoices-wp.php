@@ -65,6 +65,8 @@ $quote=wp_insert_post(array('post_type'=>GE_WTP_Commercial_Quotes::POST_TYPE,'po
 update_post_meta($quote,GE_WTP_Commercial_Quotes::CUSTOMER_META,$c['customer']);update_post_meta($quote,GE_WTP_Commercial_Quotes::CURRENT_META,1);update_post_meta($quote,GE_WTP_Commercial_Quotes::VERSIONS_META,array(1=>array('billing_profile_id'=>'test-second-profile')));
 $input['order_id']=0;$input['quote_id']=$quote;ok('Quote receiver mismatch denied',is_wp_error(GE_WTP_Customer_Invoices::normalize($input,$c['admin'])));
 update_post_meta($quote,GE_WTP_Commercial_Quotes::VERSIONS_META,array(1=>array('billing_profile_id'=>'default')));ok('Matching quote receiver allowed',!is_wp_error(GE_WTP_Customer_Invoices::normalize($input,$c['admin'])));
+delete_post_meta($quote,'_ge_organization_id');ok('Legacy owned quote without org metadata allowed',!is_wp_error(GE_WTP_Customer_Invoices::normalize($input,$c['admin'])));
+update_post_meta($quote,'_ge_organization_id','foreign-organization');ok('Quote from another organization rejected',is_wp_error(GE_WTP_Customer_Invoices::normalize($input,$c['admin'])));update_post_meta($quote,'_ge_organization_id',GE_Organization::PRIMARY);
 update_post_meta($quote,GE_WTP_Commercial_Quotes::CUSTOMER_META,$c['other']);ok('Cross-customer quote linkage denied',is_wp_error(GE_WTP_Customer_Invoices::normalize($input,$c['admin'])));
 
 $report=getenv('GE_INVOICE_QA_REPORT');if($report)file_put_contents($report,json_encode($checks,JSON_PRETTY_PRINT));echo count($checks)." model checks passed; synthetic data, simulated transport\n";

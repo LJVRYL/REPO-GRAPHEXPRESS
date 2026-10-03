@@ -60,6 +60,12 @@ final class GE_WTP_Customer_Invoices {
         return ! $org || (string) $org === (string) self::organization();
     }
 
+    private static function quote_in_scope( $id ) {
+        // Historical quotes predate organization metadata, inside the physically bound DB.
+        $org = get_post_meta( $id, '_ge_organization_id', true );
+        return ! $org || (string) $org === (string) self::organization();
+    }
+
     public static function types() {
         return array( 'factura' => 'Factura emitida', 'comprobante' => 'Comprobante de pago', 'recibo' => 'Recibo', 'nota_credito' => 'Nota de crédito', 'nota_debito' => 'Nota de débito', 'presupuesto_emitido' => 'Presupuesto / proforma', 'remito' => 'Remito' );
     }
@@ -139,7 +145,7 @@ final class GE_WTP_Customer_Invoices {
             $order_profile = $order->get_meta( '_ge_billing_profile_id', true );
             if ( $order_profile && (string) $order_profile !== $profile_id ) { return new WP_Error( 'order_profile', 'El receptor del pedido es distinto. Revisá la vinculación antes de cargar el original.' ); }
         }
-        if ( $quote_id && ( get_post_type( $quote_id ) !== GE_WTP_Commercial_Quotes::POST_TYPE || (int) get_post_meta( $quote_id, GE_WTP_Commercial_Quotes::CUSTOMER_META, true ) !== $customer || ! self::record_in_scope( $quote_id ) ) ) { return new WP_Error( 'quote', 'El presupuesto no pertenece a este cliente.' ); }
+        if ( $quote_id && ( get_post_type( $quote_id ) !== GE_WTP_Commercial_Quotes::POST_TYPE || (int) get_post_meta( $quote_id, GE_WTP_Commercial_Quotes::CUSTOMER_META, true ) !== $customer || ! self::quote_in_scope( $quote_id ) ) ) { return new WP_Error( 'quote', 'El presupuesto no pertenece a este cliente.' ); }
         if ( $quote_id ) {
             $versions = get_post_meta( $quote_id, GE_WTP_Commercial_Quotes::VERSIONS_META, true );
             $version = (int) get_post_meta( $quote_id, GE_WTP_Commercial_Quotes::CURRENT_META, true );
@@ -413,7 +419,7 @@ final class GE_WTP_Customer_Invoices {
             echo '<label>Pedido vinculado (opcional)<select name="order_id"><option value="">Sin pedido vinculado</option>';
             foreach ( wc_get_orders( array( 'customer_id' => $customer, 'limit' => -1 ) ) as $order ) { if ( self::order_in_scope( $order ) ) { echo '<option value="' . (int) $order->get_id() . '">' . esc_html( '#' . $order->get_order_number() . ' · ' . ( $order->get_date_created() ? wc_format_datetime( $order->get_date_created(), 'd/m/Y' ) : '' ) ) . '</option>'; } }
             echo '</select></label><label>Presupuesto vinculado (opcional)<select name="quote_id"><option value="">Sin presupuesto vinculado</option>';
-            foreach ( get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => -1, 'meta_key' => GE_WTP_Commercial_Quotes::CUSTOMER_META, 'meta_value' => $customer ) ) as $post ) { if ( self::record_in_scope( $post->ID ) ) { echo '<option value="' . (int) $post->ID . '">' . esc_html( $post->post_title ) . '</option>'; } }
+            foreach ( get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => -1, 'meta_key' => GE_WTP_Commercial_Quotes::CUSTOMER_META, 'meta_value' => $customer ) ) as $post ) { if ( self::quote_in_scope( $post->ID ) ) { echo '<option value="' . (int) $post->ID . '">' . esc_html( $post->post_title ) . '</option>'; } }
             echo '</select></label>';
             echo '<label>Moneda<select name="currency"><option>ARS</option><option>USD</option><option>EUR</option></select></label><label>Versión anterior (opcional)<select name="replaces"><option value="">Documento nuevo</option>'; foreach ( self::rows( $customer, get_current_user_id() ) as $row ) { echo '<option value="' . esc_attr( $row['ref'] ) . '">' . esc_html( self::title( $row ) . ' · ' . ( $row['receiver']['legal_name'] ?? '' ) ) . '</option>'; } echo '</select></label><p>Versionar conserva el archivo anterior. No anula ni reemplaza fiscalmente un comprobante.</p><label>Aclaración visible para el cliente<textarea name="public_note" maxlength="4000" rows="3"></textarea></label><label>Nota interna (solo equipo)<textarea name="internal_note" maxlength="4000" rows="3"></textarea></label><label>Original exacto · PDF, JPG o PNG · hasta 20 MB<input type="file" name="invoice_file" accept=".pdf,.jpg,.jpeg,.png" required></label><label><input type="checkbox" name="confirmed" value="1" required> Revisé cliente, receptor, tipo, número, fecha, emisor, moneda e importe contra el original.</label><p>La carga no envía correo automáticamente. Podés avisar desde el detalle después de revisarlo.</p><button class="ge-button ge-button-primary" type="submit">Guardar original y publicar en el portal</button></form></details>';
         }
