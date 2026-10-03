@@ -1,6 +1,6 @@
 # GRAPHEX_CANONICAL_STATE
 
-Última reconciliación: 2026-10-03. Estado: **canonical_synced=true**. Código verificado, master local/remoto integrado y deploy productivo **NO-OP** verificado. El release-state.json externo registra el HEAD exacto actual y las verificaciones finales.
+Última reconciliación: 2026-10-03. Estado: **canonical_synced=true**. Último release: detalle de presupuesto, PDF A4 con QR, IVA por versión y elección de alternativas. Código desplegado desde el merge canónico y verificado; el cierre documental no modifica el payload. El release-state.json externo registra el HEAD exacto actual y las verificaciones finales.
 
 - Repositorio canónico local: `/mnt/f/GIT/REPO-GRAPHEXPRESS` (`F:\GIT\REPO-GRAPHEXPRESS`).
 - Remoto: `https://github.com/LJVRYL/REPO-GRAPHEXPRESS.git`.
@@ -10,7 +10,7 @@
 - Rama de integración: `reconcile/graphex-prod-to-canonical-2026-10-03`, checkout aislado `/tmp/graphex-canonical-reconcile-20261003-remote`.
 - Captura de drift: `reconcile/prod-drift-20261003`; cada historial importado conserva sus padres mediante merges, incluidos árboles originalmente en raíz de plugin alineados como subtree.
 - Producción: perfil SSH simbólico `ai-grupo-ferozo-prod`, `/home/graphexpress/public_html`. No es Git checkout; usa deploy selectivo.
-- Código custom: 718 archivos, hashes en `docs/production-custom-files.sha256`. Fingerprint del mapa JSON ordenado: `7a69a51cdd6de88ec56dc22c48883aff24857f6780e243cfc67d4fa2fc2ba1ff`.
+- Código custom: 722 archivos, hashes en `docs/production-custom-files.sha256`. Fingerprint del mapa JSON ordenado: `65cb7b37ed3b582dbc997deef7eb9e1603b68b37eb1a28a49642c52a1495a566`.
 - Producción y candidato: cero diferencias de bytes, archivos faltantes o archivos extra dentro de los roots activos. WordPress core, WooCommerce, runtime externo y secretos de instancia se provisionan como dependencias; no están incluidos como código custom.
 - Dependencias verificadas: PHP 7.4 productivo, PHP 8.3 QA; versiones WordPress/WooCommerce y hashes protegidos constan en production-readonly-smoke.json. File Analyzer usa `/opt/ge-file-analyzer/runtime/bin/python3` y los binarios fijados en `bin/runtime-toolchain.json`.
 
@@ -49,3 +49,14 @@ Las pruebas históricas se alinearon con dependencias actuales y contratos expl�
 ## Regla permanente
 
 Consultar `docs/GRAPHEX_RELEASE_POLICY.md`: branch/worktree→tests→merge canonical→deploy desde canonical→verified→canonical_synced. DONE exige canonical_synced=true salvo excepción humana explícita y documentada. Un deploy previo a merge queda pendiente hasta reconciliarse en el mismo Work.
+
+
+## Release de presupuesto / QR / selección — 2026-10-03
+
+- Merge de código desplegado: `48b28ae15f18104616d36252f401843bcf06c706`.
+- Diez archivos allowlisted; dependencias nuevas primero, luego modelo y consumidores.
+- 115 checks de QA (67 regresiones + 48 IVA/selección); seis PDFs representativos en una página A4, incluida elección descargada del portal; 30 ítems conservan paginación completa.
+- PDF de producción #10002 v3: una página, QR verificado. Snapshot y metadatos de 986 y catálogo de emisores intactos. Cero envíos/pagos/ediciones comerciales productivas.
+- Fuente de comunicación: `docs/GRAPHEX_CUSTOMER_COMMUNICATION.md`. Alternativas explícitas por grupo; aceptación guarda elección separada de propuesta original. C no agrega IVA; configuración comercial no modifica identidad fiscal.
+- Backup selectivo verificado: `/root/ge-backups/quote-detail-qr-20261003T170723Z`. Restaurar solo los seis archivos presentes según manifest; los cuatro nuevos figuran en absent_before. No restaurar DB ni sobrescribir cambios ajenos. Rollback exige revalidar el entorno y el drift, ejecutar restauración selectiva y verificar hashes/smoke; para Git, revert revisado.
+- Estado exacto y evidencia del cierre: release-state.json y RESULT-PACK del trabajo. Resolver `refs/heads/master` para HEAD documental actual, reproducible desde el manifest.
