@@ -32,6 +32,38 @@ $portal_url = $portal_page ? get_permalink($portal_page) : home_url('/cliente-ma
 $shop_url = graphexpress_shop_url();
 $store_is_public = graphexpress_store_is_public();
 $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url('/trabaja-con-nosotros/');
+// Hero media is independent of the private store catalogue.
+$digital_media = array(
+    'src' => 'https://v1.pinimg.com/videos/iht/expMp4/45/f5/09/45f509444e96069350b9a64eaf4085e8_720w.mp4',
+    'poster' => 'https://i.pinimg.com/videos/thumbnails/originals/45/f5/09/45f509444e96069350b9a64eaf4085e8.0000000.jpg',
+    'source_url' => 'https://www.pinterest.com/pin/88735055153840396/',
+    'credit' => 'Video: Jess Wharehinga / Pinterest',
+);
+$format_media = array(
+    'src' => 'https://v1.pinimg.com/videos/mc/720p/fe/fe/bb/fefebb54d6a2d9330ea07d72d334bbf1.mp4',
+    'poster' => 'https://i.pinimg.com/736x/eb/7c/b0/eb7cb0f048f4355a4c79184cea0dd35d.jpg',
+    'source_url' => 'https://www.pinterest.com/pin/603693525061224286/',
+    'credit' => 'Video: Halsall Glass / Pinterest',
+);
+$digital_has_video = ! empty($digital_media['src']) && ! empty($digital_media['poster']);
+$format_has_video = ! empty($format_media['src']) && ! empty($format_media['poster']);
+$hero_video_ids = array();
+$hero_video_credits = array();
+foreach (array('gx-video-format' => $format_media, 'gx-video-digital' => $digital_media) as $video_id => $media) {
+    if (! empty($media['src']) && ! empty($media['poster'])) {
+        $hero_video_ids[] = $video_id;
+        if (! empty($media['source_url']) && ! empty($media['credit'])) {
+            $media['video_id'] = $video_id;
+            $hero_video_credits[] = $media;
+        }
+    }
+}
+$product_category_urls = array();
+foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
+    $category_term = get_term_by('slug', $category_slug, 'product_cat');
+    $category_link = $category_term ? get_term_link($category_term) : false;
+    $product_category_urls[$category_slug] = $store_is_public && $category_link && ! is_wp_error($category_link) ? $category_link : $whatsapp;
+}
 ?>
 <!doctype html>
 <html <?php language_attributes(); ?>>
@@ -40,6 +72,7 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Soluciones impresas, gráficas y editoriales para empresas, instituciones y comercios. Producción de calidad y respuesta ágil en Buenos Aires.">
     <?php wp_head(); ?>
+    <noscript><style>.gx-landing-active .gx-reveal { opacity: 1; transform: none; }</style></noscript>
 </head>
 <body <?php body_class('gx-home'); ?>>
 <?php wp_body_open(); ?>
@@ -53,7 +86,7 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
     </div>
 </div>
 
-<?php graphexpress_render_site_header(array('id' => 'inicio', 'action_label' => 'Cotizar ahora')); ?>
+<?php graphexpress_render_site_header(array('id' => 'inicio', 'action_label' => 'Cotizar ahora', 'brand' => 'graphex')); ?>
 
 <?php if (! $store_is_public) : ?>
     <section class="gx-store-coming" id="tienda-proximamente" aria-label="Próxima apertura de la tienda">
@@ -82,29 +115,57 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
                 </div>
             </div>
 
-            <div class="gx-hero-visual gx-reveal" aria-label="Muestra de trabajos gráficos">
+            <div class="gx-hero-visual gx-reveal" aria-label="Gran formato e imprenta digital">
                 <div class="gx-orbit gx-orbit-one"></div>
                 <div class="gx-orbit gx-orbit-two"></div>
                 <figure class="gx-hero-image gx-hero-image-main">
-                    <img src="<?php echo esc_url($asset_uri . 'hero-stationery.jpg'); ?>" alt="Papelería institucional impresa">
+                    <img class="gx-hero-fallback" src="<?php echo esc_url($asset_uri . 'graphex-gran-formato.jpg'); ?>" alt="Aplicación gráfica de gran formato" fetchpriority="high" decoding="async">
+                    <?php if ($format_has_video) : ?>
+                    <video id="gx-video-format" data-gx-hero-video muted loop playsinline preload="none" data-poster="<?php echo esc_url($format_media['poster']); ?>" aria-label="Impresión de gran formato en acción">
+                        <source data-src="<?php echo esc_url($format_media['src']); ?>" type="video/mp4">
+                        <a href="<?php echo esc_url($format_media['src']); ?>">Ver video de gran formato</a>
+                    </video>
+                    <?php endif; ?>
+                    <figcaption>Gran formato</figcaption>
                 </figure>
                 <figure class="gx-hero-image gx-hero-image-float">
-                    <img src="<?php echo esc_url($asset_uri . 'service-display.jpg'); ?>" alt="Banners de gran formato">
+                    <img class="gx-hero-fallback" src="<?php echo esc_url($asset_uri . 'graphex-offset-digital.jpg'); ?>" alt="Piezas de impresión offset y digital" decoding="async">
+                    <?php if ($digital_has_video) : ?>
+                    <video id="gx-video-digital" data-gx-hero-video muted loop playsinline preload="none" data-poster="<?php echo esc_url($digital_media['poster']); ?>" aria-label="Impresión digital en acción">
+                        <source data-src="<?php echo esc_url($digital_media['src']); ?>" type="video/mp4">
+                        <a href="<?php echo esc_url($digital_media['src']); ?>">Ver video de impresión digital</a>
+                    </video>
+                    <?php endif; ?>
+                    <figcaption>Imprenta digital</figcaption>
                 </figure>
                 <div class="gx-floating-note">
                     <span class="gx-note-icon">✓</span>
                     <span><b>De punta a punta</b><small>Diseño, impresión y entrega</small></span>
                 </div>
+                <?php if ($hero_video_ids) : ?>
+                    <div class="gx-media-controls" hidden>
+                        <button class="gx-video-toggle" type="button" aria-controls="<?php echo esc_attr(implode(' ', $hero_video_ids)); ?>" hidden>Reproducir videos</button>
+                        <?php if ($hero_video_credits) : ?>
+                            <details class="gx-video-credits"><summary>Créditos de video</summary><div><?php foreach ($hero_video_credits as $media) : ?><a data-gx-video-credit="<?php echo esc_attr($media['video_id']); ?>" href="<?php echo esc_url($media['source_url']); ?>" target="_blank" rel="noopener"><?php echo esc_html($media['credit']); ?></a><?php endforeach; ?></div></details>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </section>
 
-    <section class="gx-trust" aria-label="Clientes">
+    <section class="gx-trust gx-trust-clients" aria-labelledby="gx-client-heading">
         <div class="gx-wrap gx-trust-grid">
-            <p>Empresas e instituciones que confiaron en nosotros</p>
-            <div class="gx-client-names">
-                <span>BBVA</span><span>Banco Nación</span><span>McDonald's</span><span>Ministerio Público Fiscal</span><span>ZTE</span>
-            </div>
+            <h2 id="gx-client-heading">Algunas organizaciones para las que realizamos trabajos</h2>
+            <ul class="gx-client-names" aria-label="Organizaciones">
+                <li class="gx-client-item" data-client="ameport"><img class="gx-client-logo" src="<?php echo esc_url($asset_uri . 'clients/ameport-color.png'); ?>" alt="AMEPORT" width="1626" height="963" loading="lazy" decoding="async"></li>
+                <li class="gx-client-item" data-client="fao"><img class="gx-client-logo gx-client-logo--fao" src="<?php echo esc_url($asset_uri . 'clients/fao-logo-blue-3lines-es.svg'); ?>" alt="FAO — Organización de las Naciones Unidas para la Alimentación y la Agricultura" width="196" height="43" loading="lazy" decoding="async"></li>
+                <li class="gx-client-item" data-client="unodc"><img class="gx-client-logo gx-client-logo--unodc" src="<?php echo esc_url($asset_uri . 'clients/unodc-logo-es.svg'); ?>" alt="UNODC — Oficina de las Naciones Unidas contra la Droga y el Delito" width="394" height="102" loading="lazy" decoding="async"></li>
+                <li class="gx-client-item" data-client="ypf"><img class="gx-client-logo gx-client-logo--ypf" src="<?php echo esc_url($asset_uri . 'clients/ypf-logo-azul.svg'); ?>" alt="YPF" width="74" height="20" loading="lazy" decoding="async"></li>
+                <li class="gx-client-item" data-client="multiplex"><img class="gx-client-logo gx-client-logo--multiplex" src="<?php echo esc_url($asset_uri . 'clients/multiplex-logo-oficial.png'); ?>" alt="Cines Multiplex" width="470" height="267" loading="lazy" decoding="async"></li>
+                <li class="gx-client-item" data-client="claro"><img class="gx-client-logo gx-client-logo--claro" src="<?php echo esc_url($asset_uri . 'clients/claro-logo-rojo.svg'); ?>" alt="Claro" width="90" height="32" loading="lazy" decoding="async"></li>
+                <li class="gx-client-item" data-client="zte"><img class="gx-client-logo gx-client-logo--zte" src="<?php echo esc_url($asset_uri . 'clients/zte-official-blue.png'); ?>" alt="ZTE" width="1535" height="907" loading="lazy" decoding="async"></li>
+            </ul>
         </div>
     </section>
 
@@ -119,34 +180,30 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
             </div>
 
             <div class="gx-service-grid">
-                <article class="gx-service-card gx-service-primary gx-reveal">
-                    <div class="gx-service-number">01</div>
-                    <div class="gx-service-icon" aria-hidden="true">
-                        <svg viewBox="0 0 48 48"><path d="M10 7h23l5 5v29H10z"/><path d="M33 7v7h7M16 23h16M16 29h12M16 35h9"/></svg>
-                    </div>
-                    <div>
+                <article class="gx-service-card gx-service-photo gx-service-offset gx-reveal">
+                    <img src="<?php echo esc_url($asset_uri . 'graphex-offset-digital.jpg'); ?>" alt="Pliegos impresos a color a la salida de una prensa" width="899" height="1348" loading="lazy" decoding="async">
+                    <div class="gx-service-content">
+                        <span class="gx-service-number">01</span>
                         <h3>Offset & digital</h3>
                         <p>Papelería comercial, folletos, carpetas, catálogos y tiradas cortas o de alto volumen con excelente definición.</p>
-                        <ul><li>Respuesta ágil</li><li>Múltiples terminaciones</li><li>Control de archivos</li></ul>
+                        <a class="gx-inline-link" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Cotizar impresión <span>↗</span></a>
                     </div>
                 </article>
 
-                <article class="gx-service-card gx-service-image gx-reveal">
-                    <img src="<?php echo esc_url($asset_uri . 'service-display.jpg'); ?>" alt="Producción de banners y cartelería">
-                    <div class="gx-service-overlay">
-                        <span>02</span>
+                <article class="gx-service-card gx-service-photo gx-service-digital gx-reveal">
+                    <img src="<?php echo esc_url($asset_uri . 'graphex-gran-formato.jpg'); ?>" alt="Instalación de gráfica de gran formato en una fachada comercial" width="952" height="672" loading="lazy" decoding="async">
+                    <div class="gx-service-content">
+                        <span class="gx-service-number">02</span>
                         <h3>Gran formato</h3>
                         <p>Banners, lonas, vinilos, cartelería, stands y gráfica para puntos de venta.</p>
-                        <a href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener" aria-label="Cotizar gran formato">↗</a>
+                        <a class="gx-inline-link" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Cotizar gran formato <span>↗</span></a>
                     </div>
                 </article>
 
-                <article class="gx-service-card gx-service-light gx-reveal">
-                    <div class="gx-service-number">03</div>
-                    <div class="gx-service-icon gx-service-icon-yellow" aria-hidden="true">
-                        <svg viewBox="0 0 48 48"><path d="M8 10h14c4 0 6 2 6 6v24c0-4-2-6-6-6H8z"/><path d="M40 10H26M40 10v24H26M14 17h8M14 23h8"/></svg>
-                    </div>
-                    <div>
+                <article class="gx-service-card gx-service-photo gx-service-editorial gx-reveal">
+                    <img src="<?php echo esc_url($asset_uri . 'graphex-editorial.jpg'); ?>" alt="Revista abierta con diseño editorial sobre fondo celeste" width="1200" height="1680" loading="lazy" decoding="async">
+                    <div class="gx-service-content">
+                        <span class="gx-service-number">03</span>
                         <h3>Gráfica editorial</h3>
                         <p>Libros, revistas, informes, balances y publicaciones institucionales cuidadas de principio a fin.</p>
                         <a class="gx-inline-link" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar proyecto <span>→</span></a>
@@ -179,25 +236,22 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
                     <span class="gx-kicker"><i></i> Productos y posibilidades</span>
                     <h2>Gráfica que trabaja para tu marca.</h2>
                 </div>
-                <p>Una selección de formatos que podemos diseñar, producir y entregar. Próximamente cada categoría tendrá su catálogo completo.</p>
+                <p>Merchandising, windbanners y bolsas personalizadas para que tu marca se vea en cada detalle.</p>
             </div>
 
             <div class="gx-work-grid">
-                <article class="gx-work-card gx-work-wide gx-reveal">
-                    <img src="<?php echo esc_url($asset_uri . 'work-editorial.jpg'); ?>" alt="Papelería corporativa y editorial">
-                    <div><span>Empresas</span><h3>Papelería corporativa</h3></div>
-                </article>
-                <article class="gx-work-card gx-reveal">
-                    <img src="<?php echo esc_url($asset_uri . 'work-display.jpg'); ?>" alt="Banners y displays para eventos">
-                    <div><span>Gran formato</span><h3>Eventos & puntos de venta</h3></div>
-                </article>
-                <article class="gx-work-card gx-work-color gx-reveal">
-                    <div class="gx-work-placeholder">
-                        <span>Tu próximo proyecto</span>
-                        <strong>Packaging, merchandising y piezas especiales.</strong>
-                        <a href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Hablemos ↗</a>
-                    </div>
-                </article>
+                <a class="gx-work-card gx-work-wide gx-work-merch gx-reveal" href="<?php echo esc_url($product_category_urls['merchandising']); ?>">
+                    <img src="<?php echo esc_url($asset_uri . 'graphex-merchandising.webp'); ?>" alt="Muestra de merchandising GRAPHEX: botella, taza, libreta, lapicera y bolsa de tela con la G a color" width="1254" height="1254" loading="lazy" decoding="async">
+                    <div><span>Regalos con identidad</span><h3>Merchandising</h3><span class="gx-work-action">Ver productos ↗</span></div>
+                </a>
+                <a class="gx-work-card gx-work-windbanners gx-reveal" href="<?php echo esc_url($product_category_urls['windbanners']); ?>">
+                    <img src="<?php echo esc_url($asset_uri . 'graphex-windbanners.webp'); ?>" alt="Muestra de windbanners negro y blanco con el logo a color de GRAPHEX" width="1774" height="887" loading="lazy" decoding="async">
+                    <div><span>Tu marca en movimiento</span><h3>Windbanners</h3><span class="gx-work-action">Ver modelos ↗</span></div>
+                </a>
+                <a class="gx-work-card gx-work-bags gx-reveal" href="<?php echo esc_url($product_category_urls['bolsas']); ?>">
+                    <img src="<?php echo esc_url($asset_uri . 'graphex-bolsas.webp'); ?>" alt="Muestra de bolsas de papel negra y blanca con la nueva G de GRAPHEX impresa a color" width="1774" height="887" loading="lazy" decoding="async">
+                    <div><span>Tu próximo proyecto</span><h3>Bolsas personalizadas</h3><span class="gx-work-action">Ver bolsas ↗</span></div>
+                </a>
             </div>
         </div>
     </section>
@@ -228,7 +282,7 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
                 <a class="gx-button gx-button-primary" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Hablar por WhatsApp <span>↗</span></a>
                 <a href="mailto:imprentagraphexpress@gmail.com">imprentagraphexpress@gmail.com</a>
             </div>
-            <span class="gx-contact-word">EXPRESS</span>
+            <span class="gx-contact-word" aria-hidden="true">GRAPHEX</span>
         </div>
     </section>
 
@@ -238,14 +292,14 @@ $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url(
 <footer class="gx-footer">
     <div class="gx-wrap gx-footer-main">
         <div>
-            <a class="gx-logo gx-logo-light" href="#inicio"><span class="gx-logo-mark">GE</span><span><strong>GRAPH EXPRESS</strong><small>Impresión que comunica</small></span></a>
+            <a class="gx-logo gx-logo-light gx-graphex-logo" href="#inicio" aria-label="GRAPHEX, inicio"><img class="gx-graphex-symbol" src="<?php echo esc_url($asset_uri . 'graphex-simbolo.svg'); ?>" alt="" width="52" height="52"><span><strong>GRAPHEX</strong><small>Impresión que comunica</small></span></a>
             <p>Soluciones gráficas integrales para empresas, instituciones y comercios.</p>
         </div>
         <div><h3>Servicios</h3><a href="#servicios">Offset & digital</a><a href="#servicios">Gran formato</a><a href="#servicios">Gráfica editorial</a></div>
         <div><h3>Contacto</h3><a href="tel:+5491151393899">+54 9 11 5139-3899</a><a href="mailto:imprentagraphexpress@gmail.com">Enviar un email</a><a href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a><span>Microcentro, CABA</span></div>
         <div><h3>Tienda & clientes</h3><a href="<?php echo esc_url($shop_url); ?>"><?php echo $store_is_public ? 'Ver productos' : 'Tienda próximamente'; ?></a><a href="<?php echo esc_url($portal_url); ?>">Ingresar al portal</a><a href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Solicitar cotización</a></div>
     </div>
-    <div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> Graph Express</span><span>Hecho para imprimir grandes ideas.</span></div>
+    <div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> GRAPHEX · Graph Express</span><span>Hecho para imprimir grandes ideas.</span></div>
 </footer>
 
 <a class="gx-whatsapp-float" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">WA</a>

@@ -4,6 +4,7 @@
  */
 
 defined('ABSPATH') || exit;
+require_once get_stylesheet_directory() . '/inc/graphex-brand.php';
 
 function graphexpress_child_setup() {
     add_theme_support('title-tag');
@@ -13,6 +14,21 @@ function graphexpress_child_setup() {
     add_theme_support('html5', array('search-form', 'gallery', 'caption', 'style', 'script'));
 }
 add_action('after_setup_theme', 'graphexpress_child_setup');
+
+/**
+ * Reutiliza la G vigente de GRAPHEX como favicon público.
+ */
+function graphexpress_render_brand_favicon() {
+    $icon_url = get_stylesheet_directory_uri() . '/assets/images/graphex-simbolo.svg';
+    echo '<link rel="icon" href="' . esc_url($icon_url) . '" type="image/svg+xml" sizes="any">' . "\n";
+    echo '<link rel="shortcut icon" href="' . esc_url($icon_url) . '" type="image/svg+xml">' . "\n";
+}
+
+function graphexpress_use_brand_favicon() {
+    remove_action('wp_head', 'wp_site_icon', 99);
+    add_action('wp_head', 'graphexpress_render_brand_favicon', 2);
+}
+add_action('init', 'graphexpress_use_brand_favicon');
 
 function graphexpress_child_enqueue_styles() {
     wp_enqueue_style(
@@ -28,6 +44,22 @@ function graphexpress_child_enqueue_styles() {
         array('graphexpress-parent-style'),
         (string) filemtime(get_stylesheet_directory() . '/style.css')
     );
+
+    if (is_front_page()) {
+        wp_enqueue_style(
+            'graphex-landing',
+            get_stylesheet_directory_uri() . '/assets/css/graphex-landing.css',
+            array('graphexpress-child-style'),
+            (string) filemtime(get_stylesheet_directory() . '/assets/css/graphex-landing.css')
+        );
+        wp_enqueue_script(
+            'graphex-landing-video',
+            get_stylesheet_directory_uri() . '/assets/js/graphex-landing.js',
+            array(),
+            (string) filemtime(get_stylesheet_directory() . '/assets/js/graphex-landing.js'),
+            true
+        );
+    }
 
     // El encabezado público se reutiliza también en carrito, checkout, guías
     // y páginas provistas por el plugin. El controlador del menú debe estar
@@ -45,13 +77,14 @@ add_action('wp_enqueue_scripts', 'graphexpress_child_enqueue_styles', 20);
 /**
  * Encabezado único para todas las páginas públicas de Graph Express.
  *
- * @param array $args Opciones: active (shop|guides|careers), action_label e id.
+ * @param array $args Opciones: active (shop|guides|careers), action_label, id y brand.
  */
 function graphexpress_render_site_header($args = array()) {
     $args = wp_parse_args($args, array(
         'active'       => '',
         'action_label' => 'Consultar',
         'id'           => '',
+        'brand'        => 'graphex',
     ));
 
     $shop_url    = graphexpress_shop_url();
@@ -65,7 +98,11 @@ function graphexpress_render_site_header($args = array()) {
     ?>
     <header class="gx-header"<?php echo $args['id'] ? ' id="' . esc_attr($args['id']) . '"' : ''; ?>>
         <div class="gx-wrap gx-header-inner">
-            <a class="gx-logo" href="<?php echo esc_url(home_url('/')); ?>" aria-label="Graph Express, inicio"><span class="gx-logo-mark">GE</span><span><strong>GRAPH EXPRESS</strong><small>Impresión que comunica</small></span></a>
+            <?php if ('graphex' === $args['brand']) : ?>
+                <a class="gx-logo gx-graphex-logo" href="<?php echo esc_url(home_url('/')); ?>" aria-label="GRAPHEX, inicio"><img class="gx-graphex-symbol" src="<?php echo esc_url(get_stylesheet_directory_uri() . '/assets/images/graphex-simbolo.svg'); ?>" alt="" width="52" height="52"><span><strong>GRAPHEX</strong><small>Impresión que comunica</small></span></a>
+            <?php else : ?>
+                <a class="gx-logo" href="<?php echo esc_url(home_url('/')); ?>" aria-label="Graph Express, inicio"><span class="gx-logo-mark">GE</span><span><strong>GRAPH EXPRESS</strong><small>Impresión que comunica</small></span></a>
+            <?php endif; ?>
             <button class="gx-menu-toggle" type="button" aria-expanded="false" aria-controls="gx-navigation"><span></span><span></span><span></span><span class="screen-reader-text">Abrir menú</span></button>
             <nav class="gx-nav" id="gx-navigation" aria-label="Navegación principal">
                 <a<?php echo 'shop' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($shop_url); ?>"><?php echo esc_html($store_label); ?></a>
@@ -128,7 +165,8 @@ function graphexpress_store_is_public() {
 }
 
 function graphexpress_hide_storefront_until_launch() {
-    if (graphexpress_store_is_public() || is_admin() || wp_doing_ajax()) {
+    // Allow administrators to verify the checkout while the public store stays private.
+    if (graphexpress_store_is_public() || is_admin() || wp_doing_ajax() || current_user_can('manage_options')) {
         return;
     }
 
@@ -144,37 +182,66 @@ add_action('template_redirect', 'graphexpress_hide_storefront_until_launch', 5);
  */
 function graphexpress_store_families() {
     return array(
-        'gran-formato' => array(
-            'number'      => '01',
-            'name'        => 'Gran formato',
-            'description' => 'Gráfica de alto impacto para espacios, eventos y puntos de venta.',
-            'examples'    => array('Banners', 'Windflags', 'Vinilos', 'Cartelería', 'Displays'),
-            'class'       => 'violet',
-            'symbol'      => '↗',
-        ),
-        'windbanners' => array(
-            'number'      => '02',
-            'name'        => 'Windbanners',
-            'description' => 'Sistemas textiles y exhibidores para eventos, puntos de venta y comunicación exterior.',
-            'examples'    => array('Fly banners', 'Banderas', 'Bases', 'Carpas', 'Displays'),
-            'class'       => 'blue',
-            'symbol'      => '⚑',
-        ),
         'imprenta-digital' => array(
-            'number'      => '03',
+            'number'      => '01',
             'name'        => 'Imprenta digital',
             'description' => 'Producción rápida y flexible para tiradas cortas y personalizadas.',
             'examples'    => array('Tarjetas', 'Carpetas', 'Folletos', 'Talonarios', 'Papelería'),
             'class'       => 'yellow',
             'symbol'      => '▤',
+            'media'       => array(
+                'type'       => 'video',
+                'src'        => 'https://v1.pinimg.com/videos/iht/expMp4/45/f5/09/45f509444e96069350b9a64eaf4085e8_720w.mp4',
+                'poster'     => 'https://i.pinimg.com/videos/thumbnails/originals/45/f5/09/45f509444e96069350b9a64eaf4085e8.0000000.jpg',
+                'source_url' => 'https://www.pinterest.com/pin/88735055153840396/',
+                'label'      => 'Impresión digital en acción',
+                'credit'     => 'Video: Jess Wharehinga / Pinterest',
+            ),
         ),
         'imprenta-offset' => array(
-            'number'      => '04',
+            'number'      => '02',
             'name'        => 'Imprenta offset',
             'description' => 'Calidad y eficiencia para grandes cantidades y proyectos especiales.',
             'examples'    => array('Anotadores', 'Afiches', 'Folletos', 'Carpetas', 'Packaging'),
             'class'       => 'ink',
             'symbol'      => '◎',
+            'media'       => array(
+                'type'       => 'video',
+                'src'        => 'https://v1.pinimg.com/videos/iht/720p/f3/20/27/f32027b63c6565ad571551d80e834823.mp4',
+                'poster'     => 'https://i.pinimg.com/videos/thumbnails/originals/f3/20/27/f32027b63c6565ad571551d80e834823.0000000.jpg',
+                'source_url' => 'https://www.pinterest.com/pin/33003009765848303/',
+                'label'      => 'Producción offset en acción',
+                'credit'     => 'Video: aman sharma / Pinterest',
+            ),
+        ),
+        'gran-formato' => array(
+            'number'      => '03',
+            'name'        => 'Gran formato',
+            'description' => 'Gráfica de alto impacto para espacios, eventos y puntos de venta.',
+            'examples'    => array('Banners', 'Windflags', 'Vinilos', 'Cartelería', 'Displays'),
+            'class'       => 'violet',
+            'symbol'      => '↗',
+            'media'       => array(
+                'type'       => 'video',
+                'src'        => 'https://v1.pinimg.com/videos/mc/720p/fe/fe/bb/fefebb54d6a2d9330ea07d72d334bbf1.mp4',
+                'poster'     => 'https://i.pinimg.com/736x/eb/7c/b0/eb7cb0f048f4355a4c79184cea0dd35d.jpg',
+                'source_url' => 'https://www.pinterest.com/pin/603693525061224286/',
+                'label'      => 'Impresión UV en acción',
+                'credit'     => 'Video: Halsall Glass / Pinterest',
+            ),
+        ),
+        'windbanners' => array(
+            'number'      => '04',
+            'name'        => 'Windbanners',
+            'description' => 'Sistemas textiles y exhibidores para eventos, puntos de venta y comunicación exterior.',
+            'examples'    => array('Fly banners', 'Banderas', 'Bases', 'Carpas', 'Displays'),
+            'class'       => 'blue',
+            'symbol'      => '⚑',
+            'media'       => array(
+                'type'  => 'image',
+                'src'   => get_stylesheet_directory_uri() . '/assets/images/windbanners-graph-express.png',
+                'label' => 'Windbanners personalizados',
+            ),
         ),
         'merchandising' => array(
             'number'      => '05',

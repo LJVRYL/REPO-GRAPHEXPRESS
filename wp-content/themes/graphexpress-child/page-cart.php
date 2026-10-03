@@ -10,5 +10,5 @@ $cart_count = function_exists('WC') && WC()->cart ? WC()->cart->get_cart_content
 <div class="gx-announcement"><div class="gx-wrap"><span><b>Producción gráfica integral</b> para empresas y particulares.</span><a href="tel:+5491151393899">+54 9 11 5139-3899</a></div></div>
 <?php graphexpress_render_site_header(array('active' => 'shop')); ?>
 <main class="gx-store-main gx-commerce-main"><div class="gx-wrap"><a class="gx-store-back" href="<?php echo esc_url($shop_url); ?>">← Seguir comprando</a><div class="gx-commerce-heading"><span>Tu pedido</span><h1>Carrito</h1><p>Revisá productos, configuraciones y cantidades antes de continuar.</p></div><?php while (have_posts()) : the_post(); the_content(); endwhile; ?></div></main>
-<footer class="gx-footer gx-store-footer"><div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> Graph Express</span><a href="<?php echo esc_url($shop_url); ?>">Tienda</a><a href="<?php echo esc_url($portal_url); ?>">Portal de clientes</a></div></footer>
+<?php graphex_render_site_footer(); ?>
 <?php wp_footer(); ?></body></html>

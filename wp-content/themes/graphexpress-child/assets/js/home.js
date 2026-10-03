@@ -55,4 +55,30 @@
             element.classList.add('is-visible');
         });
     }
+
+    document.querySelectorAll('[data-gx-category-video]').forEach(function (video) {
+        var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var saveData = navigator.connection && navigator.connection.saveData;
+        if (reducedMotion || saveData) {
+            video.pause();
+            return;
+        }
+
+        if ('IntersectionObserver' in window) {
+            var videoObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        var playback = video.play();
+                        if (playback && typeof playback.catch === 'function') { playback.catch(function () {}); }
+                    } else {
+                        video.pause();
+                    }
+                });
+            }, { threshold: 0.35 });
+            videoObserver.observe(video);
+        } else {
+            var playback = video.play();
+            if (playback && typeof playback.catch === 'function') { playback.catch(function () {}); }
+        }
+    });
 }());

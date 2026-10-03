@@ -45,7 +45,7 @@ $page_description = $is_store_home
             <a class="gx-store-back" href="<?php echo esc_url($is_store_home ? home_url('/') : $shop_url); ?>">← <?php echo $is_store_home ? 'Volver al inicio' : 'Todas las categorías'; ?></a>
             <div class="gx-store-heading">
                 <div>
-                    <span class="gx-kicker"><i></i> Catálogo Graph Express</span>
+                    <span class="gx-kicker"><i></i> Catálogo GRAPHEX</span>
                     <h1><?php echo esc_html($page_title); ?></h1>
                     <div class="gx-store-description"><?php echo wp_kses_post(wpautop($page_description)); ?></div>
                 </div>
@@ -68,17 +68,44 @@ $page_description = $is_store_home
                     <?php foreach ($families as $slug => $family) :
                         $term = get_term_by('slug', $slug, 'product_cat');
                         $term_url = $term && ! is_wp_error($term) ? get_term_link($term) : add_query_arg('product_cat', $slug, $shop_url);
+                        $media = isset($family['media']) && is_array($family['media']) ? $family['media'] : array();
                     ?>
-                        <a class="gx-category-card gx-category-<?php echo esc_attr($family['class']); ?>" href="<?php echo esc_url($term_url); ?>">
+                        <?php if ($media && in_array(($media['type'] ?? ''), array('video', 'image'), true)) : ?>
+                        <article class="gx-category-card gx-category-<?php echo esc_attr($family['class']); ?> gx-category-has-media">
+                            <div class="gx-category-media" aria-hidden="true">
+                                <?php if ('video' === $media['type']) : ?>
+                                <video data-gx-category-video muted loop playsinline preload="metadata" poster="<?php echo esc_url($media['poster']); ?>">
+                                    <source src="<?php echo esc_url($media['src']); ?>" type="video/mp4">
+                                </video>
+                                <?php else : ?>
+                                <img src="<?php echo esc_url($media['src']); ?>" alt="" loading="lazy" decoding="async">
+                                <?php endif; ?>
+                                <span><?php echo esc_html($media['label']); ?></span>
+                            </div>
                             <span class="gx-category-number"><?php echo esc_html($family['number']); ?></span>
                             <span class="gx-category-symbol" aria-hidden="true"><?php echo esc_html($family['symbol']); ?></span>
-                            <div>
+                            <div class="gx-category-copy">
                                 <h2><?php echo esc_html($family['name']); ?></h2>
                                 <p><?php echo esc_html($family['description']); ?></p>
                                 <ul><?php foreach ($family['examples'] as $example) : ?><li><?php echo esc_html($example); ?></li><?php endforeach; ?></ul>
                             </div>
-                            <span class="gx-category-action">Ver productos <b>→</b></span>
-                        </a>
+                            <a class="gx-category-action" href="<?php echo esc_url($term_url); ?>">Ver productos <b>→</b></a>
+                            <?php if (! empty($media['source_url']) && ! empty($media['credit'])) : ?>
+                            <a class="gx-category-media-credit" href="<?php echo esc_url($media['source_url']); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($media['credit']); ?> ↗</a>
+                            <?php endif; ?>
+                        </article>
+                        <?php else : ?>
+                            <a class="gx-category-card gx-category-<?php echo esc_attr($family['class']); ?>" href="<?php echo esc_url($term_url); ?>">
+                                <span class="gx-category-number"><?php echo esc_html($family['number']); ?></span>
+                                <span class="gx-category-symbol" aria-hidden="true"><?php echo esc_html($family['symbol']); ?></span>
+                                <div>
+                                    <h2><?php echo esc_html($family['name']); ?></h2>
+                                    <p><?php echo esc_html($family['description']); ?></p>
+                                    <ul><?php foreach ($family['examples'] as $example) : ?><li><?php echo esc_html($example); ?></li><?php endforeach; ?></ul>
+                                </div>
+                                <span class="gx-category-action">Ver productos <b>→</b></span>
+                            </a>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -133,7 +160,7 @@ $page_description = $is_store_home
     <section class="gx-store-help"><div class="gx-wrap"><div><span class="gx-kicker gx-kicker-light"><i></i> ¿No encontrás lo que buscás?</span><h2>También hacemos productos a medida.</h2></div><a class="gx-button gx-button-primary" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Contanos tu idea ↗</a></div></section>
 </main>
 
-<footer class="gx-footer gx-store-footer"><div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> Graph Express</span><a href="<?php echo esc_url(home_url('/')); ?>">Volver a la web</a><a href="<?php echo esc_url($portal_url); ?>">Portal de clientes</a></div></footer>
+<?php graphex_render_site_footer(); ?>
 <a class="gx-whatsapp-float" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">WA</a>
 <?php wp_footer(); ?>
 </body>

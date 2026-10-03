@@ -48,7 +48,7 @@ $cart_count = function_exists('WC') && WC()->cart ? WC()->cart->get_cart_content
 
 <section class="gx-store-help"><div class="gx-wrap"><div><span class="gx-kicker gx-kicker-light"><i></i> ¿Necesitás otra medida o terminación?</span><h2>También hacemos productos a medida.</h2></div><a class="gx-button gx-button-primary" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Contanos tu idea ↗</a></div></section>
 
-<footer class="gx-footer gx-store-footer"><div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> Graph Express</span><a href="<?php echo esc_url(home_url('/')); ?>">Volver a la web</a><a href="<?php echo esc_url($portal_url); ?>">Portal de clientes</a></div></footer>
+<?php graphex_render_site_footer(); ?>
 <a class="gx-whatsapp-float" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">WA</a>
 <?php wp_footer(); ?>
 </body>
