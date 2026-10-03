@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Graphex Billing Issuer Profile v1",
+  "type": "object",
+  "required": [
+    "id",
+    "display_name",
+    "legal_name",
+    "cuit",
+    "iibb",
+    "vat_status",
+    "fiscal_address",
+    "locality",
+    "province",
+    "postal_code",
+    "country",
+    "contact_email",
+    "contact_phone",
+    "commercial_brand",
+    "point_of_sale",
+    "common_price_policy",
+    "invoice_a_price_policy",
+    "verification_status",
+    "verified_at",
+    "credentials_ref",
+    "cert_ref",
+    "arca_integration_status",
+    "created_at",
+    "updated_at",
+    "source",
+    "active",
+    "relationship_confirmed",
+    "revision",
+    "schema_version",
+    "updated_by",
+    "tax_rate_basis_points",
+    "invoice_types_allowed",
+    "default_for_scenarios"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "legal_name": {
+      "type": "string"
+    },
+    "cuit": {
+      "type": "string",
+      "pattern": "^[0-9]{11}$"
+    },
+    "iibb": {
+      "type": "string"
+    },
+    "vat_status": {
+      "type": "string",
+      "enum": [
+        "",
+        "registered",
+        "monotributo",
+        "exempt"
+      ]
+    },
+    "fiscal_address": {
+      "type": "string"
+    },
+    "locality": {
+      "type": "string"
+    },
+    "province": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "commercial_brand": {
+      "type": "string"
+    },
+    "point_of_sale": {
+      "type": "string"
+    },
+    "common_price_policy": {
+      "type": "string"
+    },
+    "invoice_a_price_policy": {
+      "type": "string"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified"
+      ]
+    },
+    "verified_at": {
+      "type": "string"
+    },
+    "credentials_ref": {
+      "type": "string",
+      "pattern": "^$|^[a-z][a-z0-9-]{2,79}$",
+      "description": "Symbolic reference only. Never a secret, token, certificate, key or material."
+    },
+    "cert_ref": {
+      "type": "string",
+      "pattern": "^$|^[a-z][a-z0-9-]{2,79}$",
+      "description": "Symbolic reference only. Never a secret, token, certificate, key or material."
+    },
+    "arca_integration_status": {
+      "type": "string",
+      "enum": [
+        "not_configured",
+        "references_configured"
+      ]
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "relationship_confirmed": {
+      "type": "boolean"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 0,
+      "const": 1
+    },
+    "updated_by": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tax_rate_basis_points": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "invoice_types_allowed": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    },
+    "default_for_scenarios": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "common",
+          "invoice_a"
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}
