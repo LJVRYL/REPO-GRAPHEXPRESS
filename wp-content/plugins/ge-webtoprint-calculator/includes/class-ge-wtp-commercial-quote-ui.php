@@ -138,8 +138,8 @@ final class GE_WTP_Commercial_Quote_UI {
         echo '<nav class="ge-quote-view-actions" aria-label="Acciones del presupuesto">';
         if ( $selection_ready ) { echo '<a class="ge-staff-button is-secondary ge-quote-pdf-download" href="' . esc_url( $pdf_url ) . '">Descargar PDF</a>'; }
         else { echo '<a class="ge-staff-button is-secondary" href="#ge-quote-configurator">Elegir configuración</a>'; }
-        if ( ! $quote['converted_order_id'] ) { echo '<button class="ge-staff-button" type="button" onclick="document.getElementById(\'ge-quote-convert\').showModal()">Pasar a producción</button>'; }
-        else { echo '<a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $quote['converted_order_id'] ) ) ) . '">Abrir pedido #' . esc_html( wc_get_order( $quote['converted_order_id'] ) ? wc_get_order( $quote['converted_order_id'] )->get_order_number() : $quote['converted_order_id'] ) . '</a>'; }
+        if ( ! $quote['converted_order_id'] && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { echo '<button class="ge-staff-button" type="button" onclick="document.getElementById(\'ge-quote-convert\').showModal()">Pasar a producción</button>'; }
+        elseif ( $quote['converted_order_id'] ) { echo '<a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $quote['converted_order_id'] ) ) ) . '">Abrir pedido #' . esc_html( wc_get_order( $quote['converted_order_id'] ) ? wc_get_order( $quote['converted_order_id'] )->get_order_number() : $quote['converted_order_id'] ) . '</a>'; }
         if ( in_array( $quote['status'], array( 'draft', 'sent', 'viewed' ), true ) && ! get_post_meta( $quote['id'], '_ge_commercial_initial_payment_order', true ) ) { echo '<a class="ge-staff-button is-secondary" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote['id'], 'edit' => 1 ) ) ) . '">Editar</a>'; }
         if ( in_array( $quote['status'], array( 'sent', 'viewed' ), true ) ) { echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_quote_send"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '">'; wp_nonce_field( 'ge_commercial_quote_send_' . $quote['id'] ); echo '<button class="ge-staff-button is-secondary" type="submit">Reenviar presupuesto</button></form>'; }
         echo '<a class="ge-staff-button is-secondary" href="' . esc_url( GE_WTP_Portal::preview_url( $quote['customer_id'], 'presupuestos', array( 'presupuesto' => $quote['id'] ) ) ) . '">Abrir portal cliente</a>';
@@ -163,9 +163,9 @@ final class GE_WTP_Commercial_Quote_UI {
         echo '<details class="ge-quote-disclosure ge-quote-payments"><summary>Pagos y comprobantes</summary>';
         $payment = GE_WTP_Commercial_Checkout::payment_status( $quote['id'], get_current_user_id() );
         if ( ! is_wp_error( $payment ) ) {
-            $total = (int) ( $payment['final_total_cents'] ?? ( $quote['snapshot']['total_cents'] ?? 0 ) );
+            $total = $selection_ready ? (int) ( $quote['snapshot']['total_cents'] ?? $payment['final_total_cents'] ?? 0 ) : 0;
             $paid = (int) $payment['amount_paid_cents'];
-            echo '<div class="ge-quote-context ge-quote-payment-summary"><div><span>Seña disponible</span><strong>' . esc_html( $quote['snapshot']['deposit_percent'] ?? 50 ) . '%</strong></div><div><span>Estado de pago</span><strong>' . esc_html( array( 'pending' => 'Pendiente', 'partial' => 'Seña / parcial', 'paid' => 'Pagado', 'failed' => 'Fallido' )[ $payment['payment_status'] ] ?? 'Pendiente' ) . '</strong></div><div><span>Abonado</span><strong>' . esc_html( self::money( $paid ) ) . '</strong></div><div><span>Saldo</span><strong>' . esc_html( self::money( max( 0, $total - $paid ) ) ) . '</strong></div></div>';
+            echo '<div class="ge-quote-context ge-quote-payment-summary"><div><span>Seña disponible</span><strong>' . esc_html( $quote['snapshot']['deposit_percent'] ?? 50 ) . '%</strong></div><div><span>Estado de pago</span><strong>' . esc_html( array( 'pending' => 'Pendiente', 'partial' => 'Seña / parcial', 'paid' => 'Pagado', 'failed' => 'Fallido' )[ $payment['payment_status'] ] ?? 'Pendiente' ) . '</strong></div><div><span>Abonado</span><strong>' . esc_html( self::money( $paid ) ) . '</strong></div><div><span>Saldo</span><strong>' . esc_html( $selection_ready ? self::money( max( 0, $total - $paid ) ) : 'A definir según elección' ) . '</strong></div></div>';
         }
         self::render_receipts( $quote, false );
         echo '</details>';
@@ -174,9 +174,9 @@ final class GE_WTP_Commercial_Quote_UI {
         echo '<div class="ge-quote-axes" aria-label="Estados separados"><span>Comercial: ' . esc_html( $status_labels[ $axes['commercial'] ] ?? $axes['commercial'] ) . '</span><span>Pago: ' . esc_html( $axis_labels[ $axes['payment'] ] ?? $axes['payment'] ) . '</span><span>Archivos y arte: ' . esc_html( $axis_labels[ $axes['artwork'] ] ?? $axes['artwork'] ) . '</span><span>Producción: ' . esc_html( $axis_labels[ $axes['production'] ] ?? $axes['production'] ) . '</span></div>';
         self::render_files( $quote, false );
         echo '</section>';
-        if ( ! $quote['converted_order_id'] ) { self::render_conversion_dialog( $quote, $customer ); }
+        if ( ! $quote['converted_order_id'] && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { self::render_conversion_dialog( $quote, $customer ); }
         self::render_events( $quote );
-        if ( class_exists( 'GE_WTP_Commercial_Checkout' ) ) { GE_WTP_Commercial_Checkout::render_staff_payment( $quote ); }
+        if ( class_exists( 'GE_WTP_Commercial_Checkout' ) && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { GE_WTP_Commercial_Checkout::render_staff_payment( $quote ); }
     }
 
     private static function render_files( $quote, $customer_view ) {
@@ -395,9 +395,9 @@ final class GE_WTP_Commercial_Quote_UI {
         if ( ! $posts ) { echo '<section class="ge-panel"><p>Todavía no tenés presupuestos.</p></section>'; return; }
         foreach ( $posts as $post ) {
             $quote = GE_WTP_Commercial_Quotes::get( $post->ID, $customer_id );
-            if ( is_wp_error( $quote ) || 'draft' === $quote['status'] || ( $selected && $selected !== $quote['id'] ) ) { continue; }
+            if ( is_wp_error( $quote ) || ( 'draft' === $quote['status'] && ! $preview ) || ( $selected && $selected !== $quote['id'] ) ) { continue; }
             if ( ! $preview ) { GE_WTP_Commercial_Quotes::mark_viewed( $quote['id'], $customer_id ); $quote = GE_WTP_Commercial_Quotes::get( $quote['id'], $customer_id ); }
-            $customer_status = array( 'sent' => 'Enviado', 'viewed' => 'Visto', 'accepted' => 'Aceptado', 'converted' => 'En proceso', 'rejected' => 'Rechazado', 'expired' => 'Vencido' );
+            $customer_status = array( 'draft' => 'Borrador en vista previa', 'sent' => 'Enviado', 'viewed' => 'Visto', 'accepted' => 'Aceptado', 'converted' => 'En proceso', 'rejected' => 'Rechazado', 'expired' => 'Vencido' );
             echo '<article class="ge-panel ge-quote-customer"><span class="ge-eyebrow">' . esc_html( $quote['number'] ) . ' · versión ' . esc_html( $quote['version'] ) . '</span><h2>Presupuesto ' . esc_html( strtolower( $customer_status[ $quote['status'] ] ?? $quote['status'] ) ) . '</h2>';
             $proposal = $quote;
             $choices = GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] );
