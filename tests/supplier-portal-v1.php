@@ -6,8 +6,8 @@ function check_sp( $ok, $message ) { global $checks; if ( ! $ok ) { throw new Ru
 function good_sp( $value ) { if ( is_wp_error( $value ) ) { throw new RuntimeException( $value->get_error_message() ); } return $value; }
 $admin = get_users( array( 'role' => 'administrator', 'number' => 1 ) )[0]->ID; wp_set_current_user( $admin );
 $profiles = (array) get_option( GE_WTP_Supplier_Dispatch::OPTION, array() );
-$profiles['custom-qa-portal'] = array( 'name' => 'Proveedor QA · Impresión', 'email' => 'supplier-qa@example.invalid', 'notes' => 'Sólo QA', 'channel' => 'email', 'auto_email' => 'no' );
-$profiles['custom-qa-other'] = array( 'name' => 'Otro proveedor QA', 'email' => '', 'notes' => 'Sólo QA' );
+$profiles['custom-qa-portal'] = array( 'name' => 'Proveedor QA · Impresión', 'email' => 'supplier-qa@example.invalid', 'notes' => 'Sólo QA', 'channel' => 'email', 'auto_email' => 'no', 'types' => array('production'), 'production_eligible' => true );
+$profiles['custom-qa-other'] = array( 'name' => 'Otro proveedor QA', 'email' => '', 'notes' => 'Sólo QA', 'types' => array('production'), 'production_eligible' => true );
 update_option( GE_WTP_Supplier_Dispatch::OPTION, $profiles, false );
 function fixture_sp() {
     $order = wc_create_order(); $order->update_meta_data( '_ge_production_initialized', current_time( 'mysql' ) ); $order->update_meta_data( '_ge_work_order', 'yes' ); $order->update_meta_data( GE_WTP_Workflow::VERSION_META, '1' ); $order->update_meta_data( GE_WTP_Workflow::STAGE_META, 'production' );
