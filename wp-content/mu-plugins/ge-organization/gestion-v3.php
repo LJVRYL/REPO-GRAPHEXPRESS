@@ -8,7 +8,7 @@ $global_query=sanitize_text_field(wp_unslash($_GET['global_q']??''));
 $title=$nav[$active]??array('library'=>'Archivos','candidates'=>'Candidatos','settings'=>'Configuración','notifications'=>'Notificaciones')[$section]??('company'===$section?'Mi empresa':('profile'===$section?'Mi perfil':'Gestión'));
 // Render first so module assets enqueued during render are available to wp_head.
 ob_start();
-if($global_query){GE_WTP_Gestion_V3::render_search($global_query);}
+if($global_query){if(in_array(GE_Organization_Runtime::role(get_current_user_id()),array('owner','admin'),true) && !in_array(false,GE_Organization_Runtime::settings()['modules'],true))GE_WTP_Gestion_V3::render_search($global_query);else GE_Organization_Runtime::search($global_query);}
 else {
     if(in_array($section,array('production','supplier-invoices'),true)) GE_WTP_Gestion_V3::domain_tabs('supplier-invoices'===$section?'documents':$view);
     if("company"===$section) GE_Organization_UI::render(); elseif("profile"===$section) GE_Organization_UI::render_profile(); else GE_WTP_Staff_Portal::render();
@@ -45,12 +45,12 @@ wp_enqueue_script('ge-gestion-v3',GE_WTP_PLUGIN_URL.'assets/js/gestion-v3.js',ar
 <?php wp_body_open(); ?>
 <a class="ge-v3-skip" href="#ge-main">Ir al contenido</a>
 <aside class="ge-v3-sidebar" id="ge-navigation" aria-label="Navegación de gestión">
- <a class="ge-v3-brand" href="<?php echo esc_url(GE_WTP_Gestion_V3::url()); ?>"><img src="<?php echo esc_url(GE_Organization::get(GE_Organization::PRIMARY)['settings']['branding']['logo_url'] ?: GE_WTP_PLUGIN_URL.'assets/images/graphex-simbolo.svg'); ?>" width="36" height="36" alt=""><span><strong><?php echo esc_html(GE_Organization::brand("brand_name","Graph Express")); ?></strong><small>Gestión</small></span></a>
+ <a class="ge-v3-brand" href="<?php echo esc_url(GE_WTP_Gestion_V3::url()); ?>"><img src="<?php echo esc_url(GE_Organization::get(GE_Organization::PRIMARY)['settings']['branding']['logo_url'] ?: (GE_Organization::PRIMARY==='graph-express'?GE_WTP_PLUGIN_URL.'assets/images/graphex-simbolo.svg':'')); ?>" width="36" height="36" alt=""><span><strong><?php echo esc_html(GE_Organization::brand("brand_name","Graph Express")); ?></strong><small>Gestión</small></span></a>
  <span class="ge-v3-nav-caption">OPERACIÓN</span>
  <nav class="ge-v3-nav" aria-label="Principal">
  <?php foreach($nav as $key=>$label): ?><a <?php echo $key===$active&&!$global_query?'aria-current="page" class="is-active"':''; ?> href="<?php echo esc_url(GE_WTP_Gestion_V3::url('dashboard'===$key?'':$key)); ?>"><?php echo GE_WTP_Gestion_V3::icon($key); ?><span><?php echo esc_html($label); ?></span></a><?php endforeach; ?>
  </nav>
- <a class="ge-v3-company-link" href="<?php echo esc_url(GE_WTP_Gestion_V3::url("company")); ?>">Mi empresa</a><div class="ge-v3-sidebar-footer"><a href="<?php echo esc_url(home_url('/')); ?>">Ir a la web <?php echo GE_WTP_Gestion_V3::icon('arrow'); ?></a><small>Graph Express · Operación interna</small></div>
+ <a class="ge-v3-company-link" href="<?php echo esc_url(GE_WTP_Gestion_V3::url("company")); ?>">Mi empresa</a><div class="ge-v3-sidebar-footer"><a href="<?php echo esc_url(home_url('/')); ?>">Ir a la web <?php echo GE_WTP_Gestion_V3::icon('arrow'); ?></a><small><?php echo esc_html(GE_Organization::brand("brand_name")); ?> · Operación interna</small></div>
 </aside>
 <div class="ge-v3-app">
  <header class="ge-v3-topbar">
@@ -58,6 +58,7 @@ wp_enqueue_script('ge-gestion-v3',GE_WTP_PLUGIN_URL.'assets/js/gestion-v3.js',ar
   <form class="ge-v3-global-search" role="search" method="get" action="<?php echo esc_url(GE_WTP_Gestion_V3::url()); ?>"><label class="ge-v3-sr-only" for="ge-v3-global">Buscar en gestión</label><?php echo GE_WTP_Gestion_V3::icon('search'); ?><input id="ge-v3-global" type="search" name="global_q" value="<?php echo esc_attr($global_query); ?>" placeholder="Buscar trabajo, cliente, proveedor o archivo…" maxlength="120"><button type="submit" aria-label="Buscar" title="Buscar"><?php echo GE_WTP_Gestion_V3::icon('arrow'); ?></button></form>
   <details class="ge-v3-quick"><summary title="Crear" aria-label="Crear presupuesto o pedido"><?php echo GE_WTP_Gestion_V3::icon('plus'); ?><span>Crear</span></summary><div><a href="<?php echo esc_url(GE_WTP_Gestion_V3::url('quotes',array('new'=>1))); ?>">Nuevo presupuesto</a><a href="<?php echo esc_url(GE_WTP_Gestion_V3::url('production',array('view'=>'new'))); ?>">Nuevo pedido</a></div></details>
   <a class="ge-v3-icon-button <?php echo in_array($section,array('settings','notifications'),true)?'is-active':''; ?>" href="<?php echo esc_url(GE_WTP_Gestion_V3::url('settings')); ?>" title="Configuración" aria-label="Configuración"><?php echo GE_WTP_Gestion_V3::icon('settings'); ?></a>
+  <?php if(class_exists('GE_WTP_Internal_Alerts') && GE_Organization_Runtime::allowed('quotes'))GE_WTP_Internal_Alerts::bell(); ?>
   <details class="ge-v3-user"><summary aria-label="Cuenta de usuario"><span><?php echo esc_html(mb_substr(wp_get_current_user()->display_name,0,1)); ?></span></summary><div><strong><?php echo esc_html(wp_get_current_user()->display_name); ?></strong><a href="<?php echo esc_url(GE_WTP_Gestion_V3::url("profile")); ?>">Mi perfil</a><a href="<?php echo esc_url(wp_logout_url(GE_WTP_Gestion_V3::url())); ?>">Cerrar sesión</a></div></details>
  </header>
  <main id="ge-main" class="ge-v3-main" tabindex="-1"><nav class="ge-v3-breadcrumb" aria-label="Ubicación"><a href="<?php echo esc_url(GE_WTP_Gestion_V3::url()); ?>">Gestión</a><span aria-hidden="true">/</span><span><?php echo esc_html($global_query?'Buscar':$title); ?></span><?php if('supplier-invoices'===$section):?><span aria-hidden="true">/</span><span>Documentos de proveedor</span><?php endif; ?></nav><?php echo $content; ?></main>

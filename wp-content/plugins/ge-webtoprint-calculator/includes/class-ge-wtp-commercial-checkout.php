@@ -446,6 +446,7 @@ final class GE_WTP_Commercial_Checkout {
 
     /** Staff may create the same operational order before any customer portal action. */
     public static function convert_staff( $quote_id, $args, $actor_id ) {
+        if (class_exists('GE_Organization_Runtime') && (!GE_Organization_Runtime::allowed('quotes',true,$actor_id)||!GE_Organization_Runtime::allowed('orders',true,$actor_id)))return new WP_Error('ge_org_permission','Conversión no habilitada para este rol o módulo.');
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
         $quote = GE_WTP_Commercial_Quotes::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }

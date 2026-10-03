@@ -22,7 +22,7 @@ final class GE_WTP_Notification_Center {
         return array( 'sender_email' => 'servicio@graphex.ar', 'sender_name' => 'Graph Express', 'recipients' => sanitize_email( get_option( 'admin_email' ) ), 'new_order' => 'yes', 'new_customer' => 'yes', 'new_candidate' => 'yes', 'new_incident' => 'yes', 'supplier_failure' => 'yes', 'production_digest' => 'yes', 'digest_hour' => 8 );
     }
 
-    public static function settings() { return wp_parse_args( get_option( self::OPTION, array() ), self::defaults() ); }
+    public static function settings() { $s=wp_parse_args(get_option(self::OPTION,array()),self::defaults());if(class_exists('GE_Organization_Runtime')){$o=GE_Organization_Runtime::settings();if($o){$s['sender_name']=$o['email']['sender_name']?:$o['general']['display_name'];if(GE_Organization::PRIMARY!=='graph-express')$s['sender_email']=$o['general']['email'];}}return $s; }
     public static function enabled( $key ) { $settings = self::settings(); return 'yes' === ( $settings[ $key ] ?? 'no' ); }
 
     public static function recipients() {

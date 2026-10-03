@@ -28,6 +28,10 @@ final class GE_WTP_Production {
     }
 
     public static function suppliers() {
+        if(class_exists('GE_Organization_Runtime') && GE_Organization::PRIMARY!=='graph-express') {
+            $out=array('pending'=>array('name'=>'Proveedor a definir','detail'=>'Asignación manual.'),'internal'=>array('name'=>'Producción interna','detail'=>GE_Organization::brand('display_name')));
+            foreach((array)get_option('ge_wtp_supplier_profiles',array()) as $key=>$profile)if(is_array($profile))$out[sanitize_key($key)]=array('name'=>sanitize_text_field($profile['name']??''),'detail'=>sanitize_textarea_field($profile['notes']??''));return $out;
+        }
         $suppliers = array(
             'druck'               => array( 'name' => 'Druck', 'detail' => 'Digital Express y ventana offset de viernes 12:00 a martes 21:00.' ),
             'mardones'            => array( 'name' => 'Mardones / Sur Colors', 'detail' => 'Offset de martes 21:00 a viernes 12:00. Entrega del proveedor: martes por la noche.' ),
@@ -345,6 +349,7 @@ final class GE_WTP_Production {
     }
 
     private static function assignment_for_item( $item, $created ) {
+        if(class_exists('GE_Organization_Runtime') && GE_Organization::PRIMARY!=='graph-express')return array('supplier'=>'pending','date'=>self::business_date($created,5),'reason'=>'Asigná un proveedor propio o producción interna.');
         $product_id = $item->get_product_id();
         $source = $product_id ? strtolower( (string) get_post_meta( $product_id, '_ge_supplier_source', true ) ) : '';
         $catalog_key = $product_id ? strtolower( (string) get_post_meta( $product_id, '_ge_public_catalog_key', true ) ) : '';

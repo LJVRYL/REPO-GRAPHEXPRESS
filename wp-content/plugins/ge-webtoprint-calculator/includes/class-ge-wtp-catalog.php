@@ -9,6 +9,7 @@ final class GE_WTP_Catalog {
     const BNA_CRON_HOOK = 'ge_wtp_refresh_bna_rate';
 
     public static function products() {
+        if(defined('GE_ORGANIZATION_INSTANCE_ID') && GE_ORGANIZATION_INSTANCE_ID!=='graph-express')return (array)get_option('ge_commerce_catalog_v1',array());
         return array(
             'adhesivo' => array(
                 'number'      => '01',

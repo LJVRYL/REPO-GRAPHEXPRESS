@@ -31,14 +31,14 @@ final class GE_WTP_Operations_Stock {
         return array_map(function($sql){return str_replace(', ', ",\n ", $sql);},$schema);
     }
     public static function item_get($id) {
-        if (!GE_WTP_Operations::permission('stock')) { return self::fail('forbidden','Sin permiso de stock.'); }
+        if (!GE_WTP_Operations::permission('stock_read')) { return self::fail('forbidden','Sin permiso de stock.'); }
         global $wpdb;
         $row=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.self::t('stock_items').' WHERE id=%d', $id), ARRAY_A);
         if($row) { $row['balance']=self::balance($id); $row['costs']=self::costs($id); }
         return $row;
     }
     public static function items($filters = array()) {
-        if (!GE_WTP_Operations::permission('stock')) { return self::fail('forbidden','Sin permiso de stock.'); }
+        if (!GE_WTP_Operations::permission('stock_read')) { return self::fail('forbidden','Sin permiso de stock.'); }
         global $wpdb;
         $where = ' WHERE active=1';
         if (!empty($filters['category'])) { $where .= $wpdb->prepare(' AND category=%s', $filters['category']); }
@@ -194,7 +194,7 @@ final class GE_WTP_Operations_Stock {
     }
     /** Read-only signals; never changes reorder levels or places a purchase. */
     public static function consumption_suggestions($filters=array()) {
-        GE_WTP_Operations::permission('stock'); global $wpdb;
+        GE_WTP_Operations::permission('stock_read'); global $wpdb;
         $days=isset($filters['days'])?(int)$filters['days']:30;
         if($days<7 || $days>90) { return self::fail('window','La ventana debe ser de 7 a 90 días.'); }
         $now=time(); $boundary=gmdate('Y-m-d H:i:s',$now-$days*DAY_IN_SECONDS); $start=gmdate('Y-m-d H:i:s',$now-2*$days*DAY_IN_SECONDS); $end=gmdate('Y-m-d H:i:s',$now);
@@ -271,6 +271,7 @@ final class GE_WTP_Operations_Stock {
         });
     }
     public static function seed_catalog() {
+        if(defined('GE_ORGANIZATION_INSTANCE_ID') && GE_ORGANIZATION_INSTANCE_ID!=='graph-express')return;
         // No invented formats, opening balances or suppliers. Paper variants await confirmation.
         global $wpdb;
         $seeds=array();
@@ -308,18 +309,18 @@ final class GE_WTP_Operations_Stock {
         }
     }
     public static function movements($filters=array()) {
-        if(!GE_WTP_Operations::permission('stock')) { return self::fail('forbidden','Sin permiso de stock.'); }
+        if(!GE_WTP_Operations::permission('stock_read')) { return self::fail('forbidden','Sin permiso de stock.'); }
         global $wpdb; $where=' WHERE 1=1';
         foreach(array('item_id','order_id') as $key) { if(!empty($filters[$key])) { $where.=$wpdb->prepare(" AND $key=%d",$filters[$key]); } }
         return $wpdb->get_results('SELECT * FROM '.self::t('stock_moves').$where.' ORDER BY id DESC LIMIT 200',ARRAY_A);
     }
     public static function purchases($filters=array()) {
-        if(!GE_WTP_Operations::permission('stock')) { return self::fail('forbidden','Sin permiso de stock.'); }
+        if(!GE_WTP_Operations::permission('stock_read')) { return self::fail('forbidden','Sin permiso de stock.'); }
         global $wpdb;
         $where='1=1';if(!empty($filters['supplier_id']))$where.=$wpdb->prepare(' AND supplier_id=%d',absint($filters['supplier_id']));$limit=max(1,min(200,absint($filters['limit']??200)));$page=max(1,absint($filters['page']??1));return $wpdb->get_results('SELECT * FROM '.self::t('purchases').' WHERE '.$where.' ORDER BY id DESC LIMIT '.$limit.' OFFSET '.(($page-1)*$limit),ARRAY_A);
     }
     public static function purchase_get($id) {
-        if(!GE_WTP_Operations::permission('stock')) { return self::fail('forbidden','Sin permiso de stock.'); }
+        if(!GE_WTP_Operations::permission('stock_read')) { return self::fail('forbidden','Sin permiso de stock.'); }
         global $wpdb;
         $p=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.self::t('purchases').' WHERE id=%d',$id),ARRAY_A);
         if($p) { $p['lines']=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::t('purchase_lines').' WHERE purchase_id=%d',$id),ARRAY_A); $p['receipts']=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::t('receipts').' WHERE purchase_id=%d',$id),ARRAY_A); }

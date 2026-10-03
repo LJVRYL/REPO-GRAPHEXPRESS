@@ -91,6 +91,7 @@ final class GE_WTP_Billing_Issuers {
     }
     /** Explicit deployment migration; never run lazily on public requests. */
     public static function seed( $actor ) {
+        if(defined('GE_ORGANIZATION_INSTANCE_ID') && GE_ORGANIZATION_INSTANCE_ID!=='graph-express')return new WP_Error('organization_seed','Los emisores legacy pertenecen exclusivamente a Graph Express.');
         $base = array( 'active' => true, 'verification_status' => 'pending', 'relationship_confirmed' => false, 'country' => 'AR', 'commercial_brand' => 'Graphex', 'source' => 'Leo supplied 2026-10-02; official verification pending' );
         $seeds = array(
             'leonardo-c' => array( 'display_name' => 'Leonardo Ayala', 'legal_name' => 'AYALA LEONARDO JAVIER', 'cuit' => '23336924529', 'iibb' => '23336924529', 'fiscal_address' => 'SAN MARTIN AV. 6177 Piso: PB', 'locality' => 'CIUDAD AUTONOMA DE BUENOS AIRES', 'province' => 'CIUDAD AUTONOMA DE BUENOS AIRES', 'postal_code' => '1419', 'vat_status' => '', 'invoice_types_allowed' => array( 'C' ), 'default_for_scenarios' => array( 'common' ), 'relationship_confirmed' => true ),
@@ -168,7 +169,7 @@ final class GE_WTP_Billing_Issuers {
     }
     public static function vat_label( $s ) { $labels = array( 'registered' => 'IVA Responsable Inscripto', 'monotributo' => 'Monotributista', 'exempt' => 'IVA Exento' ); return $labels[$s['vat_status'] ?? ''] ?? 'Condición fiscal pendiente de verificación'; }
     public static function label( $s ) { return 'unknown' === ( $s['id'] ?? 'unknown' ) ? 'Emisor histórico no registrado · requiere revisión' : ( $s['legal_name'] . ' · CUIT ' . $s['cuit'] . ' · ' . self::vat_label( $s ) ); }
-    public static function render_summary( $s ) { echo '<p class="ge-issuer-summary"><strong>Emisor / Facturación:</strong> ' . esc_html( self::label( self::from_snapshot( $s ) ) ) . '</p>'; }
+    public static function render_summary( $s ) { if ( ! GE_WTP_Staff_Portal::can_access() || GE_WTP_Portal::is_staff_preview() ) { return; } echo '<p class="ge-issuer-summary"><strong>Emisor / Facturación:</strong> ' . esc_html( self::label( self::from_snapshot( $s ) ) ) . '</p>'; }
     public static function render_picker( $s = array() ) {
         $old = self::from_snapshot( $s ); $can = self::can_manage( get_current_user_id() );
         echo '<section class="ge-production-card ge-billing-issuer-picker"><h2>Emisor / Facturación</h2><label>Emisor seleccionado<select name="issuer_profile_id"' . ( ! $can ? ' disabled' : '' ) . '><option value="">' . esc_html( $s ? 'Conservar emisor registrado' : 'Sugerir según perfil fiscal del cliente' ) . '</option>';
@@ -200,7 +201,7 @@ final class GE_WTP_Billing_Issuers {
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'settings', array( 'category' => 'billing', 'saved' => '1' ) ) ); exit;
     }
     public static function order_snapshot( $order ) { $s = $order->get_meta( self::ORDER_META, true ); return is_array( $s ) && $s ? $s : self::unknown(); }
-    public static function inherit( $order, $snapshot ) { if ( isset( $snapshot['receiver_snapshot'] ) ) { $order->update_meta_data( '_ge_billing_profile_snapshot', $snapshot['receiver_snapshot'] ); } if ( isset( $snapshot['billing_resolution'] ) ) { $order->update_meta_data( '_ge_quote_billing_resolution', $snapshot['billing_resolution'] ); } if ( ! empty( $snapshot['customer_tax_decision'] ) ) { $order->update_meta_data( '_ge_customer_tax_decision', $snapshot['customer_tax_decision'] ); } $s = self::from_snapshot( $snapshot ); $order->update_meta_data( self::ORDER_META, $s ); $order->update_meta_data( '_ge_billing_issuer_profile_id', $s['id'] ); }
+    public static function inherit( $order, $snapshot ) { if(!empty($snapshot['organization_snapshot']))$order->update_meta_data('_ge_organization_snapshot',$snapshot['organization_snapshot']); if ( isset( $snapshot['receiver_snapshot'] ) ) { $order->update_meta_data( '_ge_billing_profile_snapshot', $snapshot['receiver_snapshot'] ); } if ( isset( $snapshot['billing_resolution'] ) ) { $order->update_meta_data( '_ge_quote_billing_resolution', $snapshot['billing_resolution'] ); } if ( ! empty( $snapshot['customer_tax_decision'] ) ) { $order->update_meta_data( '_ge_customer_tax_decision', $snapshot['customer_tax_decision'] ); } $s = self::from_snapshot( $snapshot ); $order->update_meta_data( self::ORDER_META, $s ); $order->update_meta_data( '_ge_billing_issuer_profile_id', $s['id'] ); }
     public static function render_order( $order, $staff ) {
         self::render_summary( array( 'issuer_snapshot' => self::order_snapshot( $order ) ) );
         if ( ! $staff || ! self::can_manage( get_current_user_id() ) ) { return; }

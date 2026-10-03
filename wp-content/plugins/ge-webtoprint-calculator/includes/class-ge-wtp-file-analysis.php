@@ -268,7 +268,7 @@ final class GE_WTP_File_Analysis {
                     foreach ( GE_WTP_Documents::get_documents( $id ) as $doc ) { if ( $ref === ( $doc['file_analysis_ref'] ?? $doc['analysis']['file_analysis_ref'] ?? '' ) && empty( $doc['superseded_at'] ) && GE_WTP_Documents::customer_visible( $doc ) ) { return true; } }
                 }
             } elseif ( in_array( $key, array( '_ge_commercial_artwork_files', '_ge_commercial_receipt_files' ), true ) ) {
-                $quote = GE_WTP_Commercial_Quotes::get( $id, get_current_user_id() );
+                $quote = GE_WTP_Quote_Requests::TYPE === get_post_type($id) ? GE_WTP_Quote_Requests::get($id,get_current_user_id()) : GE_WTP_Commercial_Quotes::get( $id, get_current_user_id() );
                 if ( ! is_wp_error( $quote ) ) { foreach ( (array) get_post_meta( $id, $key, true ) as $doc ) { if ( $ref === ( $doc['file_analysis_ref'] ?? $doc['analysis']['file_analysis_ref'] ?? '' ) ) { return true; } } }
             } elseif ( '_ge_artwork_original' === $key && (int) get_post_meta( $id, '_ge_artwork_customer_id', true ) === get_current_user_id() ) { return true; }
         }

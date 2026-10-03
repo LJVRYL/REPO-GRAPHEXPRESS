@@ -16,6 +16,7 @@ class GE_WTP_Operations_Equipment {
         );
     }
     public static function seed() {
+        if(defined('GE_ORGANIZATION_INSTANCE_ID') && GE_ORGANIZATION_INSTANCE_ID!=='graph-express')return;
         global $wpdb;
         $rows = array('xerox-c70'=>array('Xerox C70','C70'), 'badgy200'=>array('Badgy 200','Badgy200'), 'brother-label'=>array('Brother — modelo pendiente Q700/QL-700',null), 'epson'=>array('Epson — modelo pendiente',null), 'anilladora'=>array('Anilladora',null), 'wire-o'=>array('Wire-O',null), 'binder'=>array('Binder',null), 'laminadora'=>array('Laminadora',null), 'pines38'=>array('Máquina de pines 38 mm',null));
         foreach ($rows as $code=>$row) {
@@ -24,7 +25,7 @@ class GE_WTP_Operations_Equipment {
     }
     public static function get($id) {
         global $wpdb;
-        if (!GE_WTP_Operations::permission('stock')) GE_WTP_Operations::error('forbidden', 'Sin permiso de stock.');
+        if (!GE_WTP_Operations::permission('stock_read')) GE_WTP_Operations::error('forbidden', 'Sin permiso de stock.');
         $row = $wpdb->get_row($wpdb->prepare('SELECT * FROM '.GE_WTP_Operations::table('equipment').' WHERE id=%d', $id), ARRAY_A);
         if (!$row) GE_WTP_Operations::error('equipment_invalid', 'Equipo inexistente.');
         // Adapters are deliberately not invented: no credential or unreachable LAN claim.

@@ -19,6 +19,7 @@ final class GE_WTP_Customer_Tax_UI {
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
     }
     public static function can_edit( $customer, $actor ) {
+        if(class_exists('GE_Organization_Runtime') && GE_Organization_Runtime::role($actor) && !GE_Organization_Runtime::allowed('customers',true,$actor))return false;
         return $actor && ( (int) $customer === (int) $actor || user_can( $actor, 'manage_woocommerce' ) || user_can( $actor, 'ge_manage_operations' ) );
     }
     public static function enqueue() {
@@ -32,7 +33,7 @@ final class GE_WTP_Customer_Tax_UI {
         $state = 'verified' === ( $profile['verification_status'] ?? '' ) ? ( ! empty( $evidence['customer_evidence_fresh'] ) ? 'Datos fiscales verificados' : 'Verificación anterior: revisá y actualizá la consulta' ) : 'Datos fiscales pendientes de verificación. Podés cargarlos manualmente.';
         if ( ! empty( $profile['checked_at'] ) ) { $state .= ' · Consulta ' . self::checked_label( $profile ) . ' · ' . ( 'arca_wsci' === ( $profile['source'] ?? '' ) ? 'ARCA' : 'Carga manual' ); }
         echo '<div class="ge-field-wide ge-customer-tax" data-ge-tax data-customer-id="' . esc_attr( $customer_id ) . '" data-profile-id="' . esc_attr( $profile_id ) . '"' . ( $quick ? ' data-quick="1"' : '' ) . '><button type="button" data-ge-tax-search>Buscar datos fiscales</button><input type="hidden" name="tax_preview_token" value=""><p data-ge-tax-state role="status" aria-live="polite">' . esc_html( $state ) . '</p><div data-ge-tax-preview hidden><h3>Revisá los datos encontrados</h3><dl data-ge-tax-data></dl><button type="button" data-ge-tax-confirm>Confirmar estos datos</button><button type="button" data-ge-tax-cancel>Cancelar</button></div></div>';
-        if ( self::stage() >= 2 && ! $quick ) {
+        if ( self::stage() >= 2 && ! $quick && GE_WTP_Staff_Portal::can_access() && ! GE_WTP_Portal::is_staff_preview() ) {
             $suggestion = GE_WTP_Customer_Tax::suggestion( $profile ); $issuer = GE_WTP_Billing_Issuers::get( $suggestion['issuer_profile_id'] );
             echo '<p>Emisor sugerido: ' . esc_html( $issuer['display_name'] ?? $issuer['legal_name'] ?? 'Pendiente de selección' ) . ' · Comprobante sugerido: ' . esc_html( 'unknown' === $suggestion['suggested_document_class'] ? 'Pendiente' : $suggestion['suggested_document_class'] ) . '. Requiere revisión del personal.</p>';
             self::render_warnings( $suggestion );

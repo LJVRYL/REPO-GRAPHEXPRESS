@@ -51,7 +51,7 @@ final class GE_WTP_Quote_Artwork_V2 {
         return array('pdf'=>array('application/pdf'),'jpg'=>array('image/jpeg'),'jpeg'=>array('image/jpeg'),'png'=>array('image/png'),'tif'=>array('image/tiff'),'tiff'=>array('image/tiff'),'ai'=>array('application/pdf','application/postscript'),'eps'=>array('application/postscript'),'psd'=>array('image/vnd.adobe.photoshop','image/x-photoshop'),'zip'=>array('application/zip','application/x-zip','application/x-zip-compressed'));
     }
     private static function context( $quote_id ) {
-        if ( ! is_user_logged_in() || ! GE_WTP_Staff_Portal::can_access() || GE_WTP_Portal::is_staff_preview() ) { self::fail('Acceso denegado.',403); }
+        if ( ! is_user_logged_in() || ( ! GE_WTP_Staff_Portal::can_access() && ! GE_WTP_Quote_Requests::customer_can_stage() ) || GE_WTP_Portal::is_staff_preview() ) { self::fail('Acceso denegado.',403); }
         if ($quote_id) {
             $q=GE_WTP_Commercial_Quotes::get($quote_id,get_current_user_id());
             if(is_wp_error($q)||!in_array($q['status'],array('draft','sent','viewed'),true)||$q['converted_order_id']||get_post_meta($quote_id,'_ge_commercial_initial_payment_order',true)){self::fail('Abrí el pedido vinculado o un presupuesto editable.',409);}
@@ -134,7 +134,7 @@ final class GE_WTP_Quote_Artwork_V2 {
             if(!self::uuid($id)){return new WP_Error('ge_artwork_reference','Referencia de archivo inválida.');}
             if(isset($known[$id])){continue;}
             $row=get_option(self::PREFIX.$actor.'_'.$id);
-            if(!$row||'ready'!==$row['status']||$row['session_id']!==$session||(int)$row['quote_id']!==(int)($existing['id']??0)||(!empty($row['claimed_quote_id'])&&(int)$row['claimed_quote_id']!==(int)($existing['id']??0))){return new WP_Error('ge_artwork_reference','Un archivo no terminó de subir o pertenece a otro presupuesto.');}
+            if(!$row||'ready'!==$row['status']||$row['session_id']!==$session||(int)$row['quote_id']!==(int)($existing['staging_scope_id']??$existing['id']??0)||(!empty($row['claimed_quote_id'])&&(int)$row['claimed_quote_id']!==(int)($existing['id']??0))){return new WP_Error('ge_artwork_reference','Un archivo no terminó de subir o pertenece a otro presupuesto.');}
             $known[$id]=$row['record'];
         }
         foreach($assignments as $id=>$uuid){

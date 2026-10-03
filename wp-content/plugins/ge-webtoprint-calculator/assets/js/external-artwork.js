@@ -3,7 +3,7 @@
   var config=window.geExternalArtwork;if(!config)return;
   var largeMessage='Este archivo supera el límite de carga directa. Podés asociarlo desde Google Drive, Dropbox, WeTransfer u otro enlace.';
   function uuid(){return crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var n=crypto.getRandomValues(new Uint8Array(1))[0]&15;return(c==='x'?n:(n&3)|8).toString(16);});}
-  function request(fields){var data=new FormData();Object.keys(fields).forEach(function(k){data.append(k,fields[k]);});data.append('action','ge_external_artwork');data.append('nonce',config.nonce);return fetch(config.url,{method:'POST',body:data,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(r){if(!r.success){var e=new Error(r.data.message||'No se pudo completar la acción.');e.record=r.data.record;throw e;}return r.data;});}
+  function request(fields){var data=new FormData();Object.keys(fields).forEach(function(k){data.append(k,fields[k]);});if(window.geRequest){data.append('request_context','1');data.append('request_nonce',window.geRequest.nonce);}data.append('action','ge_external_artwork');data.append('nonce',config.nonce);return fetch(config.url,{method:'POST',body:data,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(r){if(!r.success){var e=new Error(r.data.message||'No se pudo completar la acción.');e.record=r.data.record;throw e;}return r.data;});}
   function providerLabel(p){return({google_drive:'Google Drive',dropbox:'Dropbox',wetransfer:'WeTransfer',onedrive:'OneDrive',generic:'Enlace externo'})[p]||'Enlace externo';}
   function state(r){return r.imported_file_id?'Importado · origen conservado':(r.access_status==='requires_access'?'Requiere acceso':r.access_status==='unavailable'?'No disponible':'Acceso no verificado')+' · No analizado / archivo externo';}
   function button(text,attr){var b=document.createElement('button');b.type='button';b.textContent=text;b.setAttribute(attr,'');return b;}
@@ -13,7 +13,7 @@
     var a=document.createElement('a');a.href=r.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ '+r.name;
     var small=document.createElement('small');small.textContent=providerLabel(r.provider)+' · '+state(r);var actions=document.createElement('div');actions.className='ge-external-actions';
     var open=a.cloneNode(true);open.textContent='Abrir archivo externo';var copy=button('Copiar link','data-ge-copy-link');copy.dataset.geCopyLink=r.url;
-    actions.append(open,copy);if(!r.imported_file_id)actions.append(button('Importar a Graphex','data-ge-import-link'));actions.append(button('Quitar vínculo','data-ge-artwork-remove'));
+    actions.append(open,copy);if(!r.imported_file_id&&!window.geRequest)actions.append(button('Importar a Graphex','data-ge-import-link'));actions.append(button('Quitar vínculo','data-ge-artwork-remove'));
     li.append(a,small);if(r.notes){var note=document.createElement('small');note.textContent=r.notes;li.append(note);}li.append(actions);hidden(block,r,li);
     var notice=document.createElement('small');notice.dataset.geExternalNotice='';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');li.append(notice);block.querySelector('[data-ge-artwork-list]').append(li);return li;
   }

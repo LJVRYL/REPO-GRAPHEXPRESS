@@ -53,7 +53,7 @@ final class GE_WTP_External_Artwork {
     private static function fail($message,$code=422){wp_send_json_error(array('message'=>$message),$code);}
     private static function stage_key($actor,$id){return GE_WTP_Quote_Artwork_V2::PREFIX.$actor.'_'.$id;}
     public static function ajax() {
-        if(!is_user_logged_in()||!GE_WTP_Staff_Portal::can_access()||GE_WTP_Portal::is_staff_preview()){self::fail('Acceso denegado.',403);}
+        if(!is_user_logged_in()||(!GE_WTP_Staff_Portal::can_access()&&!(GE_WTP_Quote_Requests::customer_can_stage()&&'add'===($_POST['op']??'')))||GE_WTP_Portal::is_staff_preview()){self::fail('Acceso denegado.',403);}
         if(!check_ajax_referer(self::ACTION,'nonce',false)){self::fail('La sesión venció. Volvé a abrir el trabajo.',403);}
         foreach(array('op','quote_id','order_id','ref_id','session_id','url','name','notes') as $f){if(isset($_POST[$f])&&!is_scalar($_POST[$f])){self::fail('Solicitud inválida.');}}
         $actor=get_current_user_id();$quote_id=absint($_POST['quote_id']??0);$order_id=absint($_POST['order_id']??0);$order=null;$quote=null;

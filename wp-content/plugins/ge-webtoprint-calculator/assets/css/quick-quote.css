@@ -1,0 +1,22 @@
+.ge-quick-quote {max-width:800px;margin:auto}
+.ge-quick-quote [hidden],.ge-quick-register [hidden] {display:none!important}
+.ge-quick-quote fieldset {min-width:0;border:0;padding:0}
+.ge-quick-quote .ge-request-item {border:0;padding:0;margin:0;background:transparent}
+.ge-quick-quote progress {width:100%;height:6px;margin:0 0 28px;accent-color:var(--gx-violet,#5b51f5)}
+.ge-quick-quote h2 {font-size:clamp(24px,4vw,32px);line-height:1.2;text-wrap:balance;margin-bottom:20px}
+.ge-quick-quote label {display:block;margin:14px 0;font-size:16px;font-weight:600}
+.ge-quick-quote :is(input,select,textarea) {display:block;width:100%;min-height:48px;margin-top:8px;padding:12px;border:1px solid var(--gx-line,#dddcdf);border-radius:12px;font:inherit;background:var(--gx-paper,#f9f8f5);color:var(--gx-ink,#111116)}
+.ge-quick-quote textarea {min-height:160px;resize:vertical}
+.ge-quick-quote :is(button,a.ge-button) {min-height:48px;white-space:normal;cursor:pointer}
+.ge-quick-choices {display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ge-quick-choices button {padding:24px;text-align:left;border:1px solid var(--gx-line,#dddcdf);border-radius:16px;background:var(--gx-soft,#efeeeb);color:var(--gx-ink,#111116);font:inherit;font-weight:700;font-size:18px;line-height:1.4}
+.ge-quick-choices small {display:block;font-size:14px;font-weight:400;margin-top:8px}
+.ge-quick-measures {display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ge-quick-quote .ge-request-products article {display:grid;gap:10px;padding:16px;border:1px solid var(--gx-line,#dddcdf);border-radius:12px}
+.ge-quick-quote .ge-request-products a {padding:12px 0;color:var(--gx-violet-deep,#443acc)}
+.ge-quick-quote [data-request-review] p {padding:12px 0;border-bottom:1px solid var(--gx-line,#dddcdf);overflow-wrap:anywhere}
+.ge-quick-quote .ge-request-actions {display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+.ge-quick-quote [data-quick-autosave] {font-size:13px;color:var(--gx-muted,#60606b)}
+.ge-quick-register :is(button,input) {min-height:48px;font-size:16px}
+@media(min-width:1181px) and (max-width:1500px){.gx-brand-active .ge-portal-header{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.gx-brand-active .ge-portal-nav{grid-column:1/-1;grid-row:2;justify-content:center;flex-wrap:wrap;margin-bottom:12px}.gx-brand-active .ge-user-menu{min-width:0}.gx-brand-active .ge-user-menu small{overflow-wrap:anywhere}}
+@media(max-width:600px){.ge-quick-choices{grid-template-columns:1fr}.ge-quick-quote{padding:20px!important}.ge-quick-quote .ge-request-actions button{flex:1 1 44%;padding:12px}.ge-quick-quote .ge-request-products{grid-template-columns:1fr}.ge-quick-quote [data-ge-artwork]{max-width:100%;overflow-wrap:anywhere}}

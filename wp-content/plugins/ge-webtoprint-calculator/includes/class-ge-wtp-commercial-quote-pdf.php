@@ -58,6 +58,9 @@ final class GE_WTP_Commercial_Quote_PDF {
             return new WP_Error( 'ge_pdf_snapshot', 'El presupuesto necesita un snapshot comercial completo antes de emitir el PDF.' );
         }
         $pdf = new GE_WTP_Simple_PDF();
+        $organization=$s['organization_snapshot']??array();
+        $brand=$organization['general']['brand_name']??'GRAPHEX';
+        $accent=isset($organization['branding']['primary_color'])?array_map('hexdec',str_split(ltrim($organization['branding']['primary_color'],'#'),2)):array(109,69,239);
         $issuer = GE_WTP_Billing_Issuers::from_snapshot( $s );
         $issuer_lines = array( 'unknown' === $issuer['id'] ? GE_WTP_Billing_Issuers::label( $issuer ) : $issuer['legal_name'] );
         if ( 'unknown' !== $issuer['id'] ) {
@@ -122,7 +125,7 @@ final class GE_WTP_Commercial_Quote_PDF {
         if ( 'pending' === ( $s['fiscal_status'] ?? '' ) ) { $conditions[] = 'Propuesta comercial. Datos de facturación pendientes de confirmación.'; }
         if ( 'C' === ( $s['billing']['resolution']['document_type'] ?? '' ) ) { $conditions[] = 'IVA no discriminado según configuración fiscal del emisor.'; }
         if ( ! empty( $s['valid_until'] ) ) { $conditions[] = 'Vigencia hasta el ' . implode( '/', array_reverse( explode( '-', $s['valid_until'] ) ) ) . '.'; }
-        foreach ( array( 'payment_terms', 'delivery_terms', 'notes_customer' ) as $key ) { if ( ! empty( $s[ $key ] ) ) { $conditions[] = $s[ $key ]; } }
+        foreach ( array( 'payment_terms', 'commercial_terms', 'delivery_terms', 'notes_customer' ) as $key ) { if ( ! empty( $s[ $key ] ) ) { $conditions[] = $s[ $key ]; } }
         foreach ( (array) ( $s['discounts'] ?? array() ) as $discount_detail ) {
             if ( ! empty( $discount_detail['reason'] ) ) { $conditions[] = 'Descuento: ' . $discount_detail['reason']; }
         }
@@ -148,16 +151,17 @@ final class GE_WTP_Commercial_Quote_PDF {
         $pages = array();
         foreach ( $chunks as $page => $chunk ) {
             $pdf->begin_page();
-            $pdf->brand_symbol( 38, 32, 38 );
-            $pdf->text( 86, 57, 21, 'GRAPHEX', true, 17, 24, 39 );
-            $pdf->text( 87, 74, 8, 'SOLUCIONES GRÁFICAS', false, 105, 115, 134 );
+            if (!$organization || ($organization['branding']['logo_kind']??'')==='legacy-symbol') $pdf->brand_symbol(38,32,38);
+            elseif(!empty($organization['branding']['logo_jpeg']))$pdf->image_jpeg(38,32,38,38,base64_decode($organization['branding']['logo_jpeg'],true));
+            $brand_size=$organization ? min(21,max(9,21*250/max(1,GE_WTP_Simple_PDF::width($brand,21,true)))) : 21; $pdf->text( 86, 57, $brand_size, $brand, true, 17, 24, 39 );
+            $pdf->text( 87, 74, 8, $organization ? ($organization['general']['website']??'') : 'SOLUCIONES GRÁFICAS', false, 105, 115, 134 );
             $pdf->text_right( 557, 48, 11, 'Presupuesto ' . $quote['number'], true, 17, 24, 39 );
             $date = ! empty( $s['created_at'] ) ? wp_date( 'd/m/Y', strtotime( $s['created_at'] ) ) : '';
             $pdf->text_right( 557, 67, 9, $date . '  ·  Versión ' . $quote['version'], false, 105, 115, 134 );
-            $pdf->line( 38, 94, 557, 94, 109, 69, 239, 2 );
-            $pdf->text( 38, 113, 7.5, 'EMISOR / FACTURACIÓN · IDENTIDAD COMERCIAL GRAPHEX', true, 105, 115, 134 );
+            $pdf->line(38,94,557,94,$accent[0],$accent[1],$accent[2],2);
+            $pdf->text( 38, 113, 7.5, $organization ? 'EMISOR / FACTURACIÓN · '.strtoupper($brand) : 'EMISOR / FACTURACIÓN · IDENTIDAD COMERCIAL GRAPHEX', true, 105, 115, 134 );
             foreach ( $issuer_rows as $n => $line ) { $pdf->text( 38, 130 + $n * 13, 8, $line, 0 === $n, 17, 24, 39 ); }
-            $pdf->text( 38, 121 + $issuer_height, 9, $page ? 'PROPUESTA COMERCIAL · CONTINUACIÓN' : 'PROPUESTA COMERCIAL · CLIENTE', true, 109, 69, 239 );
+            $pdf->text( 38, 121 + $issuer_height, 9, $page ? 'PROPUESTA COMERCIAL · CONTINUACIÓN' : 'PROPUESTA COMERCIAL · CLIENTE', true, $accent[0], $accent[1], $accent[2] );
             $top = 147 + $issuer_height;
             foreach ( $chunk as $row ) {
                 $kind = $row['kind'];
@@ -177,7 +181,7 @@ final class GE_WTP_Commercial_Quote_PDF {
                     }
                 } elseif ( 'rule' === $kind ) { $pdf->line( 38, $top, 557, $top, 231, 234, 240 );
                 } elseif ( 'amount' === $kind || 'total' === $kind ) {
-                    if ( 'total' === $kind ) { $pdf->fill_rect( 280, $top - 10, 277, 36, 109, 69, 239 ); }
+                    if ( 'total' === $kind ) { $pdf->fill_rect( 280, $top - 10, 277, 36, $accent[0], $accent[1], $accent[2] ); }
                     $white = 'total' === $kind ? 255 : 17;
                     $pdf->text( 292, $top + 10, 'total' === $kind ? 13 : 10, $row['label'], 'total' === $kind, $white, $white, $white );
                     $pdf->text_right( 545, $top + 10, 'total' === $kind ? 13 : 10, $currency . ' ' . self::amount( $row['amount'] ), true, $white, $white, $white );
@@ -187,7 +191,7 @@ final class GE_WTP_Commercial_Quote_PDF {
                 $top += $row['height'];
             }
             $pdf->line( 38, 781, 557, 781, 231, 234, 240 );
-            $pdf->text( 38, 801, 8, 'GRAPHEX · graphex.ar', true, 105, 115, 134 );
+            $pdf->text( 38, 801, 8, $organization ? mb_substr($organization['documents']['footer'] ?: ($brand.' · '.($organization['general']['email']??'')),0,105) : 'GRAPHEX · graphex.ar', true, 105, 115, 134 );
             $contact = class_exists( 'GE_WTP_Notification_Center' ) ? ( GE_WTP_Notification_Center::settings()['sender_email'] ?? '' ) : '';
             if ( $contact ) { $pdf->text( 38, 817, 8, $contact, false, 105, 115, 134 ); }
             $pdf->text_right( 557, 801, 8, $quote['number'] . ' · Página ' . ( $page + 1 ) . ' de ' . count( $chunks ), false, 105, 115, 134 );

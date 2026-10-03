@@ -1,10 +1,10 @@
 <?php
 defined('ABSPATH') || exit;
 
-/** Configuration isolation only. Legacy operational repositories are single-organization. */
+/** Organization registry. Operational isolation uses a dedicated database per instance. */
 final class GE_Organization {
     const ROOT = 'ge_organizations_v1';
-    const PRIMARY = 'graph-express';
+    const PRIMARY = GE_ORGANIZATION_INSTANCE_ID;
     const AUDIT = 'ge_org_audit';
     const VERSION = 1;
     public static function init() {
@@ -77,6 +77,13 @@ final class GE_Organization {
             $s['email']['sender_name']=$mail['sender_name']??'Graph Express';
             $s['portal']['domain']=(string)wp_parse_url(home_url('/'),PHP_URL_HOST);
             $s['branding']['favicon_url']=get_site_icon_url();
+            if(self::PRIMARY!=='graph-express') {
+                $s=self::defaults();$s['general']['display_name']=get_bloginfo('name');
+                $s['general']['brand_name']=get_bloginfo('name');$s['general']['website']=home_url('/');
+                $s['general']['email']=get_option('admin_email');$s['email']['sender_name']=get_bloginfo('name');
+                $s['portal']['domain']=(string)wp_parse_url(home_url('/'),PHP_URL_HOST);
+                if(strpos($s['portal']['domain'],'.')===false)$s['portal']['domain']='';
+            }
             $o=array('organization_id'=>self::PRIMARY,'active'=>true,'mode'=>'legacy-primary','created_at'=>gmdate('c'),'revision'=>1,'settings'=>$s,'members'=>array((string)$actor=>'owner'),'onboarding'=>array());
             foreach(get_users(array('fields'=>'ID')) as $uid) {
                 if((int)$uid===(int)$actor)continue;
@@ -124,6 +131,14 @@ final class GE_Organization {
             $next=$o;
             if($tab==='modules') { foreach(self::modules() as $k)$next['settings']['modules'][$k]=!empty($raw[$k]); }
             elseif($tab==='users') {
+                if(!empty($raw['new_email'])) {
+                    if($id!==self::PRIMARY)return new WP_Error('instance','Creá usuarios operativos en su instancia propia.');
+                    if(!in_array($raw['role']??'',self::roles(),true))return new WP_Error('role','Rol inválido.');
+                    $email=sanitize_email($raw['new_email']);$login=sanitize_user($raw['new_login']??'',true);
+                    if(!is_email($email)||!$login||email_exists($email)||username_exists($login))return new WP_Error('user','Login y email nuevos válidos requeridos.');
+                    $new_uid=wp_insert_user(array('user_login'=>$login,'user_email'=>$email,'display_name'=>sanitize_text_field($raw['new_name']??$login),'user_pass'=>wp_generate_password(48),'role'=>GE_WTP_Staff_Portal::ROLE));
+                    if(is_wp_error($new_uid))return $new_uid;$raw['user_id']=$new_uid;
+                }
                 $uid=(int)($raw['user_id']??0);$role=$raw['role']??'';
                 if(!get_userdata($uid)||!in_array($role,self::roles(),true))return new WP_Error('user','Usuario o rol inválido.');
                 if(!user_can($actor,'manage_options') && $uid===$actor)return new WP_Error('self','No podés cambiar tu propio rol.');
@@ -188,6 +203,27 @@ final class GE_Organization {
         if(self::qa_only(get_current_user_id()) && !(is_page('gestion') && in_array($_GET['section']??'',array('company','profile'),true)))wp_die('Organización QA: acceso operativo todavía no habilitado.', '', array('response'=>403));
     }
     public static function brand($key,$fallback='') { $o=self::get(self::PRIMARY); return $o['settings']['general'][$key]??$fallback; }
+    /** Apply a portable configuration only to this explicitly provisioned non-production instance. */
+    public static function import_current($bundle,$actor) {
+        if(self::PRIMARY==='graph-express' || !user_can($actor,'manage_options'))return new WP_Error('forbidden','Importación operativa sólo en instancia destino provisionada.');
+        $binding=GE_Organization_Runtime::bind($actor);if(is_wp_error($binding))return $binding;
+        $imported=self::import_config($bundle,$actor);if(is_wp_error($imported))return $imported;
+        $id=$imported['organization_id'];$issuers=self::issuers($id);
+        return self::locked(function()use($imported,$id,$issuers,$actor){
+            $all=self::all();$before=$all[self::PRIMARY]??null;if(!$before)return new WP_Error('missing','Completá la identidad inicial.');
+            $next=$before;$next['settings']=$imported['settings'];$next['mode']='isolated-instance';$next['revision']++;$next['onboarding']=$imported['onboarding'];$next['onboarding']['ready']=false;
+            $a=self::audit(self::PRIMARY,$actor,'instance_config_imported',$before,$next);if(is_wp_error($a))return $a;
+            update_option(GE_WTP_Billing_Issuers::OPTION,$issuers,false);
+            $all[self::PRIMARY]=$next;unset($all[$id]);update_option(self::ROOT,$all,false);delete_option('ge_org_'.$id.'_issuers');return $next;
+        });
+    }
+    public static function complete_onboarding($actor) {
+        if(!self::can(self::PRIMARY,$actor,true))return new WP_Error('forbidden','Owner o admin requerido.');
+        $o=self::get(self::PRIMARY);$s=$o['settings'];
+        if(!$s['general']['display_name']||!$s['general']['country']||!$s['general']['currency']||!self::issuers(self::PRIMARY)||!in_array('owner',$o['members'],true))return new WP_Error('incomplete','Empresa, país, moneda, owner y un emisor son obligatorios.');
+        $b=GE_Organization_Runtime::bind($actor);if(is_wp_error($b))return $b;
+        return self::locked(function()use($actor){$all=self::all();$before=$all[self::PRIMARY];$next=$before;$next['mode']='isolated-instance';$next['onboarding']=array('company'=>true,'branding'=>true,'fiscal'=>true,'users'=>true,'modules'=>true,'integrations'=>true,'ready'=>true);$next['revision']++;$a=self::audit(self::PRIMARY,$actor,'onboarding_completed',$before,$next);if(is_wp_error($a))return $a;$all[self::PRIMARY]=$next;update_option(self::ROOT,$all,false);return $next;});
+    }
     public static function mail($args) {
         $o=self::get(self::PRIMARY);if(!$o)return $args;
         $s=$o['settings'];
@@ -205,8 +241,15 @@ final class GE_Organization {
         $actor=get_current_user_id();$id=sanitize_key($_POST['organization_id']??'');
         check_admin_referer('ge_org_'.$id);
         $action=sanitize_key($_POST['operation']??'save');
+        if($action==='export_data') {
+            $result=$id===self::PRIMARY?GE_Organization_Export::build($actor):new WP_Error('instance','Exportá desde la instancia propia.');
+            if(is_wp_error($result))wp_die(esc_html($result->get_error_message()),'',array('response'=>403));
+            $audit=self::audit($id,$actor,'operational_data_exported',null,array('format'=>'graphex-organization-data'));if(is_wp_error($audit))wp_die('No se pudo auditar la exportación.');
+            nocache_headers();header('Content-Type: application/json');header('Content-Disposition: attachment; filename="organization-data.json"');echo wp_json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);exit;
+        }
         if($action==='export') { $result=self::export_config($id,$actor);if(!is_wp_error($result)){self::audit($id,$actor,'config_exported',null,array('schema_version'=>1));nocache_headers();header('Content-Type: application/json');header('Content-Disposition: attachment; filename="organization-config.json"');echo wp_json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);exit;} }
-        elseif($action==='import') { $file=$_FILES['bundle']??array();if(($file['error']??1)!==UPLOAD_ERR_OK||($file['size']??0)>1048576||!is_uploaded_file($file['tmp_name']??''))$result=new WP_Error('upload','Archivo JSON válido de hasta 1 MB requerido.');else{$result=self::import_config(json_decode(file_get_contents($file['tmp_name']),true),$actor);if(!is_wp_error($result))$id=$result['organization_id'];} }
+        elseif($action==='complete_onboarding') { $result=$id===self::PRIMARY?self::complete_onboarding($actor):new WP_Error('instance','La operación corresponde a esta instancia.'); }
+        elseif($action==='import'||$action==='import_current') { $file=$_FILES['bundle']??array();if(($file['error']??1)!==UPLOAD_ERR_OK||($file['size']??0)>1048576||!is_uploaded_file($file['tmp_name']??''))$result=new WP_Error('upload','Archivo JSON válido de hasta 1 MB requerido.');else{$bundle=json_decode(file_get_contents($file['tmp_name']),true);$result=$action==='import_current'?self::import_current($bundle,$actor):self::import_config($bundle,$actor);if(!is_wp_error($result))$id=$result['organization_id'];} }
         else $result=self::save($id,$actor,(int)($_POST['revision']??0),sanitize_key($_POST['tab']??''),wp_unslash($_POST['values']??array()));
         $tab=sanitize_key($_POST['tab']??'general');
         if(is_wp_error($result)) { wp_die(esc_html($result->get_error_message()),'Mi empresa',array('response'=>400,'back_link'=>true)); }

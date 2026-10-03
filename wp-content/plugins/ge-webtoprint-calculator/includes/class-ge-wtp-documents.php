@@ -73,7 +73,7 @@ final class GE_WTP_Documents {
     }
 
     public static function private_directory() {
-        return WP_CONTENT_DIR . '/ge-private/markcom';
+        return class_exists('GE_Organization_Runtime') ? GE_Organization_Runtime::document_directory() : WP_CONTENT_DIR . '/ge-private/markcom';
     }
 
     public static function ensure_private_directory() {
