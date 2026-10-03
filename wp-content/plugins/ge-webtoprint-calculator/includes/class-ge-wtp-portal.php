@@ -214,7 +214,7 @@ final class GE_WTP_Portal {
         }
 
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
-        $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil', 'legales', 'personalizado', 'solicitudes' );
+        $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil', 'personalizado', 'solicitudes' );
         if ( self::portal_is_markcom() ) {
             $allowed[] = 'catalogo';
         }
@@ -251,8 +251,6 @@ final class GE_WTP_Portal {
                     GE_WTP_Quote_Requests::form();
                 } elseif ( 'solicitudes' === $section ) {
                     GE_WTP_Quote_Requests::history();
-                } elseif ( 'legales' === $section ) {
-                    GE_WTP_Portal_Profiles::legal();
                 } elseif ( 'perfil' === $section ) {
                     GE_WTP_Customers::render_for_portal( self::portal_customer_id(), self::is_staff_preview() );
                 } else {
@@ -348,7 +346,6 @@ final class GE_WTP_Portal {
             'documentos' => 'Documentos',
             'solicitudes' => 'Mis solicitudes',
             'perfil'     => 'Mi perfil',
-            'legales'    => 'Legales',
         );
         if ( self::portal_is_markcom() ) {
             $items = array_merge( array( 'inicio' => 'Resumen', 'catalogo' => 'Productos' ), array_slice( $items, 1, null, true ) );
