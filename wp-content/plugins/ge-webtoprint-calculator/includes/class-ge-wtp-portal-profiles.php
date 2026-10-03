@@ -49,7 +49,12 @@ final class GE_WTP_Portal_Profiles {
     }
     public static function legal() {
         $entity=GE_WTP_Billing::entity();
-        echo '<section class="ge-panel"><span class="ge-eyebrow">Información pública</span><h1>Legales</h1><h2>Graph Express</h2><dl>';
+        $brand='Graph Express';
+        if(class_exists('GE_Organization_Runtime')) {
+            $settings=GE_Organization_Runtime::settings();$general=$settings['general'];$brand=$general['brand_name']?:$general['display_name'];
+            $entity=array('legal_name'=>$general['legal_name'],'fiscal_address'=>$general['address']);
+        }
+        echo '<section class="ge-panel"><span class="ge-eyebrow">Información pública</span><h1>Legales</h1><h2>'.esc_html($brand).'</h2><dl>';
         foreach(array('legal_name'=>'Razón social','cuit'=>'CUIT','fiscal_address'=>'Domicilio fiscal') as $k=>$label) { if(!empty($entity[$k])) { echo '<dt>'.esc_html($label).'</dt><dd>'.esc_html($entity[$k]).'</dd>'; } }
         echo '</dl>';
         $privacy=get_privacy_policy_url(); if($privacy) { echo '<p><a href="'.esc_url($privacy).'">Política de privacidad</a></p>'; }

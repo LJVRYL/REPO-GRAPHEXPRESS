@@ -19,6 +19,7 @@ final class GE_WTP_Customer_Tax_UI {
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
     }
     public static function can_edit( $customer, $actor ) {
+        if(class_exists('GE_Organization_Runtime') && GE_Organization_Runtime::role($actor) && !GE_Organization_Runtime::allowed('customers',true,$actor))return false;
         return $actor && ( (int) $customer === (int) $actor || user_can( $actor, 'manage_woocommerce' ) || user_can( $actor, 'ge_manage_operations' ) );
     }
     public static function enqueue() {

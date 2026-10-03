@@ -261,7 +261,7 @@ final class GE_WTP_Portal {
                 ?>
             </main>
             <footer class="ge-portal-footer">
-                <span><?php echo esc_html( self::portal_is_markcom() ? 'Graph Express × Markcom' : 'Graph Express · Portal de clientes' ); ?></span>
+                <span><?php echo esc_html( self::portal_is_markcom() ? GE_Organization::brand('brand_name','Graph Express').' × Markcom' : GE_Organization::brand('brand_name','Graph Express').' · Portal de clientes' ); ?></span>
                 <span><?php echo esc_html( self::portal_is_markcom() ? 'Precios netos antes de IVA · Condición de pago: PO a 30 días' : 'Pedidos, archivos y documentación en un solo lugar' ); ?></span>
             </footer>
         </div>
@@ -276,8 +276,8 @@ final class GE_WTP_Portal {
         ?>
         <div class="ge-login-screen">
             <div class="ge-login-brand">
-                <span class="ge-brand-mark">GX</span>
-                <span class="ge-brand-name">GRAPH EXPRESS</span>
+                <span class="ge-brand-mark"><?php $org_logo=GE_Organization_Runtime::settings()['branding']['logo_url']??'';if($org_logo)echo '<img src="'.esc_url($org_logo).'" width="36" height="36" alt="">';else echo esc_html(mb_substr(GE_Organization::brand('brand_name'),0,1)); ?></span>
+                <span class="ge-brand-name"><?php echo esc_html(GE_Organization::brand('brand_name','Graph Express')); ?></span>
             </div>
             <div class="ge-login-grid">
                 <section class="ge-login-intro">
@@ -302,10 +302,10 @@ final class GE_WTP_Portal {
                             <div class="ge-auth-name-grid"><p><label for="ge-register-name">Nombre</label><input id="ge-register-name" type="text" name="first_name" autocomplete="given-name" required maxlength="100"></p><p><label for="ge-register-lastname">Apellido <span>(opcional)</span></label><input id="ge-register-lastname" type="text" name="last_name" autocomplete="family-name" maxlength="100"></p></div>
                             <p><label for="ge-register-email">Email</label><input id="ge-register-email" type="email" name="email" autocomplete="email" required maxlength="190"></p>
                             <p><label for="ge-register-whatsapp">WhatsApp <span>(opcional)</span></label><input id="ge-register-whatsapp" type="tel" name="whatsapp" autocomplete="tel" maxlength="40" placeholder="+54 9 11..."></p>
-                            <?php if ( in_array( 'A', (array) ( GE_WTP_Billing::entity()['document_capabilities'] ?? array() ), true ) ) : ?><p><label for="ge-register-billing">¿Necesitás Factura A?</label><select id="ge-register-billing" name="billing_mode"><option value="common">No, cliente común</option><option value="invoice_a">Sí, completaré mis datos fiscales en Mi perfil</option></select></p><?php else : ?><input type="hidden" name="billing_mode" value="common"><p>Graph Express emite Factura C, sin IVA discriminado.</p><?php endif; ?>
+                            <?php if ( in_array( 'A', (array) ( GE_WTP_Billing::entity()['document_capabilities'] ?? array() ), true ) ) : ?><p><label for="ge-register-billing">¿Necesitás Factura A?</label><select id="ge-register-billing" name="billing_mode"><option value="common">No, cliente común</option><option value="invoice_a">Sí, completaré mis datos fiscales en Mi perfil</option></select></p><?php else : ?><input type="hidden" name="billing_mode" value="common"><p>La facturación se define según el emisor y receptor registrados en cada presupuesto.</p><?php endif; ?>
                             <p><label for="ge-register-password">Contraseña</label><input id="ge-register-password" type="password" name="password" autocomplete="new-password" required minlength="10"><small class="ge-field-help">Mínimo 10 caracteres.</small></p>
                             <p><label for="ge-register-confirmation">Repetir contraseña</label><input id="ge-register-confirmation" type="password" name="password_confirmation" autocomplete="new-password" required minlength="10"></p>
-                            <p class="ge-auth-check"><label><input type="checkbox" name="terms" value="1" required> Acepto que Graph Express use estos datos para gestionar mi cuenta y mis pedidos.</label></p>
+                            <p class="ge-auth-check"><label><input type="checkbox" name="terms" value="1" required> Acepto que <?php echo esc_html(GE_Organization::brand('brand_name','Graph Express')); ?> use estos datos para gestionar mi cuenta y mis pedidos.</label></p>
                             <p class="ge-auth-check"><label><input type="checkbox" name="newsletter_optin" value="1"> Quiero recibir novedades y guías de impresión.</label></p>
                             <?php if ( class_exists( 'GE_WTP_Turnstile' ) ) { GE_WTP_Turnstile::render_widget( 'portal_register' ); } ?>
                             <p class="login-submit"><button type="submit">Crear mi cuenta</button></p>
@@ -314,7 +314,7 @@ final class GE_WTP_Portal {
                     <?php else : ?>
                         <span class="ge-eyebrow">Acceso privado</span>
                         <h2>Ingresar al portal</h2>
-                        <p>Usá tu email y contraseña de Graph Express.</p>
+                        <p>Usá tu email y contraseña de <?php echo esc_html(GE_Organization::brand('brand_name','Graph Express')); ?>.</p>
                         <?php self::render_login_error(); ?>
                         <form class="ge-portal-login-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_markcom_login"><input type="hidden" name="ge_quote_intent" value="<?php echo $quick?'1':''; ?>"><?php wp_nonce_field( 'ge_markcom_login' ); ?><p><label for="ge-portal-user">Usuario o email</label><input id="ge-portal-user" type="text" name="log" autocomplete="username" required></p><p><label for="ge-portal-password">Contraseña</label><input id="ge-portal-password" type="password" name="pwd" autocomplete="current-password" required></p><p class="login-remember"><label><input name="rememberme" type="checkbox" value="forever" checked> Mantener sesión iniciada</label></p><?php if ( class_exists( 'GE_WTP_Turnstile' ) ) { GE_WTP_Turnstile::render_widget( 'portal_login' ); } ?><p class="login-submit"><button type="submit">Ingresar</button></p><a class="ge-forgot-password" href="<?php echo esc_url( wp_lostpassword_url( self::portal_url() ) ); ?>">¿Olvidaste tu contraseña?</a></form>
                         <?php if ( class_exists( 'GE_WTP_Google_Auth' ) ) { GE_WTP_Google_Auth::render_portal_button( false ); } ?>
@@ -356,8 +356,8 @@ final class GE_WTP_Portal {
         ?>
         <header class="ge-portal-header">
             <a class="ge-portal-logo" href="<?php echo esc_url( self::portal_url() ); ?>">
-                <span class="ge-brand-mark">GX</span>
-                <span><strong>GRAPH EXPRESS</strong><small><?php echo esc_html( self::portal_is_markcom() ? 'Portal Markcom' : 'Portal de clientes' ); ?></small></span>
+                <span class="ge-brand-mark"><?php $org_logo=GE_Organization_Runtime::settings()['branding']['logo_url']??'';if($org_logo)echo '<img src="'.esc_url($org_logo).'" width="36" height="36" alt="">';else echo esc_html(mb_substr(GE_Organization::brand('brand_name'),0,1)); ?></span>
+                <span><strong><?php echo esc_html(GE_Organization::brand('brand_name','Graph Express')); ?></strong><small><?php echo esc_html( self::portal_is_markcom() ? 'Portal Markcom' : 'Portal de clientes' ); ?></small></span>
             </a>
             <nav class="ge-portal-nav" aria-label="Navegación del portal">
                 <?php foreach ( $items as $key => $label ) : ?>

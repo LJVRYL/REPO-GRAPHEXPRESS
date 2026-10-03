@@ -41,7 +41,7 @@ final class GE_WTP_Commercial_Quotes {
         $version = absint( get_post_meta( $post->ID, self::CURRENT_META, true ) );
         return array(
             'id' => (int) $post->ID,
-            'number' => class_exists( 'GE_WTP_Gestion_V3' ) ? GE_WTP_Gestion_V3::quote_number( $post->ID ) : 'GE-PRE-' . $post->ID,
+            'number' => class_exists('GE_Organization_Runtime') ? GE_Organization_Runtime::quote_number($post->ID,$versions[$version]??array()) : (class_exists('GE_WTP_Gestion_V3')?GE_WTP_Gestion_V3::quote_number($post->ID):'GE-PRE-'.$post->ID),
             'work_number' => class_exists( 'GE_WTP_Gestion_V3' ) ? GE_WTP_Gestion_V3::lookup( 'quote_id', $post->ID ) : 0,
             'customer_id' => absint( get_post_meta( $post->ID, self::CUSTOMER_META, true ) ),
             'status' => (string) get_post_meta( $post->ID, self::STATUS_META, true ),
@@ -64,6 +64,7 @@ final class GE_WTP_Commercial_Quotes {
      */
     public static function create_draft( $customer_id, $lines, $args = array(), $actor_id = 0 ) {
         $actor_id = $actor_id ?: get_current_user_id();
+        if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes', true, $actor_id)) return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.');
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) {
             return new WP_Error( 'ge_quote_forbidden', 'No tenés permiso para crear presupuestos.' );
         }
@@ -105,6 +106,7 @@ final class GE_WTP_Commercial_Quotes {
      */
     public static function revise( $quote_id, $lines, $args = array(), $actor_id = 0 ) {
         $actor_id = $actor_id ?: get_current_user_id();
+        if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes', true, $actor_id)) return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.');
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) {
             return new WP_Error( 'ge_quote_forbidden', 'No tenés permiso para editar presupuestos.' );
         }
@@ -153,6 +155,7 @@ final class GE_WTP_Commercial_Quotes {
 
     public static function send( $quote_id, $actor_id = 0 ) {
         $actor_id = $actor_id ?: get_current_user_id();
+        if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes', true, $actor_id)) return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.');
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) {
             return new WP_Error( 'ge_quote_forbidden', 'No tenés permiso para enviar presupuestos.' );
         }
@@ -188,6 +191,7 @@ final class GE_WTP_Commercial_Quotes {
 
     public static function resend( $quote_id, $actor_id = 0 ) {
         $actor_id = $actor_id ?: get_current_user_id();
+        if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes', true, $actor_id)) return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.');
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
@@ -215,7 +219,7 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! empty( $snapshot['discount_cents'] ) ) { $body .= 'Descuento comercial: −' . esc_html( $money( $snapshot['discount_cents'] ) ) . '<br>Neto imponible: ' . esc_html( $money( $snapshot['net_cents'] ) ) . '<br>'; }
         $body .= 'IVA: ' . esc_html( $money( $snapshot['tax_cents'] ?? 0 ) ) . '<br><strong>Total final: ' . esc_html( $money( $snapshot['total_cents'] ) ) . '</strong></p>';
         if ( 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { $body .= '<p>Propuesta comercial. Datos de facturación pendientes de confirmación.</p>'; }
-        return $tax_body . $body;
+        return (class_exists('GE_Organization_Runtime')?GE_Organization_Runtime::email_summary($snapshot):'') . $tax_body . $body;
     }
 
     /** Older drafts must be reviewed before their previous area price is sent. */
@@ -235,6 +239,7 @@ final class GE_WTP_Commercial_Quotes {
 
     public static function accept( $quote_id, $version, $actor_id = 0 ) {
         $actor_id = $actor_id ?: get_current_user_id();
+        if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::enabled('quotes')) return new WP_Error('ge_org_module','Presupuestos deshabilitados.');
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
         if ( $actor_id !== $quote['customer_id'] || ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) || (int) $version !== $quote['version'] ) {
@@ -285,6 +290,8 @@ final class GE_WTP_Commercial_Quotes {
     }
 
     public static function build_snapshot( $lines, $args = array() ) {
+        $organization = class_exists('GE_Organization_Runtime') ? GE_Organization_Runtime::snapshot() : array();
+        if ($organization) { $args += array('valid_until'=>wp_date('Y-m-d',strtotime('+'.(int)$organization['documents']['quote_valid_days'].' days',current_time('timestamp'))),'payment_terms'=>$organization['documents']['payment_terms'],'discount_value'=>$organization['commercial']['default_discount_percent']); }
         if ( ! is_array( $lines ) || ! $lines || count( $lines ) > 30 ) {
             return new WP_Error( 'ge_quote_lines', 'Agregá entre 1 y 30 ítems.' );
         }
@@ -373,7 +380,10 @@ final class GE_WTP_Commercial_Quotes {
         if ( $deposit_percent < 1 || $deposit_percent > 100 ) { return new WP_Error( 'ge_quote_deposit', 'Porcentaje de seña inválido.' ); }
         return array(
             'items' => $items,
-            'currency' => 'ARS',
+            'currency' => $organization['general']['currency'] ?? 'ARS',
+            'organization_snapshot' => $organization,
+            'payment_terms' => sanitize_textarea_field($args['payment_terms'] ?? ''),
+            'commercial_terms' => $organization['documents']['terms'] ?? '',
             'subtotal_cents' => $net,
             'discount_cents' => $item_discount + $quote_discount,
             'discounts' => $discounts,

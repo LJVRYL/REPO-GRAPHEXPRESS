@@ -14,7 +14,8 @@ final class GE_WTP_Operations {
     public static function table($key) { global $wpdb; if(!preg_match('/^[a-z_]+$/D',$key)) self::error('table','Invalid table'); return $wpdb->prefix.'ge_op_'.$key; }
     public static function error($code,$message=null) { throw new RuntimeException($message??$code,403===''.$code?403:0); }
     public static function permission($scope) {
-        $caps=array('stock'=>'ge_manage_inventory','finance'=>'ge_view_finance','finance_write'=>'ge_record_finance','supplier'=>'ge_manage_operations');
+        if(class_exists('GE_Organization_Runtime')) { $module=strpos($scope,'finance')===0?'finance':($scope==='supplier'?'suppliers':'stock'); GE_Organization_Runtime::require_permission($module,!in_array($scope,array('finance','stock_read'),true)); }
+        $caps=array('stock_read'=>'ge_view_inventory','stock'=>'ge_manage_inventory','finance'=>'ge_view_finance','finance_write'=>'ge_record_finance','supplier'=>'ge_manage_operations');
         if(!is_user_logged_in()||(!current_user_can('manage_options')&&!current_user_can($caps[$scope]??'manage_options'))) self::error('permission','No tenés permiso para esta operación.');
         return true;
     }
@@ -25,6 +26,7 @@ final class GE_WTP_Operations {
         catch(Throwable $e) { $wpdb->query($level?'ROLLBACK TO SAVEPOINT '.$save:'ROLLBACK'); self::$depth--; throw $e; }
     }
     public static function audit($type,$id,$payload) {
+        if(class_exists('GE_Organization'))$payload=array_merge((array)$payload,array('organization_id'=>GE_Organization::PRIMARY));
         global $wpdb; if(false===$wpdb->insert(self::table('audit'),array('event_type'=>sanitize_key($type),'object_ref'=>(string)$id,'actor_id'=>get_current_user_id(),'occurred_at'=>current_time('mysql',true),'payload'=>wp_json_encode($payload)))) self::error('audit','No se pudo registrar la auditoría.');
     }
     public static function install() {
@@ -83,9 +85,10 @@ final class GE_WTP_Operations {
         );
     }
     public static function execute($action,$input) {
+        if(class_exists('GE_Organization_Runtime')) { $module=GE_Organization_Runtime::module_for($action); $write=!preg_match('/\.(find|get|list|report|summary)$/',$action); GE_Organization_Runtime::require_permission($module,$write); }
         if(!self::enabled()) self::error('disabled','Operations no está activo.');
         if(in_array($action,array('graph.stock.reserve','graph.stock.consume','graph.stock.release'),true)) { $input['type']=array('graph.stock.reserve'=>'reservation','graph.stock.consume'=>'consume_reserved','graph.stock.release'=>'release')[$action]; return GE_WTP_Operations_Stock::movement($input); }
-        if('graph.stock.item.get'===$action) { self::permission('stock'); return GE_WTP_Operations_Stock::item_get(absint($input['id']??0)); }
+        if('graph.stock.item.get'===$action) { self::permission('stock_read'); return GE_WTP_Operations_Stock::item_get(absint($input['id']??0)); }
         if('graph.finance.order_margin.get'===$action) return GE_WTP_Operations_Finance::order_margin(absint($input['order_id']??0));
         if('graph.equipment.get'===$action||'graph.equipment.telemetry.get'===$action) return GE_WTP_Operations_Equipment::get(absint($input['id']??0));
         $map=self::actions(); if(!isset($map[$action])) self::error('action','Acción no disponible.'); return call_user_func($map[$action],$input);

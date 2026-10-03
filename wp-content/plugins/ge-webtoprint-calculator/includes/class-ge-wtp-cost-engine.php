@@ -19,6 +19,7 @@ final class GE_WTP_Cost_Engine {
     }
     public static function enabled() { return GE_WTP_Operations::enabled() && get_option('ge_cost_engine_enabled')==='yes'; }
     public static function permission($write=false) {
+        if(class_exists('GE_Organization_Runtime'))GE_Organization_Runtime::require_permission('cost_engine',$write);
         if(!self::enabled() || !is_user_logged_in() || (!current_user_can('manage_options')&&!current_user_can($write?'ge_manage_costs':'ge_view_costs'))) throw new RuntimeException('Sin permiso de costos.');
     }
     public static function install() {

@@ -45,6 +45,7 @@ final class GE_WTP_Customer_Branches {
     }
 
     public static function save( $customer_id, $input, $actor_id ) {
+        if(class_exists('GE_Organization_Runtime') && GE_Organization_Runtime::role($actor_id) && !GE_Organization_Runtime::allowed('customers',true,$actor_id))return new WP_Error('ge_org_role','Rol sin permiso sobre clientes.');
         if ( ! GE_WTP_Customer_Tax_UI::can_edit( $customer_id, $actor_id ) ) { return new WP_Error( 'ge_profile_forbidden', 'Acceso denegado.' ); }
         if ( ! get_userdata( $customer_id ) ) { return new WP_Error( 'ge_profile_customer', 'Cliente inexistente.' ); }
         $id = sanitize_text_field( $input['id'] ?? '' );

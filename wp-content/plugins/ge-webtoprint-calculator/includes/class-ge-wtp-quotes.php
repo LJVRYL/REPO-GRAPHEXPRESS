@@ -230,6 +230,12 @@ final class GE_WTP_Simple_PDF {
         $this->commands[] = 'Q';
     }
     private $commands = array();
+    private $images = array();
+    public function image_jpeg($x,$top,$w,$h,$data) {
+        $size=$data?getimagesizefromstring($data):false;if(!$size||$size[2]!==IMAGETYPE_JPEG)return;
+        $name='Im'.count($this->images);$this->images[$name]=array($data,$size[0],$size[1],($size['channels']??3)===1?'DeviceGray':'DeviceRGB');
+        $this->commands[]=sprintf('q %.2F 0 0 %.2F %.2F %.2F cm /%s Do Q',$w,$h,$x,842-$top-$h,$name);
+    }
     public function begin_page() { $this->commands = array(); }
     public function end_page() { return implode( "\n", $this->commands ); }
     public function text( $x, $top, $size, $text, $bold = false, $r = 0, $g = 0, $b = 0 ) { $encoded = $this->encode( $text ); $this->commands[] = sprintf( 'BT /%s %.2F Tf %.3F %.3F %.3F rg 1 0 0 1 %.2F %.2F Tm (%s) Tj ET', $bold ? 'F2' : 'F1', $size, $r / 255, $g / 255, $b / 255, $x, 842 - $top, $encoded ); }
@@ -248,8 +254,10 @@ final class GE_WTP_Simple_PDF {
     public function line( $x1, $top1, $x2, $top2, $r, $g, $b, $width = 1 ) { $this->commands[] = sprintf( '%.3F %.3F %.3F RG %.2F w %.2F %.2F m %.2F %.2F l S', $r / 255, $g / 255, $b / 255, $width, $x1, 842 - $top1, $x2, 842 - $top2 ); }
     public function wrap( $text, $limit ) { $paragraphs = preg_split( '/\R/u', (string) $text ); $lines = array(); foreach ( $paragraphs as $paragraph ) { $words = preg_split( '/\s+/u', trim( $paragraph ) ); $line = ''; foreach ( $words as $word ) { if ( '' === $word ) { continue; } $candidate = '' === $line ? $word : $line . ' ' . $word; if ( mb_strlen( $candidate ) > $limit && '' !== $line ) { $lines[] = $line; $line = $word; } else { $line = $candidate; } } if ( '' !== $line ) { $lines[] = $line; } } return $lines ?: array( '' ); }
     public function output( $pages ) {
-        $objects = array( 1 => '<< /Type /Catalog /Pages 2 0 R >>', 3 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>', 4 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>' ); $kids = array(); $number = 5;
-        foreach ( $pages as $commands ) { $content = $number++; $page = $number++; $objects[ $content ] = '<< /Length ' . strlen( $commands ) . ">>\nstream\n" . $commands . "\nendstream"; $objects[ $page ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' . $content . ' 0 R >>'; $kids[] = $page . ' 0 R'; }
+        $objects = array( 1 => '<< /Type /Catalog /Pages 2 0 R >>', 3 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>', 4 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>' ); $kids = array(); $number = 5; $image_resources='';
+        foreach($this->images as $name=>$image){$id=$number++;$objects[$id]='<< /Type /XObject /Subtype /Image /Width '.$image[1].' /Height '.$image[2].' /ColorSpace /'.$image[3].' /BitsPerComponent 8 /Filter /DCTDecode /Length '.strlen($image[0]).">>\nstream\n".$image[0]."\nendstream";$image_resources.='/'.$name.' '.$id.' 0 R ';}
+        $resources_extra=$image_resources?' /XObject << '.$image_resources.'>>':'';
+        foreach ( $pages as $commands ) { $content = $number++; $page = $number++; $objects[ $content ] = '<< /Length ' . strlen( $commands ) . ">>\nstream\n" . $commands . "\nendstream"; $objects[ $page ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>'.$resources_extra.' >> /Contents ' . $content . ' 0 R >>'; $kids[] = $page . ' 0 R'; }
         $objects[2] = '<< /Type /Pages /Kids [' . implode( ' ', $kids ) . '] /Count ' . count( $kids ) . ' >>'; ksort( $objects ); $pdf = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; $offsets = array( 0 );
         foreach ( $objects as $index => $object ) { $offsets[ $index ] = strlen( $pdf ); $pdf .= $index . " 0 obj\n" . $object . "\nendobj\n"; }
         $xref = strlen( $pdf ); $count = count( $objects ) + 1; $pdf .= "xref\n0 " . $count . "\n0000000000 65535 f \n"; for ( $i = 1; $i < $count; $i++ ) { $pdf .= sprintf( "%010d 00000 n \n", $offsets[ $i ] ); } return $pdf . "trailer\n<< /Size " . $count . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF";

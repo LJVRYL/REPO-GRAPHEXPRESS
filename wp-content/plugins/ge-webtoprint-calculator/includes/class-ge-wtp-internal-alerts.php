@@ -27,6 +27,7 @@ final class GE_WTP_Internal_Alerts {
         return GE_WTP_Staff_Portal::portal_url($section,array($arg=>$data['entity_ref']));
     }
     public static function unread($actor) {
+        if(class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes',false,$actor))return array();
         return get_posts(array('post_type'=>self::TYPE,'post_status'=>'private','posts_per_page'=>30,'meta_query'=>array(array('key'=>'_ge_read_'.$actor,'compare'=>'NOT EXISTS'))));
     }
     public static function read() {
