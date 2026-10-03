@@ -14,6 +14,26 @@
     button.setAttribute('aria-busy', 'true');
   });
 
+  document.querySelectorAll('[data-ge-choice-group]').forEach(function (group) {
+    var prices;
+    try { prices = JSON.parse(group.querySelector('[data-ge-choice-prices]').textContent); } catch (e) { return; }
+    var selects = group.querySelectorAll('select'), finish = selects[0], paper = selects[1];
+    var output = group.querySelector('[data-ge-choice-total]');
+    function update() {
+      var radio = group.querySelector('input[type="radio"]:checked');
+      if (!radio) return;
+      var choices = prices.filter(function (p) { return p.model === radio.value; });
+      Array.from(finish.options).forEach(function (o) { o.disabled = !choices.some(function (p) { return p.finish === o.value; }); });
+      if (finish.selectedOptions[0].disabled) finish.value = choices[0].finish;
+      var price = choices.find(function (p) { return p.finish === finish.value; });
+      Array.from(paper.options).forEach(function (o) { o.disabled = !price.papers.includes(o.value); });
+      if (paper.selectedOptions[0].disabled) paper.value = price.papers[0];
+      output.textContent = 'Total de esta opción: ' + new Intl.NumberFormat('es-AR', {style:'currency',currency:'ARS',maximumFractionDigits:2}).format(price.price / 100);
+      group.querySelectorAll('.ge-choice-model').forEach(function (card) { card.classList.toggle('is-selected', card.querySelector('input').checked); });
+    }
+    group.addEventListener('change', update); update();
+  });
+
   var root = document.querySelector('[data-ge-lines]');
   var template = document.getElementById('ge-manual-line-template');
   var catalogNode = document.getElementById('ge-manual-catalog');

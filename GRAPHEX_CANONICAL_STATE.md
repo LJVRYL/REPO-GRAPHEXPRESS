@@ -60,3 +60,8 @@ Consultar `docs/GRAPHEX_RELEASE_POLICY.md`: branch/worktree→tests→merge cano
 - Fuente de comunicación: `docs/GRAPHEX_CUSTOMER_COMMUNICATION.md`. Alternativas explícitas por grupo; aceptación guarda elección separada de propuesta original. C no agrega IVA; configuración comercial no modifica identidad fiscal.
 - Backup selectivo verificado: `/root/ge-backups/quote-detail-qr-20261003T170723Z`. Restaurar solo los seis archivos presentes según manifest; los cuatro nuevos figuran en absent_before. No restaurar DB ni sobrescribir cambios ajenos. Rollback exige revalidar el entorno y el drift, ejecutar restauración selectiva y verificar hashes/smoke; para Git, revert revisado.
 - Estado exacto y evidencia del cierre: release-state.json y RESULT-PACK del trabajo. Resolver `refs/heads/master` para HEAD documental actual, reproducible desde el manifest.
+
+
+## Configurador de presupuesto — 2026-10-03
+
+Configuración facetada de modelo/terminación/papel en Gestión y portal, miniaturas privadas y PDF de la elección. Plantilla comercial conservada. Fuente: docs/quote-configurator-20261003.md. Deploy y rollback exactos en el release-state del trabajo Magali; resolver master para HEAD. Sin elección no se emite PDF ni se suman alternativas. Selección no constituye aprobación de arte.

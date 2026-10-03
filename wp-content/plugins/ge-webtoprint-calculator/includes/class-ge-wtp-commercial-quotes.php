@@ -267,7 +267,7 @@ final class GE_WTP_Commercial_Quotes {
                 return new WP_Error( 'ge_quote_accept', 'El presupuesto ya no está disponible.' );
             }
             if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) ) {
-                $selection = GE_WTP_Quote_Selection::apply( $quote, wp_unslash( $_POST['quote_selection'] ?? array() ), $version );
+                $selection = GE_WTP_Quote_Selection::apply( $quote, wp_unslash( $_POST['quote_selection'] ?? array() ), $version, wp_unslash( $_POST['quote_configuration'] ?? array() ) );
                 if ( is_wp_error( $selection ) ) { return $selection; }
                 update_post_meta( $quote_id, GE_WTP_Quote_Selection::META, array( 'version' => $version, 'proposal_hash' => GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ), 'snapshot' => $selection['snapshot'], 'selected_by' => $actor_id, 'selected_at' => gmdate( 'c' ) ) );
             }
@@ -352,9 +352,21 @@ final class GE_WTP_Commercial_Quotes {
             $selection_type = $line['selection_type'] ?? 'required';
             $selection_group = sanitize_text_field( $line['selection_group'] ?? '' );
             if ( ! in_array( $selection_type, array( 'required', 'optional', 'alternative' ), true ) || ( 'alternative' === $selection_type && ! preg_match( '/^[a-zA-Z0-9_-]{1,60}$/D', $selection_group ) ) ) { return new WP_Error( 'ge_quote_selection', 'Definí el tipo y el grupo de alternativas de cada ítem.' ); }
+            $facets = GE_WTP_Quote_Selection::facets( $line['choice_facets'] ?? array() );
+            if ( is_wp_error( $facets ) ) { return $facets; }
+            if ( $facets && ( 'alternative' !== $selection_type || $product_id ) ) { return new WP_Error( 'ge_choice_facets', 'Las variantes configurables deben ser alternativas personalizadas.' ); }
+            foreach ( $items as $previous ) {
+                if ( 'alternative' === $selection_type && ( $previous['selection_group'] ?? '' ) === $selection_group && (bool) $facets !== (bool) ( $previous['choice_facets'] ?? array() ) ) { return new WP_Error( 'ge_choice_facets', 'No mezcles alternativas simples y configurables en el mismo grupo.' ); }
+                if ( $facets && ( $previous['selection_group'] ?? '' ) === $selection_group ) {
+                    $pf = $previous['choice_facets'] ?? array();
+                    if ( ! $pf || ( $pf['model_key'] === $facets['model_key'] && $pf['finish_key'] === $facets['finish_key'] ) ) { return new WP_Error( 'ge_choice_facets', 'No repitas la combinación de modelo y terminación dentro del grupo.' ); }
+                    if ( $pf['model_key'] === $facets['model_key'] && $pf['model_label'] !== $facets['model_label'] ) { return new WP_Error( 'ge_choice_facets', 'El nombre del modelo debe ser consistente.' ); }
+                }
+            }
             $seen_line_ids[$line_uuid] = true;
             $items[] = array(
                 'line_uuid' => $line_uuid,
+                'choice_facets' => $facets,
                 'selection_type' => $selection_type,
                 'selection_group' => $selection_group,
                 'selection_recommended' => ! empty( $line['selection_recommended'] ),

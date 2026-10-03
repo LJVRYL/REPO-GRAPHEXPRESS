@@ -100,6 +100,13 @@ final class GE_WTP_Commercial_Quote_Files {
         $item_map = array();
         foreach ( $order->get_items('line_item') as $order_item ) { $key = $order_item->get_meta('_ge_quote_line_uuid', true); if ($key) { $item_map[$key] = $order_item->get_id(); } }
         foreach ( self::all( $quote_id ) as $file ) {
+            if ( ! empty( $file['choice_preview'] ) ) { continue; }
+            if ( ! empty( $file['quote_choice_model'] ) ) {
+                $selected_line = null;
+                foreach ( $quote['snapshot']['items'] as $line ) { if ( ( $line['choice_facets']['model_key'] ?? '' ) === $file['quote_choice_model'] ) { $selected_line = $line['line_uuid']; break; } }
+                if ( ! $selected_line || empty( $quote['snapshot']['customer_selection'] ) ) { continue; }
+                $file['quote_item_id'] = $selected_line;
+            }
             if ( 'detached' === ($file['association_status'] ?? '') ) { continue; }
             if ( empty( $file['id'] ) || in_array( $file['id'], $ids, true ) ) { continue; }
             $file['source_quote_id'] = (int) $quote_id;
