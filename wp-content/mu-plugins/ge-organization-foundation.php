@@ -8,6 +8,7 @@ add_action('plugins_loaded', function () {
     require_once __DIR__ . '/ge-organization/class-ge-organization.php';
     require_once __DIR__ . '/ge-organization/class-ge-organization-ui.php';
     require_once __DIR__ . '/ge-organization/class-ge-organization-runtime.php';
+    require_once __DIR__ . '/ge-organization/class-ge-organization-export.php';
     GE_Organization::init();
     GE_Organization_UI::init();
     GE_Organization_Runtime::init();

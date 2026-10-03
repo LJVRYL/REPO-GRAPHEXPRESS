@@ -45,7 +45,7 @@ wp_enqueue_script('ge-gestion-v3',GE_WTP_PLUGIN_URL.'assets/js/gestion-v3.js',ar
 <?php wp_body_open(); ?>
 <a class="ge-v3-skip" href="#ge-main">Ir al contenido</a>
 <aside class="ge-v3-sidebar" id="ge-navigation" aria-label="Navegación de gestión">
- <a class="ge-v3-brand" href="<?php echo esc_url(GE_WTP_Gestion_V3::url()); ?>"><img src="<?php echo esc_url(GE_Organization::get(GE_Organization::PRIMARY)['settings']['branding']['logo_url'] ?: GE_WTP_PLUGIN_URL.'assets/images/graphex-simbolo.svg'); ?>" width="36" height="36" alt=""><span><strong><?php echo esc_html(GE_Organization::brand("brand_name","Graph Express")); ?></strong><small>Gestión</small></span></a>
+ <a class="ge-v3-brand" href="<?php echo esc_url(GE_WTP_Gestion_V3::url()); ?>"><img src="<?php echo esc_url(GE_Organization::get(GE_Organization::PRIMARY)['settings']['branding']['logo_url'] ?: (GE_Organization::PRIMARY==='graph-express'?GE_WTP_PLUGIN_URL.'assets/images/graphex-simbolo.svg':'')); ?>" width="36" height="36" alt=""><span><strong><?php echo esc_html(GE_Organization::brand("brand_name","Graph Express")); ?></strong><small>Gestión</small></span></a>
  <span class="ge-v3-nav-caption">OPERACIÓN</span>
  <nav class="ge-v3-nav" aria-label="Principal">
  <?php foreach($nav as $key=>$label): ?><a <?php echo $key===$active&&!$global_query?'aria-current="page" class="is-active"':''; ?> href="<?php echo esc_url(GE_WTP_Gestion_V3::url('dashboard'===$key?'':$key)); ?>"><?php echo GE_WTP_Gestion_V3::icon($key); ?><span><?php echo esc_html($label); ?></span></a><?php endforeach; ?>

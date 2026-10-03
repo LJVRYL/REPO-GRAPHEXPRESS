@@ -10,6 +10,7 @@ final class GE_Organization_Runtime {
         add_action('init', array(__CLASS__, 'verify_binding'), -100);
         add_action('admin_init', array(__CLASS__, 'guard_action'), -100);
         add_action('template_redirect', array(__CLASS__, 'guard_page'), -100);
+        add_action('template_redirect', array(__CLASS__, 'guard_extension_page'), -99);
         add_filter('rest_pre_dispatch', array(__CLASS__, 'guard_rest'), -100, 3);
         add_filter('user_has_cap', array(__CLASS__, 'caps'), 110, 4);
         add_filter('woocommerce_currency', function($v){$s=self::settings();return $s['general']['currency']??$v;});
@@ -80,9 +81,10 @@ final class GE_Organization_Runtime {
         if(!self::allowed($module,$write,$actor))throw new RuntimeException('Acceso denegado por organización, módulo o rol.',403);
     }
     public static function caps($caps,$requested,$args,$user) {
-        $role=self::role($user->ID);if(!$role)return $caps;
+        $role=self::role($user->ID);
         // Organization owners administer their business, never executable platform code.
-        foreach(array('edit_plugins','edit_themes','edit_files','install_plugins','install_themes','update_plugins','update_themes','delete_plugins','delete_themes','update_core','activate_plugins','switch_themes','unfiltered_upload','unfiltered_html') as $platform_cap)$caps[$platform_cap]=false;
+        if(GE_Organization::get(GE_Organization::PRIMARY))foreach(array('edit_plugins','edit_themes','edit_files','install_plugins','install_themes','update_plugins','update_themes','delete_plugins','delete_themes','update_core','activate_plugins','switch_themes','unfiltered_upload','unfiltered_html','promote_users','create_users','edit_users','delete_users','manage_network_users','manage_network_plugins','manage_network_themes') as $platform_cap)$caps[$platform_cap]=false;
+        if(!$role)return $caps;
         $p=self::permissions()[$role]??array('read'=>array(),'write'=>array());
         $caps['ge_manage_operations']=!empty($p['read']);
         foreach(array('ge_view_inventory'=>array('stock',false),'ge_manage_inventory'=>array('stock',true),'ge_view_finance'=>array('finance',false),'ge_record_finance'=>array('finance',true),'ge_view_costs'=>array('cost_engine',false),'ge_manage_costs'=>array('cost_engine',true),'ge_manage_products'=>array('cost_engine',true),'ge_manage_communications'=>array('communications',true),'ge_manage_billing_issuers'=>array('company',true)) as $cap=>$policy) {
@@ -102,12 +104,12 @@ final class GE_Organization_Runtime {
         if(preg_match('/finance|administration|payable|expense|record_payment/',$n))return 'finance';
         if(preg_match('/stock|inventory|equipment|counter|recipe|purchase/',$n))return 'stock';
         if(preg_match('/supplier/',$n))return 'suppliers';
-        if(preg_match('/file_analysis|file_analyzer|ai_artwork|analy[sz]/',$n))return 'file_analyzer';
+        if(preg_match('/file_analysis|file_analyzer|ai[-_]artwork|analy[sz]/',$n))return 'file_analyzer';
         if(preg_match('/production/',$n))return 'production';
         if(preg_match('/commercial_quote|quote_billing|quote_artwork|quote_balance|commercial_checkout|portal_quote|quote_api|customer_quote|cost_quote|quote/',$n))return 'quotes';
         if(preg_match('/artwork|document|reorder|order|checkout/',$n))return 'orders';
         if(preg_match('/customer|branch|profile|verification/',$n))return 'customers';
-        if(preg_match('/notification|newsletter|communication|campaign/',$n))return 'communications';
+        if(preg_match('/notification|newsletter|communication|campaign|crm|quick_repl|pipeline|opportunity|lead/',$n))return 'communications';
         if(preg_match('/cost|catalog|product|bna/',$n))return 'cost_engine';
         if(preg_match('/woo|commerce|payment|mercado/',$n))return 'ecommerce';
         return '';
@@ -140,7 +142,7 @@ final class GE_Organization_Runtime {
         $native=array('product'=>'cost_engine','product_variation'=>'cost_engine','shop_order'=>'orders','shop_order_refund'=>'finance','ge_commercial_quote'=>'quotes');
         if(isset($native[$post_type]) && !self::allowed($native[$post_type],($_SERVER['REQUEST_METHOD']??'GET')!=='GET'))self::deny();
         $action=sanitize_key($_REQUEST['action']??'');if(!$action)return;
-        if(strpos($action,'ge_')!==0 && strpos($action,'woocommerce')!==0)return;
+        if(strpos($action,'ge_')!==0 && strpos($action,'graphex_')!==0 && strpos($action,'woocommerce')!==0)return;
         list($module,$write)=self::action_policy($action);
         if($module==='company') { if($action==='ge_org_action')return;if(!GE_Organization::can(GE_Organization::PRIMARY,get_current_user_id(),$write))self::deny();return; }
         if(!$module)self::deny();
@@ -168,12 +170,20 @@ final class GE_Organization_Runtime {
         if(!$m || !self::allowed($m,false))self::deny();
     }
     public static function guard_rest($result,$server,$request) {
-        $route=$request->get_route();if(strpos($route,'/ge/')!==0 && strpos($route,'/wc/')!==0 && strpos($route,'/wc-')!==0)return $result;
+        $route=$request->get_route();if(strpos($route,'/ge/')!==0 && strpos($route,'/ge-')!==0 && strpos($route,'/wc/')!==0 && strpos($route,'/wc-')!==0)return $result;
         $m=strpos($route,'/wc')===0?'ecommerce':self::module_for($route);
+        if(strpos($route,'/ge/v1/costs/')===0)$m='cost_engine';
+        $write=!in_array($request->get_method(),array('GET','HEAD','OPTIONS'),true);
+        if(preg_match('#^/ge/v1/(?:operations|costs)/.*\.(?:get|find|list|summary|report|quote)$#',$route))$write=false;
         if($m==='company') { if(!GE_Organization::can(GE_Organization::PRIMARY,get_current_user_id(),$request->get_method()!=='GET'))return new WP_Error('ge_org_role','Rol sin permiso.',array('status'=>403));return $result; }
         if(!$m || !self::enabled($m))return new WP_Error('ge_org_module','Módulo deshabilitado.',array('status'=>403));
-        if(self::role(get_current_user_id()) && !self::allowed($m,!in_array($request->get_method(),array('GET','HEAD','OPTIONS'),true)))return new WP_Error('ge_org_role','Rol sin permiso.',array('status'=>403));
+        if(self::role(get_current_user_id()) && !self::allowed($m,$write))return new WP_Error('ge_org_role','Rol sin permiso.',array('status'=>403));
         return $result;
+    }
+    public static function guard_extension_page() {
+        // CRM's legacy bridge removes guard_page because older Foundation could not map CRM.
+        // Preserve its own authentication/feature gate while enforcing the reconciled organization policy.
+        if(is_page('gestion') && ($_GET['section']??'')==='crm' && !self::allowed('communications',false))self::deny();
     }
     public static function snapshot() {
         $o=GE_Organization::get(GE_Organization::PRIMARY);if(!$o)return array();

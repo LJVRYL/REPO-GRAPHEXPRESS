@@ -241,6 +241,12 @@ final class GE_Organization {
         $actor=get_current_user_id();$id=sanitize_key($_POST['organization_id']??'');
         check_admin_referer('ge_org_'.$id);
         $action=sanitize_key($_POST['operation']??'save');
+        if($action==='export_data') {
+            $result=$id===self::PRIMARY?GE_Organization_Export::build($actor):new WP_Error('instance','Exportá desde la instancia propia.');
+            if(is_wp_error($result))wp_die(esc_html($result->get_error_message()),'',array('response'=>403));
+            $audit=self::audit($id,$actor,'operational_data_exported',null,array('format'=>'graphex-organization-data'));if(is_wp_error($audit))wp_die('No se pudo auditar la exportación.');
+            nocache_headers();header('Content-Type: application/json');header('Content-Disposition: attachment; filename="organization-data.json"');echo wp_json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);exit;
+        }
         if($action==='export') { $result=self::export_config($id,$actor);if(!is_wp_error($result)){self::audit($id,$actor,'config_exported',null,array('schema_version'=>1));nocache_headers();header('Content-Type: application/json');header('Content-Disposition: attachment; filename="organization-config.json"');echo wp_json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);exit;} }
         elseif($action==='complete_onboarding') { $result=$id===self::PRIMARY?self::complete_onboarding($actor):new WP_Error('instance','La operación corresponde a esta instancia.'); }
         elseif($action==='import'||$action==='import_current') { $file=$_FILES['bundle']??array();if(($file['error']??1)!==UPLOAD_ERR_OK||($file['size']??0)>1048576||!is_uploaded_file($file['tmp_name']??''))$result=new WP_Error('upload','Archivo JSON válido de hasta 1 MB requerido.');else{$bundle=json_decode(file_get_contents($file['tmp_name']),true);$result=$action==='import_current'?self::import_current($bundle,$actor):self::import_config($bundle,$actor);if(!is_wp_error($result))$id=$result['organization_id'];} }

@@ -94,7 +94,7 @@ final class GE_WTP_Operations {
         $map=self::actions(); if(!isset($map[$action])) self::error('action','Acción no disponible.'); return call_user_func($map[$action],$input);
     }
     public static function routes() {
-        register_rest_route('ge/v1','/operations/(?P<action>[a-z_.]+)',array('methods'=>'POST','permission_callback'=>function(){return self::enabled()&&is_user_logged_in()&&(current_user_can('manage_options')||current_user_can('ge_manage_inventory')||current_user_can('ge_view_finance'));},'callback'=>function($r){ try { return rest_ensure_response(self::execute($r['action'],$r->get_json_params()?:array())); } catch(Throwable $e) { return new WP_Error('operations_error',$e->getMessage(),array('status'=>400)); } }));
+        register_rest_route('ge/v1','/operations/(?P<action>[a-z_.]+)',array('methods'=>'POST','permission_callback'=>function(){return self::enabled()&&is_user_logged_in()&&(current_user_can('manage_options')||current_user_can('ge_manage_inventory')||current_user_can('ge_view_inventory')||current_user_can('ge_view_finance'));},'callback'=>function($r){ try { return rest_ensure_response(self::execute($r['action'],$r->get_json_params()?:array())); } catch(Throwable $e) { return new WP_Error('operations_error',$e->getMessage(),array('status'=>400)); } }));
     }
     public static function legacy_balances() {
         self::permission('finance'); $balances=array(); $page=1;
