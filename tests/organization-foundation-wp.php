@@ -33,7 +33,16 @@ verify(!is_wp_error($uid),'qa_user_created');
 $qa=GE_Organization::save($qa['organization_id'],1,$qa['revision'],'users',array('user_id'=>$uid,'role'=>'read-only'));
 verify(!is_wp_error($qa),'assign_readonly');verify(GE_Organization::can($qa['organization_id'],$uid),'member_read');verify(!GE_Organization::can($qa['organization_id'],$uid,true),'readonly_write_denied');verify(!GE_Organization::can(GE_Organization::PRIMARY,$uid),'cross_org_config_denied');
 verify(GE_Organization::qa_only($uid),'qa_only_detected');
-wp_set_current_user($uid);verify(!current_user_can('ge_manage_operations')&&!current_user_can('manage_woocommerce'),'qa_operational_caps_denied');verify(is_wp_error(apply_filters('rest_authentication_errors',null)),'qa_rest_blocked');wp_set_current_user(1);
+$fixture_user=new WP_User($uid);$fixture_user->set_role('shop_manager');
+verify(get_role('shop_manager')->has_cap('manage_woocommerce'),'fixture_has_inherited_woocommerce_cap');
+wp_set_current_user(0);wp_set_current_user($uid);
+verify(!current_user_can('ge_manage_operations')&&!current_user_can('manage_woocommerce'),'qa_operational_caps_denied');verify(is_wp_error(apply_filters('rest_authentication_errors',null)),'qa_rest_blocked');
+verify(is_wp_error(GE_Organization::export_config(GE_Organization::PRIMARY,$uid)),'cross_org_export_denied');
+$die_filter=function(){return function($message,$title,$args){throw new RuntimeException('guarded',(int)($args['response']??0));};};
+add_filter('wp_die_handler',$die_filter);
+foreach(array('guard_admin'=>'qa_admin_ajax_blocked','guard'=>'qa_frontend_blocked') as $method=>$name){$denied=false;try{GE_Organization::$method();}catch(RuntimeException $e){$denied=$e->getCode()===403;}verify($denied,$name);}
+remove_filter('wp_die_handler',$die_filter);
+wp_set_current_user(1);
 verify(GE_Organization::storage_key($qa['organization_id'],'exports','config.json')==='organizations/'.$qa['organization_id'].'/exports/config.json','storage_namespace');
 verify(is_wp_error(GE_Organization::storage_key($qa['organization_id'],'exports','../x')),'storage_traversal_denied');
 verify(is_wp_error(GE_Organization::storage_key('unknown','exports','config.json')),'storage_unknown_org_denied');
