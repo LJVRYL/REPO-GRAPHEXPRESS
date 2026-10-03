@@ -79,7 +79,9 @@ final class GE_WTP_Commercial_Quote_UI {
         echo '</template></section>';
         $quote_discount = array();
         foreach ( (array) ( $snapshot['discounts'] ?? array() ) as $discount ) { if ( 'quote' === $discount['discount_scope'] ) { $quote_discount = $discount; } }
-        echo '<section class="ge-production-card"><h2>Condición comercial</h2><p>Precios base + IVA cuando corresponde. El descuento no cambia el tratamiento fiscal.</p><div class="ge-manual-plan-grid"><label>Tipo de descuento<select name="discount_type">';
+        $vat_mode = $snapshot['quote_vat_mode'] ?? '';
+        echo '<section class="ge-production-card"><h2>IVA de este presupuesto</h2><label>Tratamiento de los precios<select name="quote_vat_mode"><option value=""' . selected( $vat_mode, '', false ) . '>Mantener configuración actual</option><option value="added"' . selected( $vat_mode, 'added', false ) . '>Agregar IVA cuando corresponde</option><option value="final"' . selected( $vat_mode, 'final', false ) . '>Precio final: IVA incluido cuando corresponde</option></select></label><p>Con precio final no se agrega IVA al importe ingresado. Con Factura C el total no lleva IVA adicional.</p></section>';
+        echo '<section class="ge-production-card"><h2>Condición comercial</h2><p>Elegí cómo interpretar los precios de este presupuesto. La condición fiscal del emisor se conserva.</p><div class="ge-manual-plan-grid"><label>Tipo de descuento<select name="discount_type">';
         foreach ( array( 'percent' => 'Porcentaje', 'fixed' => 'Importe fijo ARS' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '"' . selected( $quote_discount['discount_type'] ?? 'percent', $value, false ) . '>' . esc_html( $label ) . '</option>'; }
         echo '</select></label><label>Descuento<input type="number" min="0" step="0.01" name="discount_value" value="' . esc_attr( $quote_discount['discount_value'] ?? '0' ) . '"></label><label>Motivo comercial<input name="discount_reason" maxlength="500" value="' . esc_attr( $quote_discount['discount_reason'] ?? '' ) . '"></label></div><button type="button" class="ge-staff-button is-secondary" data-ge-discount-alternative>Ofrecer descuento comercial 20%</button><div class="ge-live-tax-summary" data-ge-live-totals role="status" aria-live="polite"><p>Seleccioná cliente e ítems para calcular.</p></div></section>';
         echo '<section class="ge-production-card"><div class="ge-production-section-head"><div><span>03 · Condiciones</span><h2>Validez y pago</h2></div></div><div class="ge-manual-plan-grid"><label>Válido hasta<input type="date" name="valid_until" min="' . esc_attr( wp_date( 'Y-m-d' ) ) . '" value="' . esc_attr( $snapshot['valid_until'] ?? wp_date( 'Y-m-d', strtotime( '+30 days' ) ) ) . '"><small>30 días desde hoy por defecto; podés cambiarlo.</small></label><label>Seña disponible (%)<input type="number" name="deposit_percent" min="1" max="100" value="' . esc_attr( $snapshot['deposit_percent'] ?? get_option( 'ge_commercial_deposit_percent', 50 ) ) . '"></label><label class="is-wide">Notas para el cliente<textarea name="notes_customer" rows="3">' . esc_textarea( $snapshot['notes_customer'] ?? '' ) . '</textarea></label><label class="is-wide">Notas internas<textarea name="notes_internal" rows="3">' . esc_textarea( $snapshot['notes_internal'] ?? '' ) . '</textarea></label></div></section>';
@@ -94,17 +96,23 @@ final class GE_WTP_Commercial_Quote_UI {
         $product_id = absint( $line['product_id'] ?? 0 );
         $source_type = $line['source_type'] ?? ( $product_id || ! $line ? 'catalog_product' : 'custom' );
         $label = (string) ( $line['name'] ?? '' ) . ( $product_id ? ' (#' . $product_id . ')' : '' );
-        $price = isset( $line['unit_net_cents'] ) ? GE_WTP_Quote_Balance::decimal( (int) $line['unit_net_cents'] ) : '';
+        $price = isset( $line['unit_net_cents'] ) ? GE_WTP_Quote_Balance::decimal( (int) ( $line['entered_unit_cents'] ?? $line['unit_net_cents'] ) ) : '';
+        ob_start();
+        echo '<div class="ge-quote-line-choice"><label>Tipo de ítem<select name="lines[' . esc_attr( $index ) . '][selection_type]">';
+        foreach ( array( 'required' => 'Incluido / acumulable', 'optional' => 'Adicional opcional', 'alternative' => 'Alternativa: elegir una del grupo' ) as $value => $text ) { echo '<option value="' . esc_attr( $value ) . '"' . selected( $line['selection_type'] ?? 'required', $value, false ) . '>' . esc_html( $text ) . '</option>'; }
+        echo '</select></label><label>Grupo de alternativas<input name="lines[' . esc_attr( $index ) . '][selection_group]" value="' . esc_attr( $line['selection_group'] ?? '' ) . '" maxlength="60" pattern="[a-zA-Z0-9_-]+" placeholder="Ej.: carpeta"><small>Mismo grupo = se elige una sola variante. Usá letras, números o guiones.</small></label><label><input type="checkbox" name="lines[' . esc_attr( $index ) . '][selection_recommended]" value="1"' . checked( ! empty( $line['selection_recommended'] ), true, false ) . '> Opción recomendada</label></div>';
+        $choice_markup = ob_get_clean();
         $finishes = GE_WTP_Workflow::finishing_catalog();
         echo '<div class="ge-manual-line" data-ge-line data-ge-index="' . esc_attr( $index ) . '" data-ge-source="' . esc_attr( $source_type ) . '" data-ge-saved-config="' . esc_attr( wp_json_encode( $line['configuration'] ?? array() ) ) . '"><input type="hidden" name="lines[' . esc_attr( $index ) . '][source_type]" value="' . esc_attr( $source_type ) . '"><label class="is-product"><span data-ge-title-label>Producto del catálogo</span><input type="search" name="lines[' . esc_attr( $index ) . '][label]" list="ge-manual-products" required maxlength="200" value="' . esc_attr( $label ) . '" placeholder="Buscar producto"><input type="hidden" name="lines[' . esc_attr( $index ) . '][product_id]" value="' . esc_attr( $product_id ) . '"></label><label>Cantidad<input type="number" name="lines[' . esc_attr( $index ) . '][quantity]" required min="1" step="1" value="' . esc_attr( $line['quantity'] ?? 1 ) . '"></label><label class="ge-quote-unit">Unidad<select name="lines[' . esc_attr( $index ) . '][unit]">';
         foreach ( array( 'u' => 'u', 'm²' => 'm²', 'ml' => 'ml', 'lote' => 'lote', 'servicio' => 'servicio' ) as $value => $unit_label ) { echo '<option value="' . esc_attr( $value ) . '"' . selected( $line['unit'] ?? 'u', $value, false ) . '>' . esc_html( $unit_label ) . '</option>'; }
-        echo '</select></label><label>Precio unitario antes de IVA · ARS<input type="number" name="lines[' . esc_attr( $index ) . '][unit_price]" min="0" step="0.01" value="' . esc_attr( $price ) . '" required><small data-ge-price-hint></small></label><label class="is-detail">Descripción<input type="text" name="lines[' . esc_attr( $index ) . '][details]" maxlength="500" value="' . esc_attr( $line['details'] ?? '' ) . '" placeholder="Material, medidas o alcance"></label><label class="is-detail">Notas del ítem (opcionales)<input type="text" name="lines[' . esc_attr( $index ) . '][notes]" maxlength="500" value="' . esc_attr( $line['notes'] ?? '' ) . '"></label><div class="ge-quote-line-actions"><button type="button" data-ge-duplicate-line>Duplicar</button><button type="button" data-ge-remove-line>Quitar</button></div><output data-ge-line-subtotal>Subtotal ARS 0</output><div class="ge-quote-config" data-ge-config-fields hidden></div><fieldset class="ge-quote-finishes"><legend>Terminaciones disponibles <small>(opcionales; podés elegir varias)</small></legend>';
+        echo '</select></label><label>Precio unitario según tratamiento elegido · ARS<input type="number" name="lines[' . esc_attr( $index ) . '][unit_price]" min="0" step="0.01" value="' . esc_attr( $price ) . '" required><small data-ge-price-hint></small></label><label class="is-detail">Descripción<input type="text" name="lines[' . esc_attr( $index ) . '][details]" maxlength="500" value="' . esc_attr( $line['details'] ?? '' ) . '" placeholder="Material, medidas o alcance"></label><label class="is-detail">Notas del ítem (opcionales)<input type="text" name="lines[' . esc_attr( $index ) . '][notes]" maxlength="500" value="' . esc_attr( $line['notes'] ?? '' ) . '"></label><div class="ge-quote-line-actions"><button type="button" data-ge-duplicate-line>Duplicar</button><button type="button" data-ge-remove-line>Quitar</button></div><output data-ge-line-subtotal>Subtotal ARS 0</output><div class="ge-quote-config" data-ge-config-fields hidden></div><fieldset class="ge-quote-finishes"><legend>Terminaciones disponibles <small>(opcionales; podés elegir varias)</small></legend>';
         foreach ( $finishes as $key => $finish ) { echo '<label><input type="checkbox" name="lines[' . esc_attr( $index ) . '][finishes][]" value="' . esc_attr( $key ) . '"' . checked( in_array( $key, (array) ( $line['finishes'] ?? array() ), true ), true, false ) . '><span>' . esc_html( $finish ) . '</span></label>'; }
         $discount = $line['discount'] ?? array();
         echo '</fieldset><details><summary>Descuento comercial del ítem</summary><label>Tipo<select name="lines[' . esc_attr( $index ) . '][discount_type]">';
         foreach ( array( 'percent' => 'Porcentaje', 'fixed' => 'Importe ARS' ) as $value => $label ) { echo '<option value="' . esc_attr( $value ) . '"' . selected( $discount['discount_type'] ?? 'percent', $value, false ) . '>' . esc_html( $label ) . '</option>'; }
         echo '</select></label><label>Valor<input type="number" min="0" step="0.01" name="lines[' . esc_attr( $index ) . '][discount_value]" value="' . esc_attr( $discount['discount_value'] ?? '0' ) . '"></label><label>Motivo<input name="lines[' . esc_attr( $index ) . '][discount_reason]" value="' . esc_attr( $discount['discount_reason'] ?? '' ) . '"></label></details>';
 
+        echo $choice_markup;
         echo '<input type="hidden" data-ge-line-uuid name="lines['.esc_attr($index).'][line_uuid]" value="'.esc_attr($line['line_uuid']??'').'">';
         GE_WTP_Quote_Artwork_V2::block($index,$line['line_uuid']??'', $line['_artwork_files']??array(), $line['_quote_id']??0);
         echo '</div>';
@@ -113,23 +121,9 @@ final class GE_WTP_Commercial_Quote_UI {
     private static function render_staff_detail( $quote ) {
         $customer = get_userdata( $quote['customer_id'] );
         $status_labels = array( 'draft' => 'Borrador', 'sent' => 'Enviado', 'viewed' => 'Visto', 'accepted' => 'Aceptado', 'rejected' => 'Rechazado', 'expired' => 'Vencido', 'converted' => 'Convertido en pedido', 'cancelled' => 'Cancelado' );
-        echo '<section class="ge-production-card ge-quote-view"><header class="ge-quote-view-head"><div><span class="ge-quote-kicker">Presupuesto ' . esc_html( $quote['number'] ) . ' · Versión ' . esc_html( $quote['version'] ) . '</span><h2><button type="button" class="ge-qbc-name" data-ge-qbc-open="ge-qbc-customer">' . esc_html( $customer ? $customer->display_name : 'Cliente no disponible' ) . '</button></h2><small>' . esc_html( get_the_date( 'd/m/Y', $quote['id'] ) ) . '</small></div><span class="ge-quote-status is-' . esc_attr( $quote['status'] ) . '">' . esc_html( $status_labels[ $quote['status'] ] ?? ucfirst( $quote['status'] ) ) . '</span></header>';
+        echo '<section class="ge-production-card ge-quote-view"><header class="ge-quote-view-head"><div><span class="ge-quote-kicker">Presupuesto ' . esc_html( $quote['number'] ) . ' · Versión ' . esc_html( $quote['version'] ) . '</span><h2><button type="button" class="ge-qbc-name" data-ge-qbc-open="ge-qbc-customer">' . esc_html( $customer ? $customer->display_name : 'Cliente no disponible' ) . '</button></h2><small>' . esc_html( get_the_date( 'd/m/Y', $quote['id'] ) ) . '</small></div><div class="ge-quote-header-total"><span>Total de la propuesta</span><strong>' . esc_html( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] ) ? 'A definir según elección' : ( isset( $quote['snapshot']['total_cents'] ) ? self::money( $quote['snapshot']['total_cents'] ) : 'A confirmar' ) ) . '</strong><span class="ge-quote-status is-' . esc_attr( $quote['status'] ) . '">' . esc_html( $status_labels[ $quote['status'] ] ?? ucfirst( $quote['status'] ) ) . '</span></div></header>';
         echo '<div class="ge-quote-context"><div><span>Datos del contacto</span><strong>' . esc_html( $customer ? $customer->display_name : 'Ficha no disponible' ) . '</strong>' . ( $customer ? '<small>' . esc_html( $customer->user_email ) . '</small>' : '' ) . '</div><div><span>Validez</span><strong>' . esc_html( ! empty( $quote['snapshot']['valid_until'] ) ? wp_date( 'd/m/Y', ( new DateTimeImmutable( $quote['snapshot']['valid_until'], wp_timezone() ) )->getTimestamp() ) : 'Sin fecha' ) . '</strong><small>Fecha límite para aceptar</small></div><div><span>Pago</span><strong>Seña ' . esc_html( $quote['snapshot']['deposit_percent'] ?? 50 ) . '% o total</strong><small>El cliente elige al aceptar</small></div></div>';
-        echo '<div class="ge-quote-primary-actions"><a class="ge-staff-button is-secondary ge-quote-pdf-download" href="' . esc_url( GE_WTP_Commercial_Quote_PDF::url( $quote['id'] ) ) . '">Descargar PDF</a><span>Versión ' . esc_html( $quote['version'] ) . ' · Datos del presupuesto guardado</span></div>';
-        GE_WTP_Quote_Billing_Control::render( $quote );
-        self::render_snapshot( $quote['snapshot'] );
-        $payment = GE_WTP_Commercial_Checkout::payment_status( $quote['id'], get_current_user_id() );
-        if ( ! is_wp_error( $payment ) ) {
-            $total = (int) ( $payment['final_total_cents'] ?? ( $quote['snapshot']['total_cents'] ?? 0 ) );
-            $paid = (int) $payment['amount_paid_cents'];
-            echo '<div class="ge-quote-context ge-quote-payment-summary"><div><span>Seña disponible</span><strong>' . esc_html( $quote['snapshot']['deposit_percent'] ?? 50 ) . '%</strong></div><div><span>Estado de pago</span><strong>' . esc_html( $payment['payment_status'] ?: 'Pendiente' ) . '</strong></div><div><span>Abonado</span><strong>' . esc_html( self::money( $paid ) ) . '</strong></div><div><span>Saldo</span><strong>' . esc_html( self::money( max( 0, $total - $paid ) ) ) . '</strong></div></div>';
-        }
-        $axes = GE_WTP_Commercial_Quotes::state_axes( $quote );
-        $axis_labels = array( 'pending' => 'Pendiente', 'partial' => 'Seña / parcial', 'paid' => 'Pagado', 'failed' => 'Fallido', 'none' => 'Sin archivo', 'received' => 'Recibido', 'analyzed' => 'Analizado', 'final' => 'Archivo final', 'approval_pending' => 'Aprobación pendiente', 'approved' => 'Aprobado', 'not_created' => 'Sin pedido', 'created' => 'Pedido creado', 'ready' => 'Listo', 'in_production' => 'En producción', 'ready_for_delivery' => 'Listo para entregar', 'delivered' => 'Entregado' );
-        echo '<div class="ge-quote-axes" aria-label="Estados separados"><span>Comercial: ' . esc_html( $status_labels[ $axes['commercial'] ] ?? $axes['commercial'] ) . '</span><span>Pago: ' . esc_html( $axis_labels[ $axes['payment'] ] ?? $axes['payment'] ) . '</span><span>Archivos y arte: ' . esc_html( $axis_labels[ $axes['artwork'] ] ?? $axes['artwork'] ) . '</span><span>Producción: ' . esc_html( $axis_labels[ $axes['production'] ] ?? $axes['production'] ) . '</span></div>';
-        self::render_files( $quote, false );
-        self::render_receipts( $quote, false );
-        echo '<div class="ge-quote-view-actions">';
+        echo '<nav class="ge-quote-view-actions" aria-label="Acciones del presupuesto"><a class="ge-staff-button is-secondary ge-quote-pdf-download" href="' . esc_url( GE_WTP_Commercial_Quote_PDF::url( $quote['id'] ) ) . '">Descargar PDF</a>';
         if ( ! $quote['converted_order_id'] ) { echo '<button class="ge-staff-button" type="button" onclick="document.getElementById(\'ge-quote-convert\').showModal()">Pasar a producción</button>'; }
         else { echo '<a class="ge-staff-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $quote['converted_order_id'] ) ) ) . '">Abrir pedido #' . esc_html( wc_get_order( $quote['converted_order_id'] ) ? wc_get_order( $quote['converted_order_id'] )->get_order_number() : $quote['converted_order_id'] ) . '</a>'; }
         if ( in_array( $quote['status'], array( 'draft', 'sent', 'viewed' ), true ) && ! get_post_meta( $quote['id'], '_ge_commercial_initial_payment_order', true ) ) { echo '<a class="ge-staff-button is-secondary" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote['id'], 'edit' => 1 ) ) ) . '">Editar</a>'; }
@@ -142,7 +136,29 @@ final class GE_WTP_Commercial_Quote_UI {
             wp_nonce_field( 'ge_commercial_quote_send_' . $quote['id'] );
             echo '<button class="ge-staff-button" type="submit"' . disabled( $needs_roll_reprice, true, false ) . '>Enviar al cliente</button></form>';
         }
-        echo '</div></section>';
+        echo '</nav>';
+        if ( 'pending' === ( $quote['snapshot']['fiscal_status'] ?? '' ) || ! empty( $quote['snapshot']['fiscal_blockers'] ) ) { echo '<p class="ge-quote-fiscal-alert" role="note">Facturación pendiente de revisión. Antes de enviar o pasar a producción, revisá <a href="#ge-quote-fiscal">receptor, emisor e importes</a>.</p>'; }
+        self::render_snapshot( $quote['snapshot'], false, true );
+        echo '<details class="ge-quote-disclosure" id="ge-quote-fiscal"><summary>Facturación y revisión fiscal</summary>';
+        GE_WTP_Quote_Billing_Control::render( $quote );
+        $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $quote['snapshot'] );
+        if ( $tax_label ) { echo '<p class="ge-quote-fiscal-decision">' . esc_html( $tax_label ) . '</p>'; }
+        GE_WTP_Customer_Tax_UI::render_warnings( $quote['snapshot']['customer_tax_decision'] ?? array() );
+        echo '</details>';
+        echo '<details class="ge-quote-disclosure ge-quote-payments"><summary>Pagos y comprobantes</summary>';
+        $payment = GE_WTP_Commercial_Checkout::payment_status( $quote['id'], get_current_user_id() );
+        if ( ! is_wp_error( $payment ) ) {
+            $total = (int) ( $payment['final_total_cents'] ?? ( $quote['snapshot']['total_cents'] ?? 0 ) );
+            $paid = (int) $payment['amount_paid_cents'];
+            echo '<div class="ge-quote-context ge-quote-payment-summary"><div><span>Seña disponible</span><strong>' . esc_html( $quote['snapshot']['deposit_percent'] ?? 50 ) . '%</strong></div><div><span>Estado de pago</span><strong>' . esc_html( array( 'pending' => 'Pendiente', 'partial' => 'Seña / parcial', 'paid' => 'Pagado', 'failed' => 'Fallido' )[ $payment['payment_status'] ] ?? 'Pendiente' ) . '</strong></div><div><span>Abonado</span><strong>' . esc_html( self::money( $paid ) ) . '</strong></div><div><span>Saldo</span><strong>' . esc_html( self::money( max( 0, $total - $paid ) ) ) . '</strong></div></div>';
+        }
+        self::render_receipts( $quote, false );
+        echo '</details>';
+        $axes = GE_WTP_Commercial_Quotes::state_axes( $quote );
+        $axis_labels = array( 'pending' => 'Pendiente', 'partial' => 'Seña / parcial', 'paid' => 'Pagado', 'failed' => 'Fallido', 'none' => 'Sin archivo', 'received' => 'Recibido', 'analyzed' => 'Analizado', 'final' => 'Archivo final', 'approval_pending' => 'Aprobación pendiente', 'approved' => 'Aprobado', 'not_created' => 'Sin pedido', 'created' => 'Pedido creado', 'ready' => 'Listo', 'in_production' => 'En producción', 'ready_for_delivery' => 'Listo para entregar', 'delivered' => 'Entregado' );
+        echo '<div class="ge-quote-axes" aria-label="Estados separados"><span>Comercial: ' . esc_html( $status_labels[ $axes['commercial'] ] ?? $axes['commercial'] ) . '</span><span>Pago: ' . esc_html( $axis_labels[ $axes['payment'] ] ?? $axes['payment'] ) . '</span><span>Archivos y arte: ' . esc_html( $axis_labels[ $axes['artwork'] ] ?? $axes['artwork'] ) . '</span><span>Producción: ' . esc_html( $axis_labels[ $axes['production'] ] ?? $axes['production'] ) . '</span></div>';
+        self::render_files( $quote, false );
+        echo '</section>';
         if ( ! $quote['converted_order_id'] ) { self::render_conversion_dialog( $quote, $customer ); }
         self::render_events( $quote );
         if ( class_exists( 'GE_WTP_Commercial_Checkout' ) ) { GE_WTP_Commercial_Checkout::render_staff_payment( $quote ); }
@@ -157,6 +173,7 @@ final class GE_WTP_Commercial_Quote_UI {
             echo '<div class="ge-quote-file-list">';
             foreach ( $files as $file ) {
                 if(GE_WTP_External_Artwork::is_link($file)){GE_WTP_External_Artwork::render($file,$quote['id'],0,'',!$customer_view);continue;}
+                echo '<div class="ge-quote-file-group">';
                 GE_WTP_File_Analysis::render( $file, ! $customer_view );
                 $analysis = is_array( $file['analysis'] ?? null ) ? $file['analysis'] : array();
                 $association_label = 'Archivo general';
@@ -170,7 +187,7 @@ final class GE_WTP_Commercial_Quote_UI {
                 if ( in_array( $file['mime'] ?? '', array( 'image/jpeg', 'image/png' ), true ) ) { echo '<img class="ge-quote-file-thumb" loading="lazy" src="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'], true ) ) . '" alt="Vista previa de ' . esc_attr( $file['name'] ) . '">'; }
                 echo '<div><strong>' . esc_html( $file['name'] ) . '</strong><small>' . esc_html( implode( ' · ', $details ) ) . '</small>';
                 if ( ! empty( $analysis['warning'] ) ) { echo '<small class="ge-quote-file-warning">' . esc_html( $analysis['warning'] ) . '</small>'; }
-                echo '</div><div class="ge-quote-file-links"><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'], true ) ) . '" target="_blank" rel="noopener">Vista previa</a><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'] ) ) . '">Descargar</a></div></article>';
+                echo '</div><div class="ge-quote-file-links"><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'], true ) ) . '" target="_blank" rel="noopener">Vista previa</a><a href="' . esc_url( GE_WTP_Commercial_Quote_Files::download_url( $quote['id'], $file['id'] ) ) . '">Descargar</a></div></article></div>';
             }
             echo '</div>';
             $local_files=array_values(array_filter($files,function($f){return !GE_WTP_External_Artwork::is_link($f) && 'detached'!==($f['association_status']??'');}));
@@ -232,12 +249,12 @@ final class GE_WTP_Commercial_Quote_UI {
         $events = get_post_meta( $quote['id'], '_ge_commercial_events', true );
         if ( ! is_array( $events ) || ! $events ) { return; }
         $labels = array( 'created' => 'Creado', 'revised' => 'Editado', 'sent' => 'Enviado', 'viewed' => 'Visto por el cliente', 'accepted' => 'Aceptado en portal', 'accepted_staff' => 'Aceptación registrada por staff', 'file_uploaded' => 'Archivo cargado', 'file_attached' => 'Archivo vinculado', 'receipt_uploaded' => 'Comprobante cargado', 'receipt_attached' => 'Comprobante vinculado', 'payment_started' => 'Pago iniciado', 'payment_confirmed' => 'Pago confirmado', 'converted' => 'Convertido a pedido' );
-        $labels['pdf_attached'] = 'PDF comercial adjunto'; $labels['billing_selection'] = 'Receptor / emisor actualizados';
-        echo '<section class="ge-production-card ge-quote-events"><h3>Actividad del presupuesto</h3><ol>';
+        $labels['artwork_associations_saved'] = 'Asignación de artes actualizada'; $labels['pdf_attached'] = 'PDF comercial adjunto'; $labels['billing_selection'] = 'Receptor / emisor actualizados';
+        echo '<details class="ge-production-card ge-quote-disclosure ge-quote-events"><summary>Actividad del presupuesto · ' . esc_html( count( $events ) ) . ' eventos</summary><ol>';
         foreach ( array_reverse( $events ) as $event ) {
             echo '<li><strong>' . esc_html( $labels[ $event['event'] ?? '' ] ?? ucfirst( $event['event'] ?? 'Actividad' ) ) . '</strong><time>' . esc_html( ! empty( $event['at'] ) ? wp_date( 'd/m/Y H:i', strtotime( $event['at'] ) ) : '' ) . '</time></li>';
         }
-        echo '</ol></section>';
+        echo '</ol></details>';
     }
 
     private static function render_staff_list() {
@@ -367,10 +384,26 @@ final class GE_WTP_Commercial_Quote_UI {
             if ( ! $preview ) { GE_WTP_Commercial_Quotes::mark_viewed( $quote['id'], $customer_id ); $quote = GE_WTP_Commercial_Quotes::get( $quote['id'], $customer_id ); }
             $customer_status = array( 'sent' => 'Enviado', 'viewed' => 'Visto', 'accepted' => 'Aceptado', 'converted' => 'En proceso', 'rejected' => 'Rechazado', 'expired' => 'Vencido' );
             echo '<article class="ge-panel ge-quote-customer"><span class="ge-eyebrow">' . esc_html( $quote['number'] ) . ' · versión ' . esc_html( $quote['version'] ) . '</span><h2>Presupuesto ' . esc_html( strtolower( $customer_status[ $quote['status'] ] ?? $quote['status'] ) ) . '</h2>';
-            self::render_snapshot( $quote['snapshot'], true );
-            echo '<a class="ge-button ge-button-secondary ge-quote-pdf-download" href="' . esc_url( GE_WTP_Commercial_Quote_PDF::url( $quote['id'] ) ) . '"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"/></svg> Descargar PDF</a>';
-            if ( in_array( $quote['status'], array( 'sent', 'viewed' ), true ) && ! $preview && ( empty( $quote['snapshot']['valid_until'] ) || $quote['snapshot']['valid_until'] >= wp_date( 'Y-m-d' ) ) ) {
+            $proposal = $quote;
+            $choices = GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] );
+            $selection_ready = ! $choices;
+            if ( $choices ) {
+                $selection_preview = GE_WTP_Quote_Selection::preview_request( $quote );
+                $chosen = array();
+                if ( is_wp_error( $selection_preview ) ) { echo '<p role="alert">' . esc_html( $selection_preview->get_error_message() ) . '</p>'; }
+                elseif ( ! empty( $selection_preview['snapshot']['customer_selection'] ) ) { $quote = $selection_preview; $chosen = $quote['snapshot']['customer_selection']['line_ids']; $selection_ready = true; }
+                GE_WTP_Quote_Selection::render_choices( $proposal, $chosen );
+            }
+            if ( $selection_ready ) { self::render_snapshot( $quote['snapshot'], true ); }
+            else { echo '<p>Elegí las opciones para ver el total y descargar tu PDF.</p>'; }
+            $pdf_url = GE_WTP_Commercial_Quote_PDF::url( $quote['id'] );
+            if ( $choices && $selection_ready ) { $pdf_url = add_query_arg( array( 'selection_submitted' => 1, 'quote_selection' => $chosen, 'selection_version' => $quote['version'], 'selection_nonce' => wp_create_nonce( 'ge_quote_selection_' . $quote['id'] . '_' . $quote['version'] ) ), $pdf_url ); }
+            if ( $selection_ready ) {
+            echo '<a class="ge-button ge-button-secondary ge-quote-pdf-download" href="' . esc_url( $pdf_url ) . '"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"/></svg> Descargar PDF</a>';
+            }
+            if ( $selection_ready && in_array( $quote['status'], array( 'sent', 'viewed' ), true ) && ! $preview && ( empty( $quote['snapshot']['valid_until'] ) || $quote['snapshot']['valid_until'] >= wp_date( 'Y-m-d' ) ) ) {
                 echo '<form class="ge-quote-customer-action" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_quote_accept"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="version" value="' . esc_attr( $quote['version'] ) . '">';
+                foreach ( $quote['snapshot']['customer_selection']['line_ids'] ?? array() as $id ) { echo '<input type="hidden" name="quote_selection[]" value="' . esc_attr( $id ) . '">'; }
                 wp_nonce_field( 'ge_commercial_quote_accept_' . $quote['id'] . '_' . $quote['version'] );
                 echo '<button class="ge-button ge-button-primary" type="submit">Aceptar presupuesto</button></form>';
             }
@@ -382,16 +415,16 @@ final class GE_WTP_Commercial_Quote_UI {
         }
     }
 
-    private static function render_snapshot( $snapshot, $customer = false ) {
-        if ( ! $customer ) { GE_WTP_Quote_Billing_Control::summary( $snapshot ); }
+    private static function render_snapshot( $snapshot, $customer = false, $fiscal_separate = false ) {
+        if ( ! $customer && ! $fiscal_separate ) { GE_WTP_Quote_Billing_Control::summary( $snapshot ); }
         if ( empty( $snapshot['items'] ) ) { return; }
         $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $snapshot );
-        if ( $tax_label && ! $customer ) { echo '<p class="ge-quote-fiscal-decision">' . esc_html( $tax_label ) . '</p>'; }
-        if ( ! $customer ) { GE_WTP_Customer_Tax_UI::render_warnings( $snapshot['customer_tax_decision'] ?? array() ); }
+        if ( $tax_label && ! $customer && ! $fiscal_separate ) { echo '<p class="ge-quote-fiscal-decision">' . esc_html( $tax_label ) . '</p>'; }
+        if ( ! $customer && ! $fiscal_separate ) { GE_WTP_Customer_Tax_UI::render_warnings( $snapshot['customer_tax_decision'] ?? array() ); }
         $profile = GE_WTP_Quote_Billing_Control::receiver( $snapshot );
         $delivery = $snapshot['delivery'] ?? array();
         if ( $profile ) {
-            echo '<div class="ge-quote-context ge-quote-billing-delivery"><div><span>Facturación</span><strong>' . esc_html( ( $profile['label'] ?? 'Perfil principal' ) . ' · ' . ( ! empty( $profile['legal_name'] ) ? $profile['legal_name'] : 'Nombre fiscal pendiente' ) ) . '</strong></div><div><span>Entrega</span><strong>' . esc_html( $delivery ? ( ( $delivery['label'] ?? 'Destino' ) . ' · ' . ( $delivery['street'] ?? '' ) ) : 'A coordinar' ) . '</strong></div></div>';
+            echo '<div class="ge-quote-context ge-quote-billing-delivery"><div><span>Facturación</span><strong>' . esc_html( ( $profile['label'] ?? 'Perfil principal' ) . ' · ' . ( ! empty( $profile['legal_name'] ) ? $profile['legal_name'] : 'Cliente' ) ) . '</strong></div><div><span>Entrega</span><strong>' . esc_html( $delivery ? ( ( $delivery['label'] ?? 'Destino' ) . ' · ' . ( $delivery['street'] ?? '' ) ) : 'A coordinar' ) . '</strong></div></div>';
         }
         $is_invoice_c = 'C' === ( $snapshot['billing']['resolution']['document_type'] ?? '' );
         echo '<section class="ge-quote-summary" aria-label="Detalle de productos e importes"><div class="ge-quote-summary-heading"><div><span class="ge-quote-kicker">Productos y servicios</span><h3>Detalle de la propuesta</h3></div><span>' . esc_html( count( $snapshot['items'] ) ) . ' ítems</span></div><div class="ge-quote-items">';
@@ -404,7 +437,7 @@ final class GE_WTP_Commercial_Quote_UI {
             if ( ! empty( $line['details'] ) ) { echo '<p class="ge-quote-spec"><span>Observaciones</span> ' . esc_html( $line['details'] ) . '</p>'; }
             if ( ! empty( $line['notes'] ) ) { echo '<p class="ge-quote-spec"><span>Notas</span> ' . esc_html( $line['notes'] ) . '</p>'; }
             if ( ! $customer && ! empty( $line['configuration']['roll_width_cm'] ) ) { echo '<details class="ge-quote-internal"><summary>Detalle interno de cálculo</summary><p>Ancho considerado: ' . esc_html( $line['configuration']['roll_width_cm'] ) . ' cm.</p></details>'; }
-            echo '</div><div class="ge-quote-item-price"><span>' . esc_html( $line['quantity'] ) . ' ' . esc_html( $line['unit'] ?? 'u' ) . ' × ' . esc_html( self::money( $line['unit_net_cents'] ) ) . ( ! empty( $snapshot['tax_cents'] ) ? ' + IVA' : ' · precio base' ) . '</span><strong>' . esc_html( self::money( $line['net_cents'] ) ) . '</strong></div></article>';
+            echo '</div><div class="ge-quote-item-price"><span>' . esc_html( $line['quantity'] ) . ' ' . esc_html( $line['unit'] ?? 'u' ) . ' × ' . esc_html( self::money( $line['entered_unit_cents'] ?? $line['unit_net_cents'] ) ) . ( 'final' === ( $snapshot['quote_vat_mode'] ?? '' ) ? ' · precio final' : ( ! empty( $snapshot['tax_cents'] ) ? ' + IVA' : ' · precio final' ) ) . '</span><strong>' . esc_html( self::money( $line['entered_line_cents'] ?? $line['net_cents'] ) ) . '</strong></div></article>';
         }
         echo '</div>'; self::render_totals( $snapshot );
         if ( $customer && ! empty( $snapshot['valid_until'] ) ) { echo '<p class="ge-quote-validity">Válido hasta el ' . esc_html( wp_date( 'd/m/Y', ( new DateTimeImmutable( $snapshot['valid_until'], wp_timezone() ) )->getTimestamp() ) ) . '</p>'; }
@@ -414,12 +447,13 @@ final class GE_WTP_Commercial_Quote_UI {
     }
 
     public static function render_totals( $snapshot ) {
+        if ( GE_WTP_Quote_Selection::has_choices( $snapshot ) && empty( $snapshot['customer_selection'] ) ) { echo '<p>Alternativas disponibles: el total se define con la elección del cliente.</p>'; return; }
         echo '<div class="ge-quote-totals"><div><span>Subtotal / Neto sin IVA</span><strong>' . esc_html( self::money( $snapshot['subtotal_cents'] ?? $snapshot['net_cents'] ) ) . '</strong></div>';
         if ( ! empty( $snapshot['discount_cents'] ) ) { echo '<div><span>Descuento comercial</span><strong>−' . esc_html( self::money( $snapshot['discount_cents'] ) ) . '</strong></div><div><span>Neto imponible</span><strong>' . esc_html( self::money( $snapshot['net_cents'] ) ) . '</strong></div>'; }
         if ( isset( $snapshot['total_cents'] ) ) {
             $rate = $snapshot['tax_rates'][0] ?? $snapshot['billing']['resolution']['tax_rate_basis_points'] ?? $snapshot['billing']['entity']['tax_rate_basis_points'] ?? null;
-            echo '<div><span>IVA' . ( $rate ? ' ' . esc_html( number_format_i18n( $rate / 100, 2 ) ) . '%' : '' ) . '</span><strong>' . esc_html( self::money( $snapshot['tax_cents'] ?? 0 ) ) . '</strong></div><div class="is-total"><span>TOTAL' . ( ! empty( $snapshot['tax_cents'] ) ? ' con IVA' : ' final' ) . '</span><strong>' . esc_html( self::money( $snapshot['total_cents'] ) ) . '</strong></div>';
-            if ( 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { echo '<p>Propuesta comercial. Datos de facturación pendientes de confirmación.</p>'; }
+            echo '<div><span>IVA' . ( 'final' === ( $snapshot['quote_vat_mode'] ?? '' ) ? ' incluido' : '' ) . ( $rate ? ' ' . esc_html( number_format_i18n( $rate / 100, 2 ) ) . '%' : '' ) . '</span><strong>' . esc_html( self::money( $snapshot['tax_cents'] ?? 0 ) ) . '</strong></div><div class="is-total"><span>TOTAL' . ( ! empty( $snapshot['tax_cents'] ) ? ' con IVA' : ' final' ) . '</span><strong>' . esc_html( self::money( $snapshot['total_cents'] ) ) . '</strong></div>';
+            // Fiscal reconciliation messages belong to the staff-only summary.
             if ( 'C' === ( $snapshot['billing']['resolution']['document_type'] ?? '' ) ) { echo '<p>IVA no discriminado.</p>'; }
         } else { echo '<div><span>IVA</span><strong>A confirmar</strong></div><div class="is-total"><span>TOTAL</span><strong>A confirmar</strong></div><p>Datos fiscales pendientes. Se puede guardar el borrador; revisá el perfil y la configuración antes de enviar.</p>'; }
         echo '</div>';
@@ -456,7 +490,7 @@ final class GE_WTP_Commercial_Quote_UI {
         return (string) ( $line['configuration_label'] ?? '' );
     }
 
-    private static function money( $cents ) {
+    public static function money( $cents ) {
         $cents = (int) $cents;
         return 'ARS ' . number_format( $cents / 100, $cents % 100 ? 2 : 0, ',', '.' );
     }
@@ -474,9 +508,9 @@ final class GE_WTP_Commercial_Quote_UI {
         foreach ( (array) ( $_POST['lines'] ?? array() ) as $line ) {
             $label = sanitize_text_field( wp_unslash( $line['label'] ?? '' ) );
             if ( ! $label ) { continue; }
-            $lines[] = array( 'line_uuid' => sanitize_text_field($line['line_uuid'] ?? wp_generate_uuid4()), 'artwork_refs' => array_map('sanitize_text_field', (array)($line['artwork_refs']??array())), 'source_type' => sanitize_key( $line['source_type'] ?? '' ), 'name' => preg_replace( '/\s*\(#\d+\)$/', '', $label ), 'product_id' => absint( $line['product_id'] ?? 0 ), 'quantity' => sanitize_text_field( wp_unslash( $line['quantity'] ?? '' ) ), 'unit' => sanitize_text_field( wp_unslash( $line['unit'] ?? 'u' ) ), 'unit_net' => sanitize_text_field( wp_unslash( $line['unit_price'] ?? '' ) ), 'discount_type' => sanitize_key( $line['discount_type'] ?? 'percent' ), 'discount_value' => sanitize_text_field( wp_unslash( $line['discount_value'] ?? '0' ) ), 'discount_reason' => sanitize_textarea_field( wp_unslash( $line['discount_reason'] ?? '' ) ), 'configuration' => isset( $line['configuration'] ) && is_array( $line['configuration'] ) ? wp_unslash( $line['configuration'] ) : array(), 'finishes' => isset( $line['finishes'] ) && is_array( $line['finishes'] ) ? wp_unslash( $line['finishes'] ) : array(), 'details' => sanitize_text_field( wp_unslash( $line['details'] ?? '' ) ), 'notes' => sanitize_text_field( wp_unslash( $line['notes'] ?? '' ) ) );
+            $lines[] = array( 'selection_type' => sanitize_key( $line['selection_type'] ?? 'required' ), 'selection_group' => sanitize_text_field( $line['selection_group'] ?? '' ), 'selection_recommended' => ! empty( $line['selection_recommended'] ), 'line_uuid' => sanitize_text_field($line['line_uuid'] ?? wp_generate_uuid4()), 'artwork_refs' => array_map('sanitize_text_field', (array)($line['artwork_refs']??array())), 'source_type' => sanitize_key( $line['source_type'] ?? '' ), 'name' => preg_replace( '/\s*\(#\d+\)$/', '', $label ), 'product_id' => absint( $line['product_id'] ?? 0 ), 'quantity' => sanitize_text_field( wp_unslash( $line['quantity'] ?? '' ) ), 'unit' => sanitize_text_field( wp_unslash( $line['unit'] ?? 'u' ) ), 'unit_net' => sanitize_text_field( wp_unslash( $line['unit_price'] ?? '' ) ), 'discount_type' => sanitize_key( $line['discount_type'] ?? 'percent' ), 'discount_value' => sanitize_text_field( wp_unslash( $line['discount_value'] ?? '0' ) ), 'discount_reason' => sanitize_textarea_field( wp_unslash( $line['discount_reason'] ?? '' ) ), 'configuration' => isset( $line['configuration'] ) && is_array( $line['configuration'] ) ? wp_unslash( $line['configuration'] ) : array(), 'finishes' => isset( $line['finishes'] ) && is_array( $line['finishes'] ) ? wp_unslash( $line['finishes'] ) : array(), 'details' => sanitize_text_field( wp_unslash( $line['details'] ?? '' ) ), 'notes' => sanitize_text_field( wp_unslash( $line['notes'] ?? '' ) ) );
         }
-        $args = array( 'billing_override' => ! empty( $_POST['billing_override'] ), 'billing_refresh' => ! empty( $_POST['billing_refresh'] ), 'billing_reason' => sanitize_textarea_field( wp_unslash( $_POST['billing_reason'] ?? $_POST['issuer_change_reason'] ?? '' ) ), 'customer_tax_confirm' => ! empty( $_POST['customer_tax_confirm'] ), 'issuer_profile_id' => sanitize_key( $_POST['issuer_profile_id'] ?? '' ), 'issuer_refresh' => ! empty( $_POST['issuer_refresh'] ), 'issuer_change_reason' => sanitize_textarea_field( wp_unslash( $_POST['issuer_change_reason'] ?? '' ) ), 'discount_type' => sanitize_key( $_POST['discount_type'] ?? 'percent' ), 'discount_value' => sanitize_text_field( wp_unslash( $_POST['discount_value'] ?? '0' ) ), 'discount_reason' => sanitize_textarea_field( wp_unslash( $_POST['discount_reason'] ?? '' ) ), 'valid_until' => wp_unslash( $_POST['valid_until'] ?? '' ), 'deposit_percent' => wp_unslash( $_POST['deposit_percent'] ?? 50 ), 'notes_customer' => wp_unslash( $_POST['notes_customer'] ?? '' ), 'notes_internal' => wp_unslash( $_POST['notes_internal'] ?? '' ), 'expected_version' => absint( $_POST['expected_version'] ?? 0 ), 'billing_profile_id' => sanitize_text_field( wp_unslash( $_POST['billing_profile_id'] ?? 'default' ) ), 'delivery_address_id' => sanitize_text_field( wp_unslash( $_POST['delivery_address_id'] ?? '' ) ) );
+        $args = array( 'quote_vat_mode' => sanitize_key( $_POST['quote_vat_mode'] ?? '' ), 'billing_override' => ! empty( $_POST['billing_override'] ), 'billing_refresh' => ! empty( $_POST['billing_refresh'] ), 'billing_reason' => sanitize_textarea_field( wp_unslash( $_POST['billing_reason'] ?? $_POST['issuer_change_reason'] ?? '' ) ), 'customer_tax_confirm' => ! empty( $_POST['customer_tax_confirm'] ), 'issuer_profile_id' => sanitize_key( $_POST['issuer_profile_id'] ?? '' ), 'issuer_refresh' => ! empty( $_POST['issuer_refresh'] ), 'issuer_change_reason' => sanitize_textarea_field( wp_unslash( $_POST['issuer_change_reason'] ?? '' ) ), 'discount_type' => sanitize_key( $_POST['discount_type'] ?? 'percent' ), 'discount_value' => sanitize_text_field( wp_unslash( $_POST['discount_value'] ?? '0' ) ), 'discount_reason' => sanitize_textarea_field( wp_unslash( $_POST['discount_reason'] ?? '' ) ), 'valid_until' => wp_unslash( $_POST['valid_until'] ?? '' ), 'deposit_percent' => wp_unslash( $_POST['deposit_percent'] ?? 50 ), 'notes_customer' => wp_unslash( $_POST['notes_customer'] ?? '' ), 'notes_internal' => wp_unslash( $_POST['notes_internal'] ?? '' ), 'expected_version' => absint( $_POST['expected_version'] ?? 0 ), 'billing_profile_id' => sanitize_text_field( wp_unslash( $_POST['billing_profile_id'] ?? 'default' ) ), 'delivery_address_id' => sanitize_text_field( wp_unslash( $_POST['delivery_address_id'] ?? '' ) ) );
         if ( is_wp_error( GE_WTP_Commercial_Quotes::build_snapshot( $lines, $args ) ) ) { self::staff_error( 'save' ); }
         $artwork_files = null;
         if (!empty($_POST['artwork_v2'])) {

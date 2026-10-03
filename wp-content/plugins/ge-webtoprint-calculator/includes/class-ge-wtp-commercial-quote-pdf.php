@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+require_once __DIR__ . '/vendor/qrcode-generator/qrcode.php';
 
 /** Commercial PDFs use the existing immutable version, never a fresh price calculation. */
 final class GE_WTP_Commercial_Quote_PDF {
@@ -22,6 +23,11 @@ final class GE_WTP_Commercial_Quote_PDF {
         $staff = $actor && ( user_can( $actor, 'ge_manage_operations' ) || user_can( $actor, 'manage_woocommerce' ) );
         if ( ! $quote || is_wp_error( $quote ) || ( ! $staff && 'draft' === $quote['status'] ) ) {
             wp_die( 'No tenés acceso a este presupuesto.', '', array( 'response' => 403 ) );
+        }
+        if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] ) ) {
+            $quote = GE_WTP_Quote_Selection::preview_request( $quote );
+            if ( is_wp_error( $quote ) ) { wp_die( esc_html( $quote->get_error_message() ), '', array( 'response' => 409 ) ); }
+            if ( ! $staff && empty( $quote['snapshot']['customer_selection'] ) ) { wp_die( 'Elegí los ítems desde tu portal antes de descargar el PDF.', '', array( 'response' => 409 ) ); }
         }
         $pdf = self::build( $quote );
         if ( is_wp_error( $pdf ) ) { wp_die( esc_html( $pdf->get_error_message() ), '', array( 'response' => 409 ) ); }
@@ -70,15 +76,18 @@ final class GE_WTP_Commercial_Quote_PDF {
             if ( ! empty( $issuer['contact_email'] ) || ! empty( $issuer['contact_phone'] ) ) { $issuer_lines[] = trim( ( $issuer['contact_email'] ?? '' ) . ' · ' . ( $issuer['contact_phone'] ?? '' ), ' ·' ); }
         }
         $issuer_rows = array(); foreach ( $issuer_lines as $line ) { $issuer_rows = array_merge( $issuer_rows, self::wrap( $line, 510, 8 ) ); }
-        $issuer_height = 23 + count( $issuer_rows ) * 13;
+        $issuer_height = 18 + count( $issuer_rows ) * 11;
         $currency = $s['currency'] ?? 'ARS';
         $profile = GE_WTP_Quote_Billing_Control::receiver( $s );
         $customer = isset( $s['receiver_snapshot'] ) || isset( $s['customer_billing_profile'] ) || isset( $s['billing']['profile'] ) ? false : get_userdata( $quote['customer_id'] );
         // Fiscal identity is frozen in the version; contact fallback follows the existing portal.
-        $client = array_filter( array( ( $profile['legal_name'] ?? '' ) ?: ( $customer ? $customer->display_name : '' ), ! empty( $profile['cuit'] ) ? 'CUIT ' . $profile['cuit'] : '', $profile['contact_name'] ?? '', ( $profile['billing_email'] ?? '' ) ?: ( $customer ? $customer->user_email : '' ), $profile['contact_phone'] ?? '', $profile['fiscal_address'] ?? '' ) );
+        $client = array_filter( array(
+            trim( ( ( $profile['legal_name'] ?? '' ) ?: ( $customer ? $customer->display_name : '' ) ) . ( ! empty( $profile['cuit'] ) ? ' · CUIT ' . $profile['cuit'] : '' ) ),
+            implode( ' · ', array_filter( array( $profile['contact_name'] ?? '', ( $profile['billing_email'] ?? '' ) ?: ( $customer ? $customer->user_email : '' ), $profile['contact_phone'] ?? '' ) ) ),
+            $profile['fiscal_address'] ?? ''
+        ) );
         if ( isset( $s['receiver_snapshot'] ) ) { array_unshift( $client, 'RECEPTOR' ); }
-        $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $s );
-        if ( $tax_label ) { $client[] = $tax_label; }
+        // Customer PDFs contain commercial information; fiscal review stays in staff.
         $address = array_filter( array( $profile['street'] ?? $profile['address_1'] ?? '', $profile['city'] ?? '', $profile['postcode'] ?? '' ) );
         if ( $address ) { $client[] = implode( ', ', $address ); }
         $rows = array();
@@ -103,13 +112,16 @@ final class GE_WTP_Commercial_Quote_PDF {
         }
         $rows[] = array( 'kind' => 'gap', 'height' => 18 );
         // Only display fields actually recorded; no tax or discount is recomputed here.
+        $comparative = GE_WTP_Quote_Selection::has_choices( $s ) && empty( $s['customer_selection'] );
+        if ( ! $comparative ) {
         $discount = (int) ( $s['discount_cents'] ?? 0 );
+        if ( ! empty( $s['entered_discount_cents'] ) ) { $rows[] = array( 'kind' => 'copy', 'text' => 'Descuento sobre precio final: ' . $currency . ' ' . self::amount( $s['entered_discount_cents'] ) . '.', 'height' => 20 ); }
         $subtotal = (int) ( $s['subtotal_cents'] ?? $s['net_cents'] );
         $rows[] = array( 'kind' => 'amount', 'label' => ! empty( $s['tax_cents'] ) ? 'Subtotal sin IVA' : 'Subtotal', 'amount' => $subtotal, 'height' => 23 );
         if ( $discount ) { $rows[] = array( 'kind' => 'amount', 'label' => 'Descuento', 'amount' => -$discount, 'height' => 23 ); }
         if ( $discount && isset( $s['tax_cents'] ) ) { $rows[] = array( 'kind' => 'amount', 'label' => 'Neto imponible', 'amount' => $s['taxable_base_cents'] ?? $s['net_cents'], 'height' => 23 ); }
         $rates = (array) ( $s['tax_rates'] ?? array() );
-        $tax_label = count( $rates ) === 1 ? 'IVA ' . number_format( (int) reset( $rates ) / 100, 2, ',', '.' ) . '%' : 'IVA / impuestos';
+        $tax_label = count( $rates ) === 1 ? 'IVA ' . ( 'final' === ( $s['quote_vat_mode'] ?? '' ) ? 'incluido ' : '' ) . number_format( (int) reset( $rates ) / 100, 2, ',', '.' ) . '%' : 'IVA / impuestos';
         if ( isset( $s['tax_cents'] ) ) { $rows[] = array( 'kind' => 'amount', 'label' => $tax_label, 'amount' => $s['tax_cents'], 'height' => 23 ); }
         $rows[] = array( 'kind' => 'total', 'label' => 'Total', 'amount' => $s['total_cents'], 'height' => 48 );
         if ( isset( $s['deposit_percent'] ) ) {
@@ -117,31 +129,53 @@ final class GE_WTP_Commercial_Quote_PDF {
             $pending_fiscal = 'pending' === ( $s['fiscal_status'] ?? '' );
             $rows[] = array( 'kind' => 'copy', 'text' => ( $pending_fiscal ? 'Seña prevista: ' : 'Seña disponible: ' ) . $s['deposit_percent'] . '% (' . $currency . ' ' . self::amount( $deposit ) . ').', 'height' => 20 );
             $rows[] = array( 'kind' => 'copy', 'text' => 'Saldo si elegís seña: ' . $currency . ' ' . self::amount( (int) $s['total_cents'] - $deposit ) . '.', 'height' => 20 );
-            $rows[] = array( 'kind' => 'copy', 'text' => $pending_fiscal ? 'Pago sujeto a confirmación de los datos de facturación.' : 'El pago se confirma desde el portal.', 'height' => 20 );
+            $rows[] = array( 'kind' => 'copy', 'text' => 'Consultá las opciones de pago desde el portal.', 'height' => 20 );
         }
+        } else { $rows[] = array( 'kind' => 'copy', 'text' => 'Comparativo de alternativas. Elegí una opción por grupo desde tu portal para obtener el total.', 'height' => 20 ); }
         $rows[] = array( 'kind' => 'gap', 'height' => 16 );
         $rows[] = array( 'kind' => 'heading', 'text' => 'Condiciones de la propuesta', 'height' => 24 );
         $conditions = array();
-        if ( 'pending' === ( $s['fiscal_status'] ?? '' ) ) { $conditions[] = 'Propuesta comercial. Datos de facturación pendientes de confirmación.'; }
-        if ( 'C' === ( $s['billing']['resolution']['document_type'] ?? '' ) ) { $conditions[] = 'IVA no discriminado según configuración fiscal del emisor.'; }
+        // Do not expose internal reconciliation status in customer documents.
+        if ( 'C' === ( $s['billing']['resolution']['document_type'] ?? '' ) ) { $conditions[] = 'Precio final. IVA no discriminado.'; }
         if ( ! empty( $s['valid_until'] ) ) { $conditions[] = 'Vigencia hasta el ' . implode( '/', array_reverse( explode( '-', $s['valid_until'] ) ) ) . '.'; }
         foreach ( array( 'payment_terms', 'commercial_terms', 'delivery_terms', 'notes_customer' ) as $key ) { if ( ! empty( $s[ $key ] ) ) { $conditions[] = $s[ $key ]; } }
         foreach ( (array) ( $s['discounts'] ?? array() ) as $discount_detail ) {
             if ( ! empty( $discount_detail['reason'] ) ) { $conditions[] = 'Descuento: ' . $discount_detail['reason']; }
         }
-        foreach ( $conditions as $text ) { foreach ( self::wrap( $text, 510, 9.5 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); } }
+        foreach ( $conditions as $text ) { foreach ( self::wrap( $text, 410, 9.5 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); } }
         $rows[] = array( 'kind' => 'gap', 'height' => 20 );
         $rows[] = array( 'kind' => 'heading', 'text' => 'Revisá tu presupuesto online', 'height' => 24 );
-        $rows[] = array( 'kind' => 'copy', 'text' => 'Ingresá con tu cuenta para revisar la propuesta, aceptarla y seguir el trabajo.', 'height' => 17 );
+        foreach ( self::wrap( 'Ingresá con tu cuenta para revisar la propuesta, aceptarla y seguir el trabajo.', 410, 9.5 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); }
         $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote['id'] ) );
         // portal_url can carry preview nonces. Build an account-login URL without credentials.
         $url = remove_query_arg( array( 'ge_preview_customer', 'ge_preview_token' ), $url );
-        foreach ( self::wrap( $url, 510, 9 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); }
+        $qr = self::portal_qr( $url );
+        if ( is_wp_error( $qr ) ) { return $qr; }
+        // A4 has a fixed content area. Compact spacing, never clip content or shrink text.
+        $rhythm = array( 'client' => 14, 'gap' => 10, 'table' => 27, 'item' => 14, 'rule' => 10, 'amount' => 21, 'total' => 42, 'copy' => 14, 'heading' => 23 );
+        foreach ( $rows as &$row ) { $row['height'] = $rhythm[ $row['kind'] ]; }
+        unset( $row );
+        $available = 637 - $issuer_height;
+        if ( array_sum( array_column( $rows, 'height' ) ) > $available ) {
+            $dense = array( 'client' => 13, 'gap' => 3, 'table' => 27, 'item' => 12, 'rule' => 5, 'amount' => 21, 'total' => 42, 'copy' => 12, 'heading' => 23 );
+            foreach ( $rows as &$row ) { $row['height'] = $dense[ $row['kind'] ]; }
+            unset( $row );
+        }
         $chunks = array(); $current = array(); $height = 0;
         foreach ( $rows as $index => $row ) {
             $reserve = $row['height'];
             if ( in_array( $row['kind'], array( 'heading', 'table', 'amount' ), true ) && isset( $rows[ $index + 1 ] ) ) { $reserve += $rows[ $index + 1 ]['height']; }
-            if ( $height + $reserve > 615 - $issuer_height && $current ) {
+            // Keep a normal item and its description together; oversized text still flows fully.
+            if ( 'item' === $row['kind'] && $row['first'] ) {
+                $group_height = $row['height'];
+                for ( $next = $index + 1; isset( $rows[ $next ] ); $next++ ) {
+                    $following = $rows[ $next ];
+                    if ( 'item' !== $following['kind'] || $following['first'] ) { break; }
+                    $group_height += $following['height'];
+                }
+                if ( $group_height + 27 <= $available ) { $reserve = $group_height; }
+            }
+            if ( $height + $reserve > 637 - $issuer_height && $current ) {
                 $chunks[] = $current; $current = array(); $height = 0;
                 if ( 'item' === $row['kind'] ) { $current[] = array( 'kind' => 'table', 'height' => 28 ); $height = 28; }
             }
@@ -158,11 +192,11 @@ final class GE_WTP_Commercial_Quote_PDF {
             $pdf->text_right( 557, 48, 11, 'Presupuesto ' . $quote['number'], true, 17, 24, 39 );
             $date = ! empty( $s['created_at'] ) ? wp_date( 'd/m/Y', strtotime( $s['created_at'] ) ) : '';
             $pdf->text_right( 557, 67, 9, $date . '  ·  Versión ' . $quote['version'], false, 105, 115, 134 );
-            $pdf->line(38,94,557,94,$accent[0],$accent[1],$accent[2],2);
-            $pdf->text( 38, 113, 7.5, $organization ? 'EMISOR / FACTURACIÓN · '.strtoupper($brand) : 'EMISOR / FACTURACIÓN · IDENTIDAD COMERCIAL GRAPHEX', true, 105, 115, 134 );
-            foreach ( $issuer_rows as $n => $line ) { $pdf->text( 38, 130 + $n * 13, 8, $line, 0 === $n, 17, 24, 39 ); }
-            $pdf->text( 38, 121 + $issuer_height, 9, $page ? 'PROPUESTA COMERCIAL · CONTINUACIÓN' : 'PROPUESTA COMERCIAL · CLIENTE', true, $accent[0], $accent[1], $accent[2] );
-            $top = 147 + $issuer_height;
+            $pdf->line(38,80,557,80,$accent[0],$accent[1],$accent[2],2);
+            $pdf->text( 38, 98, 7.5, $organization ? 'EMISOR / FACTURACIÓN · '.strtoupper($brand) : 'EMISOR / FACTURACIÓN · IDENTIDAD COMERCIAL GRAPHEX', true, 105, 115, 134 );
+            foreach ( $issuer_rows as $n => $line ) { $pdf->text( 38, 115 + $n * 11, 8, $line, 0 === $n, 17, 24, 39 ); }
+            $pdf->text( 38, 103 + $issuer_height, 9, $page ? 'PROPUESTA COMERCIAL · CONTINUACIÓN' : 'PROPUESTA COMERCIAL · CLIENTE', true, $accent[0], $accent[1], $accent[2] );
+            $top = 125 + $issuer_height;
             foreach ( $chunk as $row ) {
                 $kind = $row['kind'];
                 if ( 'table' === $kind ) {
@@ -179,13 +213,18 @@ final class GE_WTP_Commercial_Quote_PDF {
                         $pdf->text_right( 467, $top, 8, self::amount( $item['unit_net_cents'] ), false, 17, 24, 39 );
                         $pdf->text_right( 551, $top, 8, self::amount( $item['net_cents'] ), true, 17, 24, 39 );
                     }
-                } elseif ( 'rule' === $kind ) { $pdf->line( 38, $top, 557, $top, 231, 234, 240 );
+                } elseif ( 'rule' === $kind ) { $pdf->line( 38, $top - 4, 557, $top - 4, 231, 234, 240 );
                 } elseif ( 'amount' === $kind || 'total' === $kind ) {
-                    if ( 'total' === $kind ) { $pdf->fill_rect( 280, $top - 10, 277, 36, $accent[0], $accent[1], $accent[2] ); }
+                    if ( 'total' === $kind ) { $pdf->fill_rect( 280, $top - 7, 277, 33, $accent[0], $accent[1], $accent[2] ); }
                     $white = 'total' === $kind ? 255 : 17;
                     $pdf->text( 292, $top + 10, 'total' === $kind ? 13 : 10, $row['label'], 'total' === $kind, $white, $white, $white );
                     $pdf->text_right( 545, $top + 10, 'total' === $kind ? 13 : 10, $currency . ' ' . self::amount( $row['amount'] ), true, $white, $white, $white );
                 } elseif ( 'gap' !== $kind ) {
+                    if ( 'heading' === $kind && 'Revisá tu presupuesto online' === $row['text'] ) {
+                        $qr_top = max( 125 + $issuer_height, $top - 36 );
+                        self::draw_qr( $pdf, $qr, 485, $qr_top, 72 );
+                        $pdf->text( 491, $qr_top + 82, 8, 'Escaneá el QR', false, 17, 24, 39 );
+                    }
                     $pdf->text( 38, $top, 'heading' === $kind ? 12 : ( 'client' === $kind ? 10 : 9.5 ), $row['text'], 'heading' === $kind, 17, 24, 39 );
                 }
                 $top += $row['height'];
@@ -198,6 +237,35 @@ final class GE_WTP_Commercial_Quote_PDF {
             $pages[] = $pdf->end_page();
         }
         return $pdf->output( $pages );
+    }
+
+    /** Encode locally: the public account link never includes a staff preview token. */
+    private static function portal_qr( $url ) {
+        $qr = new \Graphex\QR\QRCode();
+        $qr->setErrorCorrectLevel( \Graphex\QR\QR_ERROR_CORRECT_LEVEL_M );
+        $qr->addData( $url, \Graphex\QR\QR_MODE_8BIT_BYTE );
+        // Select capacity from RS blocks, including versions beyond the upstream shortcut table.
+        for ( $version = 1; $version <= 40; $version++ ) {
+            $capacity = 0;
+            foreach ( \Graphex\QR\QRRSBlock::getRSBlocks( $version, \Graphex\QR\QR_ERROR_CORRECT_LEVEL_M ) as $block ) { $capacity += $block->getDataCount() * 8; }
+            if ( 4 + ( $version < 10 ? 8 : 16 ) + strlen( $url ) * 8 + 4 <= $capacity ) {
+                $qr->setTypeNumber( $version );
+                $qr->make();
+                return $qr;
+            }
+        }
+        return new WP_Error( 'ge_pdf_qr', 'El enlace del portal es demasiado largo para generar el QR.' );
+    }
+
+    private static function draw_qr( $pdf, $qr, $x, $top, $size ) {
+        $count = $qr->getModuleCount();
+        $module = $size / ( $count + 8 ); // Four clear modules on each side.
+        $pdf->fill_rect( $x, $top, $size, $size, 255, 255, 255 );
+        for ( $row = 0; $row < $count; $row++ ) {
+            for ( $column = 0; $column < $count; $column++ ) {
+                if ( $qr->isDark( $row, $column ) ) { $pdf->fill_rect( $x + ( $column + 4 ) * $module, $top + ( $row + 4 ) * $module, $module, $module, 0, 0, 0 ); }
+            }
+        }
     }
 
     private static function amount( $cents ) { return number_format( (int) $cents / 100, 2, ',', '.' ); }

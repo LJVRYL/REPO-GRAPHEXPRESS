@@ -102,3 +102,38 @@
 .ge-quote-view .ge-quote-context span{font-size:12px;color:var(--ge-muted,#605968)}
 .ge-quote-primary-actions a:focus-visible{outline:2px solid var(--ge-violet,#6d45ef);outline-offset:3px}
 @media(max-width:760px){.ge-quote-billing-delivery{grid-template-columns:1fr}.ge-quote-primary-actions>a{justify-content:center;width:100%}.ge-quote-view-head{flex-wrap:wrap}.ge-quote-view .ge-quote-item-price{flex-wrap:wrap;gap:8px}.ge-quote-view .ge-quote-view-actions .ge-staff-button{justify-content:center}}
+
+
+/* Staff detail: primary work first; supporting information expands in place. */
+.ge-quote-view-head{gap:24px;align-items:flex-start}
+.ge-quote-header-total{display:grid;gap:6px;justify-items:end;min-width:0}
+.ge-quote-header-total>span:first-child{font-size:13px;color:var(--ge-muted,#625a70)}
+.ge-quote-header-total>strong{font-size:clamp(24px,3vw,32px);line-height:1.2;color:var(--ge-ink,#251c37);overflow-wrap:anywhere}
+.ge-quote-view .ge-quote-view-actions{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;padding:0;border:0;align-items:center}
+.ge-quote-view-actions form{margin:0}
+.ge-quote-view-actions .ge-staff-button{min-height:44px}
+.ge-quote-fiscal-alert{padding:12px 16px;border-left:3px solid var(--ge-violet);background:var(--ge-violet-soft,#f1edff);color:var(--ge-ink,#251c37);font-size:14px;line-height:1.5;border-radius:8px}
+.ge-quote-fiscal-alert a{color:inherit;text-decoration:underline;font-weight:700}
+.ge-quote-disclosure{margin:16px 0;border:1px solid var(--ge-border,#e3dced);border-radius:12px;background:#fff;scroll-margin-top:24px}
+.ge-quote-disclosure>summary{padding:16px;min-height:52px;cursor:pointer;font-size:16px;font-weight:700;color:var(--ge-ink,#251c37)}
+.ge-quote-disclosure>summary:focus-visible{outline:3px solid var(--ge-violet);outline-offset:3px;border-radius:8px}
+.ge-quote-disclosure[open]>summary{border-bottom:1px solid var(--ge-border,#e3dced);margin-bottom:16px}
+.ge-quote-disclosure>*:not(summary){margin-left:16px;margin-right:16px}
+.ge-quote-disclosure>.ge-qbc{border:0;padding:0;box-shadow:none}
+.ge-quote-disclosure .ge-quote-payment-summary{margin-top:16px}
+.ge-quote-view .ge-quote-file-list{gap:16px}
+.ge-quote-file-group{border:1px solid var(--ge-border,#e3dced);border-radius:10px;padding:12px;min-width:0}
+.ge-quote-file-group .ge-quote-file{border:0;padding:8px 0;margin:0;min-width:0}
+.ge-quote-file-group strong,.ge-quote-file-group small{overflow-wrap:anywhere}
+.ge-quote-events ol{padding-bottom:16px}
+@media(max-width:760px){.ge-quote-view-head{flex-direction:column}.ge-quote-header-total{justify-items:start}.ge-quote-view .ge-quote-view-actions{display:grid;grid-template-columns:1fr 1fr;align-items:stretch}.ge-quote-view-actions form{display:flex}.ge-quote-view-actions .ge-staff-button{width:100%;justify-content:center;white-space:normal;text-align:center}.ge-quote-view{padding:20px}.ge-quote-disclosure>*:not(summary){margin-left:12px;margin-right:12px}}
+.ge-staff-body .ge-quote-view-actions .ge-staff-button.is-secondary{background:#fff;color:var(--ge-ink,#251c37)!important;border:1px solid var(--ge-border,#b9afcb)}.ge-staff-body .ge-quote-view-actions .ge-staff-button.is-secondary:hover,.ge-staff-body .ge-quote-view-actions .ge-staff-button.is-secondary:focus-visible{background:var(--ge-violet-soft,#f1edff);border-color:var(--ge-violet)}
+.ge-staff-body .ge-quote-view .ge-quote-view-actions .ge-staff-button{min-height:44px}
+.ge-quote-line-choice{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;padding:12px;border:1px solid #e5e1ef;border-radius:10px}
+.ge-quote-selection .ge-quote-item{display:block;padding:16px;margin:10px 0}
+.ge-quote-selection .ge-quote-item label{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px;cursor:pointer}
+.ge-quote-selection input[type=radio],.ge-quote-selection input[type=checkbox]{width:20px;height:20px;flex:0 0 20px;accent-color:var(--ge-primary,#6d45ef)}
+.ge-quote-selection .ge-quote-item p{margin:8px 0 0}
+/* This GET form only previews frozen choices. All write forms stay disabled in staff preview. */
+.is-staff-preview .ge-portal-main form.ge-quote-selection[method=get]{pointer-events:auto;opacity:1}
+.is-staff-preview .ge-portal-main form.ge-quote-selection[method=get] input,.is-staff-preview .ge-portal-main form.ge-quote-selection[method=get] button{cursor:pointer}
