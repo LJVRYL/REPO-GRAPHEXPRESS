@@ -1,0 +1,982 @@
+{
+  "schema_version": 1,
+  "project": "graph-express",
+  "organization_id": "graph-express",
+  "automatic_send": false,
+  "quick_replies": [
+    {
+      "id": "ge-wa-hola",
+      "key": "hola",
+      "trigger": "/hola",
+      "name": "hola",
+      "category": "Primer contacto",
+      "intent": "hola",
+      "template": "Hola, ¿cómo va? Contame qué necesitás imprimir y te ayudo a elegir la mejor opción.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [],
+      "qualification_fields": [],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Consulta nueva"
+    },
+    {
+      "id": "ge-wa-datos",
+      "key": "datos",
+      "trigger": "/datos",
+      "name": "datos",
+      "category": "Pedir datos",
+      "intent": "datos",
+      "template": "Para avanzar me falta {dato_pendiente}. ¿Me lo pasás?",
+      "variables": [
+        "dato_pendiente"
+      ],
+      "required_fields": [
+        "dato_pendiente"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "dato_pendiente"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Pedir únicamente información ausente"
+    },
+    {
+      "id": "ge-wa-impresiones",
+      "key": "impresiones",
+      "trigger": "/impresiones",
+      "name": "impresiones",
+      "category": "Impresiones",
+      "intent": "impresiones",
+      "template": "Dale. ¿Cuántas copias necesitás, en qué tamaño y color o blanco y negro? Mandame el archivo si ya lo tenés.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "cantidad",
+        "medida",
+        "color",
+        "archivo"
+      ],
+      "qualification_fields": [
+        "cantidad",
+        "medida",
+        "color",
+        "archivo"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Primera consulta de impresión"
+    },
+    {
+      "id": "ge-wa-impdetalle",
+      "key": "impdetalle",
+      "trigger": "/impdetalle",
+      "name": "impdetalle",
+      "category": "Impresiones",
+      "intent": "impdetalle",
+      "template": "¿Simple o doble faz? ¿Tenés un papel elegido? Si no, contame para qué lo vas a usar y te recomiendo uno.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "faz",
+        "papel",
+        "uso"
+      ],
+      "qualification_fields": [
+        "faz",
+        "papel",
+        "uso"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Sólo si faltan faz o papel"
+    },
+    {
+      "id": "ge-wa-stickers",
+      "key": "stickers",
+      "trigger": "/stickers",
+      "name": "stickers",
+      "category": "Stickers",
+      "intent": "stickers",
+      "template": "Sí, hacemos stickers. Pasame cantidad, medida final y dónde los vas a pegar. Si tenés diseño o referencia, mandámelo.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "cantidad",
+        "medida",
+        "uso",
+        "archivo"
+      ],
+      "qualification_fields": [
+        "cantidad",
+        "medida",
+        "uso",
+        "archivo"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Elegir material según uso"
+    },
+    {
+      "id": "ge-wa-stickerdetalle",
+      "key": "stickerdetalle",
+      "trigger": "/stickerdetalle",
+      "name": "stickerdetalle",
+      "category": "Stickers",
+      "intent": "stickerdetalle",
+      "template": "¿Los querés en plancha o separados? En vinilo podemos evaluar ambas opciones; en papel autoadhesivo se entregan en plancha. Decime si necesitás laminado o te asesoramos según el uso.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "material",
+        "presentacion",
+        "corte",
+        "laminado"
+      ],
+      "qualification_fields": [
+        "material",
+        "presentacion",
+        "corte",
+        "laminado"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Definir presentación y corte después de elegir material"
+    },
+    {
+      "id": "ge-wa-vinilo",
+      "key": "vinilo",
+      "trigger": "/vinilo",
+      "name": "vinilo",
+      "category": "Vinilos y cartelería",
+      "intent": "vinilo",
+      "template": "Sí. Pasame medida final, cantidad y dónde va colocado: interior o exterior. ¿Necesitás sólo el material o también colocación?",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "medida",
+        "cantidad",
+        "uso",
+        "colocacion"
+      ],
+      "qualification_fields": [
+        "medida",
+        "cantidad",
+        "uso",
+        "colocacion"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Consulta de vinilo o cartel"
+    },
+    {
+      "id": "ge-wa-vinilodetalle",
+      "key": "vinilodetalle",
+      "trigger": "/vinilodetalle",
+      "name": "vinilodetalle",
+      "category": "Vinilos y cartelería",
+      "intent": "vinilodetalle",
+      "template": "¿Tenés material elegido o una foto del lugar? Con eso te recomiendo la opción y vemos si hace falta laminado.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "material",
+        "laminado",
+        "referencia"
+      ],
+      "qualification_fields": [
+        "material",
+        "laminado",
+        "referencia"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Material o protección pendiente"
+    },
+    {
+      "id": "ge-wa-lona",
+      "key": "lona",
+      "trigger": "/lona",
+      "name": "lona",
+      "category": "Vinilos y cartelería",
+      "intent": "lona",
+      "template": "Para la lona, pasame ancho × alto, cantidad y si va en interior o exterior. ¿Cómo la vas a sujetar? Así definimos la terminación.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "medida",
+        "cantidad",
+        "uso",
+        "terminacion"
+      ],
+      "qualification_fields": [
+        "medida",
+        "cantidad",
+        "uso",
+        "terminacion"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Lona sin estructura roll-up"
+    },
+    {
+      "id": "ge-wa-folletos",
+      "key": "folletos",
+      "trigger": "/folletos",
+      "name": "folletos",
+      "category": "Folletería y tarjetas",
+      "intent": "folletos",
+      "template": "Dale. ¿Qué cantidad y medida necesitás? ¿Impresos de un lado o de ambos? Si no tenés papel elegido, contame el uso.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "cantidad",
+        "medida",
+        "faz",
+        "papel"
+      ],
+      "qualification_fields": [
+        "cantidad",
+        "medida",
+        "faz",
+        "papel"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Folletería inicial"
+    },
+    {
+      "id": "ge-wa-folletodetalle",
+      "key": "folletodetalle",
+      "trigger": "/folletodetalle",
+      "name": "folletodetalle",
+      "category": "Folletería y tarjetas",
+      "intent": "folletodetalle",
+      "template": "¿Van planos o con algún plegado o terminación? Mandame el diseño si ya lo tenés y lo revisamos antes de producir.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "terminacion",
+        "archivo"
+      ],
+      "qualification_fields": [
+        "terminacion",
+        "archivo"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Terminación pendiente"
+    },
+    {
+      "id": "ge-wa-tarjetas",
+      "key": "tarjetas",
+      "trigger": "/tarjetas",
+      "name": "tarjetas",
+      "category": "Folletería y tarjetas",
+      "intent": "tarjetas",
+      "template": "Sí, hacemos tarjetas. ¿Qué cantidad necesitás y de uno o ambos lados? ¿Buscás una opción simple o alguna terminación especial? Si tenés diseño, mandámelo.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "cantidad",
+        "faz",
+        "terminacion",
+        "archivo"
+      ],
+      "qualification_fields": [
+        "cantidad",
+        "faz",
+        "terminacion",
+        "archivo"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Tarjetas inicial"
+    },
+    {
+      "id": "ge-wa-seguimiento",
+      "key": "seguimiento",
+      "trigger": "/seguimiento",
+      "name": "seguimiento",
+      "category": "Seguimiento y cierre",
+      "intent": "seguimiento",
+      "template": "Hola {nombre}, ¿pudiste ver el presupuesto de {producto}? Si querés ajustar cantidad o terminación, lo revisamos.",
+      "variables": [
+        "nombre",
+        "producto"
+      ],
+      "required_fields": [
+        "nombre",
+        "producto"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Recordatorio amable de un presupuesto ya enviado"
+    },
+    {
+      "id": "ge-wa-rollup",
+      "key": "rollup",
+      "trigger": "/rollup",
+      "name": "rollup",
+      "category": "Banners y roll-up",
+      "intent": "rollup",
+      "template": "Para el roll-up, pasame medida y cantidad. ¿Necesitás la estructura o sólo cambiar la gráfica? ¿Para qué fecha? Si tenés archivo, mandámelo.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "medida",
+        "cantidad",
+        "estructura",
+        "fecha",
+        "archivo"
+      ],
+      "qualification_fields": [
+        "medida",
+        "cantidad",
+        "estructura",
+        "fecha",
+        "archivo"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Banner con estructura"
+    },
+    {
+      "id": "ge-wa-libros",
+      "key": "libros",
+      "trigger": "/libros",
+      "name": "libros",
+      "category": "Libros y cuadernos",
+      "intent": "libros",
+      "template": "Dale. ¿Cuántos ejemplares, de qué tamaño y con cuántas páginas o hojas? Decime también si el interior va en color o blanco y negro.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "cantidad",
+        "medida",
+        "paginas_hojas",
+        "color"
+      ],
+      "qualification_fields": [
+        "cantidad",
+        "medida",
+        "paginas_hojas",
+        "color"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Libros o cuadernos inicial"
+    },
+    {
+      "id": "ge-wa-librodetalle",
+      "key": "librodetalle",
+      "trigger": "/librodetalle",
+      "name": "librodetalle",
+      "category": "Libros y cuadernos",
+      "intent": "librodetalle",
+      "template": "¿Cómo querés la tapa y la encuadernación? Si no lo tenés definido, mandame una referencia y te propongo opciones.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "tapa",
+        "encuadernacion",
+        "referencia"
+      ],
+      "qualification_fields": [
+        "tapa",
+        "encuadernacion",
+        "referencia"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Tapa y encuadernación pendiente"
+    },
+    {
+      "id": "ge-wa-pdf",
+      "key": "pdf",
+      "trigger": "/pdf",
+      "name": "pdf",
+      "category": "Archivos",
+      "intent": "pdf",
+      "template": "Si podés, mandame un PDF a tamaño final, sin ajustar a página. Para sangrado y marcas, seguí la indicación del producto; si no la tenés, te la confirmo.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "archivo"
+      ],
+      "qualification_fields": [
+        "archivo"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Formato recomendado sin imponer sangrado universal"
+    },
+    {
+      "id": "ge-wa-pesado",
+      "key": "pesado",
+      "trigger": "/pesado",
+      "name": "pesado",
+      "category": "Archivos",
+      "intent": "pesado",
+      "template": "Si el archivo pesa mucho, mandame un link de Drive o WeTransfer con permiso de descarga. Si ya tenés pedido, también podemos asociarlo desde tu portal: {link_portal}.",
+      "variables": [
+        "link_portal"
+      ],
+      "required_fields": [
+        "link_portal"
+      ],
+      "optional_fields": [
+        "archivo"
+      ],
+      "qualification_fields": [
+        "archivo"
+      ],
+      "next_action": "open_existing_order_portal",
+      "destination": "portal",
+      "active": true,
+      "when_to_use": "Pedido existente y portal disponible; verificar permisos y vencimiento"
+    },
+    {
+      "id": "ge-wa-sangrado",
+      "key": "sangrado",
+      "trigger": "/sangrado",
+      "name": "sangrado",
+      "category": "Archivos",
+      "intent": "sangrado",
+      "template": "Al archivo le falta sangrado para este producto. Extendé los fondos {sangrado} fuera de la medida final y mantené los textos dentro de la zona segura. Si querés, te orientamos para corregirlo.",
+      "variables": [
+        "sangrado"
+      ],
+      "required_fields": [
+        "sangrado"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "sangrado"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Sólo después de revisión y valor confirmado"
+    },
+    {
+      "id": "ge-wa-resolucion",
+      "key": "resolucion",
+      "trigger": "/resolucion",
+      "name": "resolucion",
+      "category": "Archivos",
+      "intent": "resolucion",
+      "template": "La imagen puede perder definición al tamaño solicitado. ¿Tenés una versión de mayor calidad o el original? Lo revisamos antes de confirmar la producción.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "archivo"
+      ],
+      "qualification_fields": [
+        "archivo"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Revisión humana detecta baja resolución"
+    },
+    {
+      "id": "ge-wa-editable",
+      "key": "editable",
+      "trigger": "/editable",
+      "name": "editable",
+      "category": "Archivos",
+      "intent": "editable",
+      "template": "Para hacer este ajuste necesitamos el archivo editable, con fuentes e imágenes vinculadas, o una versión con textos convertidos a curvas. Si no lo tenés, vemos qué se puede resolver con el PDF.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "archivo"
+      ],
+      "qualification_fields": [
+        "archivo"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Corrección requiere fuentes originales"
+    },
+    {
+      "id": "ge-wa-cotizar",
+      "key": "cotizar",
+      "trigger": "/cotizar",
+      "name": "cotizar",
+      "category": "Presupuesto",
+      "intent": "cotizar",
+      "template": "Pasame en una línea qué necesitás, cantidad y medida aproximada. Con eso arrancamos; te pregunto sólo lo que falte.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "producto",
+        "cantidad",
+        "medida"
+      ],
+      "qualification_fields": [
+        "producto",
+        "cantidad",
+        "medida"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Trabajo personalizado"
+    },
+    {
+      "id": "ge-wa-fecha",
+      "key": "fecha",
+      "trigger": "/fecha",
+      "name": "fecha",
+      "category": "Plazos",
+      "intent": "fecha",
+      "template": "¿Para qué fecha lo necesitás? Te confirmo si llegamos según material, cantidad y archivo.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "fecha"
+      ],
+      "qualification_fields": [
+        "fecha"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Fecha pendiente"
+    },
+    {
+      "id": "ge-wa-arte",
+      "key": "arte",
+      "trigger": "/arte",
+      "name": "arte",
+      "category": "Presupuesto",
+      "intent": "arte",
+      "template": "¿Tenés diseño, foto o referencia? Mandámelo y lo sumamos a la cotización. Si todavía no lo tenés, contame la idea.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "archivo",
+        "referencia"
+      ],
+      "qualification_fields": [
+        "archivo",
+        "referencia"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Brief necesita archivo o referencia"
+    },
+    {
+      "id": "ge-wa-formulario",
+      "key": "formulario",
+      "trigger": "/formulario",
+      "name": "formulario",
+      "category": "Presupuesto",
+      "intent": "formulario",
+      "template": "Podés dejar la solicitud acá: {link_presupuesto}. Contanos brevemente qué necesitás; seguimos desde esa información.",
+      "variables": [
+        "link_presupuesto"
+      ],
+      "required_fields": [
+        "link_presupuesto"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": false,
+      "when_to_use": "Activar sólo cuando el formulario esté desplegado y verificado"
+    },
+    {
+      "id": "ge-wa-producto",
+      "key": "producto",
+      "trigger": "/producto",
+      "name": "producto",
+      "category": "Tienda",
+      "intent": "producto",
+      "template": "Eso lo podés pedir directo acá: {link_tienda}. Si necesitás algo fuera de esas opciones, decime y te preparo una cotización personalizada.",
+      "variables": [
+        "link_tienda"
+      ],
+      "required_fields": [
+        "link_tienda"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [],
+      "next_action": "open_verified_shop_link",
+      "destination": "shop",
+      "active": true,
+      "when_to_use": "Producto exacto verificado"
+    },
+    {
+      "id": "ge-wa-categoria",
+      "key": "categoria",
+      "trigger": "/categoria",
+      "name": "categoria",
+      "category": "Tienda",
+      "intent": "categoria",
+      "template": "Acá tenés las opciones de {producto}: {link_tienda}. Si no encontrás la medida o terminación que buscás, lo cotizamos a medida.",
+      "variables": [
+        "producto",
+        "link_tienda"
+      ],
+      "required_fields": [
+        "producto",
+        "link_tienda"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [],
+      "next_action": "open_verified_shop_link",
+      "destination": "shop",
+      "active": true,
+      "when_to_use": "Categoría verificada"
+    },
+    {
+      "id": "ge-wa-tienda",
+      "key": "tienda",
+      "trigger": "/tienda",
+      "name": "tienda",
+      "category": "Tienda",
+      "intent": "tienda",
+      "template": "Podés ver y pedir las opciones disponibles en nuestra tienda: {link_tienda}. Si me decís qué buscás, te paso el producto indicado.",
+      "variables": [
+        "link_tienda"
+      ],
+      "required_fields": [
+        "link_tienda"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [],
+      "next_action": "open_verified_shop_link",
+      "destination": "shop",
+      "active": true,
+      "when_to_use": "Cliente quiere explorar"
+    },
+    {
+      "id": "ge-wa-entrega",
+      "key": "entrega",
+      "trigger": "/entrega",
+      "name": "entrega",
+      "category": "Entrega y retiro",
+      "intent": "entrega",
+      "template": "¿Preferís retirar o recibirlo? Si necesitás envío, pasame localidad y código postal para confirmar costo y disponibilidad.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "entrega",
+        "localidad",
+        "codigo_postal"
+      ],
+      "qualification_fields": [
+        "entrega",
+        "localidad",
+        "codigo_postal"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Definir logística"
+    },
+    {
+      "id": "ge-wa-retiro",
+      "key": "retiro",
+      "trigger": "/retiro",
+      "name": "retiro",
+      "category": "Entrega y retiro",
+      "intent": "retiro",
+      "template": "Podés retirar el pedido {pedido} en {direccion}, {horario}. Avisame quién pasa a buscarlo.",
+      "variables": [
+        "pedido",
+        "direccion",
+        "horario"
+      ],
+      "required_fields": [
+        "pedido",
+        "direccion",
+        "horario"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "pedido",
+        "direccion",
+        "horario"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Pedido listo; dirección y horario confirmados"
+    },
+    {
+      "id": "ge-wa-urgente",
+      "key": "urgente",
+      "trigger": "/urgente",
+      "name": "urgente",
+      "category": "Plazos",
+      "intent": "urgente",
+      "template": "Decime fecha y hora límite, cantidad y mandame el archivo si lo tenés. Revisamos disponibilidad y te confirmo antes de tomar el trabajo.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "fecha",
+        "cantidad",
+        "archivo"
+      ],
+      "qualification_fields": [
+        "fecha",
+        "cantidad",
+        "archivo"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Urgencia sin promesa de plazo"
+    },
+    {
+      "id": "ge-wa-plazo",
+      "key": "plazo",
+      "trigger": "/plazo",
+      "name": "plazo",
+      "category": "Plazos",
+      "intent": "plazo",
+      "template": "Para este trabajo estimamos {plazo}, sujeto a confirmar archivo, aprobación y disponibilidad. Te confirmo la fecha de entrega al cerrar esos pasos.",
+      "variables": [
+        "plazo"
+      ],
+      "required_fields": [
+        "plazo"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "plazo"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Estimación específica confirmada"
+    },
+    {
+      "id": "ge-wa-factura",
+      "key": "factura",
+      "trigger": "/factura",
+      "name": "factura",
+      "category": "Facturación",
+      "intent": "factura",
+      "template": "Para la factura, pasame CUIT, razón social y email de facturación. Si ya los cargaste para este pedido, avisame y los reviso.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [
+        "cuit",
+        "razon_social",
+        "email_facturacion"
+      ],
+      "qualification_fields": [
+        "cuit",
+        "razon_social",
+        "email_facturacion"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Pedir sólo datos fiscales faltantes"
+    },
+    {
+      "id": "ge-wa-sena",
+      "key": "sena",
+      "trigger": "/sena",
+      "name": "sena",
+      "category": "Pagos",
+      "intent": "sena",
+      "template": "Para avanzar con {pedido}, la seña acordada es de {precio}. Con el comprobante confirmamos la acreditación y el próximo paso.",
+      "variables": [
+        "pedido",
+        "precio"
+      ],
+      "required_fields": [
+        "pedido",
+        "precio"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "pedido",
+        "precio"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Seña específica acordada"
+    },
+    {
+      "id": "ge-wa-pago",
+      "key": "pago",
+      "trigger": "/pago",
+      "name": "pago",
+      "category": "Pagos",
+      "intent": "pago",
+      "template": "Para iniciar la producción de {pedido}, queda pendiente el pago acordado de {precio}. Mandame el comprobante y verificamos la acreditación.",
+      "variables": [
+        "pedido",
+        "precio"
+      ],
+      "required_fields": [
+        "pedido",
+        "precio"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "pedido",
+        "precio"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Sólo condición acordada para este pedido"
+    },
+    {
+      "id": "ge-wa-saldo",
+      "key": "saldo",
+      "trigger": "/saldo",
+      "name": "saldo",
+      "category": "Pagos",
+      "intent": "saldo",
+      "template": "El saldo pendiente de {pedido} es de {precio}, según lo acordado para el retiro. Te paso el medio de pago si lo necesitás.",
+      "variables": [
+        "pedido",
+        "precio"
+      ],
+      "required_fields": [
+        "pedido",
+        "precio"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "pedido",
+        "precio"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Saldo al retirar acordado"
+    },
+    {
+      "id": "ge-wa-transferencia",
+      "key": "transferencia",
+      "trigger": "/transferencia",
+      "name": "transferencia",
+      "category": "Pagos",
+      "intent": "transferencia",
+      "template": "Podés transferir {precio} a {alias}, titular {titular}. Mandame el comprobante indicando {pedido}; confirmamos cuando esté acreditado.",
+      "variables": [
+        "precio",
+        "alias",
+        "titular",
+        "pedido"
+      ],
+      "required_fields": [
+        "precio",
+        "alias",
+        "titular",
+        "pedido"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "precio",
+        "alias",
+        "titular",
+        "pedido"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Validar cuenta del pedido antes de copiar"
+    },
+    {
+      "id": "ge-wa-recibido",
+      "key": "recibido",
+      "trigger": "/recibido",
+      "name": "recibido",
+      "category": "Seguimiento y cierre",
+      "intent": "recibido",
+      "template": "Recibido, gracias. Estoy revisando la información para cotizarte; si falta algo puntual, te escribo.",
+      "variables": [],
+      "required_fields": [],
+      "optional_fields": [],
+      "qualification_fields": [],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Recepción y cotización en curso"
+    },
+    {
+      "id": "ge-wa-presupuesto",
+      "key": "presupuesto",
+      "trigger": "/presupuesto",
+      "name": "presupuesto",
+      "category": "Seguimiento y cierre",
+      "intent": "presupuesto",
+      "template": "Te paso el presupuesto de {producto}: {link_presupuesto}. ¿Querés que revisemos alguna opción o avanzamos con esa propuesta?",
+      "variables": [
+        "producto",
+        "link_presupuesto"
+      ],
+      "required_fields": [
+        "producto",
+        "link_presupuesto"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "producto"
+      ],
+      "next_action": "collect_missing_quote_fields",
+      "destination": "quote",
+      "active": true,
+      "when_to_use": "Presupuesto existente; recordar amable usando este mismo mensaje"
+    },
+    {
+      "id": "ge-wa-listo",
+      "key": "listo",
+      "trigger": "/listo",
+      "name": "listo",
+      "category": "Seguimiento y cierre",
+      "intent": "listo",
+      "template": "¡Tu pedido {pedido} está listo! Coordinamos retiro o envío según lo acordado. Gracias por elegir Graph Express.",
+      "variables": [
+        "pedido"
+      ],
+      "required_fields": [
+        "pedido"
+      ],
+      "optional_fields": [],
+      "qualification_fields": [
+        "pedido"
+      ],
+      "next_action": "human_review",
+      "destination": "manual",
+      "active": true,
+      "when_to_use": "Sólo estado listo confirmado; cierre y agradecimiento"
+    }
+  ]
+}
