@@ -34,6 +34,7 @@ final class GE_WTP_Commercial_Quote_Files {
         if ( ! $found ) { return new WP_Error( 'ge_quote_file_missing', 'Archivo no encontrado.' ); }
         update_post_meta( $quote_id, self::META, $files );
         GE_WTP_Commercial_Quotes::record_event( $quote_id, 'artwork_staff_approved', $actor_id, array( 'version_id' => $file_id, 'checksum' => $checksum, 'item_index' => $item_index, 'client_approval_required' => (bool) $required ) );
+        GE_WTP_Commercial_Quotes::refresh_selection_notice( $quote_id, $actor_id );
         return true;
     }
 
@@ -43,6 +44,38 @@ final class GE_WTP_Commercial_Quote_Files {
         $result = self::approve_file( $quote_id, sanitize_text_field( wp_unslash( $_POST['file_id'] ?? '' ) ), sanitize_text_field( wp_unslash( $_POST['checksum'] ?? '' ) ), absint( $_POST['item_index'] ?? 0 ), ! empty( $_POST['client_required'] ), get_current_user_id() );
         if ( is_wp_error( $result ) ) { set_transient( 'ge_quote_convert_error_' . get_current_user_id() . '_' . $quote_id, $result->get_error_message(), 120 ); }
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote_id, 'quote_error' => is_wp_error( $result ) ? 'convert' : '' ) ) ); exit;
+    }
+
+
+    /** Readiness is scoped to the selected items and exact approved file version. */
+    public static function selection_readiness( $quote ) {
+        $files = array_filter( self::all( $quote['id'] ), function( $file ) { return empty( $file['choice_preview'] ) && ! in_array( $file['association_status'] ?? 'active', array( 'inactive', 'removed', 'superseded', 'detached' ), true ); } );
+        $missing = 0; $pending = 0; $preliminary = 0; $ready = 0; $relevant = array();
+        foreach ( $quote['snapshot']['items'] as $index => $item ) {
+            $model = $item['choice_facets']['model_key'] ?? ''; $matches = array();
+            foreach ( $files as $file ) {
+                if ( ! empty( $file['quote_choice_model'] ) && $file['quote_choice_model'] !== $model ) { continue; }
+                if ( ! empty( $file['quote_item_id'] ) && $file['quote_item_id'] !== $item['line_uuid'] && ! in_array( $file['id'], $item['artwork_refs'] ?? array(), true ) ) { continue; }
+                $matches[] = $file; $relevant[] = $file['id'];
+            }
+            if ( ! $matches ) { ++$missing; continue; }
+            $finals = array_filter( $matches, function( $f ) { return 'final' === ( $f['source_type'] ?? '' ); } );
+            if ( ! $finals ) { ++$preliminary; continue; }
+            $ok = true;
+            foreach ( $finals as $file ) {
+                $approval = $file['staff_approval'] ?? array(); $checksum = $file['analysis']['sha256'] ?? '';
+                $path = GE_WTP_Documents::private_directory() . '/' . basename( $file['stored_name'] ?? '' );
+                if ( GE_WTP_External_Artwork::is_link( $file ) || ! $checksum || ! is_file( $path ) || ! hash_equals( $checksum, hash_file( 'sha256', $path ) ) || empty( $approval['approved'] ) || ( $approval['version_id'] ?? '' ) !== $file['id'] || (int) ( $approval['quote_version'] ?? 0 ) !== (int) $quote['version'] || ! hash_equals( $checksum, (string) ( $approval['checksum'] ?? '' ) ) ) { $ok = false; continue; }
+                // The approval must belong to the original line, not a reindexed selection.
+                $versions = get_post_meta( $quote['id'], GE_WTP_Commercial_Quotes::VERSIONS_META, true );
+                $original = $versions[$quote['version']]['items'] ?? $quote['snapshot']['items'];
+                if ( ( $original[ (int) ( $approval['item_index'] ?? -1 ) ]['line_uuid'] ?? '' ) !== $item['line_uuid'] || ! empty( $file['client_approval_required'] ) ) { $ok = false; }
+            }
+            if ( $ok ) { ++$ready; } else { ++$pending; }
+        }
+        $state = $missing ? ( $ready || $pending || $preliminary ? 'partial' : 'missing' ) : ( $pending ? 'approval_pending' : ( $preliminary ? 'preliminary' : 'ready' ) );
+        $labels = array( 'ready' => 'archivos finales listos', 'missing' => 'sin archivos', 'partial' => 'faltan archivos para algunos ítems', 'approval_pending' => 'archivos finales sin aprobar', 'preliminary' => 'archivos preliminares sin aprobar' );
+        return array( 'state' => $state, 'label' => $labels[$state], 'missing_items' => $missing, 'pending_items' => $pending, 'preliminary_items' => $preliminary, 'ready_items' => $ready, 'file_ids' => array_values( array_unique( $relevant ) ) );
     }
 
     public static function all( $quote_id, $category = 'arte' ) {
@@ -88,6 +121,7 @@ final class GE_WTP_Commercial_Quote_Files {
             $payment_id = absint( get_post_meta( $quote_id, '_ge_commercial_initial_payment_order', true ) );
             if ( $payment_id ) { self::link_receipts_to_payment( $quote_id, wc_get_order( $payment_id ) ); }
         } elseif ( ! empty( $quote['converted_order_id'] ) ) { self::inherit( $quote_id, wc_get_order( $quote['converted_order_id'] ) ); }
+        if ( 'arte' === $category ) { GE_WTP_Commercial_Quotes::refresh_selection_notice( $quote_id, $actor_id ); }
         return $record;
     }
 

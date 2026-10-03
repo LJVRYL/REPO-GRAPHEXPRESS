@@ -9,6 +9,7 @@ final class GE_WTP_Commercial_Quote_UI {
         add_action( 'admin_post_ge_commercial_quote_save', array( __CLASS__, 'handle_save' ) );
         add_action( 'admin_post_ge_commercial_quote_send', array( __CLASS__, 'handle_send' ) );
         add_action( 'admin_post_ge_commercial_quote_accept', array( __CLASS__, 'handle_accept' ) );
+        add_action( 'admin_post_ge_quote_save_selection', array( __CLASS__, 'handle_save_selection' ) );
         add_action( 'admin_post_ge_commercial_quote_convert', array( __CLASS__, 'handle_convert' ) );
         add_action( 'wp_ajax_ge_commercial_quote_totals', array( __CLASS__, 'handle_totals' ) );
         add_action( 'wp_ajax_ge_commercial_quote_price', array( __CLASS__, 'handle_price' ) );
@@ -173,6 +174,7 @@ final class GE_WTP_Commercial_Quote_UI {
         $axis_labels = array( 'pending' => 'Pendiente', 'partial' => 'Seña / parcial', 'paid' => 'Pagado', 'failed' => 'Fallido', 'none' => 'Sin archivo', 'received' => 'Recibido', 'analyzed' => 'Analizado', 'final' => 'Archivo final', 'approval_pending' => 'Aprobación pendiente', 'approved' => 'Aprobado', 'not_created' => 'Sin pedido', 'created' => 'Pedido creado', 'ready' => 'Listo', 'in_production' => 'En producción', 'ready_for_delivery' => 'Listo para entregar', 'delivered' => 'Entregado' );
         echo '<div class="ge-quote-axes" aria-label="Estados separados"><span>Comercial: ' . esc_html( $status_labels[ $axes['commercial'] ] ?? $axes['commercial'] ) . '</span><span>Pago: ' . esc_html( $axis_labels[ $axes['payment'] ] ?? $axes['payment'] ) . '</span><span>Archivos y arte: ' . esc_html( $axis_labels[ $axes['artwork'] ] ?? $axes['artwork'] ) . '</span><span>Producción: ' . esc_html( $axis_labels[ $axes['production'] ] ?? $axes['production'] ) . '</span></div>';
         self::render_files( $quote, false );
+        self::render_save_selection( $proposal, GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) && empty( $proposal['snapshot']['customer_selection'] ), true, false );
         echo '</section>';
         if ( ! $quote['converted_order_id'] && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { self::render_conversion_dialog( $quote, $customer ); }
         self::render_events( $quote );
@@ -264,7 +266,7 @@ final class GE_WTP_Commercial_Quote_UI {
         $events = get_post_meta( $quote['id'], '_ge_commercial_events', true );
         if ( ! is_array( $events ) || ! $events ) { return; }
         $labels = array( 'created' => 'Creado', 'revised' => 'Editado', 'sent' => 'Enviado', 'viewed' => 'Visto por el cliente', 'accepted' => 'Aceptado en portal', 'accepted_staff' => 'Aceptación registrada por staff', 'file_uploaded' => 'Archivo cargado', 'file_attached' => 'Archivo vinculado', 'receipt_uploaded' => 'Comprobante cargado', 'receipt_attached' => 'Comprobante vinculado', 'payment_started' => 'Pago iniciado', 'payment_confirmed' => 'Pago confirmado', 'converted' => 'Convertido a pedido' );
-        $labels['artwork_associations_saved'] = 'Asignación de artes actualizada'; $labels['pdf_attached'] = 'PDF comercial adjunto'; $labels['billing_selection'] = 'Receptor / emisor actualizados';
+        $labels['selection_saved'] = 'Selección guardada'; $labels['artwork_associations_saved'] = 'Asignación de artes actualizada'; $labels['pdf_attached'] = 'PDF comercial adjunto'; $labels['billing_selection'] = 'Receptor / emisor actualizados';
         echo '<details class="ge-production-card ge-quote-disclosure ge-quote-events"><summary>Actividad del presupuesto · ' . esc_html( count( $events ) ) . ' eventos</summary><ol>';
         foreach ( array_reverse( $events ) as $event ) {
             echo '<li><strong>' . esc_html( $labels[ $event['event'] ?? '' ] ?? ucfirst( $event['event'] ?? 'Actividad' ) ) . '</strong><time>' . esc_html( ! empty( $event['at'] ) ? wp_date( 'd/m/Y H:i', strtotime( $event['at'] ) ) : '' ) . '</time></li>';
@@ -416,17 +418,11 @@ final class GE_WTP_Commercial_Quote_UI {
             if ( $selection_ready ) {
             echo '<a class="ge-button ge-button-secondary ge-quote-pdf-download" href="' . esc_url( $pdf_url ) . '"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"/></svg> Descargar PDF</a>';
             }
-            if ( $selection_ready && in_array( $quote['status'], array( 'sent', 'viewed' ), true ) && ! $preview && ( empty( $quote['snapshot']['valid_until'] ) || $quote['snapshot']['valid_until'] >= wp_date( 'Y-m-d' ) ) ) {
-                echo '<form class="ge-quote-customer-action" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_quote_accept"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="version" value="' . esc_attr( $quote['version'] ) . '">';
-                foreach ( $quote['snapshot']['customer_selection']['line_ids'] ?? array() as $id ) { echo '<input type="hidden" name="quote_selection[]" value="' . esc_attr( $id ) . '">'; }
-                foreach ( $quote['snapshot']['customer_selection']['configurations'] ?? array() as $line_id => $config ) { echo '<input type="hidden" name="quote_configuration[' . esc_attr( $line_id ) . '][paper]" value="' . esc_attr( $config['paper'] ) . '">'; }
-                wp_nonce_field( 'ge_commercial_quote_accept_' . $quote['id'] . '_' . $quote['version'] );
-                echo '<button class="ge-button ge-button-primary" type="submit">Aceptar presupuesto</button></form>';
-            }
             echo '<nav class="ge-quote-customer-links" aria-label="Acciones del presupuesto"><a href="#ge-quote-files-' . esc_attr( $quote['id'] ) . '">Subir archivos para producción</a><a href="#ge-quote-receipts-' . esc_attr( $quote['id'] ) . '">Subir comprobante</a><a href="#ge-quote-payment-' . esc_attr( $quote['id'] ) . '">Ir a pagar</a></nav>';
             self::render_files( $quote, true );
             self::render_receipts( $quote, true );
             if ( class_exists( 'GE_WTP_Commercial_Checkout' ) ) { GE_WTP_Commercial_Checkout::render_quote_checkout( $quote ); }
+            self::render_save_selection( $proposal, $choices, false, $preview );
             echo '</article>';
         }
     }
@@ -591,6 +587,35 @@ final class GE_WTP_Commercial_Quote_UI {
         $quote = ! is_wp_error( $current ) && in_array( $current['status'], array( 'sent', 'viewed' ), true ) ? GE_WTP_Commercial_Quotes::resend( $quote_id ) : GE_WTP_Commercial_Quotes::send( $quote_id );
         if ( is_wp_error( $quote ) ) { wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote_id, 'quote_error' => 'send' ) ) ); exit; }
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $quote_id ) ) ); exit;
+    }
+
+
+    private static function render_save_selection( $quote, $choices, $staff, $preview ) {
+        $allowed = in_array( $quote['status'], $staff ? array( 'draft', 'sent', 'viewed' ) : array( 'sent', 'viewed' ), true ) && ( empty( $quote['snapshot']['valid_until'] ) || $quote['snapshot']['valid_until'] >= wp_date( 'Y-m-d' ) );
+        if ( isset( $_GET['selection_saved'] ) ) {
+            $saved = $staff ? GE_WTP_Quote_Selection::preview_request( $quote ) : $quote;
+            if ( ! is_wp_error( $saved ) && ( ! empty( $saved['snapshot']['customer_selection'] ) || ! GE_WTP_Quote_Selection::has_choices( $saved['snapshot'] ) ) ) {
+                $url = wp_nonce_url( admin_url( 'admin-post.php?action=ge_commercial_quote_pdf&quote_id=' . $quote['id'] ), 'ge_commercial_quote_pdf_' . $quote['id'] );
+                if ( $staff ) { $url = add_query_arg( GE_WTP_Quote_Selection::selection_args( $saved ), $url ); }
+                echo '<div role="status" class="ge-selection-saved"><strong>Selección guardada.</strong><p>' . esc_html( $staff ? 'La gráfica tiene el aviso. El presupuesto conserva su estado comercial.' : 'Tu presupuesto quedó aceptado y avisamos a la gráfica. La aprobación de los archivos se revisa por separado.' ) . '</p><a class="ge-button" href="' . esc_url( $url ) . '" data-ge-saved-pdf>Descargar PDF de mi selección</a></div>';
+            }
+        }
+        if ( ! $allowed && ! $preview ) { return; }
+        if ( ! $choices ) {
+            echo '<form id="ge-save-selection" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '"><input type="hidden" name="selection_version" value="' . esc_attr( $quote['version'] ) . '"><input type="hidden" name="save_nonce" value="' . esc_attr( wp_create_nonce( 'ge_quote_save_' . $quote['id'] . '_' . $quote['version'] ) ) . '"></form>';
+        }
+        echo '<footer class="ge-selection-save"><p>' . esc_html( $staff ? 'Guardá la selección y descargá su PDF. Esto no registra una aceptación del cliente ni aprueba sus archivos.' : 'Al guardar aceptás el presupuesto con las opciones elegidas. Descargaremos tu PDF y avisaremos a la gráfica del estado de tus archivos.' ) . '</p><button class="ge-button ge-button-primary ge-staff-button" type="submit" form="' . ( $choices ? 'ge-quote-configurator' : 'ge-save-selection' ) . '" formmethod="post" formaction="' . esc_url( admin_url( 'admin-post.php' ) ) . '" name="action" value="ge_quote_save_selection" data-ge-save-selection' . ( $preview ? ' disabled' : '' ) . '>Guardar selección</button>' . ( $preview ? '<small>Vista previa: guardar y aceptar están deshabilitados.</small>' : '' ) . '</footer>';
+    }
+
+    public static function handle_save_selection() {
+        if ( ! is_user_logged_in() || GE_WTP_Portal::is_staff_preview() ) { wp_die( 'Acceso denegado.', '', array( 'response' => 403 ) ); }
+        $id = absint( $_POST['quote_id'] ?? 0 ); $version = absint( $_POST['selection_version'] ?? 0 );
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['save_nonce'] ?? '' ) ), 'ge_quote_save_' . $id . '_' . $version ) ) { wp_die( 'Recargá el presupuesto para guardar la selección.', '', array( 'response' => 403 ) ); }
+        $quote = GE_WTP_Commercial_Quotes::save_selection( $id, $version, wp_unslash( $_POST ), get_current_user_id() );
+        if ( is_wp_error( $quote ) ) { wp_die( esc_html( $quote->get_error_message() ), '', array( 'response' => 409 ) ); }
+        $staff = GE_WTP_Staff_Portal::can_access();
+        $args = array( $staff ? 'quote_id' : 'presupuesto' => $id, 'selection_saved' => 1 );
+        wp_safe_redirect( $staff ? GE_WTP_Staff_Portal::portal_url( 'quotes', $args ) : GE_WTP_Portal::portal_url( 'presupuestos', $args ) ); exit;
     }
 
     public static function handle_accept() {

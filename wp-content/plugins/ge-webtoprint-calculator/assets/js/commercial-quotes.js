@@ -10,7 +10,7 @@
     if (convertForm.dataset.submitting) { event.preventDefault(); return; }
     convertForm.dataset.submitting = '1';
     var button = convertForm.querySelector('button[type="submit"]');
-    button.disabled = true; button.textContent = 'Procesando…';
+    button.disabled = true; button.textContent = 'Procesandoâ€¦';
     button.setAttribute('aria-busy', 'true');
   });
 
@@ -28,11 +28,30 @@
       var price = choices.find(function (p) { return p.finish === finish.value; });
       Array.from(paper.options).forEach(function (o) { o.disabled = !price.papers.includes(o.value); });
       if (paper.selectedOptions[0].disabled) paper.value = price.papers[0];
-      output.textContent = 'Total de esta opción: ' + new Intl.NumberFormat('es-AR', {style:'currency',currency:'ARS',maximumFractionDigits:2}).format(price.price / 100);
+      output.textContent = 'Total de esta opciÃ³n: ' + new Intl.NumberFormat('es-AR', {style:'currency',currency:'ARS',maximumFractionDigits:2}).format(price.price / 100);
       group.querySelectorAll('.ge-choice-model').forEach(function (card) { card.classList.toggle('is-selected', card.querySelector('input').checked); });
     }
     group.addEventListener('change', update); update();
   });
+
+
+  document.querySelectorAll('[data-ge-save-selection]').forEach(function (button) {
+    var form = document.getElementById(button.getAttribute('form'));
+    if (!form) return;
+    form.addEventListener('submit', function (event) {
+      if (event.submitter !== button) return;
+      if (form.dataset.savingSelection) { event.preventDefault(); return; }
+      form.dataset.savingSelection = '1';
+      button.setAttribute('aria-busy', 'true'); button.textContent = 'Guardando selecciÃ³nâ€¦';
+      // Do not disable the submitter: its action value must be included in the POST.
+    });
+  });
+  var savedPdf = document.querySelector('[data-ge-saved-pdf]');
+  if (savedPdf) {
+    var downloadFrame = document.createElement('iframe');
+    downloadFrame.hidden = true; downloadFrame.title = 'Descarga del presupuesto guardado';
+    downloadFrame.src = savedPdf.href; document.body.appendChild(downloadFrame);
+  }
 
   var root = document.querySelector('[data-ge-lines]');
   var template = document.getElementById('ge-manual-line-template');
@@ -60,10 +79,10 @@
         var previousDelivery = deliverySelect.value || selected.delivery || '';
         billingSelect.replaceChildren(); deliverySelect.replaceChildren();
         addOption(deliverySelect, '', 'A coordinar');
-        addOption(billingSelect, '', 'Elegí receptor');
-        (result.data.profiles || []).forEach(function (profile) { addOption(billingSelect, profile.id, profile.label + (profile.cuit ? ' · CUIT ' + profile.cuit : '')); });
+        addOption(billingSelect, '', 'ElegÃ­ receptor');
+        (result.data.profiles || []).forEach(function (profile) { addOption(billingSelect, profile.id, profile.label + (profile.cuit ? ' Â· CUIT ' + profile.cuit : '')); });
         if (!(result.data.profiles || []).length) addOption(billingSelect, 'default', 'Perfil principal');
-        (result.data.addresses || []).forEach(function (address) { addOption(deliverySelect, address.id, address.label + ' · ' + address.street); });
+        (result.data.addresses || []).forEach(function (address) { addOption(deliverySelect, address.id, address.label + ' Â· ' + address.street); });
         billingSelect.value = previousProfile;
         if (billingSelect.selectedIndex < 0) billingSelect.value = '';
         if (!previousProfile && (result.data.profiles || []).length === 1) billingSelect.value = result.data.profiles[0].id;
@@ -110,11 +129,11 @@
     function setSource(type) {
       source.value = type;
       line.dataset.geSource = type;
-      line.querySelector('[data-ge-title-label]').textContent = type === 'custom' ? 'Nombre del trabajo' : 'Producto del catálogo';
-      search.placeholder = type === 'custom' ? 'Ej.: Almohada bamboo 45×30 cm' : 'Buscar producto';
+      line.querySelector('[data-ge-title-label]').textContent = type === 'custom' ? 'Nombre del trabajo' : 'Producto del catÃ¡logo';
+      search.placeholder = type === 'custom' ? 'Ej.: Almohada bamboo 45Ã—30 cm' : 'Buscar producto';
       if (type === 'custom') {
         search.removeAttribute('list'); productId.value = ''; panel.replaceChildren(); panel.hidden = true;
-        manual('Ingresá el precio acordado antes de IVA.');
+        manual('IngresÃ¡ el precio acordado antes de IVA.');
       } else {
         search.setAttribute('list', 'ge-manual-products');
       }
@@ -132,11 +151,11 @@
       if (source.value === 'custom') { showSubtotal(); return; }
       var item = catalog[search.value];
       if (!item || !item.id) return;
-      if (item.mode === 'manual') { manual('Sin tarifa en catálogo: completá el precio.'); return; }
+      if (item.mode === 'manual') { manual('Sin tarifa en catÃ¡logo: completÃ¡ el precio.'); return; }
       if (item.mode === 'fixed') {
         price.readOnly = Number(item.price) > 0;
         if (price.readOnly) price.value = Number(item.price).toFixed(2);
-        hint.textContent = price.readOnly ? 'Precio calculado desde el catálogo.' : 'Completá el precio manualmente.';
+        hint.textContent = price.readOnly ? 'Precio calculado desde el catÃ¡logo.' : 'CompletÃ¡ el precio manualmente.';
         showSubtotal();
         return;
       }
@@ -149,7 +168,7 @@
       if (item.mode !== 'digital' && !configuration.option_key) {
         price.value = '';
         price.readOnly = true;
-        hint.textContent = 'Elegí una configuración para calcular el precio.';
+        hint.textContent = 'ElegÃ­ una configuraciÃ³n para calcular el precio.';
         return;
       }
       if (item.mode === 'option' || item.mode === 'variation') {
@@ -164,7 +183,7 @@
       }
       var current = ++ticket;
       price.readOnly = true;
-      hint.textContent = 'Calculando con la tarifa del sistema…';
+      hint.textContent = 'Calculando con la tarifa del sistemaâ€¦';
       var body = new URLSearchParams();
       body.set('action', 'ge_commercial_quote_price');
       body.set('nonce', geCommercialQuotes.nonce);
@@ -173,13 +192,13 @@
       Object.keys(configuration).forEach(function (key) { body.set('configuration[' + key + ']', configuration[key]); });
       fetch(geCommercialQuotes.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body }).then(function (response) { return response.json(); }).then(function (result) {
         if (current !== ticket) return;
-        if (!result.success) { price.value = ''; hint.textContent = typeof result.data === 'string' ? result.data : 'Revisá la configuración.'; return; }
+        if (!result.success) { price.value = ''; hint.textContent = typeof result.data === 'string' ? result.data : 'RevisÃ¡ la configuraciÃ³n.'; return; }
         if (result.data.quantity) quantity.value = result.data.quantity;
-        if (result.data.manual) { price.readOnly = false; hint.textContent = 'Esta combinación requiere precio manual antes de IVA.'; }
-        else { price.value = Number(result.data.price).toFixed(2); price.readOnly = true; hint.textContent = result.data.configuration && result.data.configuration.roll_width_cm ? 'Precio calculado con rollo de ' + result.data.configuration.roll_width_cm + ' cm de ancho.' : 'Precio calculado desde el catálogo.'; }
+        if (result.data.manual) { price.readOnly = false; hint.textContent = 'Esta combinaciÃ³n requiere precio manual antes de IVA.'; }
+        else { price.value = Number(result.data.price).toFixed(2); price.readOnly = true; hint.textContent = result.data.configuration && result.data.configuration.roll_width_cm ? 'Precio calculado con rollo de ' + result.data.configuration.roll_width_cm + ' cm de ancho.' : 'Precio calculado desde el catÃ¡logo.'; }
         showSubtotal();
       }).catch(function () {
-        if (current === ticket) { price.value = ''; price.readOnly = true; hint.textContent = 'No se pudo consultar la tarifa. Reintentá al cambiar una opción.'; }
+        if (current === ticket) { price.value = ''; price.readOnly = true; hint.textContent = 'No se pudo consultar la tarifa. ReintentÃ¡ al cambiar una opciÃ³n.'; }
       });
     }
 
@@ -192,11 +211,11 @@
       panel.hidden = !item || !['option', 'variation', 'digital'].includes(item.mode);
       quantity.readOnly = false;
       quantity.min = 1; quantity.step = 1;
-      if (!item) { price.value = ''; price.readOnly = true; hint.textContent = 'Seleccioná un producto del catálogo.'; showSubtotal(); return; }
+      if (!item) { price.value = ''; price.readOnly = true; hint.textContent = 'SeleccionÃ¡ un producto del catÃ¡logo.'; showSubtotal(); return; }
       if (!preserve) { price.value = ''; selected = {}; }
       if (item.mode === 'option' || item.mode === 'variation') {
-        var choice = field('select', 'lines[' + index + '][configuration][option_key]', item.label || 'Configuración');
-        var prompt = document.createElement('option'); prompt.value = ''; prompt.textContent = 'Seleccionar opción'; choice.input.appendChild(prompt);
+        var choice = field('select', 'lines[' + index + '][configuration][option_key]', item.label || 'ConfiguraciÃ³n');
+        var prompt = document.createElement('option'); prompt.value = ''; prompt.textContent = 'Seleccionar opciÃ³n'; choice.input.appendChild(prompt);
         Object.keys(item.options).forEach(function (key) {
           var option = document.createElement('option'); option.value = key; option.textContent = item.options[key].label; choice.input.appendChild(option);
         });
@@ -234,7 +253,7 @@
     search.addEventListener('input', function () {
       if (source.value === 'custom') return;
       if (catalog[search.value]) { renderConfiguration(false); return; }
-      ticket++; productId.value = ''; panel.replaceChildren(); panel.hidden = true; price.value = ''; price.readOnly = true; hint.textContent = 'Seleccioná un producto del catálogo.'; showSubtotal();
+      ticket++; productId.value = ''; panel.replaceChildren(); panel.hidden = true; price.value = ''; price.readOnly = true; hint.textContent = 'SeleccionÃ¡ un producto del catÃ¡logo.'; showSubtotal();
     });
     quantity.addEventListener('change', refreshPrice);
     quantity.addEventListener('input', showSubtotal);
