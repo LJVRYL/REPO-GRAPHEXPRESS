@@ -1,0 +1,286 @@
+/* GRAPHEX commerce skin. Layouts, dimensions, swatches and semantic states stay native. */
+/* The payment plugin sets .woocommerce to grid on phones, including the body. */
+body.gx-brand-active.gx-store-page { display: block; background: var(--gx-paper, #f9f8f5) !important; }
+body.gx-brand-active :is(.gx-store-main, .gx-commerce-main) { color: var(--gx-ink, #111116); }
+
+/* Catalog, category and product-search hero. */
+body.gx-brand-active .gx-store-hero {
+    color: var(--gx-paper);
+    background: radial-gradient(ellipse at 92% 10%, rgba(91, 81, 245, .16), transparent 46%),
+        radial-gradient(ellipse at 76% 100%, rgba(0, 200, 245, .055), transparent 45%), var(--gx-ink);
+}
+body.gx-brand-active .gx-store-heading h1 { color: var(--gx-paper); }
+body.gx-brand-active .gx-store-hero .gx-kicker { color: var(--gx-cyan); }
+body.gx-brand-active .gx-store-hero .gx-kicker i { box-shadow: 0 0 0 5px rgba(0, 200, 245, .1); }
+body.gx-brand-active .gx-store-hero .gx-store-back { color: #c5c2d0 !important; }
+body.gx-brand-active .gx-store-description { color: #c5c2d0; }
+body.gx-brand-active .gx-store-description a { color: var(--gx-cyan); }
+body.gx-brand-active .gx-store-hero :is(a, button, input):focus-visible { outline: 3px solid var(--gx-cyan); outline-offset: 4px; }
+body.gx-brand-active .gx-product-search { border-color: #5d586b; background: #24212d; box-shadow: 0 18px 45px rgba(0, 0, 0, .14); }
+body.gx-brand-active .gx-product-search > span { color: var(--gx-cyan); }
+body.gx-brand-active .gx-product-search input { color: var(--gx-paper); }
+body.gx-brand-active .gx-store-hero .gx-product-search input::placeholder { color: #c5c2d0; opacity: 1; }
+body.gx-brand-active .gx-product-search button { color: var(--gx-ink); background: var(--gx-yellow); }
+body.gx-brand-active .gx-product-search button:hover { background: #ffe078; }
+body.gx-brand-active .gx-store-back { color: var(--gx-muted) !important; }
+body.gx-brand-active .gx-store-back:hover { color: var(--gx-violet) !important; }
+
+/* Product families keep the existing grid and media intact. */
+body.gx-brand-active :is(.gx-store-categories, .gx-products-section, .gx-subcategory-section) { background: var(--gx-paper); }
+body.gx-brand-active .gx-store-section-title h2 { color: var(--gx-ink); }
+body.gx-brand-active .gx-store-section-title > span { color: var(--gx-muted); }
+body.gx-brand-active .gx-category-card { border-color: var(--gx-line); }
+body.gx-brand-active .gx-category-card:hover { box-shadow: 0 20px 44px rgba(17, 17, 22, .14); }
+body.gx-brand-active :is(.gx-category-violet, .gx-category-ink, .gx-category-green, .gx-category-orange, .gx-category-eco, .gx-category-blue, .gx-category-coral) {
+    color: var(--gx-paper) !important;
+    border-color: #39343f;
+    background: var(--gx-ink);
+}
+body.gx-brand-active .gx-category-violet { background: radial-gradient(ellipse at 95% 0, rgba(91, 81, 245, .23), transparent 75%), var(--gx-ink); }
+body.gx-brand-active :is(.gx-category-green, .gx-category-blue) { background: radial-gradient(ellipse at 95% 0, rgba(0, 200, 245, .13), transparent 75%), var(--gx-ink); }
+body.gx-brand-active :is(.gx-category-orange, .gx-category-coral) { background: radial-gradient(ellipse at 95% 0, rgba(243, 38, 146, .17), transparent 75%), var(--gx-ink); }
+body.gx-brand-active .gx-category-yellow { color: var(--gx-ink) !important; border-color: #e1b835; background: var(--gx-yellow); }
+body.gx-brand-active .gx-category-paper { color: var(--gx-ink) !important; background: #fff; }
+body.gx-brand-active .gx-category-card h2 { color: inherit; }
+body.gx-brand-active .gx-category-card p { color: inherit; opacity: .82; }
+body.gx-brand-active .gx-category-card li { opacity: .84; }
+body.gx-brand-active .gx-category-number { opacity: .8; }
+body.gx-brand-active .gx-category-action { opacity: .9; }
+body.gx-brand-active .gx-category-symbol { border-color: rgba(249, 248, 245, .25); background: rgba(249, 248, 245, .09); }
+body.gx-brand-active :is(.gx-category-yellow, .gx-category-paper) .gx-category-symbol { border-color: rgba(17, 17, 22, .19); background: rgba(255, 255, 255, .3); }
+body.gx-brand-active .gx-category-paper .gx-category-symbol { color: var(--gx-violet); }
+body.gx-brand-active .gx-category-media { background: #24212d; border-color: rgba(249, 248, 245, .2); }
+body.gx-brand-active .gx-category-media > span { color: var(--gx-paper); background: rgba(17, 17, 22, .85); border-color: rgba(249, 248, 245, .35); }
+body.gx-brand-active .gx-category-media-credit { color: #fff !important; text-shadow: 0 1px 4px #111116; }
+body.gx-brand-active .gx-subcategory-grid a { color: var(--gx-ink); border-color: var(--gx-line); background: #fff; }
+body.gx-brand-active .gx-subcategory-grid a:hover { border-color: var(--gx-violet); }
+body.gx-brand-active .gx-subcategory-grid :is(span, b) { color: var(--gx-violet); }
+body.gx-brand-active .gx-subcategory-grid h2 { color: var(--gx-ink); }
+body.gx-brand-active .gx-subcategory-grid p { color: var(--gx-muted); }
+body.gx-brand-active .gx-empty-category { border-color: #a29caa; background: #fff; }
+body.gx-brand-active .gx-empty-category > span { color: var(--gx-violet); background: #eeebfc; }
+body.gx-brand-active .gx-empty-category h2 { color: var(--gx-ink); }
+body.gx-brand-active .gx-empty-category p { color: var(--gx-muted); }
+
+/* Catalog tiles: a neutral photographic surface and a clear purchase path. */
+body.gx-brand-active .gx-products-section .products li.product { border-color: var(--gx-line); background: #fff; }
+body.gx-brand-active .gx-product-card-visual { color: var(--gx-paper); background: #24212d; }
+body.gx-brand-active :is(.gx-product-group-vinilos, .gx-product-group-portabanners) .gx-product-card-visual { color: var(--gx-paper); background: #24212d; }
+body.gx-brand-active .gx-product-group-soportes-especiales .gx-product-card-visual { color: var(--gx-ink); background: var(--gx-yellow); }
+body.gx-brand-active .gx-product-group-placas-rigidas .gx-product-card-visual { color: var(--gx-violet); background: #eeebfc; }
+body.gx-brand-active .gx-product-card-visual > span { border-color: rgba(249, 248, 245, .25); }
+body.gx-brand-active .gx-product-card-visual > small { color: #d0cdd9; }
+body.gx-brand-active :is(.gx-product-group-soportes-especiales, .gx-product-group-placas-rigidas) .gx-product-card-visual > span { border-color: rgba(17, 17, 22, .18); }
+body.gx-brand-active :is(.gx-product-group-soportes-especiales, .gx-product-group-placas-rigidas) .gx-product-card-visual > small { color: #49414f; }
+body.gx-brand-active .gx-product-card-body { color: var(--gx-ink); background: #fff; }
+body.gx-brand-active .gx-product-card-group { color: var(--gx-violet); }
+body.gx-brand-active .gx-product-card-body h2 { color: var(--gx-ink); }
+body.gx-brand-active .gx-product-card-body > p { color: var(--gx-muted); }
+body.gx-brand-active .gx-product-reference-price :is(span, small) { color: var(--gx-muted); }
+body.gx-brand-active .gx-product-reference-price strong { color: var(--gx-violet); }
+body.gx-brand-active .gx-product-card-specs { border-color: var(--gx-line); }
+body.gx-brand-active .gx-product-card-specs span { color: var(--gx-muted); }
+body.gx-brand-active .gx-product-card-specs b { color: var(--gx-ink); }
+body.gx-brand-active .gx-product-card-action { color: var(--gx-ink) !important; border-color: var(--gx-line); }
+body.gx-brand-active .gx-product-card-action span { color: var(--gx-violet); }
+body.gx-brand-active .gx-product-card-action:hover { color: var(--gx-violet) !important; }
+body.gx-brand-active .gx-products-section .woocommerce-ordering select { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active .woocommerce-result-count { color: var(--gx-muted); }
+body.gx-brand-active.woocommerce-page nav.woocommerce-pagination ul { border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page nav.woocommerce-pagination ul li { border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page nav.woocommerce-pagination ul li a { color: var(--gx-ink); background: #fff; }
+body.gx-brand-active.woocommerce-page nav.woocommerce-pagination ul li :is(a:hover, a:focus, span.current) { color: var(--gx-paper); background: var(--gx-ink); }
+
+/* Native WooCommerce catalog widgets, when the theme exposes a sidebar. */
+body.gx-brand-active :is(.widget_product_categories, .widget_price_filter, .widget_layered_nav, .widget_product_search, .woocommerce-widget-layered-nav, .widget_rating_filter) { color: var(--gx-ink); border-color: var(--gx-line); }
+body.gx-brand-active :is(.widget_product_categories, .widget_price_filter, .widget_layered_nav, .widget_product_search, .woocommerce-widget-layered-nav, .widget_rating_filter) :is(.widget-title, h2, h3) { color: var(--gx-ink); }
+body.gx-brand-active :is(.widget_product_categories, .widget_layered_nav, .woocommerce-widget-layered-nav) a { color: var(--gx-muted); }
+body.gx-brand-active :is(.widget_product_categories, .widget_layered_nav, .woocommerce-widget-layered-nav) :is(a:hover, .chosen a, .current-cat > a) { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page .widget_price_filter .ui-slider :is(.ui-slider-range, .ui-slider-handle) { background: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page .widget_price_filter .price_slider_wrapper .ui-widget-content { background: #ddd8ed; }
+body.gx-brand-active .woocommerce-product-search input[type="search"] { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active .woocommerce-product-search button { color: var(--gx-ink); background: var(--gx-yellow); border-color: var(--gx-yellow); }
+
+/* Product detail. Variant swatches, availability badges and review stars are untouched. */
+body.gx-brand-active .gx-single-product-main { background: var(--gx-paper); }
+body.gx-brand-active .gx-single-product-content { color: var(--gx-ink); }
+body.gx-brand-active :is(.woocommerce-breadcrumb, .woocommerce-breadcrumb a) { color: var(--gx-muted); }
+body.gx-brand-active .woocommerce-breadcrumb a:hover { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page div.product .product_title { color: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page div.product :is(p.price, span.price) { color: var(--gx-violet); }
+body.gx-brand-active .woocommerce-product-details__short-description { color: var(--gx-muted); }
+body.gx-brand-active .woocommerce-product-details__short-description a { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page div.product .product_meta { color: var(--gx-muted); border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page div.product .product_meta a { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page div.product form.cart .variations label { color: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page div.product form.cart .variations select { color: var(--gx-ink); border-color: #aaa5b2; background-color: #fff; }
+body.gx-brand-active.woocommerce-page div.product .reset_variations { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page .quantity .qty { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active.woocommerce-page div.product .woocommerce-tabs ul.tabs::before { border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page div.product .woocommerce-tabs ul.tabs li { color: var(--gx-muted); border-color: var(--gx-line); background: var(--gx-soft); }
+body.gx-brand-active.woocommerce-page div.product .woocommerce-tabs ul.tabs li a { color: inherit; }
+body.gx-brand-active.woocommerce-page div.product .woocommerce-tabs ul.tabs li.active { color: var(--gx-ink); border-color: var(--gx-line); background: #fff; }
+body.gx-brand-active.woocommerce-page div.product .woocommerce-tabs .panel { color: var(--gx-muted); }
+body.gx-brand-active.woocommerce-page div.product .woocommerce-tabs .panel :is(h2, h3, h4) { color: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page div.product .woocommerce-tabs .panel a:not(.button) { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page table.shop_attributes { border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page table.shop_attributes th { color: var(--gx-ink); background: var(--gx-soft); border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page table.shop_attributes td { color: var(--gx-muted); background: #fff; border-color: var(--gx-line); }
+body.gx-brand-active .gx-single-quote { background: #eeebfc; }
+body.gx-brand-active .gx-single-quote p { color: var(--gx-muted); }
+body.gx-brand-active .gx-price-guide-intro > span { color: var(--gx-violet); }
+body.gx-brand-active .gx-price-guide-intro h2,
+body.gx-brand-active .gx-price-section h3 { color: var(--gx-ink); }
+body.gx-brand-active .gx-price-table-scroll { border-color: var(--gx-line); background: #fff; }
+body.gx-brand-active .gx-price-table-scroll thead th { color: var(--gx-paper); background: var(--gx-ink); }
+body.gx-brand-active .gx-price-table-scroll tbody th { color: var(--gx-ink); background: var(--gx-soft); }
+body.gx-brand-active .gx-price-table-scroll tbody td { color: var(--gx-violet); }
+body.gx-brand-active .gx-price-notes { background: #eeebfc; }
+body.gx-brand-active .gx-price-notes h3 { color: var(--gx-ink); }
+
+/* Real storefront configurator and digital calculator selectors from the plugin. */
+body.gx-brand-active :is(.ge-storefront-config, .ge-digital-calculator) { color: var(--gx-ink); border-color: var(--gx-line); background: var(--gx-soft); }
+body.gx-brand-active :is(.ge-storefront-heading > span, .ge-digital-heading > span) { color: var(--gx-violet); }
+body.gx-brand-active :is(.ge-storefront-heading h2, .ge-digital-heading h2) { color: var(--gx-ink); }
+body.gx-brand-active :is(.ge-storefront-heading p, .ge-digital-heading p, .ge-storefront-field, .ge-storefront-buy-row label, .ge-storefront-measures label, .ge-storefront-comments, .ge-digital-field, .ge-storefront-secure, .ge-digital-notes) { color: var(--gx-muted); }
+body.gx-brand-active :is(.ge-storefront-field select, .ge-storefront-buy-row input, .ge-storefront-measures input, .ge-storefront-comments textarea, .ge-digital-field select, .ge-digital-field input[type="number"]):not([aria-invalid="true"]) { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active :is(.ge-storefront-config, .ge-digital-calculator) :is(input, select, textarea):focus-visible { outline: 3px solid rgba(91, 81, 245, .4); outline-offset: 2px; }
+body.gx-brand-active :is(.ge-storefront-config, .ge-digital-calculator) :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--gx-violet); }
+body.gx-brand-active :is(.ge-storefront-price, .ge-digital-total) { color: var(--gx-paper); background: var(--gx-ink); }
+body.gx-brand-active :is(.ge-storefront-price small, .ge-storefront-price span, .ge-digital-total small, .ge-digital-total span) { color: #c5c2d0; }
+body.gx-brand-active :is(.ge-storefront-price strong, .ge-digital-total strong) { color: var(--gx-paper); }
+body.gx-brand-active :is(.ge-storefront-upload, .ge-digital-upload) { border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active :is(.ge-storefront-upload legend, .ge-digital-upload > span) { color: var(--gx-ink); }
+body.gx-brand-active :is(.ge-storefront-upload p, .ge-storefront-upload small, .ge-digital-upload small) { color: var(--gx-muted); }
+body.gx-brand-active .ge-storefront-upload input[type="file"] { color: var(--gx-ink); border-color: #aaa5b2; background: var(--gx-paper); }
+body.gx-brand-active :is(.ge-storefront-upload, .ge-digital-upload) input[type="file"]::file-selector-button { color: var(--gx-ink); border-color: var(--gx-line); background: var(--gx-soft); font-family: inherit; cursor: pointer; }
+body.gx-brand-active :is(.ge-storefront-upload .ge-storefront-upload-hint, .ge-storefront-account-note) { color: #423763; background: #eeebfc; }
+body.gx-brand-active .ge-storefront-account-note a { color: #443acc; }
+body.gx-brand-active .ge-storefront-artworks { border-color: #cec7ed; background: #f3f0fd; }
+body.gx-brand-active .ge-storefront-artworks legend { color: var(--gx-ink); }
+body.gx-brand-active .ge-storefront-artworks p { color: var(--gx-muted); }
+body.gx-brand-active .ge-storefront-artworks label strong { color: #443acc; }
+body.gx-brand-active .ge-field-checkbox { border-color: #cec7ed; background: #eeebfc; }
+body.gx-brand-active .ge-field-checkbox > span { color: var(--gx-ink); }
+body.gx-brand-active .ge-field-checkbox small { color: var(--gx-muted); }
+body.gx-brand-active .ge-digital-offset-callout { border-color: #cec7ed; background: #f3f0fd; }
+body.gx-brand-active .ge-digital-offset-callout span { color: #443acc; }
+body.gx-brand-active .ge-digital-offset-callout strong { color: var(--gx-ink); }
+body.gx-brand-active .ge-digital-offset-callout p { color: var(--gx-muted); }
+body.gx-brand-active .ge-digital-offset-callout a { color: var(--gx-paper) !important; background: var(--gx-ink); }
+
+/* Primary actions. Explicit selectors avoid recolouring product swatches or remove links. */
+body.gx-brand-active :is(.ge-storefront-submit, .ge-digital-submit),
+body.gx-brand-active.woocommerce-page :is(.single_add_to_cart_button, .checkout-button, #place_order, .woocommerce-form-login__submit, .woocommerce-form-register__submit, button[name="save_account_details"], button[name="save_address"], button[name="woocommerce_checkout_place_order"], button[name="apply_coupon"], button[name="update_cart"]),
+body.gx-brand-active.woocommerce-page .return-to-shop a.button,
+body.gx-brand-active.woocommerce-page .woocommerce-ResetPassword .button,
+body.gx-brand-active.woocommerce-page #review_form #respond .form-submit input,
+body.gx-brand-active :is(.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout) .wc-block-components-button:not(.is-link) {
+    color: var(--gx-ink) !important;
+    border-color: var(--gx-yellow);
+    background: var(--gx-yellow) !important;
+    box-shadow: none;
+}
+body.gx-brand-active :is(.ge-storefront-submit, .ge-digital-submit):hover,
+body.gx-brand-active.woocommerce-page :is(.single_add_to_cart_button, .checkout-button, #place_order, .woocommerce-form-login__submit, .woocommerce-form-register__submit, button[name="save_account_details"], button[name="save_address"], button[name="apply_coupon"], button[name="update_cart"]):not(:disabled):hover,
+body.gx-brand-active :is(.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout) .wc-block-components-button:not(.is-link):not(:disabled):hover { color: var(--gx-ink) !important; background: #ffe078 !important; }
+body.gx-brand-active :is(.ge-storefront-submit, .ge-digital-submit):focus-visible,
+body.gx-brand-active.woocommerce-page :is(.button, input, select, textarea):focus-visible,
+body.gx-brand-active :is(.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout) :is(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--gx-violet); outline-offset: 3px; }
+
+/* Cart and checkout: classic WooCommerce templates. Error, success and stock colours stay native. */
+body.gx-brand-active .gx-commerce-heading > span { color: var(--gx-violet); }
+body.gx-brand-active .gx-commerce-heading h1 { color: var(--gx-ink); }
+body.gx-brand-active .gx-commerce-heading p { color: var(--gx-muted); }
+body.gx-brand-active.woocommerce-page table.shop_table { color: var(--gx-ink); border-color: var(--gx-line); background: #fff; }
+body.gx-brand-active.woocommerce-page table.shop_table :is(th, td) { border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page table.shop_table thead { color: var(--gx-paper); background: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page table.shop_table thead th { color: var(--gx-paper); }
+body.gx-brand-active.woocommerce-page table.shop_table .product-name a { color: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page table.shop_table .product-name a:hover { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page table.shop_table .variation { color: var(--gx-muted); }
+body.gx-brand-active.woocommerce-page :is(.cart_totals h2, .woocommerce-billing-fields h3, .woocommerce-additional-fields h3, #order_review_heading, .woocommerce-order-details__title, .woocommerce-column__title) { color: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page :is(.cart_totals, .woocommerce-checkout-review-order) { color: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page table.shop_table .order-total { color: var(--gx-ink); background: var(--gx-soft); }
+body.gx-brand-active.woocommerce-page .cart .coupon .input-text { color: var(--gx-ink); background: #fff; border-color: #aaa5b2; }
+body.gx-brand-active.woocommerce-page form .form-row label { color: var(--gx-ink); }
+body.gx-brand-active.woocommerce-page form .form-row:not(.woocommerce-invalid) :is(input.input-text, textarea, select):not([aria-invalid="true"]) { color: var(--gx-ink); border-color: #aaa5b2; background-color: #fff; }
+body.gx-brand-active.woocommerce-page form :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page form :is(input, textarea)::placeholder { color: var(--gx-muted); opacity: 1; }
+body.gx-brand-active.woocommerce-page form .form-row .select2-container .select2-selection--single { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active.woocommerce-page form .form-row .select2-selection__rendered { color: var(--gx-ink); }
+body.gx-brand-active .select2-container .select2-dropdown { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active .select2-container .select2-search__field { color: var(--gx-ink); background: #fff; border-color: #aaa5b2; }
+body.gx-brand-active .select2-container--default .select2-results__option--highlighted[aria-selected] { color: var(--gx-paper); background: var(--gx-violet); }
+body.gx-brand-active .woocommerce-checkout #payment { color: var(--gx-ink); border-color: var(--gx-line); background: var(--gx-soft); }
+body.gx-brand-active .woocommerce-checkout #payment ul.payment_methods { border-color: var(--gx-line); }
+body.gx-brand-active .woocommerce-checkout #payment div.payment_box { color: var(--gx-muted); background: #fff; }
+body.gx-brand-active .woocommerce-checkout #payment div.payment_box::before { border-bottom-color: #fff; }
+body.gx-brand-active .woocommerce-privacy-policy-text { color: var(--gx-muted); }
+body.gx-brand-active :is(.woocommerce-privacy-policy-text, .woocommerce-terms-and-conditions-wrapper) a { color: var(--gx-violet); }
+
+/* WooCommerce blocks used by the live cart and checkout. */
+body.gx-brand-active :is(.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout) { color: var(--gx-ink); }
+body.gx-brand-active :is(.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout) :is(.wc-block-components-title, .wc-block-cart__totals-title, .wc-block-components-checkout-step__heading, .wc-block-components-product-name) { color: var(--gx-ink); }
+body.gx-brand-active .wc-block-cart-items { color: var(--gx-ink); border-color: var(--gx-line); }
+body.gx-brand-active .wc-block-cart-items :is(th, td) { border-color: var(--gx-line); }
+body.gx-brand-active .wc-block-cart-items .wc-block-components-product-name:hover { color: var(--gx-violet); }
+body.gx-brand-active :is(.wp-block-woocommerce-cart, .wp-block-woocommerce-checkout) :is(.wc-block-components-product-metadata, .wc-block-components-checkout-step__description, .wc-block-components-totals-item__description, .wc-block-components-order-summary-item__individual-prices, .wc-block-components-address-card__edit) { color: var(--gx-muted); }
+body.gx-brand-active :is(.wc-block-cart__sidebar, .wc-block-checkout__sidebar) { color: var(--gx-ink); }
+body.gx-brand-active :is(.wc-block-components-totals-wrapper, .wc-block-components-order-summary, .wc-block-components-checkout-order-summary__title, .wc-block-components-order-summary-item, .wc-block-components-address-card) { border-color: var(--gx-line); }
+body.gx-brand-active .wc-block-components-totals-footer-item { color: var(--gx-ink); }
+body.gx-brand-active .wc-block-components-quantity-selector { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active .wc-block-components-quantity-selector :is(input, button) { color: var(--gx-ink); background: transparent; }
+body.gx-brand-active .wc-block-components-quantity-selector::after { border-color: #aaa5b2; }
+body.gx-brand-active .wc-block-components-form .wc-block-components-text-input:not(.has-error) :is(input[type="text"], input[type="email"], input[type="tel"], input[type="number"], input[type="password"]):not([aria-invalid="true"]),
+body.gx-brand-active .wc-block-components-text-input:not(.has-error) :is(input[type="text"], input[type="email"], input[type="tel"]):not([aria-invalid="true"]),
+body.gx-brand-active .wc-block-components-textarea:not([aria-invalid="true"]) { color: var(--gx-ink); border-color: #aaa5b2; background: #fff; }
+body.gx-brand-active .wc-block-components-text-input:not(.has-error) label { color: var(--gx-muted); }
+body.gx-brand-active .wc-block-components-combobox:not(.has-error) .components-combobox-control__suggestions-container { color: var(--gx-ink); background: #fff; border-color: #aaa5b2; }
+body.gx-brand-active .wc-block-components-combobox:not(.has-error) .components-combobox-control__input { color: var(--gx-ink); background: #fff; }
+body.gx-brand-active .wc-block-components-combobox .components-combobox-control__suggestions-list { color: var(--gx-ink); background: #fff; }
+body.gx-brand-active .wc-block-components-radio-control .wc-block-components-radio-control__option { color: var(--gx-ink); background: #fff; }
+body.gx-brand-active .wc-block-components-radio-control .wc-block-components-radio-control__option-checked { box-shadow: inset 0 0 0 1px var(--gx-violet); }
+body.gx-brand-active .wc-block-components-radio-control .wc-block-components-radio-control__description { color: var(--gx-muted); }
+body.gx-brand-active .wc-block-components-radio-control .wc-block-components-radio-control__input:checked { border-color: var(--gx-violet); }
+body.gx-brand-active .wc-block-components-radio-control .wc-block-components-radio-control__input:checked::before { background: var(--gx-violet); }
+body.gx-brand-active .wc-block-components-checkbox .wc-block-components-checkbox__input:checked { color: #fff; border-color: var(--gx-violet); background: var(--gx-violet); }
+body.gx-brand-active :is(.wc-block-components-totals-coupon-link, .wc-block-components-checkout-return-to-cart-button, .wc-block-components-address-card__edit, .wc-block-checkout__login-prompt a, .wc-block-components-checkout-step__heading a) { color: var(--gx-violet); }
+body.gx-brand-active :is(.wc-block-components-terms-and-conditions, .wc-block-checkout__terms) { color: var(--gx-muted); }
+body.gx-brand-active :is(.wc-block-components-terms-and-conditions, .wc-block-checkout__terms) a { color: var(--gx-violet); }
+
+/* My Account and customer forms use the same dark navigation / paper content pairing. */
+body.gx-brand-active .woocommerce-MyAccount-navigation { color: var(--gx-paper); background: var(--gx-ink); border-color: #39343f; }
+body.gx-brand-active .woocommerce-MyAccount-navigation ul { border-color: rgba(249, 248, 245, .16); }
+body.gx-brand-active .woocommerce-MyAccount-navigation li { border-color: rgba(249, 248, 245, .16); }
+body.gx-brand-active .woocommerce-MyAccount-navigation li a { color: #d0cdd9; background: transparent; }
+body.gx-brand-active .woocommerce-MyAccount-navigation li a:hover { color: var(--gx-cyan); }
+body.gx-brand-active .woocommerce-MyAccount-navigation li.is-active a { color: var(--gx-ink); background: var(--gx-yellow); }
+body.gx-brand-active .woocommerce-MyAccount-navigation a:focus-visible { outline: 3px solid var(--gx-cyan); outline-offset: -3px; }
+body.gx-brand-active .woocommerce-MyAccount-content { color: var(--gx-muted); }
+body.gx-brand-active .woocommerce-MyAccount-content :is(h2, h3, h4, legend, strong) { color: var(--gx-ink); }
+body.gx-brand-active .woocommerce-MyAccount-content :is(p > a:not(.button), .woocommerce-Address-title a) { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page :is(form.login, form.register, form.woocommerce-EditAccountForm, form.woocommerce-ResetPassword) { color: var(--gx-ink); background: #fff; border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page :is(form.login, form.register, form.woocommerce-EditAccountForm, form.woocommerce-ResetPassword) fieldset { border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page .lost_password a { color: var(--gx-violet); }
+body.gx-brand-active.woocommerce-page .woocommerce-Address address { color: var(--gx-muted); background: #fff; border-color: var(--gx-line); }
+body.gx-brand-active.woocommerce-page .woocommerce-orders-table .button { color: var(--gx-ink); background: var(--gx-yellow); border-color: var(--gx-yellow); }
+
+body.gx-brand-active .gx-store-help { color: var(--gx-paper); background: radial-gradient(ellipse at 90% 5%, rgba(91, 81, 245, .2), transparent 60%), var(--gx-ink); }
+body.gx-brand-active .gx-store-help h2 { color: var(--gx-paper); }
+body.gx-brand-active .gx-store-help .gx-kicker { color: var(--gx-cyan); }
+body.gx-brand-active .gx-store-help .gx-kicker i { box-shadow: 0 0 0 5px rgba(0, 200, 245, .1); }
+body.gx-brand-active .gx-store-help a:focus-visible { outline: 3px solid var(--gx-cyan); outline-offset: 4px; }
+
+@media (max-width: 780px) {
+    /* Reset the more-specific desktop nth-child spans before implicit tracks form. */
+    body.gx-brand-active .gx-category-grid { grid-template-columns: minmax(0, 1fr); }
+    body.gx-brand-active .gx-category-grid > .gx-category-card:nth-child(n) { grid-column: auto; min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.gx-brand-active :is(.gx-category-card, .gx-subcategory-grid a, .gx-product-card-action, .ge-storefront-submit, .ge-digital-submit),
+    body.gx-brand-active.woocommerce-page :is(.button, .woocommerce-MyAccount-navigation a) { transition: none; }
+    body.gx-brand-active .gx-category-card:hover,
+    body.gx-brand-active .gx-subcategory-grid a:hover { transform: none; }
+}
