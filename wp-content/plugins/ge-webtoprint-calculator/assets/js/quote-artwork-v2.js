@@ -8,7 +8,7 @@
     inputs.forEach(function(input){Array.from(input.files).forEach(function(file){total+=file.size;if(file.size>config.postMax-1048576)oversized=true;});});
     if(oversized || total>config.postMax-1048576){event.preventDefault();var notice=target.querySelector('[data-ge-upload-limit]');if(!notice){notice=document.createElement('p');notice.dataset.geUploadLimit='1';notice.setAttribute('role','alert');target.appendChild(notice);}notice.textContent='Esta carga admite hasta '+Math.floor((config.postMax-1048576)/1048576)+' MiB en total. Para artes grandes, usá Editar presupuesto y Archivos / Arte.';}
   },true);
-  var form = document.querySelector('form.ge-commercial-quote');
+  var form = document.querySelector('form.ge-commercial-quote, form.ge-request-form');
   if (!config || !form) return;
   var session = form.querySelector('[name="artwork_session"]').value;
   var queue = Promise.resolve();
@@ -22,7 +22,7 @@
   function request(op, row, extra, blob, progress) {
     return new Promise(function (resolve, reject) {
       var data = new FormData();
-      var fields = Object.assign({action:'ge_quote_artwork_v2', nonce:config.nonce, op:op, upload_id:row.uploadId, session_id:session, quote_id:config.quoteId}, extra || {});
+      var fields = Object.assign({action:'ge_quote_artwork_v2', nonce:config.nonce, op:op, upload_id:row.uploadId, session_id:form.querySelector('[name="artwork_session"]').value, quote_id:config.quoteId,request_context:form.matches('.ge-request-form')?'1':'',request_nonce:window.geRequest?window.geRequest.nonce:''}, extra || {});
       Object.keys(fields).forEach(function(key){data.append(key,fields[key]);});
       if (blob) data.append('chunk', blob, 'chunk.bin');
       var xhr = new XMLHttpRequest(); row.xhr = xhr;
@@ -100,7 +100,7 @@
   }
   function initializeAll(){form.querySelectorAll('[data-ge-artwork]').forEach(initialize);}
   initializeAll();
-  new MutationObserver(initializeAll).observe(form.querySelector('[data-ge-lines]'),{childList:true,subtree:true});
+  new MutationObserver(initializeAll).observe(form.querySelector('[data-ge-lines], [data-request-items]'),{childList:true,subtree:true});
   form.addEventListener('submit',function(event){
     var pending=form.querySelector('[data-state="queued"],[data-state="uploading"],[data-state="error"]');
     if(pending){event.preventDefault();var block=pending.closest('[data-ge-artwork]');block.querySelector('[data-ge-artwork-notice]').textContent=pending.dataset.state==='error'?'Reintentá o quitá el archivo con error antes de guardar.':'Esperá a que terminen las cargas antes de guardar.';pending.scrollIntoView({block:'center',behavior:'smooth'});return;}

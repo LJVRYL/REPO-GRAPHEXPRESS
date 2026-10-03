@@ -168,7 +168,7 @@ final class GE_WTP_Billing_Issuers {
     }
     public static function vat_label( $s ) { $labels = array( 'registered' => 'IVA Responsable Inscripto', 'monotributo' => 'Monotributista', 'exempt' => 'IVA Exento' ); return $labels[$s['vat_status'] ?? ''] ?? 'Condición fiscal pendiente de verificación'; }
     public static function label( $s ) { return 'unknown' === ( $s['id'] ?? 'unknown' ) ? 'Emisor histórico no registrado · requiere revisión' : ( $s['legal_name'] . ' · CUIT ' . $s['cuit'] . ' · ' . self::vat_label( $s ) ); }
-    public static function render_summary( $s ) { echo '<p class="ge-issuer-summary"><strong>Emisor / Facturación:</strong> ' . esc_html( self::label( self::from_snapshot( $s ) ) ) . '</p>'; }
+    public static function render_summary( $s ) { if ( ! GE_WTP_Staff_Portal::can_access() || GE_WTP_Portal::is_staff_preview() ) { return; } echo '<p class="ge-issuer-summary"><strong>Emisor / Facturación:</strong> ' . esc_html( self::label( self::from_snapshot( $s ) ) ) . '</p>'; }
     public static function render_picker( $s = array() ) {
         $old = self::from_snapshot( $s ); $can = self::can_manage( get_current_user_id() );
         echo '<section class="ge-production-card ge-billing-issuer-picker"><h2>Emisor / Facturación</h2><label>Emisor seleccionado<select name="issuer_profile_id"' . ( ! $can ? ' disabled' : '' ) . '><option value="">' . esc_html( $s ? 'Conservar emisor registrado' : 'Sugerir según perfil fiscal del cliente' ) . '</option>';

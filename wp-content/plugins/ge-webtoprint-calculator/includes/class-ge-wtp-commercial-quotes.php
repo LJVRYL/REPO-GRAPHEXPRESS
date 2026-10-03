@@ -259,6 +259,7 @@ final class GE_WTP_Commercial_Quotes {
             update_post_meta( $quote_id, '_ge_commercial_accepted_by', $actor_id );
             update_post_meta( $quote_id, '_ge_commercial_accept_source', 'portal' );
             self::event( $quote_id, $version, 'accepted', $actor_id );
+            GE_WTP_Internal_Alerts::create('quote_approved','Presupuesto aprobado · ' . $quote['number'],$quote_id,$quote['customer_id']);
             return self::get( $quote_id, $actor_id );
         } finally {
             delete_option( $lock );

@@ -14,9 +14,10 @@ final class GE_WTP_Customer_Branches {
 
     public static function profiles( $customer_id, $include_inactive = false ) {
         $legacy = GE_WTP_Billing::profile( $customer_id );
+        $legacy=array_merge($legacy,(array)get_user_meta($customer_id,'_ge_primary_profile_contact',true));
         $legacy['id'] = 'default';
-        $legacy['label'] = 'Perfil principal';
-        $legacy['active'] = true;
+        $legacy['label'] = get_user_meta( $customer_id, '_ge_primary_profile_label', true ) ?: 'Perfil principal';
+        $legacy['active'] = 'yes' !== get_user_meta( $customer_id, '_ge_primary_profile_inactive', true );
         $legacy['legacy'] = true;
         $stored = get_user_meta( $customer_id, self::META, true );
         $stored = is_array( $stored ) ? $stored : array();
@@ -120,7 +121,7 @@ final class GE_WTP_Customer_Branches {
             $profile = is_array( $billing ) ? ( $billing['profile'] ?? array() ) : array();
         }
         $tax = $order->get_meta( '_ge_customer_tax_decision', true );
-        if ( is_array( $tax ) && $tax ) { echo '<p>' . esc_html( GE_WTP_Customer_Tax_UI::decision_label( array( 'customer_tax_decision' => $tax, 'customer_billing_profile' => $profile ) ) ) . '</p>'; }
+        if ( $staff && is_array( $tax ) && $tax ) { echo '<p>' . esc_html( GE_WTP_Customer_Tax_UI::decision_label( array( 'customer_tax_decision' => $tax, 'customer_billing_profile' => $profile ) ) ) . '</p>'; }
         $delivery = $order->get_meta( '_ge_delivery_snapshot', true );
         $delivery = is_array( $delivery ) ? $delivery : array();
         $customer = get_userdata( $order->get_customer_id() );

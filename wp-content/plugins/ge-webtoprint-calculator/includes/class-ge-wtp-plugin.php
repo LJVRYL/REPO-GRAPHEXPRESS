@@ -25,6 +25,12 @@ final class GE_WTP_Plugin {
         add_action( 'init', array( 'GE_WTP_Catalog', 'ensure_exchange_schedule' ), 30 );
         add_filter( 'wc_order_statuses', array( $this, 'add_order_statuses' ) );
 
+        require_once __DIR__ . '/class-ge-wtp-portal-profiles.php';
+        GE_WTP_Portal_Profiles::init();
+        require_once __DIR__ . '/class-ge-wtp-internal-alerts.php';
+        require_once __DIR__ . '/class-ge-wtp-quote-requests.php';
+        GE_WTP_Internal_Alerts::init();
+        GE_WTP_Quote_Requests::init();
         GE_WTP_Portal::init();
         GE_WTP_Quotes::init();
         GE_WTP_Commercial_Quotes::init();

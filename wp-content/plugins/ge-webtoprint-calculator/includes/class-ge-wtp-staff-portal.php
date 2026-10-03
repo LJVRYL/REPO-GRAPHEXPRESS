@@ -111,7 +111,10 @@ final class GE_WTP_Staff_Portal {
             GE_WTP_Cost_UI::render();
         } elseif ( GE_WTP_Operations::enabled() && in_array($section,array('stock','administration','suppliers'),true) ) {
             GE_WTP_Operations_UI::render($section);
+        } elseif ( 'requests' === $section ) {
+            GE_WTP_Quote_Requests::inbox();
         } elseif ( 'quotes' === $section ) {
+            echo '<p><a href="' . esc_url(self::portal_url('requests')) . '">Solicitudes de presupuesto →</a></p>';
             GE_WTP_Commercial_Quote_UI::render_staff();
         } elseif ( 'orders' === $section ) {
             self::render_orders();
@@ -188,6 +191,7 @@ final class GE_WTP_Staff_Portal {
     }
 
     private static function render_dashboard() {
+        GE_WTP_Quote_Requests::dashboard();
         $orders = GE_WTP_Orders::get_all_orders( 250 );
         $quotes = get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => 5, 'orderby' => 'date', 'order' => 'DESC' ) );
         $open_quotes = new WP_Query( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_query' => array( array( 'key' => GE_WTP_Commercial_Quotes::STATUS_META, 'value' => array( 'draft', 'sent', 'viewed', 'accepted' ), 'compare' => 'IN' ) ) ) );

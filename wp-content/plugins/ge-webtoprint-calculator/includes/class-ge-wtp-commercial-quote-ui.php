@@ -383,11 +383,11 @@ final class GE_WTP_Commercial_Quote_UI {
     }
 
     private static function render_snapshot( $snapshot, $customer = false ) {
-        if ( $customer ) { GE_WTP_Quote_Billing_Control::summary( $snapshot ); }
+        if ( ! $customer ) { GE_WTP_Quote_Billing_Control::summary( $snapshot ); }
         if ( empty( $snapshot['items'] ) ) { return; }
         $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $snapshot );
-        if ( $tax_label ) { echo '<p class="ge-quote-fiscal-decision">' . esc_html( $tax_label ) . '</p>'; }
-        GE_WTP_Customer_Tax_UI::render_warnings( $snapshot['customer_tax_decision'] ?? array() );
+        if ( $tax_label && ! $customer ) { echo '<p class="ge-quote-fiscal-decision">' . esc_html( $tax_label ) . '</p>'; }
+        if ( ! $customer ) { GE_WTP_Customer_Tax_UI::render_warnings( $snapshot['customer_tax_decision'] ?? array() ); }
         $profile = GE_WTP_Quote_Billing_Control::receiver( $snapshot );
         $delivery = $snapshot['delivery'] ?? array();
         if ( $profile ) {
@@ -420,7 +420,7 @@ final class GE_WTP_Commercial_Quote_UI {
             $rate = $snapshot['tax_rates'][0] ?? $snapshot['billing']['resolution']['tax_rate_basis_points'] ?? $snapshot['billing']['entity']['tax_rate_basis_points'] ?? null;
             echo '<div><span>IVA' . ( $rate ? ' ' . esc_html( number_format_i18n( $rate / 100, 2 ) ) . '%' : '' ) . '</span><strong>' . esc_html( self::money( $snapshot['tax_cents'] ?? 0 ) ) . '</strong></div><div class="is-total"><span>TOTAL' . ( ! empty( $snapshot['tax_cents'] ) ? ' con IVA' : ' final' ) . '</span><strong>' . esc_html( self::money( $snapshot['total_cents'] ) ) . '</strong></div>';
             if ( 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { echo '<p>Propuesta comercial. Datos de facturación pendientes de confirmación.</p>'; }
-            if ( 'C' === ( $snapshot['billing']['resolution']['document_type'] ?? '' ) ) { echo '<p>IVA no discriminado según configuración fiscal del emisor.</p>'; }
+            if ( 'C' === ( $snapshot['billing']['resolution']['document_type'] ?? '' ) ) { echo '<p>IVA no discriminado.</p>'; }
         } else { echo '<div><span>IVA</span><strong>A confirmar</strong></div><div class="is-total"><span>TOTAL</span><strong>A confirmar</strong></div><p>Datos fiscales pendientes. Se puede guardar el borrador; revisá el perfil y la configuración antes de enviar.</p>'; }
         echo '</div>';
     }

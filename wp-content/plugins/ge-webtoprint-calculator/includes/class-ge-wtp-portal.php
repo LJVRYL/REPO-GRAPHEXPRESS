@@ -210,7 +210,7 @@ final class GE_WTP_Portal {
         }
 
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
-        $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil' );
+        $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil', 'legales', 'personalizado', 'solicitudes' );
         if ( self::portal_is_markcom() ) {
             $allowed[] = 'catalogo';
         }
@@ -243,6 +243,12 @@ final class GE_WTP_Portal {
                     elseif ( self::portal_is_markcom() ) { GE_WTP_Reorders::render_markcom_saved(); } else { GE_WTP_Reorders::render_customer_saved(); }
                 } elseif ( 'documentos' === $section ) {
                     self::render_documents_library();
+                } elseif ( 'personalizado' === $section ) {
+                    GE_WTP_Quote_Requests::form();
+                } elseif ( 'solicitudes' === $section ) {
+                    GE_WTP_Quote_Requests::history();
+                } elseif ( 'legales' === $section ) {
+                    GE_WTP_Portal_Profiles::legal();
                 } elseif ( 'perfil' === $section ) {
                     GE_WTP_Customers::render_for_portal( self::portal_customer_id(), self::is_staff_preview() );
                 } else {
@@ -335,7 +341,9 @@ final class GE_WTP_Portal {
             'pedidos'    => 'Pedidos',
             'guardados'  => 'Guardados',
             'documentos' => 'Documentos',
+            'solicitudes' => 'Mis solicitudes',
             'perfil'     => 'Mi perfil',
+            'legales'    => 'Legales',
         );
         if ( self::portal_is_markcom() ) {
             $items = array_merge( array( 'inicio' => 'Resumen', 'catalogo' => 'Productos' ), array_slice( $items, 1, null, true ) );
@@ -403,7 +411,7 @@ final class GE_WTP_Portal {
                 <span class="ge-eyebrow">Bienvenido al portal</span>
                 <h1><?php echo wp_kses_post( $markcom ? 'Todo el trabajo de Markcom,<br>claro y centralizado.' : 'Tus trabajos gráficos,<br>claros y centralizados.' ); ?></h1>
                 <p><?php echo esc_html( $markcom ? 'Consultá el catálogo acordado, armá un pedido y seguí producción, facturación y documentación desde acá.' : 'Consultá tus pedidos, documentación y archivos. También podés iniciar un nuevo pedido desde la tienda.' ); ?></p>
-                <a class="ge-button ge-button-primary" href="<?php echo esc_url( $markcom ? self::portal_url( 'catalogo' ) : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' ) ) ); ?>"><?php echo esc_html( $markcom ? 'Crear nuevo pedido' : 'Ir a la tienda' ); ?></a>
+                <a class="ge-button ge-button-primary" href="<?php echo esc_url( $markcom ? self::portal_url( 'catalogo' ) : ( function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/tienda/' ) ) ); ?>"><?php echo esc_html( $markcom ? 'Crear nuevo pedido' : 'Ir a la tienda' ); ?></a> <a class="ge-button ge-button-primary" href="<?php echo esc_url( self::portal_url( 'personalizado' ) ); ?>">Presupuesto personalizado</a>
             </div>
             <?php if ( $markcom ) : ?><div class="ge-rate-card">
                 <span class="ge-rate-label">Tipo de cambio utilizado</span>

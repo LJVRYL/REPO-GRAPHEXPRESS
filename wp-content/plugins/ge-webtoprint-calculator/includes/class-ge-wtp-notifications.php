@@ -103,6 +103,7 @@ final class GE_WTP_Notifications {
     }
 
     public static function send_order_created( $order ) {
+        GE_WTP_Internal_Alerts::create('new_order','Nuevo pedido · ' . $order->get_order_number(),$order->get_id(),$order->get_customer_id());
         if ( ! $order instanceof WC_Order ) {
             return false;
         }
