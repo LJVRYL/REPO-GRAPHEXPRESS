@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+require_once __DIR__ . '/vendor/qrcode-generator/qrcode.php';
 
 /** Commercial PDFs use the existing immutable version, never a fresh price calculation. */
 final class GE_WTP_Commercial_Quote_PDF {
@@ -133,14 +134,15 @@ final class GE_WTP_Commercial_Quote_PDF {
         foreach ( (array) ( $s['discounts'] ?? array() ) as $discount_detail ) {
             if ( ! empty( $discount_detail['reason'] ) ) { $conditions[] = 'Descuento: ' . $discount_detail['reason']; }
         }
-        foreach ( $conditions as $text ) { foreach ( self::wrap( $text, 510, 9.5 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); } }
+        foreach ( $conditions as $text ) { foreach ( self::wrap( $text, 410, 9.5 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); } }
         $rows[] = array( 'kind' => 'gap', 'height' => 20 );
         $rows[] = array( 'kind' => 'heading', 'text' => 'Revisá tu presupuesto online', 'height' => 24 );
-        $rows[] = array( 'kind' => 'copy', 'text' => 'Ingresá con tu cuenta para revisar la propuesta, aceptarla y seguir el trabajo.', 'height' => 17 );
+        foreach ( self::wrap( 'Ingresá con tu cuenta para revisar la propuesta, aceptarla y seguir el trabajo.', 410, 9.5 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); }
         $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote['id'] ) );
         // portal_url can carry preview nonces. Build an account-login URL without credentials.
         $url = remove_query_arg( array( 'ge_preview_customer', 'ge_preview_token' ), $url );
-        foreach ( self::wrap( $url, 510, 9 ) as $line ) { $rows[] = array( 'kind' => 'copy', 'text' => $line, 'height' => 15 ); }
+        $qr = self::portal_qr( $url );
+        if ( is_wp_error( $qr ) ) { return $qr; }
         // A4 has a fixed content area. Compact spacing, never clip content or shrink text.
         $rhythm = array( 'client' => 14, 'gap' => 10, 'table' => 27, 'item' => 14, 'rule' => 10, 'amount' => 21, 'total' => 42, 'copy' => 14, 'heading' => 23 );
         foreach ( $rows as &$row ) { $row['height'] = $rhythm[ $row['kind'] ]; }
@@ -210,6 +212,11 @@ final class GE_WTP_Commercial_Quote_PDF {
                     $pdf->text( 292, $top + 10, 'total' === $kind ? 13 : 10, $row['label'], 'total' === $kind, $white, $white, $white );
                     $pdf->text_right( 545, $top + 10, 'total' === $kind ? 13 : 10, $currency . ' ' . self::amount( $row['amount'] ), true, $white, $white, $white );
                 } elseif ( 'gap' !== $kind ) {
+                    if ( 'heading' === $kind && 'Revisá tu presupuesto online' === $row['text'] ) {
+                        $qr_top = max( 125 + $issuer_height, $top - 36 );
+                        self::draw_qr( $pdf, $qr, 485, $qr_top, 72 );
+                        $pdf->text( 491, $qr_top + 82, 8, 'Escaneá el QR', false, 17, 24, 39 );
+                    }
                     $pdf->text( 38, $top, 'heading' === $kind ? 12 : ( 'client' === $kind ? 10 : 9.5 ), $row['text'], 'heading' === $kind, 17, 24, 39 );
                 }
                 $top += $row['height'];
@@ -222,6 +229,35 @@ final class GE_WTP_Commercial_Quote_PDF {
             $pages[] = $pdf->end_page();
         }
         return $pdf->output( $pages );
+    }
+
+    /** Encode locally: the public account link never includes a staff preview token. */
+    private static function portal_qr( $url ) {
+        $qr = new \Graphex\QR\QRCode();
+        $qr->setErrorCorrectLevel( \Graphex\QR\QR_ERROR_CORRECT_LEVEL_M );
+        $qr->addData( $url, \Graphex\QR\QR_MODE_8BIT_BYTE );
+        // Select capacity from RS blocks, including versions beyond the upstream shortcut table.
+        for ( $version = 1; $version <= 40; $version++ ) {
+            $capacity = 0;
+            foreach ( \Graphex\QR\QRRSBlock::getRSBlocks( $version, \Graphex\QR\QR_ERROR_CORRECT_LEVEL_M ) as $block ) { $capacity += $block->getDataCount() * 8; }
+            if ( 4 + ( $version < 10 ? 8 : 16 ) + strlen( $url ) * 8 + 4 <= $capacity ) {
+                $qr->setTypeNumber( $version );
+                $qr->make();
+                return $qr;
+            }
+        }
+        return new WP_Error( 'ge_pdf_qr', 'El enlace del portal es demasiado largo para generar el QR.' );
+    }
+
+    private static function draw_qr( $pdf, $qr, $x, $top, $size ) {
+        $count = $qr->getModuleCount();
+        $module = $size / ( $count + 8 ); // Four clear modules on each side.
+        $pdf->fill_rect( $x, $top, $size, $size, 255, 255, 255 );
+        for ( $row = 0; $row < $count; $row++ ) {
+            for ( $column = 0; $column < $count; $column++ ) {
+                if ( $qr->isDark( $row, $column ) ) { $pdf->fill_rect( $x + ( $column + 4 ) * $module, $top + ( $row + 4 ) * $module, $module, $module, 0, 0, 0 ); }
+            }
+        }
     }
 
     private static function amount( $cents ) { return number_format( (int) $cents / 100, 2, ',', '.' ); }
