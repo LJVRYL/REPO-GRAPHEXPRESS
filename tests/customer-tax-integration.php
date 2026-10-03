@@ -1,0 +1,80 @@
+<?php
+/** Isolated WordPress QA only. Usage: php tests/customer-tax-integration.php /path/to/qa/wp-load.php */
+if ( empty( $argv[1] ) || false === strpos( $argv[1], '/work/qa/' ) ) { throw new RuntimeException( 'Only isolated QA is allowed.' ); }
+require $argv[1];
+if ( false === strpos( get_option( 'siteurl' ), '127.0.0.1:18813' ) ) { throw new RuntimeException( 'Wrong QA environment.' ); }
+$checks = 0;
+function ge_tax_check( $condition, $message ) { global $checks; if ( ! $condition ) { throw new RuntimeException( $message ); } ++$checks; }
+$staff = get_users( array( 'role' => 'administrator', 'number' => 1 ) )[0];
+wp_set_current_user( $staff->ID ); update_option( 'ge_customer_tax_stage_v1', 3 );
+$id = wp_insert_user( array( 'user_login' => 'tax-qa-' . wp_generate_password( 8, false ), 'user_email' => 'tax-qa-' . wp_generate_password( 8, false ) . '@example.invalid', 'user_pass' => wp_generate_password(32), 'role' => 'customer' ) );
+ge_tax_check( ! is_wp_error( $id ), 'QA customer created' );
+$base = array( 'cuit' => '23336924529', 'legal_name' => 'QA CLIENTE', 'vat_status' => 'registered', 'billing_mode' => 'common', 'billing_email' => 'qa@example.invalid', 'fiscal_address' => 'QA 123' );
+$saved = GE_WTP_Billing::save_profile( $id, array_merge( $base, array( 'verification_status' => 'verified', 'verified_at' => gmdate('c'), 'source' => 'arca_wsci' ) ), $staff->ID, true );
+ge_tax_check( 'manual' === $saved['verification_status'] && ! $saved['verified_at'], 'POST verification spoof rejected' );
+$branch = GE_WTP_Customer_Branches::save( $id, array_merge( $base, array( 'label' => 'QA sucursal', 'vat_status' => 'final_consumer', 'is_default' => true ) ), $staff->ID );
+ge_tax_check( ! is_wp_error( $branch ) && $branch['id'] === GE_WTP_Customer_Branches::default_profile_id( $id ), 'Branch default selected' );
+ge_tax_check( count( GE_WTP_Customer_Branches::profiles( $id ) ) === 2, 'Multiple profiles reuse existing storage' );
+ge_tax_check( null === GE_WTP_Customer_Branches::find( $id + 98765, $branch['id'] ), 'Cross customer profile cannot resolve' );
+ge_tax_check( is_wp_error( GE_WTP_Customer_Branches::save( $id, $base, $id + 98765 ) ), 'Cross customer save denied' );
+$own = GE_WTP_Customer_Branches::save( $id, array_merge( $branch, array( 'label' => 'Propia' ) ), $id );
+ge_tax_check( ! is_wp_error( $own ), 'Customer can update own branch' );
+$issuers = GE_WTP_Billing_Issuers::all();
+register_shutdown_function( function() use ($issuers) { update_option( GE_WTP_Billing_Issuers::OPTION, $issuers ); } );
+$issuer = array( 'id'=>'qa-registered','active'=>true,'verification_status'=>'verified','verified_at'=>gmdate('c'),'relationship_confirmed'=>true,'legal_name'=>'QA EMISOR','cuit'=>'23336924529','fiscal_address'=>'QA 1','vat_status'=>'registered','point_of_sale'=>'1','invoice_types_allowed'=>array('A','B'),'common_price_policy'=>'tax_exclusive','invoice_a_price_policy'=>'tax_exclusive','tax_rate_basis_points'=>2100,'default_for_scenarios'=>array('common','invoice_a'),'revision'=>1 );
+update_option( GE_WTP_Billing_Issuers::OPTION, array('qa-registered'=>$issuer) );
+$choice = GE_WTP_Billing_Issuers::choose( $saved, array(), $staff->ID );
+ge_tax_check( is_wp_error( $choice ) && 'ge_tax_review' === $choice->get_error_code(), 'New operation requires staff confirmation' );
+$choice = GE_WTP_Billing_Issuers::choose( $saved, array('customer_tax_confirm'=>true), $staff->ID );
+ge_tax_check( ! is_wp_error( $choice ) && $staff->ID === $choice['suggestion']['reviewed_by'], 'Review actor captured' );
+$second=array_merge($issuer,array('id'=>'qa-other'));update_option(GE_WTP_Billing_Issuers::OPTION,array('qa-registered'=>$issuer,'qa-other'=>$second));
+$override=GE_WTP_Billing_Issuers::choose($saved,array('issuer_profile_id'=>'qa-other','customer_tax_confirm'=>true),$staff->ID);
+ge_tax_check(is_wp_error($override) && 'ge_issuer_reason'===$override->get_error_code(),'Manual issuer override requires reason');
+$override=GE_WTP_Billing_Issuers::choose($saved,array('issuer_profile_id'=>'qa-other','customer_tax_confirm'=>true,'issuer_change_reason'=>'QA real issuer reviewed'),$staff->ID);
+ge_tax_check(!is_wp_error($override) && 'QA real issuer reviewed'===$override['suggestion']['override_reason'],'Authorized override records reason');
+update_option(GE_WTP_Billing_Issuers::OPTION,array('qa-registered'=>$issuer));
+$unknown = GE_WTP_Billing::resolve( GE_WTP_Billing_Issuers::entity( $issuer ), array( 'vat_status'=>'' ), 10000 );
+ge_tax_check( null === $unknown['document_type'] && in_array('recipient_condition_unknown',$unknown['blockers'],true), 'Unknown recipient never defaults to B' );
+$known = GE_WTP_Billing::resolve( GE_WTP_Billing_Issuers::entity( $issuer ), $base, 10000 );
+ge_tax_check( 12100 === $known['total_cents'] && 2100 === $known['tax_cents'], 'Centavo pricing preserved' );
+$quote = GE_WTP_Commercial_Quotes::create_draft( $id, array( array('name'=>'QA item','quantity'=>'1','unit_net'=>'100.00','unit'=>'u') ), array('customer_tax_confirm'=>true), $staff->ID );
+ge_tax_check( ! is_wp_error($quote), 'New quote created' );
+ge_tax_check( $quote['snapshot']['billing_profile_id'] === $branch['id'], 'Quote uses customer branch default' );
+ge_tax_check( 'B' === $quote['snapshot']['customer_tax_decision']['suggested_document_class'], 'Quote captures branch decision' );
+$frozen = wp_json_encode( $quote['snapshot'] );
+GE_WTP_Customer_Branches::save( $id, array_merge( $own, array('vat_status'=>'registered') ), $staff->ID );
+ge_tax_check( $frozen === wp_json_encode( GE_WTP_Commercial_Quotes::get($quote['id'])['snapshot'] ), 'Profile update leaves existing financial snapshot untouched' );
+$label = GE_WTP_Customer_Tax_UI::decision_label( $quote['snapshot'] );
+ge_tax_check( false !== strpos( GE_WTP_Commercial_Quotes::email_summary($quote['snapshot']), esc_html($label) ), 'Email uses persisted decision label' );
+ob_start(); $render = new ReflectionMethod( 'GE_WTP_Commercial_Quote_UI', 'render_snapshot' ); $render->setAccessible(true); $render->invoke(null,$quote['snapshot'],true); $portal=ob_get_clean();
+ge_tax_check( false !== strpos($portal,esc_html($label)), 'Portal uses same persisted decision label' );
+$order=wc_create_order(array('customer_id'=>$id)); GE_WTP_Billing_Issuers::inherit($order,$quote['snapshot']); $order->save();
+ge_tax_check( $quote['snapshot']['customer_tax_decision'] === $order->get_meta('_ge_customer_tax_decision',true), 'Order inherits exact decision snapshot' );
+$mono = array_merge( $issuer, array( 'vat_status'=>'monotributo','invoice_types_allowed'=>array('C'),'tax_rate_basis_points'=>0 ) );
+$stale = GE_WTP_Billing::resolve( GE_WTP_Billing_Issuers::entity($mono), array_merge($base,array('billing_mode'=>'invoice_a')), 10000 );
+ge_tax_check( 'C' === $stale['document_type'] && 10000 === $stale['total_cents'], 'Legacy invoice A preference cannot force C issuer to A' );
+$pdf = GE_WTP_Commercial_Quote_PDF::build($quote);
+ge_tax_check( is_string($pdf) && 0 === strpos($pdf,'%PDF-'), 'PDF built from same snapshot' );
+$hash = new ReflectionMethod('GE_WTP_Customer_Tax_UI','profile_hash'); $hash->setAccessible(true);
+$token=wp_generate_password(40,false); $key='ge_tax_preview_'.hash('sha256',$token);
+$partial=array_merge($base,array('vat_status'=>'unknown','verification_status'=>'pending','source_url'=>'https://www.arca.gob.ar','tax_evidence'=>array('identity_verified'=>true)));
+set_transient($key,array('actor'=>$staff->ID,'customer'=>$id,'id'=>'default','old_hash'=>$hash->invoke(null,$saved),'profile'=>$partial,'checked_at'=>gmdate('c'),'source'=>'arca_wsci'),600);
+$trusted=GE_WTP_Billing::save_profile($id,array_merge($base,array('vat_status'=>'','tax_preview_token'=>$token)),$staff->ID);
+ge_tax_check('pending'===$trusted['verification_status'] && !$trusted['verified_at'], 'Partial official identity stays pending');
+ge_tax_check(isset($trusted['tax_evidence']['identity_verified']) && isset($trusted['source_url']), 'Trusted provenance preserved');
+$repeat=GE_WTP_Billing::save_profile($id,array_merge($base,array('vat_status'=>'')),$staff->ID);
+ge_tax_check($repeat===$trusted,'Unchanged save retains nested trusted evidence');
+$replay=false;try {GE_WTP_Billing::save_profile($id,array_merge($base,array('vat_status'=>'','tax_preview_token'=>$token)),$staff->ID);} catch(InvalidArgumentException $error){$replay=true;}
+ge_tax_check($replay,'Preview token cannot be replayed');
+$expired=false;try {GE_WTP_Billing::save_profile($id,array_merge($base,array('tax_preview_token'=>'missing')),$staff->ID);} catch(InvalidArgumentException $error){$expired=true;}
+ge_tax_check($expired,'Missing or expired preview cannot verify');
+$no_staff=GE_WTP_Billing_Issuers::choose($trusted,array('customer_tax_confirm'=>true),$id);
+ge_tax_check(is_wp_error($no_staff) && 'ge_tax_review_forbidden'===$no_staff->get_error_code(),'Customer cannot confirm staff fiscal review');
+$invalid=GE_WTP_Customer_Tax_UI::suggestion_profile($trusted,array('customer_cuit'=>'11111111111','vat_status'=>'registered'));
+ge_tax_check(is_wp_error($invalid),'Invalid quick CUIT never produces invoice A suggestion');
+$candidate=GE_WTP_Customer_Tax_UI::suggestion_profile($trusted,array('customer_cuit'=>'23336924529','vat_status'=>'registered','verification_status'=>'verified'));
+ge_tax_check('pending'===$candidate['verification_status'] && 'manual_preview'===$candidate['source'],'Quick candidate never trusts client verification');
+update_option('ge_customer_tax_stage_v1',0);ob_start();GE_WTP_Customer_Tax_UI::controls($id);$disabled=ob_get_clean();ge_tax_check(''===$disabled,'Stage0 exposes no lookup UI');update_option('ge_customer_tax_stage_v1',3);
+file_put_contents( dirname( $argv[1] ) . '/../tax-integration-context.json', wp_json_encode(array('customer_id'=>$id,'quote_id'=>$quote['id'],'order_id'=>$order->get_id(),'profile_id'=>$branch['id'],'label'=>$label)) );
+update_option( GE_WTP_Billing_Issuers::OPTION, $issuers );
+echo 'PASS ' . $checks . " integration checks\n";
