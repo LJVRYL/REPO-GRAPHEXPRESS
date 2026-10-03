@@ -154,6 +154,7 @@ final class GE_WTP_Quote_Artwork_V2 {
         foreach($files as &$file){$file['quote_id']=$quote_id;$key=self::PREFIX.$actor.'_'.$file['id'];$row=get_option($key);if($row){$row['claimed_quote_id']=$quote_id;update_option($key,$row,false);}}unset($file);
         update_post_meta($quote_id,GE_WTP_Commercial_Quote_Files::META,$files);
         GE_WTP_Commercial_Quotes::record_event($quote_id,'artwork_associations_saved',$actor,array('file_count'=>count($files)));
+        GE_WTP_Commercial_Quotes::refresh_selection_notice($quote_id,$actor);
     }
     public static function save_guard( $session ) {
         if(!self::uuid($session)){wp_die('Sesión de presupuesto inválida. Volvé a abrirlo.','',array('response'=>422));}

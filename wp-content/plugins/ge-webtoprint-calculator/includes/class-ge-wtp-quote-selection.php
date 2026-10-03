@@ -124,11 +124,19 @@ final class GE_WTP_Quote_Selection {
     }
 
     public static function preview_request( $quote ) {
+        if ( ! isset( $_GET['selection_submitted'] ) ) {
+            $saved = get_post_meta( $quote['id'], '_ge_commercial_saved_selection', true );
+            if ( is_array( $saved ) && (int) ( $saved['version'] ?? 0 ) === $quote['version'] && ( $saved['proposal_hash'] ?? '' ) === GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ) ) { $quote['snapshot'] = $saved['snapshot']; }
+        }
         if ( ! isset( $_GET['selection_submitted'] ) ) { return $quote; }
         if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['selection_nonce'] ?? '' ) ), 'ge_quote_selection_' . $quote['id'] . '_' . $quote['version'] ) ) { return new WP_Error( 'ge_selection_nonce', 'Recargá el presupuesto para elegir las opciones actuales.' ); }
-        $ids = wp_unslash( $_GET['quote_selection'] ?? array() );
-        $configs = wp_unslash( $_GET['quote_configuration'] ?? array() );
-        $facets = wp_unslash( $_GET['choice'] ?? array() );
+        return self::request_selection( $quote, wp_unslash( $_GET ) );
+    }
+
+    public static function request_selection( $quote, $request ) {
+        $ids = $request['quote_selection'] ?? array();
+        $configs = $request['quote_configuration'] ?? array();
+        $facets = $request['choice'] ?? array();
         if ( ! is_array( $ids ) || ! is_array( $configs ) || ! is_array( $facets ) ) { return new WP_Error( 'ge_selection_config', 'Revisá la configuración.' ); }
         foreach ( $facets as $group => $choice ) {
             if ( ! is_array( $choice ) ) { return new WP_Error( 'ge_selection_config', 'Revisá la configuración.' ); }
@@ -140,7 +148,7 @@ final class GE_WTP_Quote_Selection {
             if ( 1 !== count( $matches ) ) { return new WP_Error( 'ge_selection_config', 'La combinación elegida no está disponible.' ); }
             $id = $matches[0]['line_uuid']; $ids[] = $id; $configs[$id] = array( 'paper' => $choice['paper'] ?? '' );
         }
-        return self::apply( $quote, $ids, absint( $_GET['selection_version'] ?? 0 ), $configs );
+        return self::apply( $quote, $ids, absint( $request['selection_version'] ?? 0 ), $configs );
     }
 
     private static function option_price( $item, $snapshot ) {
@@ -191,6 +199,7 @@ final class GE_WTP_Quote_Selection {
         }
         if ( ! $staff ) { echo '<input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '">'; }
         echo '<input type="hidden" name="selection_submitted" value="1"><input type="hidden" name="selection_version" value="' . esc_attr( $quote['version'] ) . '"><input type="hidden" name="selection_nonce" value="' . esc_attr( wp_create_nonce( 'ge_quote_selection_' . $quote['id'] . '_' . $quote['version'] ) ) . '"><input type="hidden" name="_wpnonce" value="' . esc_attr( wp_create_nonce( 'ge_commercial_quote_pdf_' . $quote['id'] ) ) . '">';
+        echo '<input type="hidden" name="save_nonce" value="' . esc_attr( wp_create_nonce( 'ge_quote_save_' . $quote['id'] . '_' . $quote['version'] ) ) . '">';
         foreach ( $groups as $group => $items ) {
             $models = array(); $finishes = array(); $papers = array(); $selected = null; $prices = array();
             foreach ( $items as $item ) {
