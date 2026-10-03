@@ -26,7 +26,7 @@ de6e113a2be0ebdedfbd8a6e8b999597f01d5230e8a14323006d225da2d834b1  wp-content/plu
 1183096f02657d336248e0a5a37d622ce8023cdc91e1e251221a0b4568773107  wp-content/plugins/ge-webtoprint-calculator/assets/css/billing-issuers.css
 f76c6fa69a09b82b0001b1d424512d2ffef729326865182200c834ce14a805df  wp-content/plugins/ge-webtoprint-calculator/assets/css/canva.css
 6b2c86ac507993a6298afef544fd85a7e4bf2f81e72d13810b86c4a7e942c019  wp-content/plugins/ge-webtoprint-calculator/assets/css/careers.css
-e1076b929014b688911dfaf6450706dcfa0db358b17b63d21093fe870669a6c0  wp-content/plugins/ge-webtoprint-calculator/assets/css/commercial-quotes.css
+d07b0d10673b91ee9c5018381fb50ab6b1079b6ac23b0718b438f098f743d7c1  wp-content/plugins/ge-webtoprint-calculator/assets/css/commercial-quotes.css
 9e2482b5522265899f33ad9ea25d18d76041000d066923543213bf638aae56cb  wp-content/plugins/ge-webtoprint-calculator/assets/css/cost-engine.css
 65fedf02fff35f466d58b8f5dbb84e907f2f434e4ed611e9af9410db423a56b9  wp-content/plugins/ge-webtoprint-calculator/assets/css/customer-profile.css
 8f58942c4df8a85283a8c376e2a998a39cb41e817af3736813e3dbd3e149f55d  wp-content/plugins/ge-webtoprint-calculator/assets/css/customer-workspace.css
@@ -539,7 +539,7 @@ b2dcf2c10f33672c3a615f2a04b2a3906fe6947acf2f03e744c486253f7567a3  wp-content/plu
 a3bdc26c7785888e6f1fa44f552085d7b24d0e07c1dcd150893f6091aea5d2ac  wp-content/plugins/ge-webtoprint-calculator/assets/js/artwork-control.js
 e12fcd12f39a6341e5a1cd2b03c771fc6598d7c793af17ae605076a3565333a5  wp-content/plugins/ge-webtoprint-calculator/assets/js/canva.js
 ac1d6f90c2d7543a11aa34ae42525aa8b4a33bfe5f9252b0ae44eec74c762def  wp-content/plugins/ge-webtoprint-calculator/assets/js/checkout-payment-choice.js
-a17672878c7446324b0eb31743c67e9dae2c576c304034b9f4675e87e6f68708  wp-content/plugins/ge-webtoprint-calculator/assets/js/commercial-quotes.js
+ad90e41b011ec2d7257cdc7cfd3647961c666a88bbfc38c367fb83cdda44bc10  wp-content/plugins/ge-webtoprint-calculator/assets/js/commercial-quotes.js
 0b24809ac19491da5ddc0ceed43ae9cf18ba70ef73195c9b446eb1487f14f2e9  wp-content/plugins/ge-webtoprint-calculator/assets/js/cost-engine.js
 ffa8f25862dd1f2937d8441db16dbc95d6739ce1a3d3b3950c150c6906de952d  wp-content/plugins/ge-webtoprint-calculator/assets/js/cost-quotes.js
 3854135130486832e0878a1a6fa40d55b23e11eb498760ade47b3675f0600f00  wp-content/plugins/ge-webtoprint-calculator/assets/js/customer-profile.js
@@ -587,10 +587,10 @@ fe3270ac431d1d9fa4e495b23d8e054d82ca219cb0716fac67e8394bbbb3047b  wp-content/plu
 4f6be4d1242af6e902d35239964aa0f3d580865ec466c5ecd856b49cc7bb50ff  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-catalog.php
 5e8116fb1cce6303cbd18fd591bea20ced29275cba9eab7b6f4471787ced28f2  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-checkout.php
 51fde95199121cd076f5dafd862b43a135ba6bd103581026887cf375b5bc8728  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-catalog.php
-67ee172700859200e8202affb0ab2b340cf1b3f202a5b7fd7400118e1c55e071  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-files.php
-d5dcc6a87d738f43c8536301b154f96060ac2425845af941947e878f8a32e655  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-pdf.php
-9e604fdb17bc0b305de01b9709103c86f9f5d19172806a3e34d0cbeda86011eb  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-ui.php
-8a34844b10809688193ec93610e36cc5bd97a6223264f597510b9b3b783e11b4  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quotes.php
+d098577f8bba898c2237f1d01e209ee73a889f51575b4c7aa9e65399fcb22a8e  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-files.php
+f15252d88bec9669018990dc6ba88081b069a5233aa4130a6e9b0ba4ee9c61b5  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-pdf.php
+c6f2935d43661f019f27f48152ba464dba63ce9df7de7486901cd6f2e30d8c4b  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quote-ui.php
+1a473fc0969b02e571d5f0d56beacb703b8bf6aa3df8d6a66403ccebf20997d9  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-commercial-quotes.php
 03d0ba73a4055b25c70680d73833c313b9855a318cc8b01aa5cad8983be837d2  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-cost-assist.php
 ff512091657b89c0446c7ce0499c2b277d41054120b69e63f2d94fa199a8f8b2  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-cost-engine.php
 51d19586ef89da623c01af7cc5dbef6f740b31c823f774e004367a498324d2e1  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-cost-legacy.php
@@ -645,7 +645,7 @@ dfdd1997fe6f6d48853e5f3e26e64247d4a2d14c3f7a09f9c265041470d66f59  wp-content/plu
 f7feb6e62d55b9b58f45ed2384e7942fbf3e358a00767cd21bc73006d944a56f  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-balance.php
 e6522abaac04299ea45c995e85c2157ef7a03ac9bd5bcb3ae37189bc933ab37e  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-billing-control.php
 c7689479d5e3a45327f4f1f23f98e48a616c26d8f74003e39be9853d0b032d0d  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-requests.php
-c9d2fc0aece3c5427abbba422c7ed6cff02b24e47fc0d4f51cc710f8549fd12d  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-selection.php
+56242e03c82f457b4ce1720580bdebf810ba15c165f60d406d4d4bb76a53923e  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quote-selection.php
 521c16083c75a0798049fe96bd819743e5e72e17bfd638edabbe9cd16f6089d2  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-quotes.php
 f4abd89f018d31816438699b5cdd4f5b88e62728e01feff9fc62df3384f9a25f  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-reorders.php
 f903d4aa61bf453f93411fadb008152318c4696f5534ca84f557fc7f5a3ce77a  wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-review-requests.php
