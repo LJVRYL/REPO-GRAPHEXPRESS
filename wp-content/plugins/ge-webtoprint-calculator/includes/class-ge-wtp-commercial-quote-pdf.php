@@ -24,6 +24,11 @@ final class GE_WTP_Commercial_Quote_PDF {
         if ( ! $quote || is_wp_error( $quote ) || ( ! $staff && 'draft' === $quote['status'] ) ) {
             wp_die( 'No tenés acceso a este presupuesto.', '', array( 'response' => 403 ) );
         }
+        if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] ) ) {
+            $quote = GE_WTP_Quote_Selection::preview_request( $quote );
+            if ( is_wp_error( $quote ) ) { wp_die( esc_html( $quote->get_error_message() ), '', array( 'response' => 409 ) ); }
+            if ( ! $staff && empty( $quote['snapshot']['customer_selection'] ) ) { wp_die( 'Elegí los ítems desde tu portal antes de descargar el PDF.', '', array( 'response' => 409 ) ); }
+        }
         $pdf = self::build( $quote );
         if ( is_wp_error( $pdf ) ) { wp_die( esc_html( $pdf->get_error_message() ), '', array( 'response' => 409 ) ); }
         nocache_headers();
@@ -82,8 +87,7 @@ final class GE_WTP_Commercial_Quote_PDF {
             $profile['fiscal_address'] ?? ''
         ) );
         if ( isset( $s['receiver_snapshot'] ) ) { array_unshift( $client, 'RECEPTOR' ); }
-        $tax_label = GE_WTP_Customer_Tax_UI::decision_label( $s );
-        if ( $tax_label ) { $client[] = $tax_label; }
+        // Customer PDFs contain commercial information; fiscal review stays in staff.
         $address = array_filter( array( $profile['street'] ?? $profile['address_1'] ?? '', $profile['city'] ?? '', $profile['postcode'] ?? '' ) );
         if ( $address ) { $client[] = implode( ', ', $address ); }
         $rows = array();
@@ -108,13 +112,16 @@ final class GE_WTP_Commercial_Quote_PDF {
         }
         $rows[] = array( 'kind' => 'gap', 'height' => 18 );
         // Only display fields actually recorded; no tax or discount is recomputed here.
+        $comparative = GE_WTP_Quote_Selection::has_choices( $s ) && empty( $s['customer_selection'] );
+        if ( ! $comparative ) {
         $discount = (int) ( $s['discount_cents'] ?? 0 );
+        if ( ! empty( $s['entered_discount_cents'] ) ) { $rows[] = array( 'kind' => 'copy', 'text' => 'Descuento sobre precio final: ' . $currency . ' ' . self::amount( $s['entered_discount_cents'] ) . '.', 'height' => 20 ); }
         $subtotal = (int) ( $s['subtotal_cents'] ?? $s['net_cents'] );
         $rows[] = array( 'kind' => 'amount', 'label' => ! empty( $s['tax_cents'] ) ? 'Subtotal sin IVA' : 'Subtotal', 'amount' => $subtotal, 'height' => 23 );
         if ( $discount ) { $rows[] = array( 'kind' => 'amount', 'label' => 'Descuento', 'amount' => -$discount, 'height' => 23 ); }
         if ( $discount && isset( $s['tax_cents'] ) ) { $rows[] = array( 'kind' => 'amount', 'label' => 'Neto imponible', 'amount' => $s['taxable_base_cents'] ?? $s['net_cents'], 'height' => 23 ); }
         $rates = (array) ( $s['tax_rates'] ?? array() );
-        $tax_label = count( $rates ) === 1 ? 'IVA ' . number_format( (int) reset( $rates ) / 100, 2, ',', '.' ) . '%' : 'IVA / impuestos';
+        $tax_label = count( $rates ) === 1 ? 'IVA ' . ( 'final' === ( $s['quote_vat_mode'] ?? '' ) ? 'incluido ' : '' ) . number_format( (int) reset( $rates ) / 100, 2, ',', '.' ) . '%' : 'IVA / impuestos';
         if ( isset( $s['tax_cents'] ) ) { $rows[] = array( 'kind' => 'amount', 'label' => $tax_label, 'amount' => $s['tax_cents'], 'height' => 23 ); }
         $rows[] = array( 'kind' => 'total', 'label' => 'Total', 'amount' => $s['total_cents'], 'height' => 48 );
         if ( isset( $s['deposit_percent'] ) ) {
@@ -122,13 +129,14 @@ final class GE_WTP_Commercial_Quote_PDF {
             $pending_fiscal = 'pending' === ( $s['fiscal_status'] ?? '' );
             $rows[] = array( 'kind' => 'copy', 'text' => ( $pending_fiscal ? 'Seña prevista: ' : 'Seña disponible: ' ) . $s['deposit_percent'] . '% (' . $currency . ' ' . self::amount( $deposit ) . ').', 'height' => 20 );
             $rows[] = array( 'kind' => 'copy', 'text' => 'Saldo si elegís seña: ' . $currency . ' ' . self::amount( (int) $s['total_cents'] - $deposit ) . '.', 'height' => 20 );
-            $rows[] = array( 'kind' => 'copy', 'text' => $pending_fiscal ? 'Pago sujeto a confirmación de los datos de facturación.' : 'El pago se confirma desde el portal.', 'height' => 20 );
+            $rows[] = array( 'kind' => 'copy', 'text' => 'Consultá las opciones de pago desde el portal.', 'height' => 20 );
         }
+        } else { $rows[] = array( 'kind' => 'copy', 'text' => 'Comparativo de alternativas. Elegí una opción por grupo desde tu portal para obtener el total.', 'height' => 20 ); }
         $rows[] = array( 'kind' => 'gap', 'height' => 16 );
         $rows[] = array( 'kind' => 'heading', 'text' => 'Condiciones de la propuesta', 'height' => 24 );
         $conditions = array();
-        if ( 'pending' === ( $s['fiscal_status'] ?? '' ) ) { $conditions[] = 'Propuesta comercial. Datos de facturación pendientes de confirmación.'; }
-        if ( 'C' === ( $s['billing']['resolution']['document_type'] ?? '' ) ) { $conditions[] = 'IVA no discriminado según configuración fiscal del emisor.'; }
+        // Do not expose internal reconciliation status in customer documents.
+        if ( 'C' === ( $s['billing']['resolution']['document_type'] ?? '' ) ) { $conditions[] = 'Precio final. IVA no discriminado.'; }
         if ( ! empty( $s['valid_until'] ) ) { $conditions[] = 'Vigencia hasta el ' . implode( '/', array_reverse( explode( '-', $s['valid_until'] ) ) ) . '.'; }
         foreach ( array( 'payment_terms', 'commercial_terms', 'delivery_terms', 'notes_customer' ) as $key ) { if ( ! empty( $s[ $key ] ) ) { $conditions[] = $s[ $key ]; } }
         foreach ( (array) ( $s['discounts'] ?? array() ) as $discount_detail ) {

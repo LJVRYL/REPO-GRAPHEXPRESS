@@ -49,6 +49,7 @@ final class GE_WTP_Commercial_Checkout {
     public static function render_quote_checkout( $quote ) {
         if ( ! is_array( $quote ) || ! in_array( $quote['status'], array( 'sent', 'viewed', 'accepted', 'converted' ), true ) ) { return; }
         $snapshot = $quote['snapshot'];
+        if ( GE_WTP_Quote_Selection::has_choices( $snapshot ) && ( empty( $snapshot['customer_selection'] ) || ! in_array( $quote['status'], array( 'accepted', 'converted' ), true ) ) ) { return; }
         if ( empty( $snapshot['total_cents'] ) || 'pending' === ( $snapshot['fiscal_status'] ?? '' ) ) { return; }
         if ( 'converted' === $quote['status'] ) {
             $order = $quote['converted_order_id'] ? wc_get_order( $quote['converted_order_id'] ) : false;
@@ -57,7 +58,7 @@ final class GE_WTP_Commercial_Checkout {
         echo '<section class="ge-panel" id="ge-quote-payment-' . esc_attr( $quote['id'] ) . '"><span class="ge-eyebrow">Pago del presupuesto</span><h3>Revisá cómo querés pagar</h3><p>Podés iniciar el pago independientemente de la aceptación comercial. El contenido y los precios corresponden a la versión vigente.</p>';
         if ( GE_WTP_Portal::is_staff_preview() ) { echo '<p>Vista previa: el cliente verá aquí sus opciones de pago.</p></section>'; return; }
         if ( 'converted' !== $quote['status'] && ! empty( $snapshot['valid_until'] ) && $snapshot['valid_until'] < wp_date( 'Y-m-d' ) ) { echo '<p>La validez del presupuesto terminó. Pedí una versión actualizada para pagar.</p></section>'; return; }
-        if ( ! self::enabled() ) { echo '<p>El pago de presupuestos estará disponible después de verificar la configuración comercial y fiscal. Graph Express te contactará.</p></section>'; return; }
+        if ( ! self::enabled() ) { echo '<p>Para coordinar el pago, contactá a Graph Express.</p></section>'; return; }
         $active = absint( get_post_meta( $quote['id'], '_ge_commercial_initial_payment_order', true ) );
         $payment_order = $active ? wc_get_order( $active ) : false;
         if ( $payment_order ) {
@@ -260,6 +261,7 @@ final class GE_WTP_Commercial_Checkout {
         if ( 'converted' !== $quote['status'] && ! empty( $snapshot['valid_until'] ) && $snapshot['valid_until'] < wp_date( 'Y-m-d' ) ) {
             return new WP_Error( 'ge_quote_expired', 'El presupuesto venció.' );
         }
+        if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] ) ) { return new WP_Error( 'ge_quote_selection_required', 'Elegí y aceptá los ítems desde tu portal antes de pagar.' ); }
         $billing = GE_WTP_Commercial_Quotes::check_billing_snapshot( $quote );
         if ( is_wp_error( $billing ) ) { return $billing; }
         $lock = 'ge_commercial_start_' . $quote_id;
