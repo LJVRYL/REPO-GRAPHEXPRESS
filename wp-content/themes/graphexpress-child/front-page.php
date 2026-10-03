@@ -30,6 +30,7 @@ $whatsapp = 'https://wa.me/5491151393899?text=' . rawurlencode('Hola Graph Expre
 $portal_page = get_page_by_path('cliente-markcom');
 $portal_url = $portal_page ? get_permalink($portal_page) : home_url('/cliente-markcom/');
 $shop_url = graphexpress_shop_url();
+$quote_url = graphexpress_quote_url();
 $store_is_public = graphexpress_store_is_public();
 $careers_url = class_exists('GE_WTP_Jobs') ? GE_WTP_Jobs::page_url() : home_url('/trabaja-con-nosotros/');
 // Hero media is independent of the private store catalogue.
@@ -59,10 +60,10 @@ foreach (array('gx-video-format' => $format_media, 'gx-video-digital' => $digita
     }
 }
 $product_category_urls = array();
-foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
+foreach (array('merchandising', 'windbanners', 'bolsas', 'imprenta-digital', 'imprenta-offset', 'gran-formato', 'editorial') as $category_slug) {
     $category_term = get_term_by('slug', $category_slug, 'product_cat');
-    $category_link = $category_term ? get_term_link($category_term) : false;
-    $product_category_urls[$category_slug] = $store_is_public && $category_link && ! is_wp_error($category_link) ? $category_link : $whatsapp;
+    $category_link = $category_term && $category_term->count>0 ? get_term_link($category_term) : false;
+    $product_category_urls[$category_slug] = $store_is_public && $category_link && ! is_wp_error($category_link) ? $category_link : $quote_url;
 }
 ?>
 <!doctype html>
@@ -105,8 +106,8 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
                 <h1>Ideas que se vuelven <em>impresión.</em></h1>
                 <p>Diseñamos y producimos gráfica de calidad para empresas e instituciones: desde una pieza editorial hasta una campaña completa en punto de venta.</p>
                 <div class="gx-hero-actions">
-                    <a class="gx-button gx-button-primary" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Pedir una cotización <span>↗</span></a>
-                    <a class="gx-text-link" href="#trabajos">Ver qué hacemos <span>↓</span></a>
+                    <a class="gx-button gx-button-primary" href="<?php echo esc_url($quote_url); ?>" data-funnel-event="landing_quote_click">Pedir una cotización <span>↗</span></a>
+                    <a class="gx-button gx-button-secondary" href="<?php echo esc_url($shop_url); ?>" data-funnel-event="landing_shop_click">Ir a la tienda <span>→</span></a>
                 </div>
                 <div class="gx-hero-proof">
                     <div><strong>10+</strong><span>años de experiencia</span></div>
@@ -186,7 +187,7 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
                         <span class="gx-service-number">01</span>
                         <h3>Offset & digital</h3>
                         <p>Papelería comercial, folletos, carpetas, catálogos y tiradas cortas o de alto volumen con excelente definición.</p>
-                        <a class="gx-inline-link" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Cotizar impresión <span>↗</span></a>
+                        <a class="gx-inline-link" href="<?php echo esc_url($product_category_urls['imprenta-digital']); ?>" data-funnel-event="landing_shop_click">Ver imprenta digital <span>↗</span></a> <a class="gx-inline-link" href="<?php echo esc_url($product_category_urls['imprenta-offset']); ?>" data-funnel-event="landing_shop_click">Ver imprenta offset →</a>
                     </div>
                 </article>
 
@@ -196,7 +197,7 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
                         <span class="gx-service-number">02</span>
                         <h3>Gran formato</h3>
                         <p>Banners, lonas, vinilos, cartelería, stands y gráfica para puntos de venta.</p>
-                        <a class="gx-inline-link" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Cotizar gran formato <span>↗</span></a>
+                        <a class="gx-inline-link" href="<?php echo esc_url($product_category_urls['gran-formato']); ?>" data-funnel-event="landing_shop_click">Ver gran formato <span>↗</span></a>
                     </div>
                 </article>
 
@@ -206,7 +207,7 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
                         <span class="gx-service-number">03</span>
                         <h3>Gráfica editorial</h3>
                         <p>Libros, revistas, informes, balances y publicaciones institucionales cuidadas de principio a fin.</p>
-                        <a class="gx-inline-link" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar proyecto <span>→</span></a>
+                        <a class="gx-inline-link" href="<?php echo esc_url($product_category_urls['editorial']); ?>" data-funnel-event="landing_quote_click">Pedir presupuesto editorial <span>→</span></a>
                     </div>
                 </article>
             </div>
@@ -240,15 +241,15 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
             </div>
 
             <div class="gx-work-grid">
-                <a class="gx-work-card gx-work-wide gx-work-merch gx-reveal" href="<?php echo esc_url($product_category_urls['merchandising']); ?>">
+                <a class="gx-work-card gx-work-wide gx-work-merch gx-reveal" href="<?php echo esc_url($product_category_urls['merchandising']); ?>" data-funnel-event="landing_shop_click" data-funnel-category="merchandising">
                     <img src="<?php echo esc_url($asset_uri . 'graphex-merchandising.webp'); ?>" alt="Muestra de merchandising GRAPHEX: botella, taza, libreta, lapicera y bolsa de tela con la G a color" width="1254" height="1254" loading="lazy" decoding="async">
                     <div><span>Regalos con identidad</span><h3>Merchandising</h3><span class="gx-work-action">Ver productos ↗</span></div>
                 </a>
-                <a class="gx-work-card gx-work-windbanners gx-reveal" href="<?php echo esc_url($product_category_urls['windbanners']); ?>">
+                <a class="gx-work-card gx-work-windbanners gx-reveal" href="<?php echo esc_url($product_category_urls['windbanners']); ?>" data-funnel-event="landing_shop_click" data-funnel-category="windbanners">
                     <img src="<?php echo esc_url($asset_uri . 'graphex-windbanners.webp'); ?>" alt="Muestra de windbanners negro y blanco con el logo a color de GRAPHEX" width="1774" height="887" loading="lazy" decoding="async">
                     <div><span>Tu marca en movimiento</span><h3>Windbanners</h3><span class="gx-work-action">Ver modelos ↗</span></div>
                 </a>
-                <a class="gx-work-card gx-work-bags gx-reveal" href="<?php echo esc_url($product_category_urls['bolsas']); ?>">
+                <a class="gx-work-card gx-work-bags gx-reveal" href="<?php echo esc_url($product_category_urls['bolsas']); ?>" data-funnel-event="landing_shop_click" data-funnel-category="bolsas">
                     <img src="<?php echo esc_url($asset_uri . 'graphex-bolsas.webp'); ?>" alt="Muestra de bolsas de papel negra y blanca con la nueva G de GRAPHEX impresa a color" width="1774" height="887" loading="lazy" decoding="async">
                     <div><span>Tu próximo proyecto</span><h3>Bolsas personalizadas</h3><span class="gx-work-action">Ver bolsas ↗</span></div>
                 </a>
@@ -256,6 +257,11 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
         </div>
     </section>
 
+    <section class="gx-conversion-paths"><div class="gx-wrap">
+        <span class="gx-kicker">ENCONTRÁ TU PRODUCTO</span><h2>Elegí por lo que necesitás.</h2>
+        <div class="gx-category-shortcuts"><?php foreach(array('stickers-autoadhesivos'=>'Stickers','vinilos'=>'Vinilos','lonas-gigantografias'=>'Lonas','placas-rigidas'=>'Cartelería','volantes'=>'Folletos','tarjetas-etiquetas'=>'Tarjetas','portabanners'=>'Roll-ups y banners') as $slug=>$label): ?><a href="<?php echo esc_url(graphexpress_conversion_category($slug)); ?>" data-funnel-event="landing_shop_click" data-funnel-category="<?php echo esc_attr($slug); ?>"><?php echo esc_html($label); ?> →</a><?php endforeach; ?></div>
+        <article class="gx-company-path"><div><span class="gx-kicker">PARA EMPRESAS</span><h2>¿Tenés varios locales o necesitás producción frecuente?</h2><p>Creá tu cuenta y contanos tu proyecto. Coordinamos las piezas, los archivos y las entregas desde tu portal.</p></div><a class="gx-button gx-button-primary" href="<?php echo esc_url(graphexpress_quote_url(true)); ?>" data-funnel-event="landing_quote_click">Crear cuenta empresa →</a></article>
+    </div></section>
     <section class="gx-section gx-process" id="proceso">
         <div class="gx-wrap">
             <div class="gx-process-intro gx-reveal">
@@ -276,10 +282,10 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
             <div>
                 <span class="gx-kicker gx-kicker-light"><i></i> Empecemos</span>
                 <h2>¿Qué necesitás imprimir?</h2>
-                <p>Mandanos las medidas, cantidades y una referencia. Te orientamos y preparamos una cotización.</p>
+                <p>Contanos tu idea en unas preguntas cortas. Guardamos tu solicitud y te acompañamos hasta resolverla.</p>
             </div>
             <div class="gx-contact-actions">
-                <a class="gx-button gx-button-primary" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Hablar por WhatsApp <span>↗</span></a>
+                <a class="gx-button gx-button-primary" href="<?php echo esc_url($quote_url); ?>" data-funnel-event="landing_quote_click">Pedir una cotización <span>↗</span></a>
                 <a href="mailto:imprentagraphexpress@gmail.com">imprentagraphexpress@gmail.com</a>
             </div>
             <span class="gx-contact-word" aria-hidden="true">GRAPHEX</span>
@@ -297,7 +303,7 @@ foreach (array('merchandising', 'windbanners', 'bolsas') as $category_slug) {
         </div>
         <div><h3>Servicios</h3><a href="#servicios">Offset & digital</a><a href="#servicios">Gran formato</a><a href="#servicios">Gráfica editorial</a></div>
         <div><h3>Contacto</h3><a href="tel:+5491151393899">+54 9 11 5139-3899</a><a href="mailto:imprentagraphexpress@gmail.com">Enviar un email</a><a href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a><span>Microcentro, CABA</span></div>
-        <div><h3>Tienda & clientes</h3><a href="<?php echo esc_url($shop_url); ?>"><?php echo $store_is_public ? 'Ver productos' : 'Tienda próximamente'; ?></a><a href="<?php echo esc_url($portal_url); ?>">Ingresar al portal</a><a href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Solicitar cotización</a></div>
+        <div><h3>Tienda & clientes</h3><a href="<?php echo esc_url($shop_url); ?>"><?php echo $store_is_public ? 'Ver productos' : 'Tienda próximamente'; ?></a><a href="<?php echo esc_url($portal_url); ?>">Ingresar al portal</a><a href="<?php echo esc_url($quote_url); ?>" data-funnel-event="landing_quote_click">Solicitar cotización</a></div>
     </div>
     <div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> GRAPHEX · Graph Express</span><span>Hecho para imprimir grandes ideas.</span></div>
 </footer>

@@ -75,7 +75,7 @@ function graphex_render_site_footer() {
             <div><?php graphex_render_brand_logo('gx-logo-light'); ?><p>Soluciones gráficas integrales para empresas, instituciones y comercios.</p></div>
             <div><h3>Servicios</h3><a href="<?php echo esc_url(home_url('/#servicios')); ?>">Offset & digital</a><a href="<?php echo esc_url(home_url('/#servicios')); ?>">Gran formato</a><a href="<?php echo esc_url(home_url('/#servicios')); ?>">Gráfica editorial</a></div>
             <div><h3>Contacto</h3><a href="tel:+5491151393899">+54 9 11 5139-3899</a><a href="mailto:imprentagraphexpress@gmail.com">Enviar un email</a><a href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a><span>Microcentro, CABA</span></div>
-            <div><h3>Tienda & clientes</h3><a href="<?php echo esc_url($shop_url); ?>">Ver productos</a><a href="<?php echo esc_url($portal_url); ?>">Ingresar al portal</a><a href="<?php echo esc_url(home_url('/#contacto')); ?>">Solicitar cotización</a></div>
+            <div><h3>Tienda & clientes</h3><a href="<?php echo esc_url($shop_url); ?>">Ver productos</a><a href="<?php echo esc_url($portal_url); ?>">Ingresar al portal</a><a href="<?php echo esc_url(graphexpress_quote_url()); ?>" data-funnel-event="landing_quote_click">Solicitar cotización</a></div>
         </div>
         <div class="gx-wrap gx-footer-bottom"><span>© <?php echo esc_html(wp_date('Y')); ?> GRAPHEX · Graph Express</span><span>Hecho para imprimir grandes ideas.</span></div>
     </footer>

@@ -66,6 +66,7 @@ final class GE_WTP_Quote_Requests {
             $lines=array_map(function($i){return array('line_uuid'=>$i['line_uuid'],'artwork_refs'=>$i['artwork_refs']);},$data['items']);
             $files=GE_WTP_Quote_Artwork_V2::prepare($id?array('id'=>$id,'staging_scope_id'=>0):null,$lines,array(),$session,$actor);if(is_wp_error($files))return $files;
             if(!$id){$id=wp_insert_post(array('post_type'=>self::TYPE,'post_status'=>'private','post_title'=>'Solicitud · '.get_userdata($actor)->display_name,'post_author'=>$actor),true);if(is_wp_error($id))return $id;update_option($key,$id,false);}
+            $data['funnel_source']='landing-v1'===($input['funnel_source']??'')?'landing-v1':($old['funnel_source']??'portal');
             $data['status']=$submit?'new':'draft';$data['created_at']=$old['created_at']??gmdate('c');$data['updated_at']=gmdate('c');$data['quote_id']=0;$data['artwork_session']=$session;$data['staff_message']='';
             update_post_meta($id,self::META,$data);GE_WTP_Quote_Artwork_V2::commit($id,$files,$actor);
             if($submit){$u=get_userdata($actor);GE_WTP_Internal_Alerts::create('quote_request',$u->display_name.' solicitó un presupuesto personalizado',$id,$actor);
@@ -89,21 +90,26 @@ final class GE_WTP_Quote_Requests {
         check_ajax_referer('ge_quote_request','nonce');if(!GE_WTP_Portal::can_access())wp_send_json_error(array('message'=>'Acceso denegado.'),403);
         $args=array('status'=>'publish','limit'=>24,'orderby'=>'title','order'=>'ASC');$q=sanitize_text_field(wp_unslash($_GET['q']??''));if($q)$args['s']=$q;
         $category=sanitize_title($_GET['category']??'');if($category)$args['category']=array($category);
-        $products=wc_get_products($args);$out=array();foreach($products as $p){if(!self::product_allowed($p->get_id(),GE_WTP_Portal::portal_customer_id()))continue;$out[]=array('id'=>$p->get_id(),'name'=>$p->get_name(),'type'=>$p->get_type(),'options'=>implode(', ',array_keys($p->get_attributes())));}
+        $products=wc_get_products($args);$out=array();foreach($products as $p){if(!self::product_allowed($p->get_id(),GE_WTP_Portal::portal_customer_id()))continue;$out[]=array('id'=>$p->get_id(),'name'=>$p->get_name(),'type'=>$p->get_type(),'options'=>implode(', ',array_keys($p->get_attributes())),'url'=>$p->is_visible()?get_permalink($p->get_id()):'');}
         wp_send_json_success($out);
     }
     public static function enqueue() {
         if(!is_page('cliente-markcom')&&!is_page('gestion'))return;
         wp_enqueue_style('ge-portal-v3',GE_WTP_PLUGIN_URL.'assets/css/portal-v3.css',array(),filemtime(GE_WTP_PLUGIN_DIR.'assets/css/portal-v3.css'));
+        wp_enqueue_style('ge-quick-quote',GE_WTP_PLUGIN_URL.'assets/css/quick-quote.css',array('ge-portal-v3'),filemtime(GE_WTP_PLUGIN_DIR.'assets/css/quick-quote.css'));
+        wp_enqueue_script('ge-quick-auth',GE_WTP_PLUGIN_URL.'assets/js/quick-auth.js',array(),filemtime(GE_WTP_PLUGIN_DIR.'assets/js/quick-auth.js'),true);
         if('personalizado'!==($_GET['seccion']??''))return;
         GE_WTP_Quote_Artwork_V2::enqueue();
-        wp_enqueue_script('ge-request',GE_WTP_PLUGIN_URL.'assets/js/quote-request.js',array('ge-quote-artwork-v2'),filemtime(GE_WTP_PLUGIN_DIR.'assets/js/quote-request.js'),true);
-        wp_localize_script('ge-request','geRequest',array('url'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('ge_quote_request'),'preview'=>GE_WTP_Portal::is_staff_preview(),'draft'=>self::draft_data()));
+        $request_js='1'===($_GET['rapida']??'')?'quick-quote.js':'quote-request.js';
+        wp_enqueue_script('ge-request',GE_WTP_PLUGIN_URL.'assets/js/'.$request_js,array('ge-quote-artwork-v2'),filemtime(GE_WTP_PLUGIN_DIR.'assets/js/'.$request_js),true);
+        wp_localize_script('ge-request','geRequest',array('url'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('ge_quote_request'),'preview'=>GE_WTP_Portal::is_staff_preview(),'draft'=>self::draft_data(),'customerId'=>GE_WTP_Portal::portal_customer_id()));
     }
     public static function draft_data() {
-        $id=absint($_GET['request_id']??0);if(!$id)return null;$d=self::get($id,GE_WTP_Portal::portal_customer_id());return !is_wp_error($d)&&'draft'===$d['status']?$d:null;
+        $id=absint($_GET['request_id']??0);if(!$id)return null;$d=self::get($id,GE_WTP_Portal::portal_customer_id());if(is_wp_error($d)||'draft'!==$d['status'])return null;
+        $product=count($d['items'])===1?absint($d['items'][0]['product_id']):0;$p=$product?wc_get_product($product):null;$d['shop_url']=$p&&$p->is_visible()&&self::product_allowed($product,GE_WTP_Portal::portal_customer_id())?get_permalink($product):'';return $d;
     }
     public static function form() {
+        if('1'===($_GET['rapida']??'')){GE_WTP_Quick_Quote::form();return;}
         $customer=GE_WTP_Portal::portal_customer_id();$profiles=self::profiles($customer);$session=wp_generate_uuid4();
         echo '<section class="ge-panel ge-request"><span class="ge-eyebrow">Hecho a tu medida</span><h1>Presupuesto personalizado</h1><p>Combiná productos de la tienda con trabajos propios. Revisaremos los detalles antes de cotizar.</p><ol class="ge-request-steps"><li aria-current="step">1. Qué necesitás</li><li>2. Detalles y archivos</li><li>3. Revisar y enviar</li></ol><form class="ge-request-form"><input type="hidden" name="artwork_session" value="'.esc_attr($session).'"><fieldset'.(GE_WTP_Portal::is_staff_preview()?' disabled':'').'>';
         echo '<section data-request-step="1"><h2>¿Qué querés hacer?</h2><div class="ge-request-search"><label>Buscar productos<input type="search" data-request-search placeholder="Por ejemplo: stickers, carteles…"></label><label>Categoría<select data-request-category><option value="">Todas las categorías</option>';
@@ -123,7 +129,7 @@ final class GE_WTP_Quote_Requests {
             foreach($d['items'] as $i)echo '<p>'.esc_html($i['title']).' · '.$i['quantity'].' unidades</p>';
             foreach(GE_WTP_Commercial_Quote_Files::all($p->ID) as $f){if('detached'===($f['association_status']??''))continue;$url=GE_WTP_External_Artwork::is_link($f)?$f['url']:wp_nonce_url(add_query_arg(array('action'=>'ge_request_file','request_id'=>$p->ID,'file_id'=>$f['id']),admin_url('admin-post.php')),'ge_request_file_'.$p->ID);echo '<p><a href="'.esc_url($url).'" target="_blank" rel="noopener noreferrer">'.esc_html($f['name']).'</a></p>';if(!GE_WTP_External_Artwork::is_link($f))GE_WTP_File_Analysis::render($f,false);}
             if($d['staff_message'])echo '<p>'.esc_html($d['staff_message']).'</p>';
-            if('draft'===$d['status'])echo '<a href="'.esc_url(GE_WTP_Portal::portal_url('personalizado',array('request_id'=>$p->ID))).'">Retomar borrador</a>';
+            if('draft'===$d['status'])echo '<a href="'.esc_url(GE_WTP_Portal::portal_url('personalizado',array('request_id'=>$p->ID,'rapida'=>count($d['items'])===1?'1':''))).'">Retomar borrador</a>';
             if($visible)echo '<a href="'.esc_url(GE_WTP_Portal::portal_url('presupuestos',array('quote_id'=>$d['quote_id']))).'">Ver presupuesto</a>';
             echo '</article>';
         }if(!$found)echo '<p>Todavía no tenés solicitudes. Contanos qué necesitás y lo preparamos.</p>';echo '</section>';
@@ -162,8 +168,8 @@ final class GE_WTP_Quote_Requests {
     }
     public static function inbox() {
         if(!GE_WTP_Staff_Portal::can_access())return;
-        echo '<section class="ge-panel ge-request-inbox"><h1>Solicitudes de presupuesto</h1>';$id=absint($_GET['request_id']??0);
-        if(!$id){$rows=get_posts(array('post_type'=>self::TYPE,'post_status'=>'private','posts_per_page'=>50));foreach($rows as $p){$d=self::get($p->ID,get_current_user_id());if(is_wp_error($d)||'draft'===$d['status'])continue;$u=get_userdata($d['customer_id']);echo '<article class="ge-request-history"><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('requests',array('request_id'=>$p->ID))).'"><strong>'.esc_html($u?$u->display_name:'Cliente').' · #'.$p->ID.'</strong></a><p>'.count($d['items']).' ítems · '.esc_html($d['status']).' · para '.esc_html($d['needed_by']?:'coordinar').'</p></article>';}echo '</section>';return;}
+        echo '<section class="ge-panel ge-request-inbox"><h1>Solicitudes de presupuesto</h1><p><a href="'.esc_url(wp_nonce_url(add_query_arg('action','ge_landing_funnel_report',admin_url('admin-post.php')),'ge_landing_funnel_report')).'">Descargar métricas del funnel</a></p>';$id=absint($_GET['request_id']??0);
+        if(!$id){$rows=get_posts(array('post_type'=>self::TYPE,'post_status'=>'private','posts_per_page'=>50));foreach($rows as $p){$d=self::get($p->ID,get_current_user_id());if(is_wp_error($d)||'draft'===$d['status'])continue;$u=get_userdata($d['customer_id']);echo '<article class="ge-request-history"><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('requests',array('request_id'=>$p->ID,'rapida'=>count($d['items'])===1?'1':''))).'"><strong>'.esc_html($u?$u->display_name:'Cliente').' · #'.$p->ID.'</strong></a><p>'.count($d['items']).' ítems · '.esc_html($d['status']).' · para '.esc_html($d['needed_by']?:'coordinar').'</p></article>';}echo '</section>';return;}
         $d=self::get($id,get_current_user_id());if(is_wp_error($d)){echo '<p>Solicitud no disponible.</p></section>';return;}$u=get_userdata($d['customer_id']);echo '<h2>'.esc_html($u->display_name).' · #'.$id.'</h2><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('customers',array('customer_id'=>$d['customer_id']))).'">Abrir cliente</a><p>Receptor: '.esc_html($d['billing_snapshot']['legal_name']??'Pendiente').' · '.esc_html($d['billing_snapshot']['cuit']??'').'</p><p>Para '.esc_html($d['needed_by']?:'coordinar').' · '.esc_html($d['urgency']).'</p><p>'.esc_html($d['notes']).'</p>';
         if($d['quote_id']){echo '<a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('quotes',array('quote_id'=>$d['quote_id']))).'">Abrir presupuesto vinculado</a></section>';return;}
         echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="ge_request_staff"><input type="hidden" name="request_id" value="'.$id.'">';wp_nonce_field('ge_request_staff_'.$id);

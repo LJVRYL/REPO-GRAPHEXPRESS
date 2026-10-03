@@ -6,6 +6,25 @@
 defined('ABSPATH') || exit;
 require_once get_stylesheet_directory() . '/inc/graphex-brand.php';
 
+/** Short quote entry and category URLs resolved from Woo taxonomy, never guessed paths. */
+function graphexpress_quote_url($company = false) {
+    $extra=array('seccion'=>'personalizado','rapida'=>'1');
+    if(!is_user_logged_in())$extra['modo']='registro';
+    if($company)$extra['cuenta']='empresa';
+    return class_exists('GE_WTP_Portal')?GE_WTP_Portal::portal_url('', $extra):add_query_arg($extra,home_url('/cliente-markcom/'));
+}
+function graphexpress_conversion_category($slug) {
+    $term=get_term_by('slug',$slug,'product_cat');
+    if($term && $term->count>0) { $url=get_term_link($term); if(!is_wp_error($url))return $url; }
+    return graphexpress_quote_url();
+}
+function graphexpress_funnel_assets() {
+    if(is_admin() || is_page('gestion'))return;
+    wp_enqueue_script('graphex-funnel-events',get_stylesheet_directory_uri().'/assets/js/funnel-events.js',array(),filemtime(get_stylesheet_directory().'/assets/js/funnel-events.js'),false);
+}
+add_action('wp_enqueue_scripts','graphexpress_funnel_assets',19);
+
+
 function graphexpress_child_setup() {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
@@ -93,7 +112,8 @@ function graphexpress_render_site_header($args = array()) {
     $portal_url  = class_exists('GE_WTP_Portal') ? GE_WTP_Portal::portal_url() : home_url('/cliente-markcom/');
     $cart_url    = function_exists('wc_get_cart_url') ? wc_get_cart_url() : home_url('/cart/');
     $cart_count  = function_exists('WC') && WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
-    $whatsapp    = 'https://wa.me/5491151393899?text=' . rawurlencode('Hola Graph Express, quiero solicitar una cotización.');
+    $quote_url=graphexpress_quote_url();
+    $portal_label=is_user_logged_in()?'Portal':'Ingresar';
     $store_label = graphexpress_store_is_public() ? 'Tienda' : 'Tienda · Próximamente';
     ?>
     <header class="gx-header"<?php echo $args['id'] ? ' id="' . esc_attr($args['id']) . '"' : ''; ?>>
@@ -105,21 +125,20 @@ function graphexpress_render_site_header($args = array()) {
             <?php endif; ?>
             <button class="gx-menu-toggle" type="button" aria-expanded="false" aria-controls="gx-navigation"><span></span><span></span><span></span><span class="screen-reader-text">Abrir menú</span></button>
             <nav class="gx-nav" id="gx-navigation" aria-label="Navegación principal">
-                <a<?php echo 'shop' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($shop_url); ?>"><?php echo esc_html($store_label); ?></a>
+                <a<?php echo 'shop' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($shop_url); ?>" data-funnel-event="landing_shop_click"><?php echo esc_html($store_label); ?></a>
+                <a href="<?php echo esc_url($quote_url); ?>" data-funnel-event="landing_quote_click">Presupuesto</a>
                 <a<?php echo 'guides' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($guides_url); ?>">Guías</a>
-                <a href="<?php echo esc_url(home_url('/#servicios')); ?>">Servicios</a>
-                <a href="<?php echo esc_url(home_url('/#trabajos')); ?>">Trabajos</a>
-                <a href="<?php echo esc_url(home_url('/#proceso')); ?>">Cómo trabajamos</a>
+
                 <a<?php echo 'careers' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($careers_url); ?>">Trabajá con nosotros</a>
-                <a href="<?php echo esc_url(home_url('/#contacto')); ?>">Contacto</a>
-                <a class="gx-nav-mobile-action is-portal" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a>
+                <?php if(is_user_logged_in()&&class_exists('GE_WTP_Portal')&&GE_WTP_Portal::is_customer_user()): ?><a href="<?php echo esc_url(GE_WTP_Portal::portal_url('solicitudes')); ?>">Mis solicitudes</a><?php endif; ?>
+                <a class="gx-nav-mobile-action is-portal" href="<?php echo esc_url($portal_url); ?>"><?php echo esc_html($portal_label); ?></a>
                 <a class="gx-nav-mobile-action is-cart" href="<?php echo esc_url($cart_url); ?>">Carrito<?php if ($cart_count) : ?> <b><?php echo esc_html($cart_count); ?></b><?php endif; ?></a>
-                <a class="gx-nav-mobile-action is-consult" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener">Consultar por WhatsApp</a>
+                <a class="gx-nav-mobile-action is-consult" href="<?php echo esc_url($quote_url); ?>" data-funnel-event="landing_quote_click">Pedir una cotización</a>
             </nav>
             <div class="gx-header-actions">
-                <a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>">Portal clientes</a>
+                <a class="gx-portal-link" href="<?php echo esc_url($portal_url); ?>"><?php echo esc_html($portal_label); ?></a>
                 <a class="gx-portal-link gx-cart-link" href="<?php echo esc_url($cart_url); ?>">Carrito<?php if ($cart_count) : ?> <b><?php echo esc_html($cart_count); ?></b><?php endif; ?></a>
-                <a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($whatsapp); ?>" target="_blank" rel="noopener"><?php echo esc_html($args['action_label']); ?></a>
+                <a class="gx-button gx-button-small gx-button-dark" href="<?php echo esc_url($quote_url); ?>" data-funnel-event="landing_quote_click"><?php echo 'Pedir una cotización'; ?></a>
             </div>
         </div>
     </header>
