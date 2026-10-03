@@ -1,12 +1,12 @@
 # GRAPHEX_CANONICAL_STATE
 
-Última reconciliación: 2026-10-03. Estado de código: verified candidate; promoción normal a master y publicación registrados en el Result Pack externo.
+Última reconciliación: 2026-10-03. Estado: **canonical_synced=true**. Código verificado, master local/remoto integrado y deploy productivo **NO-OP** verificado. El release-state.json externo registra el HEAD exacto actual y las verificaciones finales.
 
 - Repositorio canónico local: `/mnt/f/GIT/REPO-GRAPHEXPRESS` (`F:\GIT\REPO-GRAPHEXPRESS`).
 - Remoto: `https://github.com/LJVRYL/REPO-GRAPHEXPRESS.git`.
 - Rama canónica real: **master**, confirmada por HEAD remoto. HEAD anterior: `2ef226cae78391c7719fce5de5b96d3047e5b866`.
 - HEAD de código integrado y verificado antes del commit documental: `7e9379990623575b9953d918a0accd2ea8719a6e`.
-- Canonical HEAD de esta release: resolver `refs/tags/graphex-canonical-20261003` después de la promoción. El SHA exacto y el resultado del push viven en el Result Pack y release-state.json entregados.
+- Canonical HEAD: `refs/heads/master`; resolver al consultar porque el documento se versiona dentro de la propia rama. Merge de reconciliación: `ceba7258a2bfd2db03961fc091d152cd6e2e6630`. Tag de código verificado: `graphex-canonical-20261003` (mismo payload productivo; el cierre documental posterior no cambia ese código). El SHA exacto actual queda en el Result Pack y release-state.json entregados.
 - Rama de integración: `reconcile/graphex-prod-to-canonical-2026-10-03`, checkout aislado `/tmp/graphex-canonical-reconcile-20261003-remote`.
 - Captura de drift: `reconcile/prod-drift-20261003`; cada historial importado conserva sus padres mediante merges, incluidos árboles originalmente en raíz de plugin alineados como subtree.
 - Producción: perfil SSH simbólico `ai-grupo-ferozo-prod`, `/home/graphexpress/public_html`. No es Git checkout; usa deploy selectivo.
