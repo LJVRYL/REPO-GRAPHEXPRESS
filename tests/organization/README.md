@@ -1,0 +1,5 @@
+# Organization integration QA
+
+The scripts target named isolated resources under /home/leo/ge-organizations and graph-org-foundation-v1-minimal. They must never run against production; DB/resource guards abort on another database. Test transport intercepts outbound HTTP/mail. Fixture credentials remain chmod600 outside Git and outputs. Match fixture paths/resources before adapting to another host. Provision-instance.py refuses existing instances and generates a dedicated SQL principal, empty DB, core root and salts; GE_QA_ORG and GE_QA_URL select a new local QA resource. Core directories are copied, not symlinked across configurations. Deploy scripts are packaged separately with immutable SHA guards; do not build baseline guards from arbitrary live code.
+
+Order: provisioning/install/bootstrap; acceptance-operational; hardening-operational; customer-http-auth then HTTP tests; reciprocal-isolation; authentication tests QA/Graph/QA using fresh cookies; Graph contracts; rollback check. Do not run rollback and Graph read suites concurrently. No live emails, payments, fiscal emission or destructive cleanup.
