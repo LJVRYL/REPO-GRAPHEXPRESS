@@ -127,6 +127,8 @@ final class GE_WTP_Staff_Portal {
             GE_WTP_Artwork_Library::render_staff();
         } elseif ( 'supplier-invoices' === $section ) {
             GE_WTP_Supplier_Invoices::render();
+        } elseif ( 'invoice-reviews' === $section ) {
+            GE_WTP_Customer_Invoices::render_reviews();
         } elseif ( 'communications' === $section ) {
             GE_WTP_Newsletter::render_portal();
         } elseif ( in_array( $section, array( 'settings', 'notifications' ), true ) ) {
