@@ -16,7 +16,7 @@ Subir un original no emite una factura fiscal ni modifica el PDF. El importe mos
 
 ## Revisión
 
-Cliente → detalle → Informar un problema → comentario obligatorio. Historial: Recibido, En revisión, Respondido, Resuelto. Puede agregar comentarios; un comentario posterior a respuesta/resolución reabre en Recibido. Staff responde y selecciona estado desde la misma pestaña del cliente. Cambiar estado requiere mensaje público. La revisión no anula documentos ni altera pagos.
+Cliente → detalle → Informar un problema → comentario obligatorio. Historial: Recibido, En revisión, Respondido, Resuelto. Puede agregar comentarios; un comentario posterior a respuesta/resolución reabre en Recibido. Staff responde y selecciona estado desde la misma pestaña del cliente; **Avisar por correo al cliente** es opcional y está desmarcado por defecto. Cambiar estado requiere un comentario público o una nota interna del equipo. La revisión no anula documentos ni altera pagos.
 
 Aviso cliente y aviso staff usan GE_WTP_Notifications, con trazabilidad ge_email_log. Alerta interna existente enlaza al cliente/documento. La persistencia ocurre antes del intento de correo; la confirmación de comentario indica guardado, no entrega SMTP. Reintentos del mismo formulario no duplican eventos ni intentos de correo. Fallos/estados attempting requieren revisar la trazabilidad antes de una intervención operativa; no se reenvía automáticamente un resultado incierto.
 
@@ -44,3 +44,11 @@ Rollback selectivo: ejecutar `python3 <backup>/rollback.py rollback` solo tras c
 ## Multiplex
 
 Esta implementación no carga comprobantes comerciales ni envía correos reales a Multiplex. El auditor de documentos realiza la carga después del readiness publicado/verificado, con el original exacto y el receptor acreditado. No repetir su inventario ni afirmar que ambas razones sociales son intercambiables.
+
+## Bandeja y notas internas
+
+Gestión → **Revisiones** (`/gestion/?section=invoice-reviews`) lista conversaciones de la organización actual, 50 por página, con cliente, receptor, comprobante, última actividad, estado y enlace al detalle. Requiere finance read. No lista el contenido de notas privadas.
+
+Desde el detalle, **Comentario interno → Guardar nota interna** inicia o continúa el mismo caso con finance write. No se publica ni envía correo. El cliente solo ve eventos públicos; la vista previa muestra el formulario deshabilitado y explica cómo escribir desde una cuenta de cliente o abrir Gestión para una nota interna. Respuesta pública separada, con opción explícita de aviso y trazabilidad. Reintentos con token mantienen un único evento; no convierten una nota privada en respuesta pública ni agregan un envío después.
+
+QA adicional reusable: `tests/customer-invoice-reviews-wp.php`, con el mismo GE_INVOICE_QA_SITE y DB fixture independiente del test original; GE_REVIEW_QA_REPORT permite guardar el reporte. Prueba creación privada, permisos, aislamiento, privacidad cliente/preview, idempotencia, notas/respuestas/estados y correo simulado. Nunca ejecutar contra producción.

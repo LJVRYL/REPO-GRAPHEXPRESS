@@ -26,8 +26,9 @@ final class GE_WTP_Customer_Invoices {
         add_action( 'admin_post_ge_invoice_download', array( __CLASS__, 'download' ) );
         add_action( 'admin_post_ge_invoice_review', array( __CLASS__, 'review_action' ) );
         add_action( 'admin_post_ge_invoice_response', array( __CLASS__, 'response_action' ) );
+        add_action( 'admin_post_ge_invoice_internal_note', array( __CLASS__, 'internal_note_action' ) );
         add_action( 'admin_post_ge_invoice_notice', array( __CLASS__, 'notice_action' ) );
-        foreach ( array( 'upload', 'download', 'review', 'response', 'notice' ) as $action ) {
+        foreach ( array( 'upload', 'download', 'review', 'response', 'notice', 'internal_note' ) as $action ) {
             add_action( 'admin_post_nopriv_ge_invoice_' . $action, function () { self::fail( new WP_Error( 'forbidden', 'Ingresá a tu cuenta para continuar.' ), 403 ); } );
         }
     }
@@ -260,8 +261,9 @@ final class GE_WTP_Customer_Invoices {
         return is_array( $case ) && ( $case['ref'] ?? '' ) === $ref ? array_merge( $case, array( 'id' => $id ) ) : null;
     }
 
-    public static function comment( $ref, $message, $token, $actor, $staff = false, $status = 'recibido' ) {
+    public static function comment( $ref, $message, $token, $actor, $staff = false, $status = 'recibido', $internal = false, $send_notice = true ) {
         $row = self::resolve( $ref, $actor ); if ( is_wp_error( $row ) ) { return $row; }
+        if ( $internal && ! $staff ) { return new WP_Error( 'forbidden', 'Una nota interna requiere permiso de Administración.' ); }
         if ( $staff ? ! self::staff( $actor, true ) : ( (int) $actor !== (int) $row['customer_id'] || GE_WTP_Portal::is_staff_preview() ) ) { return new WP_Error( 'forbidden', 'Sin permiso para esta acción.' ); }
         $message = trim( sanitize_textarea_field( $message ) );
         if ( strlen( $message ) < 5 || mb_strlen( $message ) > 4000 || ! preg_match( '/^[a-f0-9-]{36}$/D', $token ) || ! isset( self::statuses()[ $status ] ) ) { return new WP_Error( 'comment', 'Contanos qué hay que revisar (entre 5 y 4000 caracteres).' ); }
@@ -269,20 +271,23 @@ final class GE_WTP_Customer_Invoices {
         if ( ! self::lock( $lock ) ) { return new WP_Error( 'busy', 'Estamos guardando una actualización. Revisá el historial antes de reintentar.' ); }
         try {
             $case = self::case_for( $ref );
-            if ( $staff && ! $case ) { return new WP_Error( 'case', 'No hay una revisión abierta.' ); }
+            if ( $staff && ! $internal && ! $case ) { return new WP_Error( 'case', 'No hay una revisión abierta.' ); }
             if ( ! $case ) {
                 $id = wp_insert_post( array( 'post_type' => self::CASE_TYPE, 'post_status' => 'private', 'post_title' => 'Revisión de comprobante', 'post_author' => $actor ), true );
                 if ( is_wp_error( $id ) ) { return $id; }
                 update_post_meta( $id, '_ge_organization_id', self::organization() ); update_option( $key, $id, false );
                 $case = array( 'id' => $id, 'ref' => $ref, 'customer_id' => $row['customer_id'], 'profile_id' => $row['profile_id'], 'status' => 'recibido', 'events' => array(), 'created_at' => gmdate( 'c' ) );
             }
-            foreach ( $case['events'] as $event ) { if ( $event['token'] === $token ) { return $case; } }
+            if ( (int) $case['customer_id'] !== (int) $row['customer_id'] || ( $case['profile_id'] ?? '' ) !== $row['profile_id'] ) { return new WP_Error( 'forbidden', 'Revisión no disponible.' ); }
+            foreach ( $case['events'] as $event ) { if ( $event['token'] === $token ) { return (int) $event['actor'] === (int) $actor && ( ! empty( $event['internal'] ) ) === (bool) $internal ? $case : new WP_Error( 'conflict', 'Identificador de operación ya utilizado.' ); } }
             $status = $staff ? $status : ( in_array( $case['status'], array( 'recibido', 'en_revision' ), true ) ? $case['status'] : 'recibido' );
-            $event = array( 'token' => $token, 'actor' => $actor, 'staff' => $staff, 'message' => $message, 'status' => $status, 'at' => gmdate( 'c' ) );
+            $event = array( 'token' => $token, 'actor' => $actor, 'staff' => $staff, 'internal' => (bool) $internal, 'message' => $message, 'status' => $status, 'at' => gmdate( 'c' ) );
             $case['events'][] = $event; $case['status'] = $status; $case['updated_at'] = $event['at'];
+            wp_update_post( array( 'ID' => $case['id'] ) );
             update_post_meta( $case['id'], self::CASE_META, $case );
             // Persist before mail. A retry never creates a second message or transport attempt.
-            $notice = self::notify( $row, $case['id'], $token, $staff );
+            $notice = $internal || ! $send_notice ? array( 'customer' => 'not_requested' ) : self::notify( $row, $case['id'], $token, $staff );
+            add_post_meta( $case['id'], '_ge_invoice_case_audit', array( 'actor' => $actor, 'at' => $event['at'], 'token' => $token, 'internal' => (bool) $internal, 'status' => $status ) );
             $case['events'][ count( $case['events'] ) - 1 ]['notice'] = $notice;
             update_post_meta( $case['id'], self::CASE_META, $case );
             return $case;
@@ -308,9 +313,10 @@ final class GE_WTP_Customer_Invoices {
 
     public static function review_action() { self::message_action( false ); }
     public static function response_action() { self::message_action( true ); }
-    private static function message_action( $staff ) {
+    public static function internal_note_action() { self::message_action( true, true ); }
+    private static function message_action( $staff, $internal = false ) {
         $ref = sanitize_text_field( wp_unslash( $_POST['invoice'] ?? '' ) ); check_admin_referer( 'ge_invoice_message_' . $ref );
-        $result = self::comment( $ref, wp_unslash( $_POST['message'] ?? '' ), sanitize_text_field( $_POST['operation_id'] ?? '' ), get_current_user_id(), $staff, sanitize_key( $_POST['status'] ?? 'recibido' ) );
+        $result = self::comment( $ref, wp_unslash( $_POST['message'] ?? '' ), sanitize_text_field( $_POST['operation_id'] ?? '' ), get_current_user_id(), $staff, sanitize_key( $_POST['status'] ?? 'recibido' ), $internal, ! $staff || ( ! $internal && ! empty( $_POST['notify_customer'] ) ) );
         if ( is_wp_error( $result ) ) { self::fail( $result, 'forbidden' === $result->get_error_code() ? 403 : 400 ); }
         wp_safe_redirect( add_query_arg( 'invoice_status', 'review_saved', self::url( $ref, $staff, $result['customer_id'] ) ) ); exit;
     }
@@ -394,16 +400,68 @@ final class GE_WTP_Customer_Invoices {
         $case = self::case_for( $row['ref'] );
         echo '<section class="ge-panel ge-invoice-conversation"><h2>Revisión del comprobante</h2>';
         if ( $case ) {
-            echo '<p class="ge-invoice-status">' . esc_html( self::statuses()[ $case['status'] ] ) . ' · consulta #' . (int) $case['id'] . '</p><ol class="ge-invoice-history">';
-            foreach ( $case['events'] as $event ) { echo '<li><strong>' . ( $event['staff'] ? 'Graph Express' : 'Cliente' ) . '</strong> <small>' . esc_html( wp_date( 'd/m/Y H:i', strtotime( $event['at'] ) ) ) . ' · ' . esc_html( self::statuses()[ $event['status'] ] ) . '</small><p>' . nl2br( esc_html( $event['message'] ) ) . '</p>'; if ( $staff && isset( $event['notice'] ) ) { echo '<small>Aviso cliente: ' . esc_html( $event['notice']['customer'] ?? 'Sin confirmar' ) . ( isset( $event['notice']['staff'] ) ? ' · Aviso equipo: ' . esc_html( $event['notice']['staff'] ) : '' ) . '</small>'; } echo '</li>'; } echo '</ol>';
+            echo '<p class="ge-invoice-status">' . esc_html( self::statuses()[ $case['status'] ] ?? 'Recibido' ) . ' · consulta #' . (int) $case['id'] . '</p><ol class="ge-invoice-history">';
+            $shown = 0;
+            foreach ( $case['events'] as $event ) {
+                if ( ! $staff && ! empty( $event['internal'] ) ) { continue; }
+                $shown++;
+                echo '<li><strong>' . ( ! empty( $event['internal'] ) ? 'Nota interna · solo equipo' : ( $event['staff'] ? 'Graph Express' : 'Cliente' ) ) . '</strong> <small>' . esc_html( wp_date( 'd/m/Y H:i', strtotime( $event['at'] ) ) ) . ' · ' . esc_html( self::statuses()[ $event['status'] ] ?? '' ) . '</small><p>' . nl2br( esc_html( $event['message'] ) ) . '</p>';
+                if ( $staff && isset( $event['notice'] ) ) {
+                    $notice = $event['notice'];
+                    echo '<small>' . ( ! empty( $event['internal'] ) || ( $notice['customer'] ?? '' ) === 'not_requested' ? 'Sin aviso por correo.' : 'Aviso cliente: ' . esc_html( $notice['customer'] ?? 'Sin confirmar' ) . ( isset( $notice['staff'] ) ? ' · Aviso equipo: ' . esc_html( $notice['staff'] ) : '' ) ) . '</small>';
+                }
+                echo '</li>';
+            }
+            echo '</ol>';
+            if ( ! $shown ) { echo '<p>Todavía no hay comentarios públicos sobre este comprobante.</p>'; }
         } else { echo '<p>¿Esta factura tiene un problema? Indicá qué datos o importes querés que revisemos.</p>'; }
-        if ( ! $staff && ! GE_WTP_Portal::is_staff_preview() ) {
+        if ( ! $staff && GE_WTP_Portal::is_staff_preview() ) {
+            echo '<p role="note">Vista previa de solo lectura. El cliente puede escribir y enviar desde su cuenta. Para agregar una nota interna, abrí este comprobante en Gestión.</p><fieldset disabled><label>Contanos qué hay que revisar<textarea rows="4" placeholder="Comentario del cliente" disabled></textarea></label><button class="ge-button" type="button" disabled>Informar un problema</button></fieldset><p><a href="' . esc_url( self::url( $row['ref'], true, $row['customer_id'] ) ) . '">Abrir revisión en Gestión</a></p>';
+        } elseif ( ! $staff ) {
             self::form_open( 'ge_invoice_review', 'ge_invoice_message_' . $row['ref'], $row['ref'] );
             echo '<label>Contanos qué hay que revisar<textarea name="message" minlength="5" maxlength="4000" rows="4" required></textarea></label><p>Podés señalar el número, receptor, importe u otro detalle. La consulta y nuestras respuestas quedan acá.</p><button class="ge-button ge-button-primary" type="submit">' . ( $case ? 'Agregar comentario y avisar' : 'Informar un problema' ) . '</button></form>';
-        } elseif ( $staff && $case && self::staff( get_current_user_id(), true ) ) {
-            self::form_open( 'ge_invoice_response', 'ge_invoice_message_' . $row['ref'], $row['ref'] ); echo '<label>Estado<select name="status">'; foreach ( self::statuses() as $key => $label ) { echo '<option value="' . $key . '"' . selected( $case['status'], $key, false ) . '>' . esc_html( $label ) . '</option>'; } echo '</select></label><label>Respuesta pública al cliente<textarea name="message" minlength="5" maxlength="4000" rows="4" required></textarea></label><button class="ge-button ge-button-primary" type="submit">Guardar respuesta y avisar</button></form>';
-        }
+        } elseif ( self::staff( get_current_user_id(), true ) ) {
+            echo '<h3>Nota interna del equipo</h3><p>Solo la ve Administración. No se publica en el portal del cliente ni envía correo. Puede iniciar el seguimiento de este comprobante.</p>';
+            self::form_open( 'ge_invoice_internal_note', 'ge_invoice_message_' . $row['ref'], $row['ref'] );
+            self::status_select( $case['status'] ?? 'en_revision' );
+            echo '<label>Comentario interno<textarea name="message" minlength="5" maxlength="4000" rows="4" required></textarea></label><button class="ge-button" type="submit">Guardar nota interna</button></form>';
+            if ( $case ) {
+                echo '<h3>Respuesta pública</h3><p>El cliente verá esta respuesta en su conversación.</p>';
+                self::form_open( 'ge_invoice_response', 'ge_invoice_message_' . $row['ref'], $row['ref'] ); self::status_select( $case['status'] );
+                echo '<label>Respuesta pública al cliente<textarea name="message" minlength="5" maxlength="4000" rows="4" required></textarea></label><label><input type="checkbox" name="notify_customer" value="1"> Avisar por correo al cliente</label><button class="ge-button ge-button-primary" type="submit">Guardar respuesta pública</button></form>';
+            }
+            echo '<p><a href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'invoice-reviews' ) ) . '">Ver todas las revisiones</a></p>';
+        } else { echo '<p>Tu rol permite consultar la conversación. Administración puede agregar notas y responder.</p>'; }
         echo '</section>';
+    }
+
+    private static function status_select( $status ) {
+        echo '<label>Estado de la revisión<select name="status">';
+        foreach ( self::statuses() as $key => $label ) { echo '<option value="' . esc_attr( $key ) . '"' . selected( $status, $key, false ) . '>' . esc_html( $label ) . '</option>'; }
+        echo '</select></label>';
+    }
+
+    public static function render_reviews() {
+        $actor = get_current_user_id();
+        if ( ! self::staff( $actor ) ) { echo '<p role="alert">Sin permiso para consultar revisiones.</p>'; return; }
+        $page = max( 1, absint( $_GET['review_page'] ?? 1 ) );
+        $query = new WP_Query( array( 'post_type' => self::CASE_TYPE, 'post_status' => 'private', 'posts_per_page' => 50, 'paged' => $page, 'orderby' => 'modified', 'order' => 'DESC', 'meta_key' => '_ge_organization_id', 'meta_value' => self::organization() ) );
+        echo '<section class="ge-invoices"><header class="ge-page-heading"><div><h1>Revisiones de comprobantes</h1><p>Consultas de clientes y seguimiento interno de Administración. Cada revisión conserva su conversación y su original.</p></div></header><div class="ge-invoice-list">';
+        $shown = 0;
+        foreach ( $query->posts as $post ) {
+            $case = get_post_meta( $post->ID, self::CASE_META, true );
+            if ( ! is_array( $case ) || empty( $case['ref'] ) ) { continue; }
+            $row = self::resolve( $case['ref'], $actor ); $canonical = self::case_for( $case['ref'] );
+            if ( is_wp_error( $row ) || (int) ( $case['customer_id'] ?? 0 ) !== (int) $row['customer_id'] || ! $canonical || $canonical['id'] !== (int) $post->ID ) { continue; }
+            $customer = get_userdata( $row['customer_id'] ); $shown++;
+            $date = $case['updated_at'] ?? $case['created_at'];
+            echo '<article class="ge-panel ge-invoice-row"><div><h2><a href="' . esc_url( self::url( $row['ref'], true, $row['customer_id'] ) ) . '">' . esc_html( self::title( $row ) ) . '</a></h2><p>' . esc_html( $customer->display_name ) . ' · ' . esc_html( $row['receiver']['legal_name'] ?? '' ) . '</p><small>Última actividad: ' . esc_html( wp_date( 'd/m/Y H:i', strtotime( $date ) ) ) . '</small></div><div><p class="ge-invoice-status">' . esc_html( self::statuses()[ $case['status'] ] ?? 'Recibido' ) . '</p><a class="ge-button" href="' . esc_url( self::url( $row['ref'], true, $row['customer_id'] ) ) . '">Abrir conversación</a></div></article>';
+        }
+        if ( ! $shown ) { echo '<section class="ge-panel"><h2>No hay revisiones en esta página</h2><p>Las consultas del cliente y las notas internas aparecerán acá. Para iniciar una revisión, abrí un comprobante desde la ficha del cliente.</p></section>'; }
+        echo '</div><nav aria-label="Páginas de revisiones">';
+        if ( $page > 1 ) { echo '<a class="ge-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'invoice-reviews', array( 'review_page' => $page - 1 ) ) ) . '">← Anterior</a> '; }
+        if ( $page < $query->max_num_pages ) { echo '<a class="ge-button" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'invoice-reviews', array( 'review_page' => $page + 1 ) ) ) . '">Siguiente →</a>'; }
+        echo '</nav></section>';
     }
 
     public static function render_staff( $customer ) {

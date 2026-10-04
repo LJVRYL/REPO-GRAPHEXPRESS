@@ -165,7 +165,7 @@ final class GE_Organization_Runtime {
         $o=GE_Organization::get(GE_Organization::PRIMARY);
         if(GE_Organization::PRIMARY!=='graph-express' && empty($o['onboarding']['ready']) && !in_array($section,array('company','profile'),true)){wp_safe_redirect(GE_WTP_Staff_Portal::portal_url('company',array('tab'=>'onboarding')));exit;}
         if(in_array($section,array('company','profile','dashboard'),true))return;
-        $map=array('requests'=>'quotes','administration'=>'finance','costs'=>'cost_engine','library'=>'orders','supplier-invoices'=>'suppliers','notifications'=>'company','settings'=>'company');
+        $map=array('invoice-reviews'=>'finance','requests'=>'quotes','administration'=>'finance','costs'=>'cost_engine','library'=>'orders','supplier-invoices'=>'suppliers','notifications'=>'company','settings'=>'company');
         $m=$map[$section]??self::module_for($section);
         if($m==='company'){if(!GE_Organization::can(GE_Organization::PRIMARY,get_current_user_id(),true))self::deny();return;}
         if(!$m || !self::allowed($m,false))self::deny();
@@ -229,7 +229,7 @@ final class GE_Organization_Runtime {
         $s=self::settings();if(!$s)return;
         $color=$s['branding']['primary_color'];
         echo '<style>:root{--ge-accent:'.esc_html($color).';--ge-v3-accent:'.esc_html($color).'}</style>';
-        $sections=array('customers'=>'customers','quotes'=>'quotes','requests'=>'quotes','orders'=>'orders','production'=>'production','suppliers'=>'suppliers','stock'=>'stock','administration'=>'finance','costs'=>'cost_engine','communications'=>'communications','library'=>'orders');
+        $sections=array('customers'=>'customers','quotes'=>'quotes','requests'=>'quotes','orders'=>'orders','production'=>'production','suppliers'=>'suppliers','stock'=>'stock','invoice-reviews'=>'finance','administration'=>'finance','costs'=>'cost_engine','communications'=>'communications','library'=>'orders');
         echo '<style>';foreach($sections as $section=>$module)if(!self::enabled($module) || (self::role(get_current_user_id())&&!self::allowed($module)))echo 'a[href*="section='.esc_attr($section).'"]{display:none!important}';echo '</style>';
         if(function_exists('is_account_page')&&is_account_page()) {
             echo '<meta name="application-name" content="'.esc_attr($s['general']['display_name']).'">';
