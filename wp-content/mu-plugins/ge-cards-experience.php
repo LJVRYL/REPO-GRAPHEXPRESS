@@ -262,7 +262,15 @@ final class GE_Cards_Experience {
         if ( 'landing' !== $view ) { header( 'X-Robots-Tag: noindex, nofollow' ); }
         if ( 'profile' === $view ) { add_filter( 'document_title_parts', function( $parts ) use ( $data ) { $parts['title'] = trim( $data['first_name'] . ' ' . $data['last_name'] ) . ' · Contacto'; return $parts; }, 50 ); }
         $view_file = __DIR__ . '/ge-cards-experience/' . $view . '.php';
-        get_header(); include $view_file; get_footer(); exit;
+        ob_start(); get_header(); $head = ob_get_clean();
+        // The legacy alternate-host shell emits its own canonical. Keep this feature's
+        // canonical on the actual Graphex route without changing the shared shell.
+        $head = preg_replace( "~<link\\b[^>]*\\brel=([\"'])canonical\\1[^>]*>\\s*~i", '', $head );
+        $canonical = 'landing' === $view ? self::url() : ( 'profile' === $view ? $url : self::url( 'mi-vcard/' ) );
+        $tags = '<link rel="canonical" href="' . esc_url( $canonical ) . '">';
+        if ( 'landing' !== $view ) { $tags .= '<meta name="robots" content="noindex,nofollow">'; }
+        echo str_replace( '</head>', $tags . '</head>', $head );
+        include $view_file; get_footer(); exit;
     }
 }
 GE_Cards_Experience::init();
