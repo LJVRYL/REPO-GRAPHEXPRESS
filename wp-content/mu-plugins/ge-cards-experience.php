@@ -7,6 +7,8 @@ final class GE_Cards_Experience {
     const INTENT = 'ge_cards_intent';
     const OPTION = 'ge_cards_experience_enabled_v1';
     const FIELDS = array( 'first_name', 'last_name', 'company', 'role', 'email', 'phone', 'website' );
+    const MARKETING_TEXT = 'Quiero recibir por email novedades, promociones y descuentos de Graphex. Puedo darme de baja cuando quiera.';
+    private static $registration_marketing = null;
 
     public static function init() {
         add_action( 'init', array( __CLASS__, 'register' ) );
@@ -15,8 +17,12 @@ final class GE_Cards_Experience {
         add_action( 'admin_post_nopriv_ge_customer_contact_card_save', array( __CLASS__, 'deny' ) );
         add_action( 'admin_post_ge_customer_contact_card_download_qr', array( __CLASS__, 'owner_qr' ) );
         add_action( 'admin_post_nopriv_ge_customer_contact_card_download_qr', array( __CLASS__, 'deny' ) );
-        add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'product_notice' ), 27 );
+        add_action( 'woocommerce_after_single_product_summary', array( __CLASS__, 'product_notice' ), 8 );
+        add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
         add_filter( 'document_title_parts', array( __CLASS__, 'title' ) );
+        add_filter( 'do_shortcode_tag', array( __CLASS__, 'portal_link' ), 30, 2 );
+        add_action( 'admin_post_nopriv_ge_customer_register', array( __CLASS__, 'registration_marketing_guard' ), 1 );
+        add_action( 'wp_login', array( __CLASS__, 'registration_marketing_audit' ), 30, 2 );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ), 30 );
     }
 
@@ -34,9 +40,17 @@ final class GE_Cards_Experience {
     public static function assets() {
         if ( ! self::enabled() ) { return; }
         $path = self::path();
-        if ( 0 !== strpos( $path, '/tarjetas/' ) && 0 !== strpos( $path, '/contacto/' ) ) { return; }
+        $product_page = self::product_context();
+        if ( ! $product_page && 0 !== strpos( $path, '/tarjetas/' ) && 0 !== strpos( $path, '/contacto/' ) ) { return; }
         wp_enqueue_style( 'ge-cards-experience', content_url( '/mu-plugins/ge-cards-experience/cards.css' ), array(), (string) filemtime( __DIR__ . '/ge-cards-experience/cards.css' ) );
+        if ( '/tarjetas/mi-vcard/' === $path ) { wp_enqueue_script( 'ge-cards-preview', content_url( '/mu-plugins/ge-cards-experience/preview.js' ), array(), (string) filemtime( __DIR__ . '/ge-cards-experience/preview.js' ), true ); }
+        if ( $product_page ) { wp_enqueue_script( 'ge-cards-product-preview', content_url( '/mu-plugins/ge-cards-experience/product-preview.js' ), array(), (string) filemtime( __DIR__ . '/ge-cards-experience/product-preview.js' ), true ); }
     }
+    public static function body_class( $classes ) {
+        if ( self::enabled() && self::product_context() ) { $classes[] = 'ge-cards-product'; }
+        return $classes;
+    }
+    public static function product_context() { return function_exists( 'is_product' ) && is_product() && in_array( (int) get_queried_object_id(), array( 78, 83 ), true ); }
     public static function deny() { wp_die( 'Necesitás iniciar sesión en tu cuenta de Graphex.', 'Acceso privado', array( 'response' => 403 ) ); }
     public static function actor_allowed() {
         if ( ! is_user_logged_in() || ! class_exists( 'GE_WTP_Portal' ) || GE_WTP_Portal::is_staff_preview() ) { return false; }
@@ -149,7 +163,8 @@ final class GE_Cards_Experience {
             if ( is_array( $current ) && ( $current['token'] ?? '' ) === $guard ) { delete_option( $lock ); }
         }
         if ( ! empty( $failure ) ) { wp_die( esc_html( $failure ), '', array( 'response' => $failure_status ) ); }
-        wp_safe_redirect( add_query_arg( 'saved', $notice, self::url( 'mi-vcard/' ) ) ); exit;
+        $marketing = self::marketing_save( $user_id, 'vcard-email-v1', ! empty( $_POST['card_email_marketing'] ) );
+        wp_safe_redirect( add_query_arg( array( 'saved' => $notice, 'marketing' => $marketing ), self::url( 'mi-vcard/' ) ) ); exit;
     }
     public static function public_card( $token ) {
         if ( ! preg_match( '/^[a-f0-9]{32}$/D', $token ) ) { return null; }
@@ -162,12 +177,18 @@ final class GE_Cards_Experience {
     public static function qr_download_url( $card, $format ) {
         return wp_nonce_url( add_query_arg( array( 'action' => 'ge_customer_contact_card_download_qr', 'card_id' => $card->ID, 'format' => $format ), admin_url( 'admin-post.php' ) ), 'ge_customer_contact_card_download_qr_' . $card->ID );
     }
+    public static function final_qr_allowed( $card, $actor ) {
+        if ( ! self::owned( $card, $actor ) ) { return false; }
+        $public = self::public_card( $card->post_name );
+        return $public && (int) $public->ID === (int) $card->ID;
+    }
     public static function owner_qr() {
         if ( ! self::enabled() || ! self::actor_allowed() ) { self::deny(); }
         $id = absint( $_GET['card_id'] ?? 0 );
         check_admin_referer( 'ge_customer_contact_card_download_qr_' . $id );
         $card = get_post( $id );
-        if ( ! self::owned( $card, get_current_user_id() ) || ! in_array( $card->post_status, array( 'draft', 'publish' ), true ) ) { self::deny(); }
+        if ( ! self::owned( $card, get_current_user_id() ) ) { self::deny(); }
+        if ( ! self::final_qr_allowed( $card, get_current_user_id() ) ) { wp_die( 'Publicá primero un perfil válido para descargar el QR final.', '', array( 'response' => 409 ) ); }
         $format = sanitize_text_field( $_GET['format'] ?? '' );
         if ( ! in_array( $format, array( 'qr.svg', 'qr.png' ), true ) ) { wp_die( 'Formato inválido.', '', array( 'response' => 422 ) ); }
         header( 'Content-Disposition: attachment; filename="contacto-' . $format . '"' );
@@ -177,7 +198,54 @@ final class GE_Cards_Experience {
         if ( ! self::enabled() ) { return; }
         global $product;
         if ( ! $product instanceof WC_Product || ! in_array( $product->get_slug(), array( 'tarjetas-personales', 'tarjetas-express' ), true ) ) { return; }
-        echo '<section class="ge-storefront-upload"><h3>Tu contacto digital, incluido</h3><p>Prepará tu perfil desde tu cuenta y descargá el QR para agregarlo al diseño. El contacto público se activa con la compra y tu autorización, antes de imprimir.</p><p><a class="button" href="' . esc_url( self::url( 'mi-vcard/' ) ) . '">Preparar mi tarjeta digital</a></p></section>';
+        $card = self::actor_allowed() ? self::mine( get_current_user_id() ) : null;
+        $published = $card && self::final_qr_allowed( $card, get_current_user_id() );
+        $data = $card ? self::data( $card ) : array( 'first_name' => 'Alex', 'last_name' => 'Ejemplo', 'company' => 'Estudio Ejemplo', 'role' => 'Diseño y comunicación', 'email' => 'alex@example.com', 'phone' => '', 'website' => 'https://example.com' );
+        include __DIR__ . '/ge-cards-experience/product.php';
+    }
+    public static function portal_link( $output, $tag ) {
+        if ( ! self::enabled() || 'ge_markcom_portal' !== $tag ) { return $output; }
+        $output = str_replace( 'Quiero recibir novedades y guías de impresión.', esc_html( self::MARKETING_TEXT ), $output );
+        if ( ! self::actor_allowed() ) { return $output; }
+        $link = '<a href="' . esc_url( self::url( 'mi-vcard/' ) ) . '">Mi tarjeta digital</a>';
+        return preg_replace( '~(<nav\b[^>]*class="ge-portal-nav"[^>]*>)~', '$1' . $link, $output, 1 );
+    }
+    public static function marketing_status( $email ) {
+        global $wpdb;
+        if ( ! class_exists( 'GE_WTP_Newsletter' ) || ! $wpdb ) { return 'unavailable'; }
+        $table = $wpdb->prefix . 'ge_newsletter_contacts';
+        $status = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$table} WHERE email = %s LIMIT 1", strtolower( sanitize_email( $email ) ) ) );
+        return $wpdb->last_error ? 'unavailable' : ( $status ?: 'none' );
+    }
+    public static function marketing_audit( $actor, $source, $choice, $before, $after ) {
+        if ( ! is_callable( array( 'GE_Organization', 'audit' ) ) ) { return false; }
+        $result = GE_Organization::audit( self::organization(), $actor, 'email_marketing_consent', array( 'status' => $before ), array( 'source' => $source, 'channel' => 'email', 'text_version' => '2026-10-05-v1', 'text' => self::MARKETING_TEXT, 'checked' => (bool) $choice, 'status' => $after ) );
+        return ! is_wp_error( $result ) && $result;
+    }
+    public static function marketing_save( $actor, $source, $choice ) {
+        $user = get_userdata( $actor );
+        if ( ! $user ) { return 'unavailable'; }
+        $before = self::marketing_status( $user->user_email );
+        // Saving contact fields never withdraws or restores a previous subscription.
+        $after = ! $choice ? $before : ( 'none' === $before ? 'subscribed' : $before );
+        if ( ! self::marketing_audit( $actor, $source, $choice, $before, $before ) ) { return 'unavailable'; }
+        if ( ! $choice ) { return 'unchanged'; }
+        if ( ! in_array( $before, array( 'none', 'subscribed' ), true ) ) { return 'suppressed'; }
+        if ( 'none' === $before ) {
+            $result = GE_WTP_Newsletter::subscribe( $user->user_email, $user->first_name, $user->last_name, $source );
+            if ( is_wp_error( $result ) || 'subscribed' !== self::marketing_status( $user->user_email ) ) { return 'unavailable'; }
+        }
+        update_user_meta( $actor, '_ge_newsletter_optin', 'yes' );
+        return 'subscribed';
+    }
+    public static function registration_marketing_guard() {
+        if ( ! self::enabled() || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'ge_customer_register' ) ) { return; }
+        self::$registration_marketing = ! empty( $_POST['newsletter_optin'] );
+        if ( self::$registration_marketing && ! in_array( self::marketing_status( sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ) ), array( 'none', 'subscribed' ), true ) ) { unset( $_POST['newsletter_optin'] ); }
+    }
+    public static function registration_marketing_audit( $login, $user ) {
+        if ( ! self::enabled() || null === self::$registration_marketing || ! $user || strtolower( $user->user_email ) !== strtolower( sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ) ) ) { return; }
+        self::marketing_audit( $user->ID, 'registration-email-v1', self::$registration_marketing, 'registration', self::marketing_status( $user->user_email ) );
     }
     private static function escape_vcf( $value ) { return str_replace( array( '\\', ';', ',', "\r", "\n" ), array( '\\\\', '\\;', '\\,', '', '\\n' ), $value ); }
     public static function vcf( $data, $url ) {
@@ -238,7 +306,8 @@ final class GE_Cards_Experience {
             nocache_headers();
             if ( ! is_user_logged_in() ) {
                 setcookie( self::INTENT, 'vcard', array( 'expires' => time() + 1800, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ) );
-                wp_safe_redirect( GE_WTP_Portal::portal_url() ); exit;
+                $register = 'registro' === sanitize_key( $_GET['acceso'] ?? '' );
+                wp_safe_redirect( GE_WTP_Portal::portal_url( '', $register ? array( 'modo' => 'registro' ) : array() ) ); exit;
             }
             if ( ! self::actor_allowed() ) { self::deny(); }
             self::page( 'editor', self::mine( get_current_user_id() ) );
@@ -253,7 +322,10 @@ final class GE_Cards_Experience {
             $card = self::public_card( $m[1] );
             if ( ! $card ) { wp_die( 'Este perfil no está publicado.', 'Perfil no disponible', array( 'response' => 404 ) ); }
             $data = self::data( $card ); $url = self::public_url( $card );
-            if ( ! empty( $m[2] ) ) { self::output( $data, $url, $m[2] ); }
+            if ( ! empty( $m[2] ) ) {
+                if ( 'contacto.vcf' !== $m[2] ) { if ( ! self::actor_allowed() || ! self::owned( $card, get_current_user_id() ) ) { self::deny(); } }
+                self::output( $data, $url, $m[2] );
+            }
             self::page( 'profile', $card, $data, $url );
         }
     }

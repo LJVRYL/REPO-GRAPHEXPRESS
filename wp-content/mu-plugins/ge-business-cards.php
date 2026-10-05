@@ -9,7 +9,7 @@ final class GE_Business_Cards {
     const ASSET_OPTION = 'ge_business_cards_image_id_v1';
 
     public static function init() {
-        add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render' ), 28 );
+        add_action( 'woocommerce_after_single_product_summary', array( __CLASS__, 'render' ), 7 );
         add_filter( 'woocommerce_product_get_image_id', array( __CLASS__, 'image_id' ), 30, 2 );
         add_filter( 'get_post_metadata', array( __CLASS__, 'thumbnail' ), 30, 4 );
     }
