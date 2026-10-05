@@ -23,3 +23,5 @@ Rollback: restaurar opción anterior o `no`, retirar el MU-plugin a backup priva
 ## Límites actuales
 
 Un perfil de contacto editable por cuenta. La comprobación busca hasta 1.000 pedidos pagados recientes y luego deriva el caso a atención si no encuentra la compra; primero verifica el pedido que habilitó un perfil existente. La incorporación del QR al arte y su aprobación siguen el flujo actual de prueba antes de producción. No envía invitaciones, correos, campañas ni crea cobros automáticamente.
+
+Corrección 05/10/2026: las acciones de guardar y descargar QR usan el prefijo ge_customer_contact_card_ para que Organization Runtime las reconozca dentro del módulo customers; la descarga se clasifica como lectura. Se mantienen sesión, nonce, autor y organización. Backup verificado: /root/ge-backups/cards-actions-20261005. Verificación: 62 pruebas aisladas y guard_action real con cuenta customer, sin modificar registros.

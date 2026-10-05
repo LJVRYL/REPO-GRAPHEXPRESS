@@ -11,10 +11,10 @@ final class GE_Cards_Experience {
     public static function init() {
         add_action( 'init', array( __CLASS__, 'register' ) );
         add_action( 'template_redirect', array( __CLASS__, 'route' ), 1 );
-        add_action( 'admin_post_ge_contact_card_save', array( __CLASS__, 'save' ) );
-        add_action( 'admin_post_nopriv_ge_contact_card_save', array( __CLASS__, 'deny' ) );
-        add_action( 'admin_post_ge_contact_card_qr', array( __CLASS__, 'owner_qr' ) );
-        add_action( 'admin_post_nopriv_ge_contact_card_qr', array( __CLASS__, 'deny' ) );
+        add_action( 'admin_post_ge_customer_contact_card_save', array( __CLASS__, 'save' ) );
+        add_action( 'admin_post_nopriv_ge_customer_contact_card_save', array( __CLASS__, 'deny' ) );
+        add_action( 'admin_post_ge_customer_contact_card_download_qr', array( __CLASS__, 'owner_qr' ) );
+        add_action( 'admin_post_nopriv_ge_customer_contact_card_download_qr', array( __CLASS__, 'deny' ) );
         add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'product_notice' ), 27 );
         add_filter( 'document_title_parts', array( __CLASS__, 'title' ) );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ), 30 );
@@ -99,7 +99,7 @@ final class GE_Cards_Experience {
     }
     public static function save() {
         if ( ! self::enabled() || ! self::actor_allowed() || 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) { self::deny(); }
-        check_admin_referer( 'ge_contact_card_save' );
+        check_admin_referer( 'ge_customer_contact_card_save' );
         $user_id = get_current_user_id();
         $lock = 'ge_card_lock_' . $user_id;
         $guard = wp_generate_uuid4();
@@ -160,12 +160,12 @@ final class GE_Cards_Experience {
     }
     public static function public_url( $card ) { return home_url( '/contacto/' . $card->post_name . '/' ); }
     public static function qr_download_url( $card, $format ) {
-        return wp_nonce_url( add_query_arg( array( 'action' => 'ge_contact_card_qr', 'card_id' => $card->ID, 'format' => $format ), admin_url( 'admin-post.php' ) ), 'ge_contact_card_qr_' . $card->ID );
+        return wp_nonce_url( add_query_arg( array( 'action' => 'ge_customer_contact_card_download_qr', 'card_id' => $card->ID, 'format' => $format ), admin_url( 'admin-post.php' ) ), 'ge_customer_contact_card_download_qr_' . $card->ID );
     }
     public static function owner_qr() {
         if ( ! self::enabled() || ! self::actor_allowed() ) { self::deny(); }
         $id = absint( $_GET['card_id'] ?? 0 );
-        check_admin_referer( 'ge_contact_card_qr_' . $id );
+        check_admin_referer( 'ge_customer_contact_card_download_qr_' . $id );
         $card = get_post( $id );
         if ( ! self::owned( $card, get_current_user_id() ) || ! in_array( $card->post_status, array( 'draft', 'publish' ), true ) ) { self::deny(); }
         $format = sanitize_text_field( $_GET['format'] ?? '' );

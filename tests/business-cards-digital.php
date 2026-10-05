@@ -30,8 +30,8 @@ function wc_get_order($id){return $GLOBALS['orders'][$id]??false;} function wc_g
 require getenv('GE_CARDS_MODULE') ?: dirname(__DIR__).'/wp-content/mu-plugins/ge-cards-experience.php';
 function ok($v,$msg){global $passed;if(!$v)throw new RuntimeException($msg);$passed++;}
 function submit($extra=array()){$_SERVER['REQUEST_METHOD']='POST';$_POST=array_merge(array('_wpnonce'=>'good','first_name'=>'Alex','last_name'=>'Ejemplo','company'=>'Estudio Ejemplo','email'=>'alex@example.com','visibility'=>'draft','revision'=>0,'card_id'=>0),$extra);try{GE_Cards_Experience::save();throw new RuntimeException('Sin respuesta');}catch(Test_Response $r){return $r;}}
-ok(isset($GLOBALS['hooks']['admin_post_nopriv_ge_contact_card_save']),'Guard anónimo registrado');
-ok(isset($GLOBALS['hooks']['admin_post_nopriv_ge_contact_card_qr']),'QR de borrador exige autenticación');
+ok(isset($GLOBALS['hooks']['admin_post_nopriv_ge_customer_contact_card_save']),'Guard anónimo registrado');
+ok(isset($GLOBALS['hooks']['admin_post_nopriv_ge_customer_contact_card_download_qr']),'QR de borrador exige autenticación');
 $GLOBALS['actor']=0;ok(submit()->getCode()===403,'Creación anónima denegada');ok(!$GLOBALS['posts'],'Anónimo no crea registros');
 $GLOBALS['actor']=7;$GLOBALS['preview']=true;ok(submit()->getCode()===403,'Preview staff no modifica contacto');$GLOBALS['preview']=false;
 $GLOBALS['user_meta'][7]['_ge_organization_id']='otro';ok(submit()->getCode()===403,'Tenant ajeno denegado');unset($GLOBALS['user_meta'][7]);
