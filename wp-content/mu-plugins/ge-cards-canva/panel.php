@@ -1,0 +1,8 @@
+<?php defined( 'ABSPATH' ) || exit; ?>
+<section class="gxc gxc-canva-panel" aria-label="Diseñar con Canva">
+<h3>Elegí y editá en Canva</h3><p>Conectá tu propia cuenta. Podés elegir una plantilla del catálogo, guardarla en Canva y volver para seleccionarla aquí. El regreso automático funciona al abrir el editor desde Graphex.</p>
+<a class="gxc-text-link" href="https://www.canva.com/s/templates?query=&amp;adj=eyJFIjp7IkEiOiJ0QUNaQ3NIdzBwQSJ9fQ" target="_blank" rel="noopener noreferrer">Ver catálogo de tarjetas ↗</a>
+<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-canva-connect><input type="hidden" name="action" value="ge_customer_cards_design_authorize"><input type="hidden" name="selection" value=""><?php wp_nonce_field( self::NONCE ); ?><button class="gxc-button gxc-primary" type="submit">Conectar mi cuenta de Canva</button></form>
+<div data-canva-connected hidden><p>Tu cuenta de Canva está conectada.</p><div class="gxc-actions"><button type="button" data-canva-refresh>Buscar mis diseños</button><button type="button" data-canva-forget>Desconectar de Graphex</button></div><ul data-canva-designs></ul><button type="button" data-canva-more hidden>Ver más diseños</button></div>
+<p data-canva-status role="status" aria-live="polite"></p><p class="gxc-note">Al regresar, recibimos el PDF y lo cargamos mediante el almacenamiento privado de este producto. La vista previa y el análisis no sustituyen la aprobación del archivo exacto. Si Canva rechaza la exportación, descargá PDF para impresión y subilo manualmente.</p>
+</section>
