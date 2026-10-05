@@ -44,7 +44,10 @@ final class GE_Cards_Experience {
         if ( ! $product_page && 0 !== strpos( $path, '/tarjetas/' ) && 0 !== strpos( $path, '/contacto/' ) ) { return; }
         wp_enqueue_style( 'ge-cards-experience', content_url( '/mu-plugins/ge-cards-experience/cards.css' ), array(), (string) filemtime( __DIR__ . '/ge-cards-experience/cards.css' ) );
         if ( '/tarjetas/mi-vcard/' === $path ) { wp_enqueue_script( 'ge-cards-preview', content_url( '/mu-plugins/ge-cards-experience/preview.js' ), array(), (string) filemtime( __DIR__ . '/ge-cards-experience/preview.js' ), true ); }
-        if ( $product_page ) { wp_enqueue_script( 'ge-cards-product-preview', content_url( '/mu-plugins/ge-cards-experience/product-preview.js' ), array(), (string) filemtime( __DIR__ . '/ge-cards-experience/product-preview.js' ), true ); }
+        if ( $product_page ) {
+            wp_enqueue_script( 'ge-cards-product-preview', content_url( '/mu-plugins/ge-cards-experience/product-preview.js' ), array(), (string) filemtime( __DIR__ . '/ge-cards-experience/product-preview.js' ), true );
+            wp_localize_script( 'ge-cards-product-preview', 'geCardsProduct', array( 'selectionScope' => substr( wp_hash( (string) get_current_user_id() ), 0, 16 ), 'productId' => get_queried_object_id() ) );
+        }
     }
     public static function body_class( $classes ) {
         if ( self::enabled() && self::product_context() ) { $classes[] = 'ge-cards-product'; }
@@ -134,7 +137,7 @@ final class GE_Cards_Experience {
             if ( ! in_array( $choice, array( 'draft', 'publish' ), true ) ) { throw new RuntimeException( 'Visibilidad inválida.', 422 ); }
             $purchase = self::entitlement( $user_id, $card );
             $consent = 'publish' === $choice && ! empty( $_POST['public_consent'] );
-            if ( 'publish' === $choice && ! $consent ) { throw new RuntimeException( 'Confirmá expresamente qué datos querés hacer públicos.', 422 ); }
+            if ( 'publish' === $choice && ! $consent ) { throw new RuntimeException( 'Para publicar, marcá «Autorizo que estos datos se vean públicamente». Si querés mantenerlos privados, volvé al formulario y elegí «Guardar borrador privado».', 422 ); }
             // Hide before changing fields; a partially saved contact never becomes public.
             $post = array( 'post_type' => self::TYPE, 'post_author' => $user_id, 'post_status' => 'draft', 'post_title' => trim( $data['first_name'] . ' ' . $data['last_name'] ) );
             if ( $card ) { $post['ID'] = $card->ID; } else { $post['post_name'] = bin2hex( random_bytes( 16 ) ); }
@@ -296,6 +299,7 @@ final class GE_Cards_Experience {
     }
     public static function route() {
         if ( ! self::enabled() ) { return; }
+        if ( self::product_context() && is_user_logged_in() ) { nocache_headers(); header( 'Referrer-Policy: no-referrer' ); }
         $path = self::path();
         if ( '/cliente-markcom/' === $path && self::actor_allowed() && 'vcard' === ( $_COOKIE[self::INTENT] ?? '' ) ) {
             setcookie( self::INTENT, '', array( 'expires' => time() - 3600, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ) );

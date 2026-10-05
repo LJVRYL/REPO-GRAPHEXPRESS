@@ -2,6 +2,27 @@
   const scriptUrl = document.currentScript.src;
   const product = document.querySelector('#product-78, #product-83');
   const form = product?.querySelector('form[data-ge-digital-calculator], form[data-ge-storefront]');
+  if (form && window.geCardsProduct) {
+    const key = `ge-cards-selection:${geCardsProduct.selectionScope}:${geCardsProduct.productId}`;
+    const controls = [...form.querySelectorAll('[data-ge-field]')];
+    const save = () => {
+      const values = Object.fromEntries(controls.map(control => [control.dataset.geField, control.value]));
+      try { sessionStorage.setItem(key, JSON.stringify({expires: Date.now() + 3600000, values})); } catch (_) {}
+    };
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(key) || 'null');
+      if (saved && saved.expires > Date.now() && controls.every(control => Object.hasOwn(saved.values, control.dataset.geField) && [...control.options].some(option => option.value === saved.values[control.dataset.geField]))) {
+        controls.forEach(control => {
+          const choice = saved.values[control.dataset.geField];
+          if ([...control.options].some(option => option.value === choice && !option.disabled)) {
+            control.value = choice; control.dispatchEvent(new Event('change', {bubbles: true}));
+          }
+        });
+      }
+    } catch (_) {}
+    controls.forEach(control => control.addEventListener('change', save));
+    save();
+  }
   const input = form?.querySelector('[data-ge-digital-files], [data-ge-r2-files]');
   const gallery = product?.querySelector('.woocommerce-product-gallery');
   if (!input || !gallery) return;
@@ -31,7 +52,8 @@
   };
   const status = () => {
     if (uploadFailed) { message('La carga no se completó. Reintentá subir el archivo o reemplazalo.', true); return; }
-    const stored = input.dataset.uploadedFingerprint && claims?.value && claims.value !== '[]';
+    const fingerprint = [...input.files].map(file => [file.name, file.size, file.lastModified].join(':')).join('|');
+    const stored = fingerprint && input.dataset.uploadedFingerprint === fingerprint && claims?.value && claims.value !== '[]';
     const uploading = upload?.disabled;
     message((uploading ? 'Subiendo al almacenamiento privado…' : stored ? 'Archivo cargado · revisión técnica pendiente.' : 'Archivo seleccionado · falta subirlo.') + (previewMessage ? ' ' + previewMessage : ''));
   };

@@ -11,6 +11,17 @@
       node.hidden = !value(key);
     }
   };
+  const consent = form.elements.namedItem('public_consent');
+  const error = document.querySelector('#gxc-publish-error');
+  form.addEventListener('submit', event => {
+    if (event.submitter?.value === 'publish' && !consent.checked) {
+      event.preventDefault();
+      error.textContent = 'Para publicar y obtener el QR, marcá la autorización de datos públicos. También podés guardar un borrador privado.';
+      error.hidden = false;
+      consent.focus();
+    }
+  });
+  consent.addEventListener('change', () => { if (consent.checked) error.hidden = true; });
   form.addEventListener('input', update);
   update();
 })();

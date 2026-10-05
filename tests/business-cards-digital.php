@@ -15,7 +15,7 @@ class WC_Order {
 }
 class Test_Item { private $id,$qty; function __construct($id,$qty){$this->id=$id;$this->qty=$qty;} function get_product_id(){return $this->id;} function get_quantity(){return $this->qty;} function get_total(){return 1000;} }
 $GLOBALS['posts']=array();$GLOBALS['meta']=array();$GLOBALS['user_meta']=array();$GLOBALS['options']=array('ge_cards_experience_enabled_v1'=>'yes');$GLOBALS['actor']=7;$GLOBALS['roles']=array(7=>'customer',8=>'customer');$GLOBALS['orders']=array();$GLOBALS['hooks']=array();$passed=0;
-function add_action($hook,$fn){$GLOBALS['hooks'][$hook]=$fn;} function add_filter(){} function register_post_type(){}
+function is_product(){return false;}function add_action($hook,$fn){$GLOBALS['hooks'][$hook]=$fn;} function add_filter(){} function register_post_type(){}
 function absint($x){return abs((int)$x);} function is_wp_error($x){return $x instanceof WP_Error;} function is_user_logged_in(){return $GLOBALS['actor']>0;} function get_current_user_id(){return $GLOBALS['actor'];}
 function wp_get_current_user(){return (object)array('ID'=>$GLOBALS['actor'],'role'=>$GLOBALS['roles'][$GLOBALS['actor']]??'none');} function get_user_by($by,$id){return isset($GLOBALS['roles'][$id])?(object)array('ID'=>$id):false;}
 function get_user_meta($id,$key,$single=true){return $GLOBALS['user_meta'][$id][$key]??'';} function get_post_meta($id,$key,$single=true){return $GLOBALS['meta'][$id][$key]??'';}
