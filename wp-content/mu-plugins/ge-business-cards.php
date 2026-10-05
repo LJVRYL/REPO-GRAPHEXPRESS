@@ -11,6 +11,7 @@ final class GE_Business_Cards {
     public static function init() {
         add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render' ), 28 );
         add_filter( 'woocommerce_product_get_image_id', array( __CLASS__, 'image_id' ), 30, 2 );
+        add_filter( 'get_post_metadata', array( __CLASS__, 'thumbnail' ), 30, 4 );
     }
 
     private static function applies( $product ) {
@@ -21,6 +22,13 @@ final class GE_Business_Cards {
         if ( ! self::applies( $product ) ) { return $image_id; }
         $replacement = absint( get_option( self::ASSET_OPTION, 0 ) );
         return $replacement && 'attachment' === get_post_type( $replacement ) && wp_attachment_is_image( $replacement ) ? $replacement : $image_id;
+    }
+
+    public static function thumbnail( $value, $post_id, $key, $single ) {
+        if ( '_thumbnail_id' !== $key || 'product' !== get_post_type( $post_id ) || ! in_array( get_post_field( 'post_name', $post_id ), array( 'tarjetas-personales', 'tarjetas-express' ), true ) ) { return $value; }
+        $replacement = absint( get_option( self::ASSET_OPTION, 0 ) );
+        if ( ! $replacement || 'attachment' !== get_post_type( $replacement ) || ! wp_attachment_is_image( $replacement ) ) { return $value; }
+        return $single ? $replacement : array( $replacement );
     }
 
     public static function render() {
