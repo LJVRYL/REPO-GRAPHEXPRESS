@@ -213,7 +213,7 @@ final class GE_WTP_Notifications {
                 self::log( $to, $subject, $html, $context, $object_id, 'failed', $attachment->get_error_message() );
                 return false; // A quote is never sent without its commercial PDF.
             }
-            $html .= '<p>Adjuntamos el PDF comercial de tu presupuesto (versión ' . absint( $attachment['version'] ) . '). Podés revisarlo y aceptarlo desde el portal.</p>';
+            $html .= class_exists('GE_WTP_Email_Templates') ? GE_WTP_Email_Templates::attachment_notice($attachment['version']) : '<p>Adjuntamos el PDF comercial de tu presupuesto (versión ' . absint( $attachment['version'] ) . '). Podés revisarlo y aceptarlo desde el portal.</p>';
         }
         try {
             $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : array() );

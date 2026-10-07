@@ -204,7 +204,8 @@ final class GE_WTP_Commercial_Quotes {
         if ( 'yes' === get_user_meta( $customer->ID, '_ge_commercial_needs_invite', true ) ) {
             $body .= '<p>Si es tu primer acceso, usá “¿Olvidaste tu contraseña?” en el portal para definirla con este email.</p>';
         }
-        if ( ! GE_WTP_Notifications::send( $customer->user_email, 'Tu presupuesto · ' . $quote['number'], $body, 'commercial_quote_sent', $quote_id ) ) {
+        $message = class_exists('GE_WTP_Email_Templates') ? GE_WTP_Email_Templates::quote_message($quote, $snapshot, $customer) : array('subject'=>'Tu presupuesto · ' . $quote['number'], 'body'=>$body);
+        if ( ! GE_WTP_Notifications::send( $customer->user_email, $message['subject'], $message['body'], 'commercial_quote_sent', $quote_id ) ) {
             return new WP_Error( 'ge_quote_email', 'No se pudo enviar el presupuesto. Revisá Notificaciones antes de reintentar.' );
         }
         update_post_meta( $quote_id, self::STATUS_META, 'sent' );
@@ -225,7 +226,8 @@ final class GE_WTP_Commercial_Quotes {
         $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote_id ) );
         $body = '<p>Hola ' . esc_html( $customer->first_name ?: $customer->display_name ) . ',</p><p>Podés volver a revisar tu presupuesto de Graph Express.</p><p><a href="' . esc_url( $url ) . '">Ver presupuesto ' . esc_html( $quote['number'] ) . '</a></p>';
         $body .= self::email_summary( $quote['snapshot'] );
-        if ( ! GE_WTP_Notifications::send( $customer->user_email, 'Tu presupuesto · ' . $quote['number'], $body, 'commercial_quote_sent', $quote_id ) ) { return new WP_Error( 'ge_quote_email', 'No se pudo reenviar. Revisá Notificaciones.' ); }
+        $message = class_exists('GE_WTP_Email_Templates') ? GE_WTP_Email_Templates::quote_message($quote, $quote['snapshot'], $customer, true) : array('subject'=>'Tu presupuesto · ' . $quote['number'], 'body'=>$body);
+        if ( ! GE_WTP_Notifications::send( $customer->user_email, $message['subject'], $message['body'], 'commercial_quote_sent', $quote_id ) ) { return new WP_Error( 'ge_quote_email', 'No se pudo reenviar. Revisá Notificaciones.' ); }
         self::event( $quote_id, $quote['version'], 'sent', $actor_id );
         return $quote;
     }

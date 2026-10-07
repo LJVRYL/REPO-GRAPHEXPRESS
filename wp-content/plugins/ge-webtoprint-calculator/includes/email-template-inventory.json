@@ -1,0 +1,572 @@
+[
+  {
+    "id": "customer_welcome_verification",
+    "title": "Bienvenida y verificación del email",
+    "group": "Portal",
+    "trigger": "Registro de cliente",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "$content = '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>' . esc_html( $intro ) . '</p><p style=\"margin:26px 0\"><a href=\"' . esc_url( $verification_url ) . '\" style=\"display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700\">Verificar mi email</a></p><p style=\"color:#777382;font-size:13px\">El enlace vence en 24 horas. Si no pediste esta verificación, podés ignorar el mensaje.</p>';\nreturn self::send( $email, ( $welcome ? 'Bienvenido a Graph Express' : 'Verificá tu email' ) . ' · confirmación requerida', self::basic_email( $welcome ? 'Tu cuenta está lista' : 'Verificá tu email', $content ), $welcome ? 'customer_welcome_verification' : 'customer_email_verification', $user->ID );"
+  },
+  {
+    "id": "customer_email_verification",
+    "title": "Verificación del email",
+    "group": "Portal",
+    "trigger": "Confirmar dirección de email",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "$content = '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>' . esc_html( $intro ) . '</p><p style=\"margin:26px 0\"><a href=\"' . esc_url( $verification_url ) . '\" style=\"display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700\">Verificar mi email</a></p><p style=\"color:#777382;font-size:13px\">El enlace vence en 24 horas. Si no pediste esta verificación, podés ignorar el mensaje.</p>';\nreturn self::send( $email, ( $welcome ? 'Bienvenido a Graph Express' : 'Verificá tu email' ) . ' · confirmación requerida', self::basic_email( $welcome ? 'Tu cuenta está lista' : 'Verificá tu email', $content ), $welcome ? 'customer_welcome_verification' : 'customer_email_verification', $user->ID );"
+  },
+  {
+    "id": "customer_portal_invite",
+    "title": "Invitación al portal",
+    "group": "Portal",
+    "trigger": "Invitar cliente a definir contraseña",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "$content = '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>Ya tenés acceso a tu portal de Graph Express. Para ingresar, definí tu contraseña desde este enlace privado:</p><p style=\"margin:26px 0\"><a href=\"' . esc_url( $reset_url ) . '\" style=\"display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700\">Definir mi contraseña</a></p><p>Después podés ingresar en <a href=\"' . esc_url( GE_WTP_Portal::portal_url() ) . '\">tu portal</a> con este email.</p><p style=\"color:#777382;font-size:13px\">El enlace vence en 24 horas. Si no esperabas esta invitación, podés ignorarla.</p>';\nreturn self::send( $user->user_email, 'Acceso a tu portal · Graph Express', self::basic_email( 'Tu acceso a Graph Express', $content ), 'customer_portal_invite', $user->ID );\n$ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : array() );\n$logged_html = 'customer_portal_invite' === $context ? '<p>Invitación con enlace privado para definir contraseña. El enlace se omitió del historial.</p>' : $html;"
+  },
+  {
+    "id": "new_customer_admin",
+    "title": "Nuevo cliente registrado",
+    "group": "Internos",
+    "trigger": "Alta de cliente",
+    "recipient": "Personal",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "$content = '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>Ya tenés acceso a tu portal de Graph Express. Para ingresar, definí tu contraseña desde este enlace privado:</p><p style=\"margin:26px 0\"><a href=\"' . esc_url( $reset_url ) . '\" style=\"display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700\">Definir mi contraseña</a></p><p>Después podés ingresar en <a href=\"' . esc_url( GE_WTP_Portal::portal_url() ) . '\">tu portal</a> con este email.</p><p style=\"color:#777382;font-size:13px\">El enlace vence en 24 horas. Si no esperabas esta invitación, podés ignorarla.</p>';\nreturn self::send( $user->user_email, 'Acceso a tu portal · Graph Express', self::basic_email( 'Tu acceso a Graph Express', $content ), 'customer_portal_invite', $user->ID );\n$content = '<p>Se registró un nuevo cliente en la web.</p><table style=\"width:100%;border-collapse:collapse\"><tr><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0\">Nombre</td><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right\"><strong>' . esc_html( $user->display_name ) . '</strong></td></tr><tr><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0\">Email</td><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right\"><strong>' . esc_html( $user->user_email ) . '</strong></td></tr></table><p style=\"margin:26px 0\"><a href=\"' . esc_url( $url ) . '\" style=\"display:inline-block;padding:14px 20px;border-radius:10px;background:#17152a;color:#fff;text-decoration:none;font-weight:700\">Ver ficha del cliente</a></p>';\nif ( class_exists( 'GE_WTP_Notification_Center' ) ) { $result = GE_WTP_Notification_Center::send_internal( 'new_customer', 'Nuevo cliente registrado · Graph Express', self::basic_email( 'Nuevo cliente', $content ), $user->ID ); return null === $result ? true : $result; }\nreturn self::send( get_option( 'admin_email' ), 'Nuevo cliente registrado · Graph Express', self::basic_email( 'Nuevo cliente', $content ), 'new_customer_admin', $user->ID );"
+  },
+  {
+    "id": "order_customer",
+    "title": "Pedido recibido",
+    "group": "Pedidos",
+    "trigger": "Creación de pedido",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "$customer_ok = $customer_email ? self::send( $customer_email, 'Pedido recibido · ' . $reference, $customer_body, 'order_customer', $order->get_id() ) : false;"
+  },
+  {
+    "id": "order_admin",
+    "title": "Nuevo pedido",
+    "group": "Internos",
+    "trigger": "Creación de pedido",
+    "recipient": "Personal",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "else { $admin_email = sanitize_email( get_option( 'admin_email' ) ); $admin_ok = $admin_email ? self::send( $admin_email, 'Nuevo pedido Graph Express · ' . $reference, $admin_body, 'order_admin', $order->get_id() ) : false; $admin_state = $admin_ok ? 'sent' : 'failed'; }"
+  },
+  {
+    "id": "order_status_*",
+    "title": "Cambio de estado del pedido",
+    "group": "Pedidos",
+    "trigger": "Confirmado / producción / listo / entregado",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "$content = '<p>Se registró un nuevo cliente en la web.</p><table style=\"width:100%;border-collapse:collapse\"><tr><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0\">Nombre</td><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right\"><strong>' . esc_html( $user->display_name ) . '</strong></td></tr><tr><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0\">Email</td><td style=\"padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right\"><strong>' . esc_html( $user->user_email ) . '</strong></td></tr></table><p style=\"margin:26px 0\"><a href=\"' . esc_url( $url ) . '\" style=\"display:inline-block;padding:14px 20px;border-radius:10px;background:#17152a;color:#fff;text-decoration:none;font-weight:700\">Ver ficha del cliente</a></p>';\nif ( class_exists( 'GE_WTP_Notification_Center' ) ) { $result = GE_WTP_Notification_Center::send_internal( 'new_customer', 'Nuevo cliente registrado · Graph Express', self::basic_email( 'Nuevo cliente', $content ), $user->ID ); return null === $result ? true : $result; }\nreturn self::send( get_option( 'admin_email' ), 'Nuevo cliente registrado · Graph Express', self::basic_email( 'Nuevo cliente', $content ), 'new_customer_admin', $user->ID );"
+  },
+  {
+    "id": "order_manual_update",
+    "title": "Actualización del pedido manual",
+    "group": "Pedidos",
+    "trigger": "Notificar actualización",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notifications.php",
+    "excerpt": "$ok = self::send( $order->get_billing_email(), 'Presupuesto actualizado · ' . $reference, $body, 'order_manual_update', $order->get_id() );"
+  },
+  {
+    "id": "manual_customer_invite",
+    "title": "Invitación desde pedido manual",
+    "group": "Portal",
+    "trigger": "Registro de pedido manual",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-manual-orders.php",
+    "excerpt": "$html = '<p>Hola ' . esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ) . ',</p><p>Podés crear tu cuenta de Graph Express para consultar pedidos y repetir trabajos más rápido.</p><p><a href=\"' . esc_url( $url ) . '\">Crear mi cuenta</a></p><p>Registrate con el mismo email utilizado en tu pedido.</p>';\n$sent = $email ? GE_WTP_Notifications::send( $email, 'Guardá tus pedidos · Graph Express', $html, 'manual_customer_invite', $order->get_id() ) : false;"
+  },
+  {
+    "id": "payment_instructions",
+    "title": "Opciones de pago",
+    "group": "Pagos",
+    "trigger": "Compartir instrucciones de pago",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-payments.php",
+    "excerpt": "Contenido compuesto en su emisor; variables y enlaces privados se resuelven únicamente al enviar."
+  },
+  {
+    "id": "payment_confirmed",
+    "title": "Pago confirmado",
+    "group": "Pagos",
+    "trigger": "Confirmación de pago",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-payments.php",
+    "excerpt": "Contenido compuesto en su emisor; variables y enlaces privados se resuelven únicamente al enviar."
+  },
+  {
+    "id": "quote_request_received",
+    "title": "Solicitud de presupuesto recibida",
+    "group": "Presupuestos",
+    "trigger": "Cliente envía solicitud",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-quote-requests.php",
+    "excerpt": "$url=GE_WTP_Staff_Portal::portal_url('requests',array('request_id'=>$id));$body='<p>Solicitud #'.$id.' · '.count($data['items']).' ítems</p><p><a href=\"'.esc_url($url).'\">Ver solicitud en Gestión</a></p>';\n$recipients=GE_WTP_Notification_Center::recipients();$sent=!empty($recipients);foreach($recipients as $recipient){$sent=GE_WTP_Notifications::send($recipient,'Nueva solicitud de presupuesto · #'.$id,$body,'quote_request_internal',$id)&&$sent;}\nGE_WTP_Notifications::send($u->user_email,'Recibimos tu solicitud de presupuesto · #'.$id,'<p>Recibimos tu solicitud con '.count($data['items']).' ítems. Nuestro equipo la revisará.</p><p><a href=\"'.esc_url(GE_WTP_Portal::portal_url('solicitudes')).'\">Mis solicitudes</a></p>','quote_request_received',$id);"
+  },
+  {
+    "id": "quote_request_internal",
+    "title": "Nueva solicitud de presupuesto",
+    "group": "Internos",
+    "trigger": "Cliente envía solicitud",
+    "recipient": "Personal",
+    "editable": false,
+    "source": "includes/class-ge-wtp-quote-requests.php",
+    "excerpt": "$url=GE_WTP_Staff_Portal::portal_url('requests',array('request_id'=>$id));$body='<p>Solicitud #'.$id.' · '.count($data['items']).' ítems</p><p><a href=\"'.esc_url($url).'\">Ver solicitud en Gestión</a></p>';\n$recipients=GE_WTP_Notification_Center::recipients();$sent=!empty($recipients);foreach($recipients as $recipient){$sent=GE_WTP_Notifications::send($recipient,'Nueva solicitud de presupuesto · #'.$id,$body,'quote_request_internal',$id)&&$sent;}"
+  },
+  {
+    "id": "workflow_artwork_approval",
+    "title": "Aprobación del archivo final",
+    "group": "Producción",
+    "trigger": "Solicitar aprobación del archivo exacto",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-workflow.php",
+    "excerpt": "$html = '<p>Preparámos el archivo de <strong>' . esc_html( $item->get_name() ) . '</strong>, versión <strong>' . esc_html( $item->get_meta( '_ge_item_artwork_version', true ) ) . '</strong>.</p><p><a href=\"' . esc_url( $portal ) . '\">Revisar y aprobar la versión final en tu portal</a></p>' . $registration . '<p>Si necesitás cambios, respondé este mensaje antes de aprobar. No enviaremos este trabajo a producción sin tu confirmación.</p>';\n$sent = GE_WTP_Notifications::send( $email, 'Aprobación final del archivo · ' . self::reference( $order ), $html, 'workflow_artwork_approval', $order->get_id() );"
+  },
+  {
+    "id": "workflow_customer_production",
+    "title": "Pedido en producción",
+    "group": "Producción",
+    "trigger": "Inicio de producción",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-workflow.php",
+    "excerpt": "$html = '<p>Tu pedido <strong>' . esc_html( $reference ) . '</strong> fue aprobado y pasó a producción.</p><p>Podés consultar su avance desde <a href=\"' . esc_url( $portal ) . '\">tu portal de cliente</a>.</p>';\n$sent = GE_WTP_Notifications::send( $email, 'Pedido en producción · ' . $reference, $html, 'workflow_customer_production', $order->get_id() );"
+  },
+  {
+    "id": "supplier_order",
+    "title": "Orden al proveedor",
+    "group": "Proveedores",
+    "trigger": "Emitir orden de producción",
+    "recipient": "Proveedor",
+    "editable": false,
+    "source": "includes/class-ge-wtp-supplier-dispatch.php",
+    "excerpt": "$html = '<!doctype html><html><body style=\"font-family:Arial,sans-serif;color:#17152a\"><div style=\"max-width:680px;margin:auto\"><div style=\"padding:18px 22px;background:#17152a;color:#fff\"><strong>GRAPH EXPRESS · ORDEN A PROVEEDOR</strong></div><div style=\"padding:25px;border:1px solid #ddd\"><h1>' . esc_html( $reference ) . '</h1><p>Solicitamos producir los siguientes trabajos para la fecha <strong>' . esc_html( GE_WTP_Production::date_label_public( $order->get_meta( '_ge_production_promised_date' ) ) ) . '</strong>.</p><table style=\"width:100%;border-collapse:collapse\"><tr><th style=\"padding:10px;text-align:left;background:#eee\">Producto</th><th style=\"padding:10px;text-align:right;background:#eee\">Cantidad</th></tr>' . $rows . '</table><h3>Indicaciones</h3><p style=\"white-space:pre-wrap\">' . esc_html( $order->get_meta( '_ge_production_technical_notes' ) ?: 'Sin indicaciones adicionales.' ) . '</p><p style=\"color:#777;font-size:12px\">Confirmar recepción y fecha posible de entrega respondiendo este correo.</p></div></div></body></html>';\nreturn GE_WTP_Notifications::send( $profile['email'], 'Orden de producción ' . $reference . ' · Graph Express', $html, 'supplier_order', $order->get_id() );"
+  },
+  {
+    "id": "workflow_supplier_portal",
+    "title": "Acceso técnico del proveedor",
+    "group": "Proveedores",
+    "trigger": "Despachar trabajo al proveedor",
+    "recipient": "Proveedor",
+    "editable": false,
+    "source": "includes/class-ge-wtp-supplier-portal.php",
+    "excerpt": "$html = nl2br( esc_html( self::message( $row, $url ) ) );\n$html = str_replace( esc_html( $url ), '<a href=\"' . esc_url( $url ) . '\">Abrir portal y descargar archivos</a>', $html );\n$sent = $manual || GE_WTP_Notifications::send( $email, 'Orden de producción ' . $row['snapshot']['reference'] . ' · Graphex', $html, 'workflow_supplier_portal', $id );"
+  },
+  {
+    "id": "invoice_available",
+    "title": "Comprobante disponible",
+    "group": "Comprobantes",
+    "trigger": "Publicar comprobante",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-customer-invoices.php",
+    "excerpt": "$ok = GE_WTP_Notifications::send( $user->user_email, 'Comprobante disponible · Graph Express', '<p>Tenés un comprobante disponible en tu portal.</p><p><a href=\"' . esc_url( self::url( $ref ) ) . '\">Ver en Mis facturas</a></p>', 'invoice_available', $user->ID );"
+  },
+  {
+    "id": "invoice_review_received",
+    "title": "Consulta de comprobante recibida",
+    "group": "Comprobantes",
+    "trigger": "Cliente solicita revisión",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-customer-invoices.php",
+    "excerpt": "$html = '<p>' . esc_html( $subject ) . '.</p><p><a href=\"' . esc_url( self::url( $row['ref'] ) ) . '\">Ver comprobante y conversación</a></p><p>Pedir una revisión no anula el comprobante ni cambia el estado de pago.</p>';\n$result['customer'] = GE_WTP_Notifications::send( $customer->user_email, $subject . ' · Graph Express', $html, $response ? 'invoice_review_response' : 'invoice_review_received', $entity ) ? 'accepted' : 'failed';"
+  },
+  {
+    "id": "invoice_review_response",
+    "title": "Respuesta sobre comprobante",
+    "group": "Comprobantes",
+    "trigger": "Personal responde consulta",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-customer-invoices.php",
+    "excerpt": "$html = '<p>' . esc_html( $subject ) . '.</p><p><a href=\"' . esc_url( self::url( $row['ref'] ) ) . '\">Ver comprobante y conversación</a></p><p>Pedir una revisión no anula el comprobante ni cambia el estado de pago.</p>';\n$result['customer'] = GE_WTP_Notifications::send( $customer->user_email, $subject . ' · Graph Express', $html, $response ? 'invoice_review_response' : 'invoice_review_received', $entity ) ? 'accepted' : 'failed';"
+  },
+  {
+    "id": "invoice_review_staff",
+    "title": "Revisión de comprobante pendiente",
+    "group": "Internos",
+    "trigger": "Cliente solicita revisión",
+    "recipient": "Personal",
+    "editable": false,
+    "source": "includes/class-ge-wtp-customer-invoices.php",
+    "excerpt": "$result['customer'] = GE_WTP_Notifications::send( $customer->user_email, $subject . ' · Graph Express', $html, $response ? 'invoice_review_response' : 'invoice_review_received', $entity ) ? 'accepted' : 'failed';\nforeach ( $recipients as $email ) { $ok = GE_WTP_Notifications::send( $email, 'Solicitud de revisión de comprobante · Graph Express', '<p>Hay una consulta para revisar.</p><p><a href=\"' . esc_url( self::url( $row['ref'], true, $row['customer_id'] ) ) . '\">Abrir revisión en Gestión</a></p>', 'invoice_review_staff', $entity ) && $ok; }"
+  },
+  {
+    "id": "review_request",
+    "title": "Solicitud de reseña",
+    "group": "Posventa",
+    "trigger": "Solicitar opinión sobre pedido",
+    "recipient": "Cliente",
+    "editable": false,
+    "source": "includes/class-ge-wtp-review-requests.php",
+    "excerpt": "$body = self::email_body( $name ?: '¿cómo estás?', self::review_url() );\n$sent = GE_WTP_Notifications::send( $email, '¿Cómo fue tu experiencia con Graph Express?', $body, 'review_request', $order->get_id() );"
+  },
+  {
+    "id": "newsletter_campaign",
+    "title": "Campaña newsletter",
+    "group": "Campañas",
+    "trigger": "Campaña programada con suscripción vigente",
+    "recipient": "Contactos suscriptos",
+    "editable": false,
+    "source": "includes/class-ge-wtp-newsletter.php",
+    "excerpt": "Contenido compuesto en su emisor; variables y enlaces privados se resuelven únicamente al enviar."
+  },
+  {
+    "id": "newsletter_test",
+    "title": "Prueba de campaña",
+    "group": "Campañas",
+    "trigger": "Prueba explícita del administrador",
+    "recipient": "Administrador",
+    "editable": false,
+    "source": "includes/class-ge-wtp-newsletter.php",
+    "excerpt": "global $wpdb; self::admin_guard(); check_admin_referer( 'ge_newsletter_save_campaign' ); $subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : ''; $content = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : ''; if ( ! $subject || ! $content ) { wp_die( 'Asunto y contenido son obligatorios.' ); } $wpdb->insert( self::campaigns_table(), array( 'subject' => $subject, 'preview_text' => isset( $_POST['preview_text'] ) ? sanitize_text_field( wp_unslash( $_POST['preview_text'] ) ) : '', 'content' => $content, 'status' => 'draft', 'created_by' => get_current_user_id(), 'created_at' => current_time( 'mysql' ) ) ); self::admin_redirect();\nglobal $wpdb; self::admin_guard(); $id = isset( $_POST['campaign_id'] ) ? absint( $_POST['campaign_id'] ) : 0; check_admin_referer( 'ge_newsletter_send_test_' . $id ); $campaign = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::campaigns_table() . ' WHERE id=%d', $id ) ); if ( ! $campaign ) { wp_die( 'Campaña inválida.' ); } $admin = wp_get_current_user(); GE_WTP_Notifications::send( $admin->user_email, '[PRUEBA] ' . $campaign->subject, self::campaign_html( $campaign, '', 'Vista previa del administrador' ), 'newsletter_test', $id ); self::admin_redirect();"
+  },
+  {
+    "id": "internal_*",
+    "title": "Avisos internos de operación",
+    "group": "Internos",
+    "trigger": "Pedido / cliente / postulación / incidente / proveedor / resumen de producción",
+    "recipient": "Personal configurado",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notification-center.php",
+    "excerpt": "public static function send_internal( $event, $subject, $html, $object_id = 0 ) {\nforeach ( self::recipients() as $email ) { $sent++; if ( ! GE_WTP_Notifications::send( $email, $subject, $html, 'internal_' . sanitize_key( $event ), $object_id ) ) { $ok = false; } }\nforeach ( self::recipients() as $email ) { $sent++; if ( ! GE_WTP_Notifications::send( $email, 'Prueba de notificaciones · Graph Express', '<p>El centro de notificaciones está conectado correctamente.</p><p>Fecha: ' . esc_html( current_time( 'd/m/Y H:i' ) ) . '</p>', 'internal_test' ) ) { $ok = false; } }"
+  },
+  {
+    "id": "internal_test",
+    "title": "Prueba de notificaciones",
+    "group": "Internos",
+    "trigger": "Prueba explícita de notificaciones",
+    "recipient": "Personal",
+    "editable": false,
+    "source": "includes/class-ge-wtp-notification-center.php",
+    "excerpt": "foreach ( self::recipients() as $email ) { $sent++; if ( ! GE_WTP_Notifications::send( $email, 'Prueba de notificaciones · Graph Express', '<p>El centro de notificaciones está conectado correctamente.</p><p>Fecha: ' . esc_html( current_time( 'd/m/Y H:i' ) ) . '</p>', 'internal_test' ) ) { $ok = false; } }"
+  },
+  {
+    "id": "job_application",
+    "title": "Postulación laboral",
+    "group": "Internos",
+    "trigger": "Nueva postulación; fallback wp_mail",
+    "recipient": "Administrador",
+    "editable": false,
+    "source": "includes/class-ge-wtp-jobs.php",
+    "excerpt": "Contenido compuesto en su emisor; variables y enlaces privados se resuelven únicamente al enviar."
+  },
+  {
+    "id": "wordpress_send_recovery_mode_email",
+    "title": "Acceso al modo de recuperación por error del sitio",
+    "group": "WordPress",
+    "trigger": "Acceso al modo de recuperación por error del sitio · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/class-wp-recovery-mode-email-service.php · send_recovery_mode_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_send_note_notification",
+    "title": "Aviso de nota de edición",
+    "group": "WordPress",
+    "trigger": "Aviso de nota de edición · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/comment.php · wp_send_note_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_site_admin_email_change_notification",
+    "title": "Cambio del email administrativo del sitio",
+    "group": "WordPress",
+    "trigger": "Cambio del email administrativo del sitio · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/functions.php · wp_site_admin_email_change_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wpmu_signup_blog_notification",
+    "title": "Registro de sitio en una red",
+    "group": "WordPress",
+    "trigger": "Registro de sitio en una red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · wpmu_signup_blog_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wpmu_signup_user_notification",
+    "title": "Registro de usuario en una red",
+    "group": "WordPress",
+    "trigger": "Registro de usuario en una red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · wpmu_signup_user_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_newblog_notify_siteadmin",
+    "title": "Nuevo sitio: aviso al administrador de red",
+    "group": "WordPress",
+    "trigger": "Nuevo sitio: aviso al administrador de red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · newblog_notify_siteadmin",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_newuser_notify_siteadmin",
+    "title": "Nuevo usuario: aviso al administrador de red",
+    "group": "WordPress",
+    "trigger": "Nuevo usuario: aviso al administrador de red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · newuser_notify_siteadmin",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wpmu_welcome_notification",
+    "title": "Bienvenida a un sitio de la red",
+    "group": "WordPress",
+    "trigger": "Bienvenida a un sitio de la red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · wpmu_welcome_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wpmu_new_site_admin_notification",
+    "title": "Nuevo administrador de sitio en la red",
+    "group": "WordPress",
+    "trigger": "Nuevo administrador de sitio en la red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · wpmu_new_site_admin_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wpmu_welcome_user_notification",
+    "title": "Bienvenida a un usuario de la red",
+    "group": "WordPress",
+    "trigger": "Bienvenida a un usuario de la red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · wpmu_welcome_user_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_update_network_option_new_admin_email",
+    "title": "Confirmación del email de la red",
+    "group": "WordPress",
+    "trigger": "Confirmación del email de la red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · update_network_option_new_admin_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_network_admin_email_change_notification",
+    "title": "Cambio del email administrativo de la red",
+    "group": "WordPress",
+    "trigger": "Cambio del email administrativo de la red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/ms-functions.php · wp_network_admin_email_change_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_notify_postauthor",
+    "title": "Nuevo comentario: aviso al autor",
+    "group": "WordPress",
+    "trigger": "Nuevo comentario: aviso al autor · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/pluggable.php · wp_notify_postauthor",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_notify_moderator",
+    "title": "Comentario pendiente de moderación",
+    "group": "WordPress",
+    "trigger": "Comentario pendiente de moderación · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/pluggable.php · wp_notify_moderator",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_password_change_notification",
+    "title": "Contraseña modificada",
+    "group": "WordPress",
+    "trigger": "Contraseña modificada · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/pluggable.php · wp_password_change_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_new_user_notification",
+    "title": "Nuevo usuario y acceso al sitio",
+    "group": "WordPress",
+    "trigger": "Nuevo usuario y acceso al sitio · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/pluggable.php · wp_new_user_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_update_user",
+    "title": "Cambio de contraseña o email de usuario",
+    "group": "WordPress",
+    "trigger": "Cambio de contraseña o email de usuario · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/user.php · wp_update_user",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_retrieve_password",
+    "title": "Recuperar contraseña",
+    "group": "WordPress",
+    "trigger": "Recuperar contraseña · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/user.php · retrieve_password",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_send_confirmation_on_profile_email",
+    "title": "Confirmar cambio de email del perfil",
+    "group": "WordPress",
+    "trigger": "Confirmar cambio de email del perfil · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/user.php · send_confirmation_on_profile_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress__wp_privacy_send_request_confirmation_notification",
+    "title": "Solicitud de privacidad confirmada",
+    "group": "WordPress",
+    "trigger": "Solicitud de privacidad confirmada · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/user.php · _wp_privacy_send_request_confirmation_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress__wp_privacy_send_erasure_fulfillment_notification",
+    "title": "Solicitud de borrado de datos completada",
+    "group": "WordPress",
+    "trigger": "Solicitud de borrado de datos completada · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/user.php · _wp_privacy_send_erasure_fulfillment_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_send_user_request",
+    "title": "Confirmar solicitud de privacidad",
+    "group": "WordPress",
+    "trigger": "Confirmar solicitud de privacidad · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-includes/user.php · wp_send_user_request",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_update_option_new_admin_email",
+    "title": "Confirmar email administrativo del sitio",
+    "group": "WordPress",
+    "trigger": "Confirmar email administrativo del sitio · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/includes/misc.php · update_option_new_admin_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_send_email",
+    "title": "Resultado de actualización automática",
+    "group": "WordPress",
+    "trigger": "Resultado de actualización automática · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/includes/class-wp-automatic-updater.php · send_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_send_plugin_theme_email",
+    "title": "Actualización de plugins y temas",
+    "group": "WordPress",
+    "trigger": "Actualización de plugins y temas · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/includes/class-wp-automatic-updater.php · send_plugin_theme_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_send_debug_email",
+    "title": "Informe técnico de actualización",
+    "group": "WordPress",
+    "trigger": "Informe técnico de actualización · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/includes/class-wp-automatic-updater.php · send_debug_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_new_blog_notification",
+    "title": "Bienvenida al administrador de una instalación",
+    "group": "WordPress",
+    "trigger": "Bienvenida al administrador de una instalación · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/includes/upgrade.php · wp_new_blog_notification",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_wp_privacy_send_personal_data_export_email",
+    "title": "Exportación de datos personales disponible",
+    "group": "WordPress",
+    "trigger": "Exportación de datos personales disponible · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/includes/privacy-tools.php · wp_privacy_send_personal_data_export_email",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_ms-delete-site",
+    "title": "Confirmar eliminación de sitio en una red",
+    "group": "WordPress",
+    "trigger": "Confirmar eliminación de sitio en una red · depende del evento y la configuración del sitio · solo multisitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/ms-delete-site.php · ms-delete-site",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  },
+  {
+    "id": "wordpress_user-new",
+    "title": "Invitación de usuario al sitio",
+    "group": "WordPress",
+    "trigger": "Invitación de usuario al sitio · depende del evento y la configuración del sitio",
+    "recipient": "Titular o administrador según el evento",
+    "editable": false,
+    "source": "wp-admin/user-new.php · user-new",
+    "excerpt": "Administrada por WordPress. Esta referencia no genera enlaces de contraseña, tokens ni correos."
+  }
+]

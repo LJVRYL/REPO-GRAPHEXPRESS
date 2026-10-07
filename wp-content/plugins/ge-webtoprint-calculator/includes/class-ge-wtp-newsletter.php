@@ -182,8 +182,8 @@ final class GE_WTP_Newsletter {
         if ( ! current_user_can( 'manage_woocommerce' ) ) { return; }
         $view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'campaigns';
         echo '<div class="wrap ge-admin-wrap">'; GE_WTP_Backoffice::render_communications_header();
-        echo '<nav class="nav-tab-wrapper"><a class="nav-tab ' . ( 'campaigns' === $view ? 'nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=ge-backoffice-newsletter&view=campaigns' ) ) . '">Campañas</a><a class="nav-tab ' . ( 'contacts' === $view ? 'nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=ge-backoffice-newsletter&view=contacts' ) ) . '">Contactos</a><a class="nav-tab ' . ( 'emails' === $view ? 'nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=ge-backoffice-newsletter&view=emails' ) ) . '">Correos enviados</a></nav>';
-        if ( 'contacts' === $view ) { self::render_contacts(); } elseif ( 'emails' === $view ) { self::render_email_logs(); } else { self::render_campaigns(); }
+        echo '<nav class="nav-tab-wrapper"><a class="nav-tab ' . ( 'campaigns' === $view ? 'nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=ge-backoffice-newsletter&view=campaigns' ) ) . '">Campañas</a><a class="nav-tab ' . ( 'contacts' === $view ? 'nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=ge-backoffice-newsletter&view=contacts' ) ) . '">Contactos</a><a class="nav-tab ' . ( 'emails' === $view ? 'nav-tab-active' : '' ) . '" href="' . esc_url( admin_url( 'admin.php?page=ge-backoffice-newsletter&view=emails' ) ) . '">Correos enviados</a><a class="' . ( 'templates' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Email_Templates::url() ) . '">Plantillas</a></nav>';
+        if ( 'templates' === $view ) { GE_WTP_Email_Templates::render_portal(); } elseif ( 'contacts' === $view ) { self::render_contacts(); } elseif ( 'emails' === $view ) { self::render_email_logs(); } else { self::render_campaigns(); }
         echo '</div>';
     }
 
@@ -195,8 +195,8 @@ final class GE_WTP_Newsletter {
         self::$portal_context = true;
         $view = isset( $_GET['subsection'] ) ? sanitize_key( wp_unslash( $_GET['subsection'] ) ) : 'campaigns';
         echo '<div class="ge-staff-heading"><div><span>Comunicaciones</span><h1>Newsletter y correos</h1><p>Contactos, campañas y trazabilidad.</p></div></div>';
-        echo '<nav class="ge-staff-tabs"><a class="' . ( 'campaigns' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'campaigns' ) ) ) . '">Campañas</a><a class="' . ( 'contacts' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'contacts' ) ) ) . '">Contactos</a><a class="' . ( 'emails' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'emails' ) ) ) . '">Correos enviados</a></nav>';
-        if ( 'contacts' === $view ) { self::render_contacts(); } elseif ( 'emails' === $view ) { self::render_email_logs(); } else { self::render_campaigns(); }
+        echo '<nav class="ge-staff-tabs"><a class="' . ( 'campaigns' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'campaigns' ) ) ) . '">Campañas</a><a class="' . ( 'contacts' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'contacts' ) ) ) . '">Contactos</a><a class="' . ( 'emails' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'emails' ) ) ) . '">Correos enviados</a><a class="' . ( 'templates' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Email_Templates::url() ) . '">Plantillas</a></nav>';
+        if ( 'templates' === $view ) { GE_WTP_Email_Templates::render_portal(); } elseif ( 'contacts' === $view ) { self::render_contacts(); } elseif ( 'emails' === $view ) { self::render_email_logs(); } else { self::render_campaigns(); }
         self::$portal_context = false;
     }
 
