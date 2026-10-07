@@ -140,7 +140,7 @@ final class GE_WTP_Gestion_V3 {
         return self::shell_enabled() && is_page( 'gestion' ) && GE_WTP_Staff_Portal::can_access() ? GE_WTP_PLUGIN_DIR . 'templates/gestion-v3.php' : $original;
     }
 
-    public static function nav() { $nav=array('dashboard'=>'Inicio','customers'=>'Clientes','quotes'=>'Presupuestos','requests'=>'Solicitudes','orders'=>'Pedidos','production'=>'Producción'); if(GE_WTP_Operations::enabled()) { if(GE_WTP_Operations::module_enabled('suppliers')) $nav['suppliers']='Proveedores'; if(GE_WTP_Operations::module_enabled('stock')&&(current_user_can('ge_manage_inventory')||current_user_can('manage_options'))) $nav['stock']='Stock'; if(GE_WTP_Operations::module_enabled('administration')&&(current_user_can('ge_view_finance')||current_user_can('manage_options'))) $nav['administration']='Administración'; } if(GE_WTP_Cost_Engine::enabled()&&(current_user_can('ge_view_costs')||current_user_can('manage_options'))) $nav['costs']='Costos y Productos'; if(class_exists('GE_WTP_Customer_Invoices')&&GE_WTP_Customer_Invoices::staff(get_current_user_id())) $nav['invoice-reviews']='Revisiones'; $nav['communications']='Comunicaciones'; return $nav; }
+    public static function nav() { $nav=array('dashboard'=>'Inicio','customers'=>'Clientes','jobs'=>'Trabajos'); if(GE_WTP_Operations::enabled()) { if(GE_WTP_Operations::module_enabled('suppliers')) $nav['suppliers']='Proveedores'; if(GE_WTP_Operations::module_enabled('stock')&&(current_user_can('ge_manage_inventory')||current_user_can('manage_options'))) $nav['stock']='Stock'; if(GE_WTP_Operations::module_enabled('administration')&&(current_user_can('ge_view_finance')||current_user_can('manage_options'))) $nav['administration']='Administración'; } if(GE_WTP_Cost_Engine::enabled()&&(current_user_can('ge_view_costs')||current_user_can('manage_options'))) $nav['costs']='Costos y Productos'; if(class_exists('GE_WTP_Customer_Invoices')&&GE_WTP_Customer_Invoices::staff(get_current_user_id())) $nav['invoice-reviews']='Revisiones'; $nav['communications']='Comunicaciones'; if(!GE_WTP_Work_Panel::accessible())unset($nav['jobs']); return $nav; }
     public static function status_label( $key ) {
         $labels=array('draft'=>'Borrador','sent'=>'Enviado','viewed'=>'Visto','accepted'=>'Aceptado','converted'=>'Convertido','rejected'=>'Rechazado','expired'=>'Vencido','cancelled'=>'Cancelado');
         return $labels[$key]??ucfirst(str_replace('_',' ',$key));
@@ -153,6 +153,7 @@ final class GE_WTP_Gestion_V3 {
             'dashboard'=>'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
             'customers'=>'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
             'quotes'=>'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h5',
+            'jobs'=>'M3 7h18v14H3z M8 7V3h8v4 M3 12h18 M10 12v3h4v-3',
             'orders'=>'M6 6h12l2 15H4z M9 7V5a3 3 0 0 1 6 0v2',
             'production'=>'M3 21V9l6 4V9l6 4V3h5v18z M7 17h1 M12 17h1 M17 17h1',
             'communications'=>'M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z',

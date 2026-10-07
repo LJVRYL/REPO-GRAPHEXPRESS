@@ -32,6 +32,7 @@ final class GE_WTP_Plugin {
         GE_WTP_Internal_Alerts::init();
         GE_WTP_Quote_Requests::init();
         require_once __DIR__ . '/class-ge-wtp-job-flow.php';
+        require_once __DIR__ . '/class-ge-wtp-work-panel.php';
         GE_WTP_Job_Flow::init();
         require_once __DIR__ . '/class-ge-wtp-customer-invoices.php';
         GE_WTP_Customer_Invoices::init();

@@ -2,7 +2,7 @@
 if(!defined('ABSPATH'))exit;
 $section=sanitize_key(wp_unslash($_GET['section']??'dashboard'));
 $view=sanitize_key(wp_unslash($_GET['view']??'queue'));
-$active='supplier-invoices'===$section?'production':$section;
+$active=GE_WTP_Work_Panel::contains($section)?'jobs':('supplier-invoices'===$section?'jobs':$section);
 $nav=GE_WTP_Gestion_V3::nav();
 $global_query=sanitize_text_field(wp_unslash($_GET['global_q']??''));
 $title=$nav[$active]??array('library'=>'Archivos','candidates'=>'Candidatos','settings'=>'Configuración','notifications'=>'Notificaciones')[$section]??'Gestión';
@@ -10,7 +10,7 @@ $title=$nav[$active]??array('library'=>'Archivos','candidates'=>'Candidatos','se
 ob_start();
 if($global_query){GE_WTP_Gestion_V3::render_search($global_query);}
 else {
-    if(in_array($section,array('production','supplier-invoices'),true)) GE_WTP_Gestion_V3::domain_tabs('supplier-invoices'===$section?'documents':$view);
+    if('supplier-invoices'===$section) GE_WTP_Gestion_V3::domain_tabs('supplier-invoices'===$section?'documents':$view);
     GE_WTP_Staff_Portal::render();
     if('dashboard'===$section)GE_WTP_Gestion_V3::secondary_links();
 }

@@ -62,6 +62,7 @@ final class GE_WTP_Staff_Portal {
     }
 
     public static function portal_url( $section = '', $args = array() ) {
+        if ( class_exists('GE_WTP_Work_Panel') && isset(GE_WTP_Work_Panel::sections()[$section]) && !$args ) { $args=array('tipo'=>$section); $section='jobs'; }
         $page = get_page_by_path( self::PAGE_SLUG );
         $url = $page ? get_permalink( $page ) : home_url( '/' . self::PAGE_SLUG . '/' );
         if ( $section ) {
@@ -107,6 +108,11 @@ final class GE_WTP_Staff_Portal {
             return;
         }
         $section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : 'dashboard';
+        if ( GE_WTP_Work_Panel::contains($section) ) {
+            if ( ! GE_WTP_Work_Panel::accessible() || ('jobs' !== $section && ! GE_WTP_Work_Panel::allowed($section)) ) { echo '<p>Acceso no disponible para tu rol.</p>'; return; }
+            GE_WTP_Work_Panel::header($section);
+            if ( GE_WTP_Work_Panel::overview($section) ) { GE_WTP_Work_Panel::render($section); return; }
+        }
         GE_WTP_Job_Flow::staff( $section );
         if($section==='dashboard' && class_exists('GE_Organization_Runtime') && (!in_array(GE_Organization_Runtime::role(get_current_user_id()),array('owner','admin'),true)||GE_Organization::PRIMARY!=='graph-express'||in_array(false,GE_Organization_Runtime::settings()['modules'],true))){GE_Organization_Runtime::dashboard();return;}
         if ( 'costs' === $section && GE_WTP_Cost_Engine::enabled() ) {
@@ -116,7 +122,6 @@ final class GE_WTP_Staff_Portal {
         } elseif ( 'requests' === $section ) {
             GE_WTP_Quote_Requests::inbox();
         } elseif ( 'quotes' === $section ) {
-            echo '<p><a href="' . esc_url(self::portal_url('requests')) . '">Solicitudes de presupuesto →</a></p>';
             GE_WTP_Commercial_Quote_UI::render_staff();
         } elseif ( 'orders' === $section ) {
             self::render_orders();

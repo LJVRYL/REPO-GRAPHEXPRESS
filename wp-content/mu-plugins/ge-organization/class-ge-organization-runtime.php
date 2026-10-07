@@ -165,6 +165,7 @@ final class GE_Organization_Runtime {
         $o=GE_Organization::get(GE_Organization::PRIMARY);
         if(GE_Organization::PRIMARY!=='graph-express' && empty($o['onboarding']['ready']) && !in_array($section,array('company','profile'),true)){wp_safe_redirect(GE_WTP_Staff_Portal::portal_url('company',array('tab'=>'onboarding')));exit;}
         if(in_array($section,array('company','profile','dashboard'),true))return;
+        if($section==='jobs'){if(class_exists('GE_WTP_Work_Panel') && GE_WTP_Work_Panel::accessible())return;self::deny();}
         $map=array('invoice-reviews'=>'finance','requests'=>'quotes','administration'=>'finance','costs'=>'cost_engine','library'=>'orders','supplier-invoices'=>'suppliers','notifications'=>'company','settings'=>'company');
         $m=$map[$section]??self::module_for($section);
         if($m==='company'){if(!GE_Organization::can(GE_Organization::PRIMARY,get_current_user_id(),true))self::deny();return;}
