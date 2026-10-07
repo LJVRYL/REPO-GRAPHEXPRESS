@@ -90,6 +90,7 @@
         if (deliverySelect.selectedIndex < 0) deliverySelect.value = '';
         if (!previousDelivery && deliverySelect.options.length === 2) deliverySelect.selectedIndex = 1;
         selected = {};
+        branchPicker.dispatchEvent(new CustomEvent('ge:quote-profiles', { bubbles: true, detail: result.data.profiles || [] }));
       }).catch(function () { /* Keep the existing selections when the lookup is unavailable. */ });
     }
     emailInput.addEventListener('change', loadBranches);

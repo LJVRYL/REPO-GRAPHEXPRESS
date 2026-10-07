@@ -69,11 +69,15 @@ final class GE_WTP_Commercial_Checkout {
         }
         echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_commercial_start_payment"><input type="hidden" name="quote_id" value="' . esc_attr( $quote['id'] ) . '">';
         wp_nonce_field( 'ge_commercial_start_payment_' . $quote['id'] );
-        echo '<fieldset><legend>Importe</legend><label><input type="radio" name="payment_kind" value="full" checked> Pagar total</label> <label><input type="radio" name="payment_kind" value="deposit"> Pagar ' . esc_html( $snapshot['deposit_percent'] ) . '% de seña</label></fieldset>';
+        $deposit_enabled = ! array_key_exists( 'deposit_enabled', $snapshot ) || $snapshot['deposit_enabled'];
+        echo '<fieldset><legend>Importe</legend><label><input type="radio" name="payment_kind" value="full" checked> Pagar total</label>';
+        if ( $deposit_enabled ) { echo ' <label><input type="radio" name="payment_kind" value="deposit"> Pagar ' . esc_html( $snapshot['deposit_percent'] ) . '% de seña</label>'; }
+        echo '</fieldset>';
         echo '<fieldset><legend>Medio</legend><label><input type="radio" name="payment_method" value="bacs" checked> Transferencia bancaria</label> <label><input type="radio" name="payment_method" value="mercadopago"> Mercado Pago</label></fieldset>';
         $base = (int) $snapshot['total_cents'];
         foreach ( array( 'bacs' => 'Transferencia', 'mercadopago' => 'Mercado Pago' ) as $method => $label ) {
             $final = $base + ( 'converted' === $quote['status'] ? 0 : self::adjustment_cents( $base, $method ) );
+            if ( ! $deposit_enabled ) { echo '<p><strong>' . esc_html( $label ) . ':</strong> total ' . esc_html( GE_WTP_Quote_Balance::decimal( $final ) ) . ' ARS.</p>'; continue; }
             $deposit = GE_WTP_Quote_Balance::deposit( $final, (int) $snapshot['deposit_percent'] * 100 );
             echo '<p><strong>' . esc_html( $label ) . ':</strong> total ' . esc_html( GE_WTP_Quote_Balance::decimal( $final ) ) . ' ARS · seña ' . esc_html( GE_WTP_Quote_Balance::decimal( $deposit['deposit_cents'] ) ) . ' ARS · saldo ' . esc_html( GE_WTP_Quote_Balance::decimal( $deposit['remaining_cents'] ) ) . ' ARS.</p>';
         }
@@ -254,6 +258,7 @@ final class GE_WTP_Commercial_Checkout {
         }
         $quote = GE_WTP_Commercial_Quotes::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( ! empty( $quote['snapshot']['draft_incomplete'] ) || ( 'deposit' === $kind && array_key_exists( 'deposit_enabled', $quote['snapshot'] ) && ! $quote['snapshot']['deposit_enabled'] ) ) { return new WP_Error( 'ge_quote_payment_state', 'Este presupuesto no admite ese pago.' ); }
         if ( (int) $actor_id !== $quote['customer_id'] || ! in_array( $quote['status'], array( 'sent', 'viewed', 'accepted', 'converted' ), true ) || empty( $quote['snapshot']['total_cents'] ) ) {
             return new WP_Error( 'ge_quote_payment_state', 'El presupuesto no está listo para pagar.' );
         }

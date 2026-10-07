@@ -124,7 +124,7 @@ final class GE_WTP_Commercial_Quote_PDF {
         $tax_label = count( $rates ) === 1 ? 'IVA ' . ( 'final' === ( $s['quote_vat_mode'] ?? '' ) ? 'incluido ' : '' ) . number_format( (int) reset( $rates ) / 100, 2, ',', '.' ) . '%' : 'IVA / impuestos';
         if ( isset( $s['tax_cents'] ) ) { $rows[] = array( 'kind' => 'amount', 'label' => $tax_label, 'amount' => $s['tax_cents'], 'height' => 23 ); }
         $rows[] = array( 'kind' => 'total', 'label' => 'Total', 'amount' => $s['total_cents'], 'height' => 48 );
-        if ( isset( $s['deposit_percent'] ) ) {
+        if ( isset( $s['deposit_percent'] ) && ( ! array_key_exists( 'deposit_enabled', $s ) || $s['deposit_enabled'] ) ) {
             $deposit = (int) round( (int) $s['total_cents'] * (int) $s['deposit_percent'] / 100 );
             $pending_fiscal = 'pending' === ( $s['fiscal_status'] ?? '' );
             $rows[] = array( 'kind' => 'copy', 'text' => ( $pending_fiscal ? 'Seña prevista: ' : 'Seña disponible: ' ) . $s['deposit_percent'] . '% (' . $currency . ' ' . self::amount( $deposit ) . ').', 'height' => 20 );
