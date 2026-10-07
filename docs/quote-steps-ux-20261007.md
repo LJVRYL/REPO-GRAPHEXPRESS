@@ -1,35 +1,27 @@
-# Presupuestos por cards — candidato 07/10/2026
+# Presupuestos — asistente secuencial 07/10/2026
 
-Estado: candidate. Base: master remoto e2089d8e654a535c4eb95c203884309ab745f33d.
+Base canónica y producción comprobada por lectura: 1d4c0caa46b7d06359e8c944121a58080cf62af6. Esa versión anterior muestra todas las cards y navegación numerada; el nuevo candidato corrige esa presentación.
 
-El formulario separa contacto, datos fiscales manuales, emisor, receptor/entrega, productos, IVA, descuentos, condiciones y archivos. Se usan tokens Graphex existentes, texto de 16px, cards numeradas y navegación libre con indicador de sección. Los controles de auditoría de revisiones siguen disponibles.
+Una sola card visible a la vez. Orden: cliente → fiscal opcional → emisor → receptor/entrega opcional → productos → descuentos e IVA → validez/seña/notas → archivos opcionales → revisión y envío.
 
-## Contratos
+- Indicador discreto «Paso X de 9», progreso accesible y título. Sin links numerados/subrayados ni badges. Fuente Jost heredada y botones existentes de Gestión.
+- Continuar valida solamente el paso actual. Atrás conserva controles, valores, UUIDs y widgets sin reconstruirlos. Omitir avanza los pasos opcionales sin borrar valores.
+- Guardar borrador está disponible en todos los pasos tras completar nombre/email. Conserva guardado asíncrono, errores, idempotencia y hash optimista.
+- Enviar aparece sólo en la revisión final: cliente, datos fiscales, emisor, receptor, entrega, productos, selección, totales del calculador existente, descuentos, IVA, condiciones, notas públicas/privadas y archivos.
+- Editar lleva al paso correspondiente. La confirmación de revisión está en el último paso y se invalida al modificar datos.
+- Errores de envío abren el paso/campo exacto y conservan valores. Foco en título al navegar, resumen al fallar y campo al seguir enlace.
+- Enter en texto/número no envía ni guarda implícitamente; selects, archivos, textarea y botones conservan interacción de teclado. Doble clic no saltea pasos ni activa envío al entrar en revisión. Guardado conserva bloqueo de concurrencia.
 
-- Nombre/email permiten guardar un borrador sin productos, archivos, emisor o receptor completo. `draft_incomplete` bloquea envío y operaciones fiscales; no produce un total cobrable. Los ítems a medio completar se conservan en `draft_lines` sin inventar precios.
-- La ficha se resuelve por email; buscar/seleccionar no guarda. Guardar el borrador registra/vincula la ficha; el único camino de envío conserva las notificaciones existentes.
-- CUIT, razón social, condición y domicilio se cargan manualmente o se reutilizan del perfil autorizado. Los datos del receptor pertenecen al cliente; la dirección de entrega se valida por separado.
-- `revise()` conserva snapshots y versiona propuestas enviadas. `expected_hash` complementa `expected_version` para detectar cambios dentro de una misma versión de borrador. Se mantienen permisos, bloqueos, motivos y auditoría de cambios verificados.
-- Descuentos siguen las reglas monetarias existentes. IVA mantiene modos final/added y resolución fiscal; no se convierte en descuento ni se agrega sobre un precio final.
-- `deposit_enabled` desactiva seña en UI, PDF y checkout. Los snapshots anteriores sin ese campo mantienen su comportamiento. La seña activada valida porcentaje y muestra importe calculado.
-- Las notas internas quedan privadas. Los archivos siguen el almacenamiento, Analyzer, referencias y bloqueo de sesión existentes.
-- Guardado asíncrono conserva valores, referencias y archivos ante errores. Resumen e inline enlazan/focalizan el campo. Reintento utiliza el guardado idempotente existente; un envío fallido después de guardar conserva ID/versión/hash y renueva sesión para corregir sin duplicar.
-- Se corrige una colisión local de `$label`: los controles de variantes no sustituyen el nombre del producto por «ID de la miniatura privada».
+Contratos conservados: borrador mínimo sin fiscal/emisor/productos/archivos; pendiente sin total cobrable y sin envío/cobro/conversión. Snapshots, permisos, auditoría, revisiones, IVA, descuentos, seña, PDF/checkout, almacenamiento y Analyzer conservan caminos existentes.
 
-## Verificación realizada
+QA del candidato:
+- PHP 8.4 Windows lint del renderer; JavaScript syntax; git diff check.
+- Regresiones: commercial-quote-snapshot, 26 quote-steps-draft, 5 quote-steps-pdf, billing-flows y quote-balance.
+- Navegador con formulario PHP real, estilos staff/gestion existentes y dependencias/HTTP sintéticos: card única, pasos, opcionales, guardado mínimo alcanza endpoint, error422 abre paso5 conserva valores, errores/foco, Enter, doble clic, productos, descuento>100/motivo, seña inválida, notas, revisión, links de error entre pasos.
+- Desktop/móvil390px: fuente cuerpo/input/botón Jost heredada, sin links de progreso, card única y sin overflow tras corregir footer.
+- Adjuntar archivo sintético fue rechazado por navegador; no repetido ni eludido. Controles y referencias permanecen intactos, pero no se afirma QA nueva de upload/Analyzer.
+- Los54 checks WordPress/PHP7.4 del release anterior son históricos, no QA integral nueva de este candidato.
 
-- PHP 8.4 Windows: sintaxis; regresiones commercial-quote-snapshot, billing-flows y quote-balance.
-- 26 checks del modelo real con adaptador WP en memoria: borrador mínimo, permisos, receptor/dirección ajenos, no envío/cobro, revisión/historia, snapshots previos, conflicto de hash, ítems parciales, descuentos y seña.
-- 5 checks del generador PDF real: bytes válidos, privacidad de nota interna, nota comercial, una página A4 y seña off/on. Render visual Poppler sin solapamientos; advertencia local de fuente Symbol, sin defecto visible.
-- Navegador integrado sobre PHP real y dependencias sintéticas: foco/resumen/inline, mínimo contacto alcanza endpoint, conservación tras 422, selección cliente y reutilización fiscal, seña off/on, bloqueo previo de envío incompleto. Capturas desktop/móvil; 390px sin overflow, texto 16px y numeración blanca con contraste.
-- Pantalla productiva inspeccionada por lectura: sigue con formulario anterior y reproduce la colisión del nombre del producto. No se envió ningún formulario productivo.
+Release pendiente: sesión actual restringe red para Git y resuelve SSH a .sbx-denybin; sin bypass, cambios de claves, ACL o WSL. Completar QA exacta PHP7.4/WordPress aislado, backup/preimages/rollback, merge canonical, deploy de tres archivos, smoke/relectura hashes.
 
-## Pendientes obligatorios de release
-
-1. QA WordPress/WooCommerce integral aislada, PHP 7.4, con correo/HTTP externos interceptados: creación cliente real sintética, persistencia/uploads/Analyzer/reemplazo, variantes, selección, fiscal C/A/final/added, revisión de receptor y permisos, checkout desactivado/activado, errores/dobleclick/reintento.
-2. SSH: servidor acepta publickey existente, pero el sandbox no puede consultar el canal del agente Windows para firmar (Permission denied). No hay ruta de habilitación soportada confirmada; no se alteraron claves, ACL ni WSL.
-3. Revalidar master y hashes productivos; backup privado verificado, rollback selectivo y guardas de concurrencia.
-4. Tests integrados → merge canonical → deploy desde canonical → smoke → relectura de hashes.
-
-merged=false, deployed=false, verified=false (integral/productivo), canonical_synced=false. Este candidato no es un release terminado.
-
+candidate=true; merged=false; deployed=false; canonical_synced=false para este asistente. Release previo permanece en producción.
