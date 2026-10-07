@@ -8,19 +8,11 @@
   var cards = Array.from(form.querySelectorAll(':scope > section.ge-production-card'));
   var busy = false, dirty = false;
   // Reuse the original controls and file widgets; moving between steps never rebuilds them.
-  var vatCard = cards[5], discountCard = cards[6];
-  var vatHeading = vatCard.querySelector('h2');
-  var vatTitle = document.createElement('h3'); vatTitle.textContent = 'IVA de este presupuesto';
-  vatHeading.replaceWith(vatTitle);
-  discountCard.querySelector('h2').textContent = 'Descuentos e IVA';
-  discountCard.appendChild(vatCard);
-  vatCard.classList.remove('ge-production-card'); vatCard.classList.add('ge-quote-vat-section');
-  cards.splice(5, 1);
   var reviewCard = document.createElement('section'); reviewCard.className = 'ge-production-card ge-quote-review';
   var reviewHeading = document.createElement('h2'); reviewHeading.textContent = 'Revisar y enviar'; reviewCard.appendChild(reviewHeading);
   var reviewBody = document.createElement('div'); reviewBody.dataset.geReview = '1'; reviewCard.appendChild(reviewBody);
   form.querySelector('.ge-manual-summary').before(reviewCard); cards.push(reviewCard);
-  var currentStep = 0, reviewEnteredAt = 0, optionalSteps = [1, 3, 7];
+  var currentStep = 0, reviewEnteredAt = 0, optionalSteps = [1, 3, 6];
   var back = form.querySelector('[data-ge-step-back]'), next = form.querySelector('[data-ge-step-next]');
   var skip = form.querySelector('[data-ge-step-skip]'), sendButton = form.querySelector('[value="send"]');
   var draftButton = form.querySelector('[value="draft"]');
@@ -72,13 +64,13 @@
       rows.push([title.value, (quantity.value || 'Cantidad pendiente') + ' ' + unit.value + ' · ' + subtotal.textContent + (selection ? ' · ' + selection.selectedOptions[0].textContent : '')]);
     });
     reviewSection('Productos y servicios', 4, rows.length ? rows : [['Ítems', 'Sin productos; podés guardar el borrador y completarlos después.']]);
-    var amountSection = reviewSection('Descuentos e IVA', 5, [['Descuento', selectedText('discount_value') + (selectedText('discount_type') === 'Porcentaje' ? '%' : ' ARS')], ['Tratamiento', selectedText('quote_vat_mode', 'Configuración actual del emisor')]]);
+    var amountSection = reviewSection('Importes', 4, [['IVA', 'Según el emisor elegido en Emisor / Facturación']]);
     reviewTotals = document.createElement('div'); reviewTotals.className = 'ge-quote-review-totals'; reviewTotals.setAttribute('role', 'status'); reviewTotals.setAttribute('aria-live', 'polite'); amountSection.appendChild(reviewTotals); syncTotals();
-    reviewSection('Validez, pago y notas', 6, [['Válido hasta', selectedText('valid_until')], ['Seña', deposit.checked ? selectedText('deposit_percent') + '%' : 'Sin seña'], ['Notas para el cliente', selectedText('notes_customer', 'Sin notas')], ['Notas internas (privadas)', selectedText('notes_internal', 'Sin notas')]]);
+    reviewSection('Validez, pago y notas', 5, [['Válido hasta', selectedText('valid_until')], ['Seña', deposit.checked ? selectedText('deposit_percent') + '%' : 'Sin seña'], ['Notas para el cliente', selectedText('notes_customer', 'Sin notas')], ['Notas internas (privadas)', selectedText('notes_internal', 'Sin notas')]]);
     var files = [];
     form.querySelectorAll('[data-ge-artwork-list]').forEach(function (list) { if (list.textContent.trim()) files.push(list.textContent.trim()); });
     form.querySelectorAll('input[type="file"]').forEach(function (input) { Array.from(input.files || []).forEach(function (file) { files.push(file.name); }); });
-    reviewSection('Archivos', 7, [['Adjuntos', files.length ? files.join(' · ') : 'Sin archivos; son opcionales.']]);
+    reviewSection('Archivos', 6, [['Adjuntos', files.length ? files.join(' · ') : 'Sin archivos; son opcionales.']]);
   }
   if (liveTotals) new MutationObserver(syncTotals).observe(liveTotals, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['aria-busy'] });
   function showStep(index, focus) {
