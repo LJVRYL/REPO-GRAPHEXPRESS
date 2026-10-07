@@ -7,7 +7,7 @@ final class GE_WTP_Cost_Quotes {
     public static function enqueue(){
         if(!GE_WTP_Cost_Engine::enabled()||!is_user_logged_in()||sanitize_key($_GET['section']??'')!=='quotes'||(!current_user_can('manage_options')&&!current_user_can('ge_view_costs')))return;
         $refs=array();$id=absint($_GET['quote_id']??0);if($id){$quote=GE_WTP_Commercial_Quotes::get($id,get_current_user_id());if(!is_wp_error($quote))foreach((array)get_post_meta($id,'_ge_cost_quote_version_'.$quote['version'],true) as $index=>$r)$refs[$index]=absint($r['snapshot_id']??0);}
-        wp_enqueue_script('ge-cost-quotes',GE_WTP_PLUGIN_URL.'assets/js/cost-quotes.js',array(),GE_WTP_Cost_Engine::VERSION,true);wp_localize_script('ge-cost-quotes','geCostQuotes',array('calculatorUrl'=>GE_WTP_Cost_UI::url(),'refs'=>$refs));
+        wp_enqueue_script('ge-cost-quotes',GE_WTP_PLUGIN_URL.'assets/js/cost-quotes.js',array(),(string)filemtime(GE_WTP_PLUGIN_DIR.'assets/js/cost-quotes.js'),true);wp_localize_script('ge-cost-quotes','geCostQuotes',array('calculatorUrl'=>GE_WTP_Cost_UI::url(),'refs'=>$refs));
     }
     public static function prepare(){
         if(!GE_WTP_Cost_Engine::enabled())return;

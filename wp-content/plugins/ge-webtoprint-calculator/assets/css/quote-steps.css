@@ -57,3 +57,23 @@
   .ge-quote-wizard-navigation { width: 100%; }
   .ge-quote-wizard-navigation [data-ge-step-next] { margin-left: auto; }
 }
+
+/* Optional product controls use progressive disclosure in step 5. */
+.ge-quote-steps .ge-manual-line > .ge-product-fold { grid-column:1 / -1; border:1px solid var(--ge-border,#d9e2e8); border-radius:10px; padding:0 16px; background:var(--ge-surface,#fff); }
+.ge-quote-steps .ge-product-fold > summary { min-height:48px; padding:12px 0; cursor:pointer; font-weight:600; line-height:1.5; }
+.ge-quote-steps .ge-product-fold[open] { padding-bottom:16px; }
+.ge-quote-steps .ge-product-fold > p { margin:0 0 14px; color:var(--ge-muted,#52616b); }
+.ge-quote-steps .ge-product-fold label { margin:12px 0; }
+.ge-quote-steps .ge-product-fold summary:focus-visible { outline:3px solid var(--ge-primary,#167c80); outline-offset:3px; border-radius:4px; }
+.ge-quote-steps .ge-quote-line-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.ge-quote-steps .ge-quote-line-actions button { min-height:44px; }
+.ge-quote-steps .ge-quote-line-actions [data-ge-cost-private-hint] { flex-basis:100%; }
+.ge-quote-steps [data-ge-source="catalog_product"] [data-ge-calculate-cost],
+.ge-quote-steps [data-ge-source="catalog_product"] .ge-product-cost-help { display:none; }
+.ge-quote-steps .ge-manual-line [data-ge-artwork] { padding:20px; border:1px solid var(--ge-border,#d9e2e8); border-radius:12px; background:var(--ge-surface,#fff); display:flex; flex-direction:column; gap:12px; }
+.ge-quote-steps .ge-manual-line [data-ge-artwork] > p { margin:0; }
+.ge-quote-steps .ge-manual-line [data-ge-add-link] { align-self:flex-start; min-height:44px; }
+.ge-quote-steps .ge-manual-line [data-ge-artwork] > label { margin:0; }
+.ge-quote-steps .ge-manual-line [data-ge-artwork-list]:empty { display:none; }
+.ge-quote-steps .ge-choice-editor { margin-top:16px; }
+.ge-quote-steps .ge-choice-editor > summary { min-height:44px; cursor:pointer; }

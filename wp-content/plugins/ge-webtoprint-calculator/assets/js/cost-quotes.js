@@ -4,9 +4,9 @@
  function connect(){document.querySelectorAll('[data-ge-lines] [data-ge-line]').forEach(line=>{
    if(connected.has(line))return;connected.add(line);const actions=line.querySelector('.ge-quote-line-actions');if(!actions)return;
    const quantity=line.querySelector('input[name$="[quantity]"]');if(!quantity)return;const prefix=quantity.name.replace(/\[quantity\]$/,'');const match=prefix.match(/\[(\d+)\]$/);
-   const button=document.createElement('button');button.type='button';button.dataset.geCalculateCost='';button.textContent='Calcular costo';
-   const hidden=document.createElement('input');hidden.type='hidden';hidden.name=prefix+'[cost_snapshot_id]';hidden.value=match?geCostQuotes.refs[match[1]]||'':'';
-   const hint=document.createElement('span');hint.dataset.geCostPrivateHint='';if(hidden.value)hint.textContent='Snapshot de costo privado asociado.';
+   const button=line.querySelector('[data-ge-calculate-cost]')||document.createElement('button');button.type='button';button.dataset.geCalculateCost='';button.textContent='Estimar costo y precio';
+   const hidden=line.querySelector('input[name$="[cost_snapshot_id]"]')||document.createElement('input');hidden.type='hidden';hidden.name=prefix+'[cost_snapshot_id]';hidden.value=match?geCostQuotes.refs[match[1]]||'':'';
+   const hint=line.querySelector('[data-ge-cost-private-hint]')||document.createElement('span');hint.dataset.geCostPrivateHint='';hint.textContent=hidden.value?'Costo interno asociado; no se muestra al cliente.':'';
    actions.prepend(button,hidden,hint);
  });}
  function clear(line){const hidden=line.querySelector('input[name$="[cost_snapshot_id]"]');if(hidden)hidden.value='';const hint=line.querySelector('[data-ge-cost-private-hint]');if(hint)hint.textContent='';}
