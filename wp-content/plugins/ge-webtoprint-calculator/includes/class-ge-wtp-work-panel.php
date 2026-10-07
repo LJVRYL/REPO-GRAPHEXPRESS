@@ -39,6 +39,11 @@ final class GE_WTP_Work_Panel {
             echo '<a'.($active===$key?' aria-current="page"':'').' href="'.esc_url(self::url($args)).'">'.esc_html($label).'</a>';
         }
         echo '</nav>';
+        if ( 'production' === $active && self::allowed('production') ) {
+            echo '<details class="ge-work-tools"><summary>Herramientas de producción</summary>';
+            GE_WTP_Gestion_V3::domain_tabs(sanitize_key($_GET['view']??'queue'));
+            echo '</details>';
+        }
         if ( ! self::overview($section) ) { echo '<a class="ge-work-back" href="'.esc_url(self::url()).'">← Volver a todos los trabajos</a>'; }
     }
     private static function customer( $id, $fallback = '' ) {
