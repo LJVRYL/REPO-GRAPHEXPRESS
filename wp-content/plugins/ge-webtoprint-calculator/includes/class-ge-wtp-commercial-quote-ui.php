@@ -405,7 +405,7 @@ final class GE_WTP_Commercial_Quote_UI {
         if ( ! $posts ) { echo '<section class="ge-panel"><p>Todavía no tenés presupuestos.</p></section>'; return; }
         foreach ( $posts as $post ) {
             $quote = GE_WTP_Commercial_Quotes::get( $post->ID, $customer_id );
-            if ( is_wp_error( $quote ) || ( 'draft' === $quote['status'] && ! $preview ) || ( $selected && $selected !== $quote['id'] ) ) { continue; }
+            if ( ! GE_WTP_Portal_Quotes::visible( $quote ) || ( $selected && $selected !== $quote['id'] ) ) { continue; }
             if ( ! $preview ) { GE_WTP_Commercial_Quotes::mark_viewed( $quote['id'], $customer_id ); $quote = GE_WTP_Commercial_Quotes::get( $quote['id'], $customer_id ); }
             $customer_status = array( 'draft' => 'Borrador en vista previa', 'sent' => 'Enviado', 'viewed' => 'Visto', 'accepted' => 'Aceptado', 'converted' => 'En proceso', 'rejected' => 'Rechazado', 'expired' => 'Vencido' );
             echo '<article class="ge-panel ge-quote-customer"><span class="ge-eyebrow">' . esc_html( $quote['number'] ) . ' · versión ' . esc_html( $quote['version'] ) . '</span><h2>Presupuesto ' . esc_html( strtolower( $customer_status[ $quote['status'] ] ?? $quote['status'] ) ) . '</h2>';

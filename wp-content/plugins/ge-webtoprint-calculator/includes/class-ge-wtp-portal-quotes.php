@@ -1,15 +1,31 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-/** Read-only portal projections; draft and internal events never appear to customers. */
+/** Shared read-only projection. Drafts are visible only in authorized staff previews. */
 final class GE_WTP_Portal_Quotes {
+    public static function visible( $quote ) {
+        $customer = GE_WTP_Portal::portal_customer_id();
+        if ( ! $customer || is_wp_error( $quote ) || (int) $quote['customer_id'] !== (int) $customer ) { return false; }
+        if ( class_exists( 'GE_Organization_Runtime' ) ) {
+            if ( ! GE_Organization_Runtime::enabled( 'quotes' ) ) { return false; }
+            if ( GE_WTP_Portal::is_staff_preview() && ! GE_Organization_Runtime::allowed( 'quotes', false ) ) { return false; }
+            $organization = $quote['snapshot']['organization_snapshot'] ?? array();
+            foreach ( array( get_user_meta( $customer, '_ge_organization_id', true ), get_post_meta( $quote['id'], '_ge_organization_id', true ), $organization['organization_id'] ?? $organization['id'] ?? '' ) as $scope ) {
+                if ( $scope && $scope !== GE_Organization::PRIMARY ) { return false; }
+            }
+        }
+        return in_array( $quote['status'], array( 'sent', 'viewed', 'accepted', 'converted', 'rejected', 'expired', 'cancelled' ), true )
+            || ( 'draft' === $quote['status'] && GE_WTP_Portal::is_staff_preview() );
+    }
+
     public static function customer_quotes() {
         $customer = GE_WTP_Portal::portal_customer_id();
+        if ( ! $customer ) { return array(); }
         $posts = get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => -1, 'meta_key' => GE_WTP_Commercial_Quotes::CUSTOMER_META, 'meta_value' => $customer ) );
         $quotes = array();
         foreach ( $posts as $post ) {
             $quote = GE_WTP_Commercial_Quotes::get( $post->ID, $customer );
-            if ( ! is_wp_error( $quote ) && 'draft' !== $quote['status'] ) { $quotes[] = $quote; }
+            if ( self::visible( $quote ) ) { $quotes[] = $quote; }
         }
         return $quotes;
     }
@@ -20,7 +36,10 @@ final class GE_WTP_Portal_Quotes {
 
     public static function card( $quotes ) {
         $pending = count( array_filter( $quotes, array( __CLASS__, 'pending' ) ) );
-        echo '<article class="ge-quote-stat"><span>Presupuestos</span><strong>' . esc_html( count( $quotes ) ) . '</strong><small>' . esc_html( $pending ? $pending . ' pendiente' . ( $pending > 1 ? 's' : '' ) . ' de aprobación' : 'En tu historial' ) . '</small><a href="' . esc_url( GE_WTP_Portal::portal_url( 'presupuestos' ) ) . '">Ver presupuestos <span aria-hidden="true">→</span></a></article>';
+        $drafts = count( array_filter( $quotes, function( $quote ) { return 'draft' === $quote['status']; } ) );
+        $caption = $pending ? $pending . ' pendiente' . ( $pending > 1 ? 's' : '' ) . ' de aprobación' : 'En tu historial';
+        if ( $drafts ) { $caption = ( $pending ? $caption . ' · ' : '' ) . $drafts . ' en preparación (vista previa)'; }
+        echo '<article class="ge-quote-stat"><span>Presupuestos</span><strong>' . esc_html( count( $quotes ) ) . '</strong><small>' . esc_html( $caption ) . '</small><a href="' . esc_url( GE_WTP_Portal::portal_url( 'presupuestos' ) ) . '">Ver presupuestos <span aria-hidden="true">→</span></a></article>';
     }
 
     public static function activity( $quotes, $orders ) {
@@ -31,7 +50,7 @@ final class GE_WTP_Portal_Quotes {
             $visible = array_values( array_filter( $events, function( $event ) use ( $labels, $quote ) { return isset( $labels[ $event['event'] ?? '' ] ) && (int) ( $event['version'] ?? 0 ) === $quote['version']; } ) );
             $last = $visible ? end( $visible ) : array();
             $pending = self::pending( $quote );
-            $status = $pending ? 'pendiente de aprobación' : ( $labels[ $last['event'] ?? '' ] ?? array( 'accepted' => 'aprobado', 'converted' => 'convertido a pedido', 'expired' => 'vencido', 'rejected' => 'rechazado' )[ $quote['status'] ] ?? 'disponible' );
+            $status = 'draft' === $quote['status'] ? 'en preparación (vista previa)' : ( $pending ? 'pendiente de aprobación' : ( $labels[ $last['event'] ?? '' ] ?? array( 'accepted' => 'aprobado', 'converted' => 'convertido a pedido', 'expired' => 'vencido', 'rejected' => 'rechazado' )[ $quote['status'] ] ?? 'disponible' ) );
             $entries[] = array( 'title' => 'Presupuesto ' . $quote['number'] . ' ' . $status, 'at' => strtotime( $last['at'] ?? $quote['snapshot']['created_at'] ?? '' ) ?: 0, 'pending' => $pending, 'url' => GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote['id'] ) ), 'cta' => $pending ? 'Revisar presupuesto' : 'Ver presupuesto' );
             // One earlier milestone preserves the timeline without repeating resend notices.
             $seen = array( $last['event'] ?? '' );

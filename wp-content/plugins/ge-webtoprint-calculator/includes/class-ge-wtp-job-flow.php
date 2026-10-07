@@ -25,15 +25,13 @@ final class GE_WTP_Job_Flow {
         echo '<section class="ge-page-heading"><div><span class="ge-eyebrow">Propuestas</span><h1>Presupuestos</h1><p>Tus solicitudes y propuestas, desde la idea hasta el pedido.</p></div><a class="ge-button ge-button-primary" href="' . esc_url( GE_WTP_Portal::portal_url( 'personalizado', array( 'rapida'=>1 ) ) ) . '">Solicitar presupuesto</a></section>';
         echo '<section class="ge-panel"><h2>Propuestas recibidas</h2>';
         $visible = 0;
-        foreach ( get_posts( array( 'post_type'=>GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status'=>'private', 'posts_per_page'=>50, 'meta_key'=>GE_WTP_Commercial_Quotes::CUSTOMER_META, 'meta_value'=>$customer ) ) as $post ) {
-            $quote = GE_WTP_Commercial_Quotes::get( $post->ID, $customer );
-            if ( is_wp_error( $quote ) || 'draft' === $quote['status'] && ! GE_WTP_Portal::is_staff_preview() ) { continue; }
+        foreach ( GE_WTP_Portal_Quotes::customer_quotes() as $quote ) {
             $visible++;
             $labels = array( 'draft'=>'En preparación', 'sent'=>'Para revisar', 'viewed'=>'Para revisar', 'accepted'=>'Aceptado', 'converted'=>'Pedido creado', 'rejected'=>'Rechazado', 'expired'=>'Vencido', 'cancelled'=>'Cancelado' );
             $choices = GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] );
             echo '<article class="ge-request-history"><div><strong>' . esc_html( $quote['number'] ) . '</strong><p>' . esc_html( $labels[ $quote['status'] ] ?? 'En revisión' ) . ' · versión ' . esc_html( $quote['version'] ) . '</p><p>' . esc_html( $choices ? 'Importe según tu elección' : ( isset( $quote['snapshot']['total_cents'] ) ? number_format_i18n( $quote['snapshot']['total_cents'] / 100, 2 ) . ' ' . ( $quote['snapshot']['currency'] ?? 'ARS' ) : 'Importe a confirmar' ) ) . '</p></div><a class="ge-button ge-button-secondary" href="' . esc_url( self::url( 'quotes', $quote['id'], true ) ) . '">Ver detalle</a></article>';
         }
-        if ( ! $visible ) { echo '<p>Todavía no hay propuestas para revisar. Podés solicitar un presupuesto y seguirlo aquí.</p>'; }
+        if ( ! $visible ) { echo '<p>Todavía no hay propuestas enviadas para revisar. Las propuestas en preparación aparecerán cuando Graph Express las envíe.</p>'; }
         echo '</section><section class="ge-panel"><h2>Solicitudes en curso</h2>';
         $visible = 0;
         foreach ( get_posts( array( 'post_type'=>GE_WTP_Quote_Requests::TYPE, 'post_status'=>'private', 'posts_per_page'=>50, 'meta_key'=>GE_WTP_Quote_Requests::META ) ) as $post ) {
