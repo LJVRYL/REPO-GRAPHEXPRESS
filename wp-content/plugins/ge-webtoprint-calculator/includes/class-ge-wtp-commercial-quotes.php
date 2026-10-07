@@ -291,21 +291,31 @@ final class GE_WTP_Commercial_Quotes {
         return false;
     }
 
-    public static function accept( $quote_id, $version, $actor_id = 0, $selection_quote = null ) {
+    public static function accept( $quote_id, $version, $actor_id = 0, $selection_quote = null, $expected_hash = '' ) {
+        $lock = 'ge_quote_publish_notice_' . absint( $quote_id );
+        if ( ! add_option( $lock, time(), '', false ) ) { return new WP_Error( 'ge_quote_busy', 'Estamos procesando el presupuesto. Volvé a intentar.' ); }
+        try { return self::accept_unlocked( $quote_id, $version, $actor_id, $selection_quote, $expected_hash ); }
+        finally { delete_option( $lock ); }
+    }
+
+    private static function accept_unlocked( $quote_id, $version, $actor_id, $selection_quote, $expected_hash ) {
         $actor_id = $actor_id ?: get_current_user_id();
         if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::enabled('quotes')) return new WP_Error('ge_org_module','Presupuestos deshabilitados.');
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( $actor_id === $quote['customer_id'] && (int) $version === $quote['version'] && in_array( $quote['status'], array( 'accepted', 'converted' ), true ) ) {
+            if ( $selection_quote && GE_WTP_Quote_Billing_Control::hash( $selection_quote['snapshot'] ) !== GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ) ) { return new WP_Error( 'ge_quote_accept_changed', 'Este presupuesto ya fue aprobado con otra selección. Solicitá una actualización.' ); }
+            if ( 'failed' === get_post_meta( $quote_id, '_ge_commercial_accept_notice_status', true ) ) { self::selection_notice( $quote, true ); }
+            return $quote;
+        }
+        if ( $expected_hash && ! hash_equals( GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ), $expected_hash ) ) { return new WP_Error( 'ge_quote_accept_changed', 'La propuesta cambió. Recargá y revisá el total antes de aprobar.' ); }
         if ( $actor_id !== $quote['customer_id'] || ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) || (int) $version !== $quote['version'] ) {
             return new WP_Error( 'ge_quote_accept', 'El presupuesto cambió o no está disponible para aceptar.' );
         }
         if ( ! empty( $quote['snapshot']['valid_until'] ) && $quote['snapshot']['valid_until'] < wp_date( 'Y-m-d' ) ) {
             return new WP_Error( 'ge_quote_expired', 'El presupuesto venció. Solicitá una actualización.' );
         }
-        if ( 'pending' !== ( $quote['snapshot']['fiscal_status'] ?? '' ) || empty( $quote['snapshot']['commercial_tax_policy'] ) ) {
-            $billing = self::check_billing_snapshot( $quote );
-            if ( is_wp_error( $billing ) ) { return $billing; }
-        }
+        if ( empty( $quote['snapshot']['items'] ) || ! empty( $quote['snapshot']['draft_incomplete'] ) ) { return new WP_Error( 'ge_quote_incomplete', 'Pedí que completen la propuesta comercial antes de aprobar.' ); }
         $lock = 'ge_commercial_quote_accept_' . $quote_id;
         if ( ! add_option( $lock, time(), '', 'no' ) ) { return new WP_Error( 'ge_quote_busy', 'Estamos procesando el presupuesto. Volvé a intentar.' ); }
         try {
@@ -313,11 +323,15 @@ final class GE_WTP_Commercial_Quotes {
             if ( is_wp_error( $quote ) || ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) || $quote['version'] !== (int) $version ) {
                 return new WP_Error( 'ge_quote_accept', 'El presupuesto ya no está disponible.' );
             }
-            if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) ) {
+            if ( $selection_quote || GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) ) {
                 $selection = GE_WTP_Quote_Selection::apply( $quote, $selection_quote ? ( $selection_quote['snapshot']['customer_selection']['line_ids'] ?? array() ) : wp_unslash( $_POST['quote_selection'] ?? array() ), $version, $selection_quote ? ( $selection_quote['snapshot']['customer_selection']['configurations'] ?? array() ) : wp_unslash( $_POST['quote_configuration'] ?? array() ) );
                 if ( is_wp_error( $selection ) ) { return $selection; }
                 update_post_meta( $quote_id, GE_WTP_Quote_Selection::META, array( 'version' => $version, 'proposal_hash' => GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ), 'snapshot' => $selection['snapshot'], 'selected_by' => $actor_id, 'selected_at' => gmdate( 'c' ) ) );
             }
+            $final = isset( $selection ) ? $selection : $quote;
+            $pdf = GE_WTP_Commercial_Quote_PDF::build( $final );
+            if ( is_wp_error( $pdf ) ) { return $pdf; }
+            update_post_meta( $quote_id, '_ge_commercial_acceptance', array( 'version' => (int) $version, 'actor_id' => $actor_id, 'at' => gmdate( 'c' ), 'snapshot_hash' => GE_WTP_Quote_Billing_Control::hash( $final['snapshot'] ), 'receiver' => $final['snapshot']['receiver_snapshot'] ?? $final['snapshot']['billing']['profile'] ?? array(), 'items' => $final['snapshot']['items'], 'net_cents' => $final['snapshot']['net_cents'], 'tax_cents' => $final['snapshot']['tax_cents'], 'total_cents' => $final['snapshot']['total_cents'], 'currency' => $final['snapshot']['currency'] ?? 'ARS' ) );
             update_post_meta( $quote_id, self::STATUS_META, 'accepted' );
             update_post_meta( $quote_id, '_ge_commercial_accepted_at', gmdate( 'c' ) );
             update_post_meta( $quote_id, '_ge_commercial_accepted_by', $actor_id );
@@ -331,7 +345,7 @@ final class GE_WTP_Commercial_Quotes {
     }
 
 
-    /** A saved choice is commercial acceptance for the customer; staff saves a draft choice only. */
+    /** Private saved choices never accept the quote or notify staff. */
     public static function save_selection( $quote_id, $version, $request, $actor_id ) {
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
@@ -348,11 +362,8 @@ final class GE_WTP_Commercial_Quotes {
             if ( GE_WTP_Quote_Billing_Control::hash( $selected['snapshot'] ) !== GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ) ) { return new WP_Error( 'ge_save_accepted', 'La selección ya fue aceptada. Pedí una actualización para cambiarla.' ); }
             return $quote;
         }
-        // Prepare the PDF before committing, so a failed generator cannot accept a quote.
-        $pdf = GE_WTP_Commercial_Quote_PDF::build( $selected );
-        if ( is_wp_error( $pdf ) ) { return $pdf; }
-        if ( ! $staff ) { return self::accept( $quote_id, $version, $actor_id, $selected ); }
-        $lock = 'ge_quote_save_' . $quote_id;
+        // Saving is private persistence; PDF generation and approval are independent actions.
+        $lock = 'ge_quote_publish_notice_' . absint( $quote_id );
         if ( ! add_option( $lock, time(), '', false ) ) { return new WP_Error( 'ge_save_busy', 'Estamos guardando la selección. Volvé a intentar.' ); }
         try {
             $current = self::get( $quote_id, $actor_id );
@@ -360,8 +371,7 @@ final class GE_WTP_Commercial_Quotes {
             $old = get_post_meta( $quote_id, '_ge_commercial_saved_selection', true );
             if ( ( $old['snapshot']['snapshot_hash'] ?? '' ) !== $selected['snapshot']['snapshot_hash'] ) {
                 update_post_meta( $quote_id, '_ge_commercial_saved_selection', array( 'version' => $version, 'proposal_hash' => GE_WTP_Quote_Billing_Control::hash( $proposal['snapshot'] ), 'snapshot' => $selected['snapshot'], 'selected_by' => $actor_id, 'selected_at' => gmdate( 'c' ) ) );
-                self::record_event( $quote_id, 'selection_saved', $actor_id, array( 'selection_hash' => $selected['snapshot']['snapshot_hash'], 'source' => 'staff' ) );
-                self::selection_notice( $selected, false );
+                self::record_event( $quote_id, 'selection_saved', $actor_id, array( 'selection_hash' => $selected['snapshot']['snapshot_hash'], 'source' => $staff ? 'staff' : 'customer' ) );
             }
             return $selected;
         } finally { delete_option( $lock ); }
@@ -373,12 +383,43 @@ final class GE_WTP_Commercial_Quotes {
     }
 
     private static function selection_notice( $quote, $accepted ) {
-        if ( is_wp_error( $quote ) ) { return; }
-        $art = GE_WTP_Commercial_Quote_Files::selection_readiness( $quote );
-        $prefix = $accepted ? 'Presupuesto aceptado' : 'Selección guardada';
-        $type = ( $accepted ? 'quote_accepted_' : 'quote_selection_' ) . $quote['version'] . '_' . substr( GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ), 0, 12 ) . '_' . $art['state'] . '_' . substr( hash( 'sha256', wp_json_encode( $art['file_ids'] ) ), 0, 8 );
-        $id = GE_WTP_Internal_Alerts::create( $type, $prefix . ' · #' . $quote['number'] . ' · ' . $art['label'], $quote['id'], $quote['customer_id'], 'ready' === $art['state'] ? 'info' : 'warning' );
-        if ( $id && ! is_wp_error( $id ) ) { update_post_meta( $id, '_ge_quote_selection_notice', array( 'quote_version' => $quote['version'], 'selection_hash' => GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] ), 'artwork_state' => $art['state'], 'artwork' => $art, 'commercial_accepted' => $accepted, 'production_released' => false ) ); }
+        if ( is_wp_error( $quote ) || ! $accepted ) { return; }
+        $hash = GE_WTP_Quote_Billing_Control::hash( $quote['snapshot'] );
+        $type = 'quote_accepted_' . $quote['version'] . '_' . substr( $hash, 0, 12 );
+        try {
+            $art = GE_WTP_Commercial_Quote_Files::selection_readiness( $quote );
+            $id = GE_WTP_Internal_Alerts::create( $type, 'Presupuesto aprobado · ' . $quote['number'], $quote['id'], $quote['customer_id'], 'info' );
+            if ( is_wp_error( $id ) || ! is_numeric( $id ) || ! $id ) { throw new RuntimeException( 'Notification not persisted' ); }
+            update_post_meta( $id, '_ge_quote_selection_notice', array( 'quote_version' => $quote['version'], 'selection_hash' => $hash, 'artwork' => $art, 'commercial_accepted' => true, 'production_released' => false ) );
+            update_post_meta( $quote['id'], '_ge_commercial_accept_notice_status', 'sent' );
+            update_post_meta( $quote['id'], '_ge_commercial_accept_notice_id', (int) $id );
+        } catch ( Throwable $error ) {
+            if ( 'failed' !== get_post_meta( $quote['id'], '_ge_commercial_accept_notice_status', true ) ) { self::record_event( $quote['id'], 'accept_notice_failed', get_current_user_id(), array( 'version' => $quote['version'], 'selection_hash' => $hash ) ); }
+            update_post_meta( $quote['id'], '_ge_commercial_accept_notice_status', 'failed' );
+        }
+    }
+
+    /** Both portal entry points confirm the same frozen commercial selection. */
+    public static function approve_selection( $id, $version, $request, $actor ) {
+        $quote = self::get( $id, $actor );
+        if ( is_wp_error( $quote ) ) { return $quote; }
+        if ( $actor !== $quote['customer_id'] || GE_WTP_Portal::is_staff_preview() || (int) $version !== $quote['version'] ) { return new WP_Error( 'ge_approve_forbidden', 'Recargá el presupuesto desde tu cuenta para aprobarlo.' ); }
+        if ( empty( $request['receiver_confirmed'] ) ) { return new WP_Error( 'ge_approve_receiver', 'Confirmá el receptor y el total antes de aprobar.' ); }
+        $versions = get_post_meta( $id, self::VERSIONS_META, true );
+        $proposal = $quote; $proposal['snapshot'] = $versions[$version] ?? $quote['snapshot'];
+        $expected = $request['proposal_hash'] ?? '';
+        if ( ! is_string( $expected ) || ! hash_equals( GE_WTP_Quote_Billing_Control::hash( $proposal['snapshot'] ), $expected ) ) { return new WP_Error( 'ge_approve_stale', 'La propuesta cambió. Revisá la versión vigente antes de aprobar.' ); }
+        $selected = GE_WTP_Quote_Selection::request_selection( $proposal, $request );
+        if ( is_wp_error( $selected ) ) { return $selected; }
+        $receiver = $selected['snapshot']['receiver_snapshot'] ?? $selected['snapshot']['billing']['profile'] ?? array();
+        if ( ! trim( $receiver['legal_name'] ?? $receiver['name'] ?? '' ) ) { return new WP_Error( 'ge_approve_receiver', 'Pedí a Graph Express que complete el receptor antes de aprobar.' ); }
+        $reviewed = $request['selection_hash'] ?? '';
+        if ( ! is_string( $reviewed ) || ! hash_equals( GE_WTP_Quote_Billing_Control::hash( $selected['snapshot'] ), $reviewed ) ) { return new WP_Error( 'ge_approve_total', 'La selección cambió. Revisá su total antes de aprobar.' ); }
+        if ( ! in_array( $quote['status'], array( 'accepted', 'converted' ), true ) ) {
+            $saved = self::save_selection( $id, $version, $request, $actor );
+            if ( is_wp_error( $saved ) ) { return $saved; }
+        }
+        return self::accept( $id, $version, $actor, $selected, $expected );
     }
 
     /** Records a staff-confirmed commercial acceptance, never artwork approval. */

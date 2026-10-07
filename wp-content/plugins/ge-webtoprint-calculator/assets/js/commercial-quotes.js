@@ -46,12 +46,14 @@
       // Do not disable the submitter: its action value must be included in the POST.
     });
   });
-  var savedPdf = document.querySelector('[data-ge-saved-pdf]');
-  if (savedPdf) {
-    var downloadFrame = document.createElement('iframe');
-    downloadFrame.hidden = true; downloadFrame.title = 'Descarga del presupuesto guardado';
-    downloadFrame.src = savedPdf.href; document.body.appendChild(downloadFrame);
-  }
+  document.querySelectorAll('[data-ge-approve-form]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (form.dataset.submitting) { event.preventDefault(); return; }
+      form.dataset.submitting = '1';
+      var button = form.querySelector('button[type="submit"]');
+      button.disabled = true; button.textContent = 'Registrando aprobación…'; button.setAttribute('aria-busy', 'true');
+    });
+  });
 
   var root = document.querySelector('[data-ge-lines]');
   var template = document.getElementById('ge-manual-line-template');

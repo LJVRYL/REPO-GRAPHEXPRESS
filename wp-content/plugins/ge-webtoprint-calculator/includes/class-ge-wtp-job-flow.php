@@ -27,9 +27,12 @@ final class GE_WTP_Job_Flow {
         $visible = 0;
         foreach ( GE_WTP_Portal_Quotes::customer_quotes() as $quote ) {
             $visible++;
-            $labels = array( 'draft'=>'En preparación', 'sent'=>'Para revisar', 'viewed'=>'Para revisar', 'accepted'=>'Aceptado', 'converted'=>'Pedido creado', 'rejected'=>'Rechazado', 'expired'=>'Vencido', 'cancelled'=>'Cancelado' );
+            $labels = array( 'draft'=>'En preparación', 'sent'=>'Para revisar', 'viewed'=>'Para revisar', 'accepted'=>'Aprobado', 'converted'=>'Pedido creado', 'rejected'=>'Rechazado', 'expired'=>'Vencido', 'cancelled'=>'Cancelado' );
             $choices = GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] );
-            echo '<article class="ge-request-history"><div><strong>' . esc_html( $quote['number'] ) . '</strong><p>' . esc_html( $labels[ $quote['status'] ] ?? 'En revisión' ) . ' · versión ' . esc_html( $quote['version'] ) . '</p><p>' . esc_html( $choices ? 'Importe según tu elección' : ( isset( $quote['snapshot']['total_cents'] ) ? number_format_i18n( $quote['snapshot']['total_cents'] / 100, 2 ) . ' ' . ( $quote['snapshot']['currency'] ?? 'ARS' ) : 'Importe a confirmar' ) ) . '</p></div><a class="ge-button ge-button-secondary" href="' . esc_url( self::url( 'quotes', $quote['id'], true ) ) . '">Ver detalle</a></article>';
+            echo '<article class="ge-request-history"><div><strong>' . esc_html( $quote['number'] ) . '</strong><p>' . esc_html( $labels[ $quote['status'] ] ?? 'En revisión' ) . ' · versión ' . esc_html( $quote['version'] ) . '</p><p>' . esc_html( $choices ? 'Importe según tu elección' : ( isset( $quote['snapshot']['total_cents'] ) ? number_format_i18n( $quote['snapshot']['total_cents'] / 100, 2 ) . ' ' . ( $quote['snapshot']['currency'] ?? 'ARS' ) : 'Importe a confirmar' ) ) . '</p></div><a class="ge-button ge-button-secondary" href="' . esc_url( self::url( 'quotes', $quote['id'], true ) ) . '">Ver detalle</a>';
+            if ( in_array( $quote['status'], array( 'sent', 'viewed' ), true ) && ( empty( $quote['snapshot']['valid_until'] ) || $quote['snapshot']['valid_until'] >= wp_date( 'Y-m-d' ) ) ) { echo '<a class="ge-button ge-button-primary" href="' . esc_url( add_query_arg( 'approval_review', 1, self::url( 'quotes', $quote['id'], true ) ) ) . '">Aprobar presupuesto</a>'; }
+            if ( in_array( $quote['status'], array( 'accepted', 'converted' ), true ) ) { $at = get_post_meta( $quote['id'], '_ge_commercial_accepted_at', true ); if ( $at ) { echo '<small>Aprobado · ' . esc_html( wp_date( 'd/m/Y H:i', strtotime( $at ) ) ) . '</small>'; } }
+            echo '</article>';
         }
         if ( ! $visible ) { echo '<p>Todavía no hay propuestas enviadas para revisar. Las propuestas en preparación aparecerán cuando Graph Express las envíe.</p>'; }
         echo '</section>';
