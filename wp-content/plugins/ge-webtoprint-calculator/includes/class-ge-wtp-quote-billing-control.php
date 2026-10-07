@@ -46,6 +46,13 @@ final class GE_WTP_Quote_Billing_Control {
         return $s;
     }
     public static function select( $id, $args, $actor ) {
+        $lock = 'ge_quote_publish_notice_' . absint($id);
+        if (!add_option($lock,time(),'',false)) { return new WP_Error('ge_quote_busy','El presupuesto se está publicando o enviando. Esperá antes de editar la facturación.'); }
+        try { return self::select_unlocked($id,$args,$actor); }
+        finally { delete_option($lock); }
+    }
+
+    private static function select_unlocked( $id, $args, $actor ) {
         if ( ! self::can_edit( $actor ) ) { return new WP_Error( 'ge_billing_forbidden', 'Acceso denegado.' ); }
         $q = GE_WTP_Commercial_Quotes::get( $id, $actor ); if ( is_wp_error( $q ) ) { return $q; }
         if ( 'draft' !== $q['status'] || $q['converted_order_id'] || get_post_meta( $id, '_ge_commercial_initial_payment_order', true ) ) { return new WP_Error( 'ge_billing_historical', 'El presupuesto enviado o vinculado conserva sus datos. Creá una revisión explícita.' ); }
@@ -137,7 +144,7 @@ final class GE_WTP_Quote_Billing_Control {
         $p = self::receiver( $s ); $state = self::state( $s ); $d = $s['customer_tax_decision'] ?? array();
         echo '<div class="ge-qbc-summary"><p><strong>Receptor:</strong> ' . esc_html( ( $p['label'] ?? '' ) . ' · ' . ( $p['legal_name'] ?? 'Receptor histórico pendiente' ) . ( ! empty( $p['cuit'] ) ? ' · CUIT ' . $p['cuit'] : '' ) ) . '</p><p><strong>Condición:</strong> ' . esc_html( self::vat_label( $p ) ) . ' · ' . esc_html( $state['locked'] ? 'Verificado' : 'Pendiente' ) . '</p>';
         GE_WTP_Billing_Issuers::render_summary( $s );
-        if ( in_array( 'billing_identity_changed_requires_reconciliation', (array) ( $s['fiscal_blockers'] ?? array() ), true ) ) { echo '<p><strong>Importes conservados: revisá la conciliación fiscal antes de enviar o convertir. Editar y guardar permite revisar el cálculo expresamente.</strong></p>'; }
+        if ( in_array( 'billing_identity_changed_requires_reconciliation', (array) ( $s['fiscal_blockers'] ?? array() ), true ) ) { echo '<p><strong>Importes conservados. Podés publicar esta propuesta comercial; la conciliación fiscal se revisa antes de cobrar o facturar. Editar y guardar permite revisar el cálculo expresamente.</strong></p>'; }
         echo '<p><strong>Comprobante sugerido:</strong> ' . esc_html( 'unknown' === ( $d['suggested_document_class'] ?? 'unknown' ) ? 'Pendiente' : $d['suggested_document_class'] ) . '</p><p>' . esc_html( $state['locked'] ? 'Resuelto por datos fiscales verificados' : 'Situación fiscal no verificada' ) . ' · Fuente: ' . esc_html( $state['verified_source'] ) . ( $state['verified_at'] ? ' · ' . esc_html( $state['verified_at'] ) : '' ) . '</p></div>';
     }
     public static function vat_label( $p ) { return array( 'registered' => 'Responsable inscripto','monotributo' => 'Monotributista','exempt' => 'Exento','final_consumer' => 'Consumidor final' )[ $p['vat_status'] ?? '' ] ?? 'Sin confirmar'; }

@@ -9,7 +9,7 @@
   var busy = false, dirty = false;
   // Reuse the original controls and file widgets; moving between steps never rebuilds them.
   var reviewCard = document.createElement('section'); reviewCard.className = 'ge-production-card ge-quote-review';
-  var reviewHeading = document.createElement('h2'); reviewHeading.textContent = 'Revisar y enviar'; reviewCard.appendChild(reviewHeading);
+  var reviewHeading = document.createElement('h2'); reviewHeading.textContent = 'Revisar y publicar'; reviewCard.appendChild(reviewHeading);
   var reviewBody = document.createElement('div'); reviewBody.dataset.geReview = '1'; reviewCard.appendChild(reviewBody);
   form.querySelector('.ge-manual-summary').before(reviewCard); cards.push(reviewCard);
   var currentStep = 0, reviewEnteredAt = 0, optionalSteps = [1, 3, 6];
@@ -188,7 +188,7 @@
       var refresh = issuer.querySelector('[name="issuer_refresh"]'); if (refresh) advanced.appendChild(refresh.closest('label'));
     }
     var review = issuer.querySelector('[name="customer_tax_confirm"]');
-    if (review) { review.closest('label').lastChild.textContent = ' Revisé la propuesta y confirmo el receptor y el emisor para enviarla'; reviewCard.appendChild(review.closest('label')); }
+    if (review) { review.closest('label').hidden = true; reviewCard.appendChild(review.closest('label')); var approvalNote = document.createElement('p'); approvalNote.textContent = 'Al publicar y enviar confirmás tu aprobación comercial de esta propuesta.'; reviewCard.appendChild(approvalNote); }
   }
   var cuit = form.elements.namedItem('customer_cuit'), billing = form.elements.namedItem('billing_profile_id');
   function showCuit() {
@@ -257,7 +257,6 @@
       errors = errors.concat(discountErrors(form));
       var named = [['billing_profile_id', 'Elegí el receptor fiscal antes de enviar.'], ['issuer_profile_id', 'Elegí el emisor antes de enviar.']];
       named.forEach(function (pair) { var input = form.elements.namedItem(pair[0]); if (!input.value) errors.push({ field: input, message: pair[1] }); });
-      var review = form.elements.namedItem('customer_tax_confirm'); if (review && !review.checked) errors.push({ field: review, message: 'Confirmá receptor y emisor antes de enviar.' });
       var lines = Array.from(form.querySelectorAll('[data-ge-line]'));
       if (!lines.some(function (line) { return line.querySelector('input[type="search"]').value.trim(); })) errors.push({ field: 'lines', message: 'Agregá un producto o servicio antes de enviar.' });
       lines.forEach(function (line) { if (line.querySelector('input[type="search"]').value.trim()) line.querySelectorAll('[required]').forEach(function (input) { if (!input.value || !input.validity.valid) errors.push({ field: input, message: 'Completá los datos de este producto antes de enviar.' }); }); });

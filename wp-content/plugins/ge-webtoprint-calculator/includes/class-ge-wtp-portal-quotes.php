@@ -18,14 +18,14 @@ final class GE_WTP_Portal_Quotes {
             || ( 'draft' === $quote['status'] && GE_WTP_Portal::is_staff_preview() );
     }
 
-    public static function customer_quotes() {
+    public static function customer_quotes( $include_preparation = false ) {
         $customer = GE_WTP_Portal::portal_customer_id();
         if ( ! $customer ) { return array(); }
         $posts = get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => -1, 'meta_key' => GE_WTP_Commercial_Quotes::CUSTOMER_META, 'meta_value' => $customer ) );
         $quotes = array();
         foreach ( $posts as $post ) {
-            $quote = GE_WTP_Commercial_Quotes::get( $post->ID, $customer );
-            if ( self::visible( $quote ) ) { $quotes[] = $quote; }
+            $quote = GE_WTP_Commercial_Quotes::get( $post->ID, get_current_user_id() );
+            if ( self::visible( $quote ) && ( 'draft' !== $quote['status'] || $include_preparation && GE_WTP_Portal::is_staff_preview() ) ) { $quotes[] = $quote; }
         }
         return $quotes;
     }
@@ -36,15 +36,15 @@ final class GE_WTP_Portal_Quotes {
 
     public static function card( $quotes ) {
         $pending = count( array_filter( $quotes, array( __CLASS__, 'pending' ) ) );
-        $drafts = count( array_filter( $quotes, function( $quote ) { return 'draft' === $quote['status']; } ) );
+        $drafts = GE_WTP_Portal::is_staff_preview() ? count( array_filter( self::customer_quotes( true ), function( $quote ) { return 'draft' === $quote['status']; } ) ) : 0;
         $caption = $pending ? $pending . ' pendiente' . ( $pending > 1 ? 's' : '' ) . ' de aprobación' : 'En tu historial';
-        if ( $drafts ) { $caption = ( $pending ? $caption . ' · ' : '' ) . $drafts . ' en preparación (vista previa)'; }
-        echo '<article class="ge-quote-stat"><span>Presupuestos</span><strong>' . esc_html( count( $quotes ) ) . '</strong><small>' . esc_html( $caption ) . '</small><a href="' . esc_url( GE_WTP_Portal::portal_url( 'presupuestos' ) ) . '">Ver presupuestos <span aria-hidden="true">→</span></a></article>';
+        if ( $drafts ) { $caption = ( $pending ? $caption . ' · ' : '' ) . $drafts . ' en preparación · solo vista interna'; }
+        echo '<article class="ge-quote-stat"><span>Presupuestos publicados</span><strong>' . esc_html( count( $quotes ) ) . '</strong><small>' . esc_html( $caption ) . '</small><a href="' . esc_url( GE_WTP_Portal::portal_url( 'presupuestos' ) ) . '">Ver presupuestos <span aria-hidden="true">→</span></a></article>';
     }
 
     public static function activity( $quotes, $orders ) {
         $entries = array();
-        $labels = array( 'created' => 'creado', 'sent' => 'enviado', 'accepted' => 'aprobado', 'accepted_staff' => 'aprobado', 'rejected' => 'rechazado', 'observed' => 'observado', 'converted' => 'convertido a pedido' );
+        $labels = array( 'published' => 'publicado', 'created' => 'creado', 'sent' => 'enviado', 'accepted' => 'aprobado', 'accepted_staff' => 'aprobado', 'rejected' => 'rechazado', 'observed' => 'observado', 'converted' => 'convertido a pedido' );
         foreach ( $quotes as $quote ) {
             $events = (array) get_post_meta( $quote['id'], '_ge_commercial_events', true );
             $visible = array_values( array_filter( $events, function( $event ) use ( $labels, $quote ) { return isset( $labels[ $event['event'] ?? '' ] ) && (int) ( $event['version'] ?? 0 ) === $quote['version']; } ) );

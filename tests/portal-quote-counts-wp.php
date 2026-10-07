@@ -24,9 +24,10 @@ function make_portal_quote($customer,$state,$scope=''){
 wp_set_current_user($customer);$_GET=array();verify_portal(count(GE_WTP_Portal_Quotes::customer_quotes())===0,'Zero count matches empty list');
 $draft=make_portal_quote($customer,'draft');
 verify_portal(!GE_WTP_Portal_Quotes::customer_quotes(),'Internal draft stays hidden from customer');
-preview_portal($customer);$quotes=GE_WTP_Portal_Quotes::customer_quotes();verify_portal(count($quotes)===1&&$quotes[0]['id']===$draft,'Authorized preview counts its draft');
-ob_start();GE_WTP_Portal_Quotes::card($quotes);$card=ob_get_clean();verify_portal(strpos($card,'<strong>1</strong>')!==false&&strpos($card,'1 en preparación (vista previa)')!==false,'Summary explains preview draft count');
-ob_start();GE_WTP_Job_Flow::customer_list();$list=ob_get_clean();verify_portal(substr_count($list,'Ver detalle')===1&&strpos($list,'En preparación')!==false,'Preview list and summary both show one draft');
+verify_portal(is_wp_error(GE_WTP_Commercial_Quotes::get($draft,$customer)),'Direct quote PDF and file access reject customer draft ownership');
+preview_portal($customer);verify_portal(!GE_WTP_Portal_Quotes::customer_quotes(),'Preview published count does not include internal drafts');$quotes=GE_WTP_Portal_Quotes::customer_quotes(true);verify_portal(count($quotes)===1&&$quotes[0]['id']===$draft,'Authorized preview can inspect its draft separately');
+ob_start();GE_WTP_Portal_Quotes::card(GE_WTP_Portal_Quotes::customer_quotes());$card=ob_get_clean();verify_portal(strpos($card,'<strong>0</strong>')!==false&&strpos($card,'1 en preparación · solo vista interna')!==false,'Summary separates zero published and one internal draft');
+ob_start();GE_WTP_Job_Flow::customer_list();$list=ob_get_clean();verify_portal(substr_count($list,'Ver detalle')===0&&substr_count($list,'Ver borrador')===1&&strpos($list,'solo vista interna')!==false,'Preview list separates internal draft from published proposals');
 ob_start();GE_WTP_Portal_Quotes::activity($quotes,array());$activity=ob_get_clean();verify_portal(strpos($activity,'en preparación (vista previa)')!==false&&strpos($activity,'pendiente de aprobación')===false,'Draft activity does not imply publication or approval');
 $before=get_post_meta($draft);$_GET['presupuesto']=$draft;ob_start();GE_WTP_Commercial_Quote_UI::render_customer();$detail=ob_get_clean();verify_portal(strpos($detail,'borrador en vista previa')!==false,'Preview detail identifies draft');verify_portal(get_post_meta($draft)===$before,'Preview detail changes no status snapshots or viewed events');
 wp_set_current_user($customer);$_GET=array('ge_preview_customer'=>$customer,'ge_preview_token'=>wp_create_nonce('ge_preview_customer_'.$customer));verify_portal(!GE_WTP_Portal::is_staff_preview()&&!GE_WTP_Portal_Quotes::customer_quotes(),'Customer cannot forge staff preview with a nonce');
@@ -40,7 +41,7 @@ update_user_meta($customer,'_ge_organization_id','other-organization');verify_po
 for($i=0;$i<46;$i++)make_portal_quote($customer,'sent');
 $quotes=GE_WTP_Portal_Quotes::customer_quotes();verify_portal(count($quotes)===53,'Count covers complete history beyond 50 rows');
 ob_start();GE_WTP_Job_Flow::customer_list();$list=ob_get_clean();verify_portal(substr_count($list,'Ver detalle')===53,'List covers same complete history as count');
-preview_portal($customer);$quotes=GE_WTP_Portal_Quotes::customer_quotes();verify_portal(count($quotes)===54,'Preview complete history adds only its internal draft');
+preview_portal($customer);$quotes=GE_WTP_Portal_Quotes::customer_quotes();verify_portal(count($quotes)===53&&count(GE_WTP_Portal_Quotes::customer_quotes(true))===54,'Preview separates published history and its internal draft');
 ob_start();GE_WTP_Portal_Quotes::card($quotes);$card=ob_get_clean();verify_portal(strpos($card,'48 pendientes de aprobación')!==false&&strpos($card,'1 en preparación')!==false,'Plural pending and draft counts are separate');
 $original=get_option(GE_Organization::ROOT);$limited=$original;$limited[GE_Organization::PRIMARY]['members']['1']='produccion';$filter=function()use(&$limited){return $limited;};add_filter('pre_option_'.GE_Organization::ROOT,$filter);
 verify_portal(!GE_WTP_Portal_Quotes::customer_quotes(),'Staff preview respects quote module role');

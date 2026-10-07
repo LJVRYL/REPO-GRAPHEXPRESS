@@ -55,7 +55,7 @@ $context=GE_WTP_Job_Flow::context('orders',$order->get_id(),1);ck($context['requ
 GE_WTP_Workflow::enable($order);$order->update_meta_data('_ge_production_promised_date','2026-11-01');$order->save();
 $url=act(['GE_WTP_Workflow','release'],['order_id'=>$order->get_id()],1,'ge_workflow_release_'.$order->get_id());ck(strpos($url,'blocked')!==false,'Release without exact artwork blocked');
 // A real private document fixture, attached to the exact item; no public uploads.
-$pdf='%PDF-1.4 QA SYNTHETIC ARTWORK';$path=GE_WTP_Documents::ensure_private_directory().'/job-flow-'.wp_generate_uuid4().'.pdf';file_put_contents($path,$pdf);
+$pdf='%PDF-1.4 QA SYNTHETIC ARTWORK';ck(GE_WTP_Documents::ensure_private_directory(),'Private fixture directory exists');$path=GE_WTP_Documents::private_directory().'/job-flow-'.wp_generate_uuid4().'.pdf';file_put_contents($path,$pdf);ck(is_file($path)&&hash_file('sha256',$path)===hash('sha256',$pdf),'Fixture exists with exact private artwork hash');
 $items=$order->get_items('line_item');$item=reset($items);$itemid=$item->get_id();$docid=wp_generate_uuid4();
 $document=['id'=>$docid,'name'=>'Stickers-QA-v1.pdf','category'=>'arte','path'=>$path,'mime'=>'application/pdf','size'=>strlen($pdf),'order_item_id'=>$itemid,'artwork_side'=>'general','sha256'=>hash_file('sha256',$path),'analysis'=>['sha256'=>hash_file('sha256',$path)],'version'=>1,'created_at'=>gmdate('c')];
 $order->update_meta_data(GE_WTP_Documents::META_KEY,[$document]);$order->save();

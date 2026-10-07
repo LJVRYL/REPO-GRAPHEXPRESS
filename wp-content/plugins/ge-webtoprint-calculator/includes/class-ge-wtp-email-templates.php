@@ -19,7 +19,7 @@ final class GE_WTP_Email_Templates {
     public static function defaults() {
         return array('commercial_quote_sent' => array(
             'title' => 'Presupuesto: enviar y reenviar al cliente', 'group' => 'Presupuestos',
-            'trigger' => 'Enviar al cliente / Reenviar presupuesto', 'recipient' => 'Cliente del presupuesto',
+            'trigger' => 'Publicar y enviar al cliente / Volver a enviar aviso', 'recipient' => 'Cliente del presupuesto',
             'subject' => 'Tu presupuesto · {{quote_number}}',
             'body' => '<p>Hola {{customer_name}},</p><p>{{intro}}</p><p><a href="{{portal_url}}">Ver presupuesto {{quote_number}}</a></p>{{summary}}{{first_access}}',
             'placeholders' => array('customer_name','quote_number','intro','portal_url','summary','first_access','brand_name'),
@@ -167,7 +167,7 @@ final class GE_WTP_Email_Templates {
         $legacy=is_readable($inventory)?json_decode(file_get_contents($inventory),true):array();
         foreach((array)$legacy as $row) if(!isset($rows[$row['id']]))$rows[$row['id']]=$row;
         if (function_exists('WC') && WC()->mailer()) foreach(WC()->mailer()->get_emails() as $email) {
-            $id='woocommerce_'.$email->id;$rows[$id]=array('title'=>$email->get_title(),'group'=>'WooCommerce','trigger'=>wp_strip_all_tags($email->get_description()),'recipient'=>!empty($email->customer_email)?'Cliente':'Personal configurado en WooCommerce','editable'=>false,'source'=>'WooCommerce · '.$email->id,'enabled'=>$email->is_enabled());
+            $id='woocommerce_'.$email->id;$rows[$id]=array('title'=>$email->get_title(),'group'=>'WooCommerce','trigger'=>wp_strip_all_tags($email->get_description()),'recipient'=>$email->is_customer_email()?'Cliente':'Personal configurado en WooCommerce','editable'=>false,'source'=>'WooCommerce · '.$email->id,'enabled'=>$email->is_enabled());
         }
         return $rows;
     }

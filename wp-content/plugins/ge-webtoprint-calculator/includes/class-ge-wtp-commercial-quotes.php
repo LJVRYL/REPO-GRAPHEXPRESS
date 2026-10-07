@@ -57,11 +57,19 @@ final class GE_WTP_Commercial_Quotes {
         if(class_exists('GE_Organization_Runtime')) {
             if(!GE_Organization_Runtime::enabled('quotes'))return false;
             if(GE_Organization_Runtime::role($actor_id) && !GE_Organization_Runtime::allowed('quotes',false,$actor_id))return false;
+            $customer = absint(get_post_meta($quote_id,self::CUSTOMER_META,true));
+            $versions = (array)get_post_meta($quote_id,self::VERSIONS_META,true);
+            $version = absint(get_post_meta($quote_id,self::CURRENT_META,true));
+            $organization = $versions[$version]['organization_snapshot'] ?? array();
+            foreach (array(get_post_meta($quote_id,'_ge_organization_id',true),get_user_meta($customer,'_ge_organization_id',true),$organization['organization_id'] ?? $organization['id'] ?? '') as $scope) {
+                if ($scope && $scope !== GE_Organization::PRIMARY) return false;
+            }
         }
         if ( user_can( $actor_id, 'ge_manage_operations' ) || user_can( $actor_id, 'manage_woocommerce' ) ) {
             return true;
         }
-        return (int) $actor_id === (int) get_post_meta( $quote_id, self::CUSTOMER_META, true );
+        return (int) $actor_id === (int) get_post_meta( $quote_id, self::CUSTOMER_META, true )
+            && in_array(get_post_meta($quote_id,self::STATUS_META,true),array('sent','viewed','accepted','converted','rejected','expired','cancelled'),true);
     }
 
     /**
@@ -118,6 +126,13 @@ final class GE_WTP_Commercial_Quotes {
      * version; a previously accepted version remains available for audit.
      */
     public static function revise( $quote_id, $lines, $args = array(), $actor_id = 0 ) {
+        $lock = 'ge_quote_publish_notice_' . absint($quote_id);
+        if (!add_option($lock,time(),'',false)) { return new WP_Error('ge_quote_busy','El presupuesto se está publicando o enviando. Esperá antes de editarlo.'); }
+        try { return self::revise_unlocked($quote_id,$lines,$args,$actor_id); }
+        finally { delete_option($lock); }
+    }
+
+    private static function revise_unlocked( $quote_id, $lines, $args = array(), $actor_id = 0 ) {
         $actor_id = $actor_id ?: get_current_user_id();
         if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes', true, $actor_id)) return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.');
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) {
@@ -175,62 +190,75 @@ final class GE_WTP_Commercial_Quotes {
         return self::get( $quote_id, $actor_id );
     }
 
-    public static function send( $quote_id, $actor_id = 0 ) {
-        $actor_id = $actor_id ?: get_current_user_id();
-        if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes', true, $actor_id)) return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.');
-        if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) {
-            return new WP_Error( 'ge_quote_forbidden', 'No tenés permiso para enviar presupuestos.' );
-        }
-        $quote = self::get( $quote_id, $actor_id );
-        if ( is_wp_error( $quote ) ) { return $quote; }
-        if ( 'draft' !== $quote['status'] ) { return new WP_Error( 'ge_quote_state', 'Sólo puede enviarse un borrador.' ); }
-        if ( ! empty( $quote['snapshot']['draft_incomplete'] ) || empty( $quote['snapshot']['items'] ) ) { return new WP_Error( 'ge_quote_incomplete', 'Completá productos, receptor y emisor, y confirmalos antes de enviar. El borrador está guardado.' ); }
-        if ( self::needs_roll_reprice( $quote['snapshot'] ) ) { return new WP_Error( 'ge_quote_roll_reprice', 'Editá y guardá este borrador para recalcular el vinilo según el ancho del rollo antes de enviarlo.' ); }
-        if ( in_array( 'billing_identity_changed_requires_reconciliation', (array) ( $quote['snapshot']['fiscal_blockers'] ?? array() ), true ) ) { return new WP_Error( 'ge_billing_reconcile', 'Revisá expresamente los importes fiscales antes de enviar.' ); }
-        $snapshot = $quote['snapshot'];
-        $issuer = GE_WTP_Billing_Issuers::from_snapshot( $snapshot );
-        $publish = GE_WTP_Billing_Issuers::can_publish( $issuer ); if ( is_wp_error( $publish ) ) { return $publish; }
-        if ( isset( $snapshot['total_cents'] ) && 'pending' === ( $snapshot['fiscal_status'] ?? '' ) && ! empty( $snapshot['commercial_tax_policy'] ) ) { /* Commercial proposal; fiscal operations remain gated. */ }
-        elseif ( isset( $snapshot['total_cents'] ) ) { $valid = self::check_billing_snapshot( $quote ); if ( is_wp_error( $valid ) ) { return $valid; } }
-        else { $snapshot = self::resolve_billing( $quote['customer_id'], $snapshot ); }
-        if ( is_wp_error( $snapshot ) ) { return $snapshot; }
-        $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
-        $versions[ $quote['version'] ] = $snapshot;
-        update_post_meta( $quote_id, self::VERSIONS_META, $versions );
-        $customer = get_userdata( $quote['customer_id'] );
-        $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote_id ) );
-        $body = '<p>Hola ' . esc_html( $customer->first_name ?: $customer->display_name ) . ',</p><p>Tenés un nuevo presupuesto de Graph Express para revisar.</p><p><a href="' . esc_url( $url ) . '">Ver presupuesto ' . esc_html( $quote['number'] ) . '</a></p>';
-        $body .= self::email_summary( $snapshot );
-        if ( 'yes' === get_user_meta( $customer->ID, '_ge_commercial_needs_invite', true ) ) {
-            $body .= '<p>Si es tu primer acceso, usá “¿Olvidaste tu contraseña?” en el portal para definirla con este email.</p>';
-        }
-        $message = class_exists('GE_WTP_Email_Templates') ? GE_WTP_Email_Templates::quote_message($quote, $snapshot, $customer) : array('subject'=>'Tu presupuesto · ' . $quote['number'], 'body'=>$body);
-        if ( ! GE_WTP_Notifications::send( $customer->user_email, $message['subject'], $message['body'], 'commercial_quote_sent', $quote_id ) ) {
-            return new WP_Error( 'ge_quote_email', 'No se pudo enviar el presupuesto. Revisá Notificaciones antes de reintentar.' );
-        }
-        update_post_meta( $quote_id, self::STATUS_META, 'sent' );
-        self::event( $quote_id, $quote['version'], 'sent', $actor_id );
-        return self::get( $quote_id, $actor_id );
+    /** Staff approval publishes the commercial proposal; fiscal issuance remains separate. */
+    public static function send( $quote_id, $actor_id = 0, $expected_version = 0, $request_id = '' ) {
+        return self::publish_notice( $quote_id, $actor_id, false, $expected_version, $request_id );
     }
 
-    public static function resend( $quote_id, $actor_id = 0 ) {
-        $actor_id = $actor_id ?: get_current_user_id();
-        if (class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('quotes', true, $actor_id)) return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.');
-        if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
-        $quote = self::get( $quote_id, $actor_id );
-        if ( is_wp_error( $quote ) ) { return $quote; }
-        if ( ! in_array( $quote['status'], array( 'sent', 'viewed' ), true ) ) { return new WP_Error( 'ge_quote_state', 'Este presupuesto no se puede reenviar.' ); }
-        $publish = GE_WTP_Billing_Issuers::can_publish( GE_WTP_Billing_Issuers::from_snapshot( $quote['snapshot'] ) ); if ( is_wp_error( $publish ) ) { return $publish; }
-        $customer = get_userdata( $quote['customer_id'] );
-        if ( ! $customer ) { return new WP_Error( 'ge_quote_customer', 'Cliente no disponible.' ); }
-        $url = GE_WTP_Portal::portal_url( 'presupuestos', array( 'presupuesto' => $quote_id ) );
-        $body = '<p>Hola ' . esc_html( $customer->first_name ?: $customer->display_name ) . ',</p><p>Podés volver a revisar tu presupuesto de Graph Express.</p><p><a href="' . esc_url( $url ) . '">Ver presupuesto ' . esc_html( $quote['number'] ) . '</a></p>';
-        $body .= self::email_summary( $quote['snapshot'] );
-        $message = class_exists('GE_WTP_Email_Templates') ? GE_WTP_Email_Templates::quote_message($quote, $quote['snapshot'], $customer, true) : array('subject'=>'Tu presupuesto · ' . $quote['number'], 'body'=>$body);
-        if ( ! GE_WTP_Notifications::send( $customer->user_email, $message['subject'], $message['body'], 'commercial_quote_sent', $quote_id ) ) { return new WP_Error( 'ge_quote_email', 'No se pudo reenviar. Revisá Notificaciones.' ); }
-        self::event( $quote_id, $quote['version'], 'sent', $actor_id );
-        return $quote;
+    public static function resend( $quote_id, $actor_id = 0, $expected_version = 0, $request_id = '' ) {
+        return self::publish_notice( $quote_id, $actor_id, true, $expected_version, $request_id );
     }
+
+    private static function publish_notice( $quote_id, $actor_id, $resend, $expected_version, $request_id ) {
+        $actor_id = $actor_id ?: get_current_user_id();
+        if ( class_exists('GE_Organization_Runtime') && ! GE_Organization_Runtime::allowed('quotes', true, $actor_id) ) { return new WP_Error('ge_org_permission','Rol o módulo sin permiso para modificar presupuestos.'); }
+        if ( ! user_can($actor_id,'ge_manage_operations') && ! user_can($actor_id,'manage_woocommerce') ) { return new WP_Error('ge_quote_forbidden','No tenés permiso para publicar presupuestos.'); }
+        $lock = 'ge_quote_publish_notice_' . absint($quote_id);
+        if ( ! add_option($lock, time(), '', false) ) { return new WP_Error('ge_quote_busy','El presupuesto se está procesando. Esperá y revisá el resultado antes de repetir la acción.'); }
+        try {
+            $quote = self::get($quote_id,$actor_id);
+            if ( is_wp_error($quote) ) { return $quote; }
+            if ( $expected_version && (int)$expected_version !== (int)$quote['version'] ) { return new WP_Error('ge_quote_version','El presupuesto cambió. Volvé a abrirlo y revisá la versión actual antes de publicar o enviar el aviso.'); }
+            $snapshot = $quote['snapshot'];
+            if ( class_exists('GE_Organization_Runtime') ) {
+                $organization = $snapshot['organization_snapshot'] ?? array();
+                foreach ( array(get_post_meta($quote_id,'_ge_organization_id',true),get_user_meta($quote['customer_id'],'_ge_organization_id',true),$organization['organization_id'] ?? $organization['id'] ?? '') as $scope ) {
+                    if ( $scope && $scope !== GE_Organization::PRIMARY ) { return new WP_Error('ge_quote_forbidden','No tenés acceso a este presupuesto.'); }
+                }
+            }
+            $customer = get_userdata($quote['customer_id']);
+            if ( ! $customer || ! is_email($customer->user_email) ) { return new WP_Error('ge_quote_customer','Completá un email válido en la ficha del cliente antes de publicar y enviar.'); }
+            $notice = (array)get_post_meta($quote_id,'_ge_commercial_notice',true);
+            $request_id = sanitize_key($request_id ?: ($resend ? wp_generate_uuid4() : 'publish-v'.$quote['version']));
+            $deliveries = (array)($notice['deliveries'] ?? array());
+            if ( isset($deliveries[$request_id]) && (int)$deliveries[$request_id]['version'] === (int)$quote['version'] ) {
+                if ( 'sent' === $deliveries[$request_id]['status'] ) { return $quote; }
+                if ( in_array($deliveries[$request_id]['status'],array('unknown','delivering'),true) ) { return new WP_Error('ge_quote_notice_unknown','Publicado. El resultado de este aviso no está confirmado. Revisá Notificaciones antes de reintentar.'); }
+                return new WP_Error('ge_quote_notice_failed','El presupuesto está publicado; este aviso ya fue procesado. Revisá Notificaciones y usá Reintentar aviso para un nuevo intento.');
+            }
+            if ( ! $resend && 'draft' !== $quote['status'] ) {
+                if ( in_array($quote['status'],array('sent','viewed','accepted','converted','rejected','expired'),true) ) { return $quote; }
+                return new WP_Error('ge_quote_state','Este presupuesto no se puede publicar en su estado actual.');
+            }
+            if ( $resend && ! in_array($quote['status'],array('sent','viewed'),true) ) { return new WP_Error('ge_quote_state','Este presupuesto no admite otro aviso.'); }
+            if ( ! $resend ) {
+                if ( ! empty($snapshot['draft_incomplete']) || empty($snapshot['items']) || ! isset($snapshot['total_cents'],$snapshot['net_cents']) ) { return new WP_Error('ge_quote_incomplete','Completá los productos e importes y elegí receptor y emisor antes de publicar. El borrador está guardado.'); }
+                update_post_meta($quote_id,self::STATUS_META,'sent');
+                if ( 'sent' !== get_post_meta($quote_id,self::STATUS_META,true) ) { return new WP_Error('ge_quote_publish','No pudimos guardar la publicación. El aviso no se envió; revisá el estado antes de reintentar.'); }
+                update_post_meta($quote_id,'_ge_commercial_published_version',$quote['version']);
+                self::event($quote_id,$quote['version'],'published',$actor_id);
+                $quote['status'] = 'sent';
+            }
+            $entry = array('version'=>$quote['version'],'status'=>'delivering','actor_id'=>$actor_id,'at'=>gmdate('c'));
+            $deliveries[$request_id] = $entry;
+            $notice = array('version'=>$quote['version'],'status'=>'delivering','request_id'=>$request_id,'deliveries'=>array_slice($deliveries,-20,null,true));
+            update_post_meta($quote_id,'_ge_commercial_notice',$notice);
+            $url = GE_WTP_Portal::portal_url('presupuestos',array('presupuesto'=>$quote_id));
+            $body = '<p>Hola '.esc_html($customer->first_name ?: $customer->display_name).',</p><p>'.($resend ? 'Podés volver a revisar tu presupuesto de Graph Express.' : 'Tenés un nuevo presupuesto de Graph Express para revisar.').'</p><p><a href="'.esc_url($url).'">Ver presupuesto '.esc_html($quote['number']).'</a></p>'.self::email_summary($snapshot);
+            if ( ! $resend && 'yes' === get_user_meta($customer->ID,'_ge_commercial_needs_invite',true) ) { $body .= '<p>Si es tu primer acceso, usá “¿Olvidaste tu contraseña?” en el portal para definirla con este email.</p>'; }
+            $message = class_exists('GE_WTP_Email_Templates') ? GE_WTP_Email_Templates::quote_message($quote,$snapshot,$customer,$resend) : array('subject'=>'Tu presupuesto · '.$quote['number'],'body'=>$body);
+            try { $sent = GE_WTP_Notifications::send($customer->user_email,$message['subject'],$message['body'],'commercial_quote_sent',$quote_id); }
+            catch (Throwable $error) {
+                $notice['status']='unknown';$notice['deliveries'][$request_id]['status']='unknown';update_post_meta($quote_id,'_ge_commercial_notice',$notice);self::event($quote_id,$quote['version'],'notice_unknown',$actor_id);
+                return new WP_Error('ge_quote_notice_unknown','Publicado. No se pudo confirmar el resultado del aviso. Revisá Notificaciones antes de reintentar para evitar un correo duplicado.');
+            }
+            $notice['status']=$sent ? 'sent' : 'failed';$notice['deliveries'][$request_id]['status']=$notice['status'];update_post_meta($quote_id,'_ge_commercial_notice',$notice);
+            self::event($quote_id,$quote['version'],$sent ? 'sent' : 'notice_failed',$actor_id);
+            if ( ! $sent ) { return new WP_Error('ge_quote_notice_failed','Publicado; aviso no enviado. El cliente ya puede verlo en el portal. Revisá Notificaciones y usá Reintentar aviso.'); }
+            return self::get($quote_id,$actor_id);
+        } finally { delete_option($lock); }
+    }
+
 
     public static function email_summary( $snapshot ) {
         if ( GE_WTP_Quote_Selection::has_choices( $snapshot ) && empty( $snapshot['customer_selection'] ) ) { return '<p>Revisá las variantes y elegí los ítems desde tu portal para ver el total de tu presupuesto.</p>'; }
@@ -238,8 +266,9 @@ final class GE_WTP_Commercial_Quotes {
         if ( ! isset( $snapshot['total_cents'] ) ) { return $tax_body . '<p>Total pendiente de confirmación.</p>'; }
         $money = function( $cents ) { return number_format_i18n( $cents / 100, 2 ) . ' ' . ( $snapshot['currency'] ?? 'ARS' ); };
         $receiver = GE_WTP_Quote_Billing_Control::receiver( $snapshot );
-        $body = '<p>Receptor: ' . esc_html( ( $receiver['legal_name'] ?? 'Pendiente' ) . ' · CUIT ' . ( $receiver['cuit'] ?? '' ) . ' · ' . ( $receiver['fiscal_address'] ?? '' ) ) . '</p>';
-        $body .= '<p>Emisor / Facturación: ' . esc_html( GE_WTP_Billing_Issuers::label( GE_WTP_Billing_Issuers::from_snapshot( $snapshot ) ) ) . '</p>';
+        $body = ! empty($receiver['legal_name']) ? '<p>Receptor: ' . esc_html( implode(' · ',array_filter(array($receiver['legal_name'],empty($receiver['cuit']) ? '' : 'CUIT '.$receiver['cuit'],$receiver['fiscal_address'] ?? ''))) ) . '</p>' : '';
+        $issuer = GE_WTP_Billing_Issuers::from_snapshot($snapshot);
+        if ('unknown' !== $issuer['id'] && !empty($issuer['legal_name'])) { $body .= '<p>Emisor / Facturación: '.esc_html($issuer['legal_name'].(!empty($issuer['cuit']) ? ' · CUIT '.$issuer['cuit'] : '')).'</p>'; }
         $body .= '<p>Subtotal / Neto: ' . esc_html( $money( $snapshot['subtotal_cents'] ?? $snapshot['net_cents'] ) ) . '<br>';
         if ( ! empty( $snapshot['discount_cents'] ) ) { $body .= 'Descuento comercial: −' . esc_html( $money( $snapshot['discount_cents'] ) ) . '<br>Neto imponible: ' . esc_html( $money( $snapshot['net_cents'] ) ) . '<br>'; }
         $body .= 'IVA: ' . esc_html( $money( $snapshot['tax_cents'] ?? 0 ) ) . '<br><strong>Total final: ' . esc_html( $money( $snapshot['total_cents'] ) ) . '</strong></p>';

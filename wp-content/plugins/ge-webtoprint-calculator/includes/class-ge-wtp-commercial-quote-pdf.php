@@ -68,10 +68,10 @@ final class GE_WTP_Commercial_Quote_PDF {
         $brand=$organization['general']['brand_name']??'GRAPHEX';
         $accent=isset($organization['branding']['primary_color'])?array_map('hexdec',str_split(ltrim($organization['branding']['primary_color'],'#'),2)):array(109,69,239);
         $issuer = GE_WTP_Billing_Issuers::from_snapshot( $s );
-        $issuer_lines = array( 'unknown' === $issuer['id'] ? GE_WTP_Billing_Issuers::label( $issuer ) : $issuer['legal_name'] );
+        $issuer_lines = array( 'unknown' === $issuer['id'] ? $brand : $issuer['legal_name'] );
         if ( 'unknown' !== $issuer['id'] ) {
             $issuer_lines[] = 'CUIT: ' . $issuer['cuit'] . ( ! empty( $issuer['iibb'] ) ? ' · IIBB: ' . $issuer['iibb'] : '' );
-            if ( ! empty( $issuer['vat_status'] ) ) { $issuer_lines[] = GE_WTP_Billing_Issuers::vat_label( $issuer ); }
+            if ( in_array( $issuer['vat_status'] ?? '', array('registered','monotributo','exempt'), true ) ) { $issuer_lines[] = GE_WTP_Billing_Issuers::vat_label( $issuer ); }
             $issuer_lines[] = implode( ' · ', array_filter( array( $issuer['fiscal_address'], trim( ( $issuer['postal_code'] ?? '' ) . ' - ' . ( $issuer['locality'] ?? '' ), ' -' ), $issuer['province'] ?? '', $issuer['country'] ?? '' ) ) );
             if ( ! empty( $issuer['contact_email'] ) || ! empty( $issuer['contact_phone'] ) ) { $issuer_lines[] = trim( ( $issuer['contact_email'] ?? '' ) . ' · ' . ( $issuer['contact_phone'] ?? '' ), ' ·' ); }
         }
@@ -193,7 +193,7 @@ final class GE_WTP_Commercial_Quote_PDF {
             $date = ! empty( $s['created_at'] ) ? wp_date( 'd/m/Y', strtotime( $s['created_at'] ) ) : '';
             $pdf->text_right( 557, 67, 9, $date . '  ·  Versión ' . $quote['version'], false, 105, 115, 134 );
             $pdf->line(38,80,557,80,$accent[0],$accent[1],$accent[2],2);
-            $pdf->text( 38, 98, 7.5, $organization ? 'EMISOR / FACTURACIÓN · '.strtoupper($brand) : 'EMISOR / FACTURACIÓN · IDENTIDAD COMERCIAL GRAPHEX', true, 105, 115, 134 );
+            $pdf->text( 38, 98, 7.5, 'unknown' === $issuer['id'] ? 'PROPUESTA DE '.strtoupper($brand) : ($organization ? 'EMISOR / FACTURACIÓN · '.strtoupper($brand) : 'EMISOR / FACTURACIÓN · IDENTIDAD COMERCIAL GRAPHEX'), true, 105, 115, 134 );
             foreach ( $issuer_rows as $n => $line ) { $pdf->text( 38, 115 + $n * 11, 8, $line, 0 === $n, 17, 24, 39 ); }
             $pdf->text( 38, 103 + $issuer_height, 9, $page ? 'PROPUESTA COMERCIAL · CONTINUACIÓN' : 'PROPUESTA COMERCIAL · CLIENTE', true, $accent[0], $accent[1], $accent[2] );
             $top = 125 + $issuer_height;

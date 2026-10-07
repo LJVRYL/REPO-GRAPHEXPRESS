@@ -142,7 +142,7 @@ final class GE_WTP_Gestion_V3 {
 
     public static function nav() { $nav=array('dashboard'=>'Inicio','customers'=>'Clientes','jobs'=>'Trabajos'); if(GE_WTP_Operations::enabled()) { if(GE_WTP_Operations::module_enabled('suppliers')) $nav['suppliers']='Proveedores'; if(GE_WTP_Operations::module_enabled('stock')&&(current_user_can('ge_manage_inventory')||current_user_can('manage_options'))) $nav['stock']='Stock'; if(GE_WTP_Operations::module_enabled('administration')&&(current_user_can('ge_view_finance')||current_user_can('manage_options'))) $nav['administration']='Administración'; } if(GE_WTP_Cost_Engine::enabled()&&(current_user_can('ge_view_costs')||current_user_can('manage_options'))) $nav['costs']='Costos y Productos'; if(class_exists('GE_WTP_Customer_Invoices')&&GE_WTP_Customer_Invoices::staff(get_current_user_id())) $nav['invoice-reviews']='Revisiones'; $nav['communications']='Comunicaciones'; if(!GE_WTP_Work_Panel::accessible())unset($nav['jobs']); return $nav; }
     public static function status_label( $key ) {
-        $labels=array('draft'=>'Borrador','sent'=>'Enviado','viewed'=>'Visto','accepted'=>'Aceptado','converted'=>'Convertido','rejected'=>'Rechazado','expired'=>'Vencido','cancelled'=>'Cancelado');
+        $labels=array('draft'=>'Borrador','sent'=>'Publicado','viewed'=>'Visto','accepted'=>'Aceptado','converted'=>'Convertido','rejected'=>'Rechazado','expired'=>'Vencido','cancelled'=>'Cancelado');
         return $labels[$key]??ucfirst(str_replace('_',' ',$key));
     }
     public static function url( $section = '', $args = array() ) { return GE_WTP_Staff_Portal::portal_url( $section, $args ); }

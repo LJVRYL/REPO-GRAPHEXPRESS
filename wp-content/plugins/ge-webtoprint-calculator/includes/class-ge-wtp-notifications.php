@@ -217,10 +217,13 @@ final class GE_WTP_Notifications {
         }
         try {
             $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : array() );
+        } catch ( Throwable $error ) {
+            self::log( $to, $subject, $html, $context, $object_id, 'unknown', 'Resultado del transporte sin confirmar. Revisar antes de reenviar.' );
+            throw $error;
         } finally {
             if ( $attachment && is_file( $attachment['path'] ) ) { unlink( $attachment['path'] ); }
         }
-        $result = self::is_local_environment() ? 'simulated' : ( $ok ? 'sent' : 'failed' );
+        $result = $ok ? ( self::is_local_environment() ? 'simulated' : 'sent' ) : 'failed';
         $logged_html = 'customer_portal_invite' === $context ? '<p>Invitación con enlace privado para definir contraseña. El enlace se omitió del historial.</p>' : $html;
         if ( 'workflow_supplier_portal' === $context ) { $logged_html = '<p>Orden técnica enviada al proveedor. El enlace privado se omite del historial. Consultá la versión y el detalle en Producción.</p>'; }
         self::log( $to, $subject, $logged_html, $context, $object_id, $result, self::$last_mail_error );
@@ -243,7 +246,7 @@ final class GE_WTP_Notifications {
             update_post_meta( $post_id, '_ge_email_to', sanitize_email( $to ) );
             update_post_meta( $post_id, '_ge_email_context', sanitize_key( $context ) );
             update_post_meta( $post_id, '_ge_email_object_id', absint( $object_id ) );
-            update_post_meta( $post_id, '_ge_email_result', in_array( $result, array( 'sent', 'failed', 'simulated' ), true ) ? $result : 'failed' );
+            update_post_meta( $post_id, '_ge_email_result', in_array( $result, array( 'sent', 'failed', 'simulated', 'unknown' ), true ) ? $result : 'failed' );
             if ( $error ) {
                 update_post_meta( $post_id, '_ge_email_error', mb_substr( sanitize_text_field( $error ), 0, 500 ) );
             }

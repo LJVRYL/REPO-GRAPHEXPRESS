@@ -23,7 +23,7 @@ final class GE_WTP_Job_Flow {
         self::assets();
         $customer = GE_WTP_Portal::portal_customer_id();
         echo '<section class="ge-page-heading"><div><span class="ge-eyebrow">Propuestas</span><h1>Presupuestos</h1><p>Tus solicitudes y propuestas, desde la idea hasta el pedido.</p></div><a class="ge-button ge-button-primary" href="' . esc_url( GE_WTP_Portal::portal_url( 'personalizado', array( 'rapida'=>1 ) ) ) . '">Solicitar presupuesto</a></section>';
-        echo '<section class="ge-panel"><h2>Propuestas recibidas</h2>';
+        echo '<section class="ge-panel"><h2>Presupuestos publicados</h2>';
         $visible = 0;
         foreach ( GE_WTP_Portal_Quotes::customer_quotes() as $quote ) {
             $visible++;
@@ -32,7 +32,16 @@ final class GE_WTP_Job_Flow {
             echo '<article class="ge-request-history"><div><strong>' . esc_html( $quote['number'] ) . '</strong><p>' . esc_html( $labels[ $quote['status'] ] ?? 'En revisión' ) . ' · versión ' . esc_html( $quote['version'] ) . '</p><p>' . esc_html( $choices ? 'Importe según tu elección' : ( isset( $quote['snapshot']['total_cents'] ) ? number_format_i18n( $quote['snapshot']['total_cents'] / 100, 2 ) . ' ' . ( $quote['snapshot']['currency'] ?? 'ARS' ) : 'Importe a confirmar' ) ) . '</p></div><a class="ge-button ge-button-secondary" href="' . esc_url( self::url( 'quotes', $quote['id'], true ) ) . '">Ver detalle</a></article>';
         }
         if ( ! $visible ) { echo '<p>Todavía no hay propuestas enviadas para revisar. Las propuestas en preparación aparecerán cuando Graph Express las envíe.</p>'; }
-        echo '</section><section class="ge-panel"><h2>Solicitudes en curso</h2>';
+        echo '</section>';
+        if ( GE_WTP_Portal::is_staff_preview() ) {
+            $drafts = array_filter( GE_WTP_Portal_Quotes::customer_quotes( true ), function( $quote ) { return 'draft' === $quote['status']; } );
+            if ( $drafts ) {
+                echo '<section class="ge-panel"><h2>En preparación · solo vista interna</h2><p>El cliente todavía no ve estos borradores. Publicar y enviar al cliente los hará visibles.</p>';
+                foreach ( $drafts as $quote ) { echo '<article class="ge-request-history"><strong>' . esc_html( $quote['number'] ) . '</strong><p>En preparación · versión ' . esc_html( $quote['version'] ) . '</p><a class="ge-button ge-button-secondary" href="' . esc_url( self::url( 'quotes', $quote['id'], true ) ) . '">Ver borrador</a></article>'; }
+                echo '</section>';
+            }
+        }
+        echo '<section class="ge-panel"><h2>Solicitudes en curso</h2>';
         $visible = 0;
         foreach ( get_posts( array( 'post_type'=>GE_WTP_Quote_Requests::TYPE, 'post_status'=>'private', 'posts_per_page'=>50, 'meta_key'=>GE_WTP_Quote_Requests::META ) ) as $post ) {
             $request = GE_WTP_Quote_Requests::get( $post->ID, $customer );
