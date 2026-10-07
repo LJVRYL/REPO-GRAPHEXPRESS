@@ -89,6 +89,11 @@ final class GE_WTP_Order_Lifecycle {
     /** Existing Markcom and QR delivery actions continue to set their legacy statuses. */
     public static function sync_legacy_status( $order_id, $old_status, $new_status, $order ) {
         if ( ! $order instanceof WC_Order ) { return; }
+        // Confirmation is commercial. In the controlled flow it cannot approve an artwork version.
+        if ( 'ge-confirmado' === $new_status && class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) {
+            if ( ! in_array( self::stage( $order ), array( 'produccion', 'listo', 'entregado' ), true ) ) { self::set_stage( $order, 'recibido' ); }
+            return;
+        }
         $mapping = array(
             'ge-enviado' => 'recibido', 'ge-espera-po' => 'recibido',
             'ge-confirmado' => 'aprobado', 'ge-produccion' => 'produccion',

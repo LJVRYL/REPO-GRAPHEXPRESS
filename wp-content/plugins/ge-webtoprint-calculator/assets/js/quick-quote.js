@@ -3,7 +3,7 @@
   var cfg = window.geRequest, form = document.querySelector('.ge-quick-quote .ge-request-form');
   if (!cfg || !form) return;
   var root = form.closest('.ge-quick-quote'), notice = form.querySelector('[data-request-notice]'), line = form.querySelector('[data-ge-line]');
-  var step = 'intent', history = [], selectedUrl = '', busy = false, touched = false, searchSeq = 0;
+  var step = form.querySelector('[data-quick-step="profile"]') ? 'profile' : 'intent', history = [], selectedUrl = '', busy = false, touched = false, searchSeq = 0;
   var storageKey = 'ge.quick.request.v1.' + cfg.customerId;
   function field(name) { return line.querySelector('[name="' + name + '"]') || form.querySelector('[name="' + name + '"]'); }
   function event(name, extra) { document.dispatchEvent(new CustomEvent('graphex:funnel', {detail:Object.assign({event:name}, extra || {})})); }
@@ -18,11 +18,15 @@
     try { localStorage.setItem(storageKey, JSON.stringify({at:Date.now(), step:step, history:history, selectedUrl:selectedUrl, data:payload()})); root.querySelector('[data-quick-autosave]').textContent = 'Tu avance se guarda en este dispositivo.'; }
     catch(e) { root.querySelector('[data-quick-autosave]').textContent = 'Para retomar después, usá Guardar borrador.'; }
   }
+  function nextLabel() {
+    var optional = step === 'measure' && !field('width').value && !field('height').value || step === 'date' && !form.elements.needed_by.value || step === 'artwork' && !line.querySelector('input[name*="artwork_refs"]') && !line.querySelector('[data-state="queued"],[data-state="uploading"],[data-state="error"]');
+    form.querySelector('[data-quick-next]').textContent = optional ? 'Omitir por ahora' : 'Continuar';
+  }
   function show(next, back) {
     if (!back && next !== step) history.push(step);
     step = next;
     form.querySelectorAll('[data-quick-step]').forEach(function(el) {el.hidden = el.dataset.quickStep !== step;});
-    var flow = ['intent','description','quantity','measure','date','artwork','profile','review'], pos = flow.indexOf(step);
+    var flow = ['profile','intent','description','quantity','measure','date','artwork','review'], pos = flow.indexOf(step);
     if (step === 'catalog') pos = 1;
     root.querySelector('[data-quick-bar]').value = Math.max(1,pos);
     root.querySelector('[data-quick-progress]').textContent = step === 'review' ? 'Revisar y enviar' : 'Una pregunta a la vez';
@@ -31,6 +35,7 @@
     form.querySelector('[data-request-submit]').hidden = step !== 'review';
     form.querySelector('[data-request-draft]').hidden = !field('title').value || !field('quantity').value;
     notice.textContent = '';
+    nextLabel();
     if (step === 'review') review();
     var heading = form.querySelector('[data-quick-step="'+step+'"] h2');
     if (heading) {heading.tabIndex = -1; heading.focus({preventScroll:true}); heading.scrollIntoView({block:'nearest'});}
@@ -57,7 +62,7 @@
   }
   function next() {
     if(!validateStep())return;
-    var route={description:'quantity',quantity:'measure',measure:'date',date:'artwork',artwork:form.querySelector('[data-quick-step="profile"]')?'profile':'review',profile:'review'};
+    var route={description:'quantity',quantity:'measure',measure:'date',date:'artwork',artwork:'review',profile:'intent'};
     show(route[step] || 'review');
   }
   function review() {
@@ -84,7 +89,7 @@
     notice.textContent=draft?'Guardando borrador…':'Enviando solicitud…';
     var body=new FormData();body.set('action','ge_request_save');body.set('nonce',cfg.nonce);body.set('payload',JSON.stringify(payload()));if(draft)body.set('draft','1');
     try {var res=await fetch(cfg.url,{method:'POST',body:body,credentials:'same-origin'}),json=await res.json();if(!json.success)throw new Error(json.data.message);
-      notice.textContent=draft?'Borrador guardado en Mis solicitudes.':'Solicitud recibida.';
+      notice.textContent=draft?'Borrador guardado en Presupuestos.':'Solicitud recibida.';
       if(!draft){event('quote_request_submitted',{request_id:json.data.id});touched=false;try{localStorage.removeItem(storageKey);}catch(e){} window.location.assign(json.data.url);}
     } catch(e) {notice.textContent=e.message||'No se pudo enviar. Tu avance está guardado; reintentá.';}
     finally {busy=false;form.querySelector('[data-request-submit]').disabled=false;form.querySelector('[data-request-draft]').disabled=false;}
@@ -107,15 +112,16 @@
     if(b.hasAttribute('data-request-draft'))save(true);
   });
   form.addEventListener('submit',function(e){e.preventDefault();if(step==='review')save(false);else if(!['intent','catalog'].includes(step))next();});
-  form.addEventListener('input',function(){touched=true;localSave();});form.addEventListener('change',localSave);
+  form.addEventListener('input',function(){touched=true;nextLabel();localSave();});form.addEventListener('change',function(){nextLabel();localSave();});
   document.addEventListener('ge:quote-lines-changed',function(){setTimeout(localSave,0);});
   var searchTimer;form.querySelector('[data-request-search]').addEventListener('input',function(){clearTimeout(searchTimer);searchTimer=setTimeout(search,350);});
   form.querySelector('[data-request-category]').addEventListener('change',function(){event('category_selected',{category:this.value});search();});
   form.querySelector('[data-quick-shop]').addEventListener('click',function(){event('shop_product_clicked_from_quote',{product_id:Number(field('product_id').value)});});
   line.querySelector('[data-ge-artwork]').dataset.field='items[0][artwork_refs][]';
-  new MutationObserver(localSave).observe(line.querySelector('[data-ge-artwork-list]'),{childList:true,subtree:true});
+  new MutationObserver(function(){nextLabel();localSave();}).observe(line.querySelector('[data-ge-artwork-list]'),{childList:true,subtree:true});
   if(cfg.draft&&cfg.draft.items.length===1){restore(cfg.draft);selectedUrl=cfg.draft.shop_url||'';show('review');}
   else if(!cfg.preview){try{var cached=JSON.parse(localStorage.getItem(storageKey));if(cached&&Date.now()-cached.at<86400000*7&&restore(cached.data)){selectedUrl=cached.selectedUrl||'';history=Array.isArray(cached.history)?cached.history:[];show(form.querySelector('[data-quick-step="'+cached.step+'"]')?cached.step:'description',true);notice.textContent='Retomamos tu solicitud guardada.';}}catch(e){}}
+  if (!touched) show(step,true);
   if(!cfg.preview)event('quote_request_started');
   window.addEventListener('pagehide',localSave);
 })();

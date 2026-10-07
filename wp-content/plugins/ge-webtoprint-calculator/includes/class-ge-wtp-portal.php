@@ -229,6 +229,7 @@ final class GE_WTP_Portal {
             <?php self::render_header( $section ); ?>
             <main class="ge-portal-main">
                 <?php self::render_notice(); ?>
+                <?php if ( in_array( $section, array( 'presupuestos', 'pedidos' ), true ) ) { GE_WTP_Job_Flow::customer( $section ); } ?>
                 <?php if ( ! self::is_staff_preview() ) :
                     $billing_missing = GE_WTP_Billing::missing_fields( GE_WTP_Billing::profile( self::portal_customer_id() ) );
                     if ( $billing_missing && 'perfil' !== $section ) : ?>
@@ -252,7 +253,7 @@ final class GE_WTP_Portal {
                 } elseif ( 'personalizado' === $section ) {
                     GE_WTP_Quote_Requests::form();
                 } elseif ( 'solicitudes' === $section ) {
-                    GE_WTP_Quote_Requests::history();
+                    GE_WTP_Job_Flow::customer_list();
                 } elseif ( 'perfil' === $section ) {
                     GE_WTP_Customers::render_for_portal( self::portal_customer_id(), self::is_staff_preview() );
                 } else {
@@ -347,7 +348,6 @@ final class GE_WTP_Portal {
             'guardados'  => 'Guardados',
             'documentos' => 'Documentos',
             'facturas' => 'Mis facturas',
-            'solicitudes' => 'Mis solicitudes',
             'perfil'     => 'Mi perfil',
         );
         if ( self::portal_is_markcom() ) {

@@ -110,7 +110,7 @@ final class GE_WTP_Workflow {
         echo '<a class="ge-admin-back" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'production' ) ) . '">← Volver a trabajos</a>';
         echo '<div class="ge-production-hero"><div><span>Pedido ' . esc_html( $labels[ $step ] ) . '</span><h1>' . esc_html( $reference ) . '</h1><p>' . esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ) . '</p></div><b>' . esc_html( self::released( $order ) ? 'En producción' : 'Pendiente de liberación' ) . '</b></div>';
         $notice = sanitize_key( wp_unslash( $_GET['workflow_notice'] ?? '' ) );
-        $messages = array( 'saved' => 'Los datos quedaron guardados.', 'ai-queued' => 'Solicitud interna registrada. Queda pendiente la integración con AI-GRUPO.', 'approval-sent' => 'La solicitud de aprobación final se envió al cliente.', 'approval-failed' => 'No se pudo enviar la solicitud de aprobación. Revisá el email del cliente.', 'released' => 'Los trabajos aprobados pasaron a producción.', 'blocked' => 'Revisá el archivo, el control técnico y la aprobación final de cada trabajo.', 'email-sent' => 'El aviso al cliente se envió y quedó registrado.', 'email-failed' => 'No se pudo enviar el aviso al cliente.' );
+        $messages = array( 'commercial-blocked' => 'Las condiciones comerciales cambiaron. Revisá el presupuesto de origen antes de liberar producción.', 'saved' => 'Los datos quedaron guardados.', 'ai-queued' => 'Solicitud interna registrada. Queda pendiente la integración con AI-GRUPO.', 'approval-sent' => 'La solicitud de aprobación final se envió al cliente.', 'approval-failed' => 'No se pudo enviar la solicitud de aprobación. Revisá el email del cliente.', 'released' => 'Los trabajos aprobados pasaron a producción.', 'blocked' => 'Revisá el archivo, el control técnico y la aprobación final de cada trabajo.', 'email-sent' => 'El aviso al cliente se envió y quedó registrado.', 'email-failed' => 'No se pudo enviar el aviso al cliente.' );
         if ( isset( $messages[ $notice ] ) ) { echo '<div class="ge-production-notice' . ( in_array( $notice, array( 'blocked', 'email-failed', 'approval-failed' ), true ) ? ' is-error' : '' ) . '" role="status">' . esc_html( $messages[ $notice ] ) . '</div>'; }
         echo '<nav class="ge-workflow-steps" aria-label="Pasos del pedido">';
         foreach ( $labels as $key => $label ) {
@@ -152,12 +152,14 @@ final class GE_WTP_Workflow {
         self::render_approval_requests( $order );
         echo '<form class="ge-workflow-release" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_release"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
         wp_nonce_field( 'ge_workflow_release_' . $order->get_id() );
+        $commercial = GE_WTP_Job_Flow::commercial_check( $order );
         $eligible = 0;
         foreach ( $order->get_items( 'line_item' ) as $item ) { if ( self::ready( $item, $order ) ) { $eligible++; } }
         $has_date = (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $order->get_meta( '_ge_production_promised_date', true ) );
         echo '<p>Para liberar un trabajo necesitás el archivo final asignado al producto, aprobación interna o aprobación del cliente cuando se requiera, y fecha prometida.</p>';
+        if ( is_wp_error( $commercial ) ) { echo '<p class="ge-production-notice is-error">' . esc_html( $commercial->get_error_message() ) . '</p>'; }
         if ( ! $eligible || ! $has_date ) { echo '<p class="ge-production-notice is-error">' . esc_html( ! $has_date ? 'Guardá primero la fecha prometida en Planificación.' : 'Todavía no hay trabajos con archivo y aprobación completos.' ) . '</p>'; }
-        echo '<button class="ge-staff-button" type="submit" ' . disabled( ! $eligible || ! $has_date, true, false ) . '>Enviar trabajos aprobados a producción</button></form>';
+        echo '<button class="ge-staff-button" type="submit" ' . disabled( ! $eligible || ! $has_date || is_wp_error( $commercial ), true, false ) . '>Enviar trabajos aprobados a producción</button></form>';
     }
 
     public static function item_states() {
@@ -373,10 +375,12 @@ final class GE_WTP_Workflow {
         $approved = array();
         foreach ( $order->get_items( 'line_item' ) as $item ) { if ( 'production' !== GE_WTP_Production::item_status( $item, $order ) && self::ready( $item, $order ) ) { $approved[] = $item; } }
         $date = (string) $order->get_meta( '_ge_production_promised_date', true );
+        $commercial = GE_WTP_Job_Flow::commercial_check( $order );
+        if ( is_wp_error( $commercial ) ) { self::redirect( $order, 'review', 'commercial-blocked' ); }
         if ( ! $approved || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) { self::redirect( $order, 'review', 'blocked' ); }
         foreach ( $approved as $item ) { $item->update_meta_data( '_ge_item_status', 'production' ); $item->update_meta_data( '_ge_item_workflow_released_at', time() ); $item->update_meta_data( '_ge_item_workflow_released_by', get_current_user_id() ); $item->save(); }
         $order->update_meta_data( self::STAGE_META, 'production' ); $order->update_meta_data( '_ge_production_status', 'production' ); $order->update_meta_data( '_ge_production_started_at', time() ); $order->save();
-        if ( class_exists( 'GE_WTP_Order_Lifecycle' ) ) { GE_WTP_Order_Lifecycle::set_stage( $order, 'aprobado', 'Archivo final liberado por el equipo.' ); }
+        if ( class_exists( 'GE_WTP_Order_Lifecycle' ) ) { GE_WTP_Order_Lifecycle::set_stage( $order, 'produccion', 'Archivo final liberado por el equipo.' ); }
         self::redirect( $order, 'production', 'released' );
     }
 

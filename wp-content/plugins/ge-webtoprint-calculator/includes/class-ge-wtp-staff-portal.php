@@ -107,6 +107,7 @@ final class GE_WTP_Staff_Portal {
             return;
         }
         $section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : 'dashboard';
+        GE_WTP_Job_Flow::staff( $section );
         if($section==='dashboard' && class_exists('GE_Organization_Runtime') && (!in_array(GE_Organization_Runtime::role(get_current_user_id()),array('owner','admin'),true)||GE_Organization::PRIMARY!=='graph-express'||in_array(false,GE_Organization_Runtime::settings()['modules'],true))){GE_Organization_Runtime::dashboard();return;}
         if ( 'costs' === $section && GE_WTP_Cost_Engine::enabled() ) {
             GE_WTP_Cost_UI::render();

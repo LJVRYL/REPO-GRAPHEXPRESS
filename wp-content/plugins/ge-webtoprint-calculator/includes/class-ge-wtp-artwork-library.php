@@ -344,6 +344,7 @@ final class GE_WTP_Artwork_Library {
             if ( ! $item || ! in_array( $next, array( 'production', 'ready' ), true ) ) { continue; }
             $current = class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::item_status( $item, $order ) : 'pending';
             if ( in_array( $current, array( 'production', 'ready' ), true ) ) { continue; }
+            if ( class_exists( 'GE_WTP_Job_Flow' ) && is_wp_error( GE_WTP_Job_Flow::commercial_check( $order ) ) ) { self::blocked_page( $order, array( $item->get_name() ), 'Revisá las condiciones comerciales antes de producir' ); }
             if ( ! self::item_ready_for_production( $item, $order ) ) { self::blocked_page( $order, array( $item->get_name() ), 'No se puede pasar este trabajo a producción' ); }
         }
     }
@@ -351,6 +352,7 @@ final class GE_WTP_Artwork_Library {
     public static function guard_supplier_dispatch() {
         if ( ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
         $order = wc_get_order( absint( $_REQUEST['order_id'] ?? 0 ) );
+        if ( $order && class_exists( 'GE_WTP_Job_Flow' ) && is_wp_error( GE_WTP_Job_Flow::commercial_check( $order ) ) ) { self::blocked_page( $order, array(), 'Revisá las condiciones comerciales antes de enviar al proveedor' ); }
         if ( $order && ! self::order_ready_for_dispatch( $order ) ) { self::blocked_page( $order, self::blocked_item_names( $order ), 'Orden bloqueada por control de archivos' ); }
     }
 
