@@ -16,7 +16,7 @@ final class GE_WTP_Work_Panel {
     public static function overview( $section ) {
         if ( 'jobs' === $section ) { return true; }
         if ( ! self::contains( $section ) ) { return false; }
-        foreach ( array( 'request_id','quote_id','order_id','new','edit','view','filter','trash','s','q' ) as $key ) { if ( ! empty( $_GET[ $key ] ) ) { return false; } }
+        foreach ( array( 'request_id','quote_id','order_id','legacy_user','legacy_key','new','edit','view','filter','trash','s','q' ) as $key ) { if ( ! empty( $_GET[ $key ] ) ) { return false; } }
         return true;
     }
     public static function url( $args = array() ) { return GE_WTP_Staff_Portal::portal_url( 'jobs', $args ); }
