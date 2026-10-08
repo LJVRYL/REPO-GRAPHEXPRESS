@@ -26,6 +26,35 @@ final class GE_WTP_Customer_Workspace {
         echo '<div class="ge-workspace-save"><span data-ge-save-state aria-live="polite">Sin cambios</span><button type="submit">Guardar</button></div></form>';
     }
 
+    public static function update_contact_email( $id, $email, $actor_id ) {
+        if ( ! user_can( $actor_id, 'manage_woocommerce' ) && ! user_can( $actor_id, 'ge_manage_operations' ) ) { return new WP_Error( 'ge_contact_forbidden', 'Acceso denegado.' ); }
+        if ( class_exists( 'GE_Organization_Runtime' ) && ! GE_Organization_Runtime::allowed( 'customers', true, $actor_id ) ) { return new WP_Error( 'ge_contact_forbidden', 'Acceso denegado.' ); }
+        $user = get_userdata( $id );
+        if ( ! $user ) { return new WP_Error( 'ge_contact_missing', 'Cliente inexistente.' ); }
+        if ( user_can( $id, 'manage_options' ) || user_can( $id, 'manage_woocommerce' ) || user_can( $id, 'ge_manage_operations' ) ) { return new WP_Error( 'ge_contact_forbidden', 'Las cuentas del personal se administran por separado.' ); }
+        $org = get_user_meta( $id, '_ge_organization_id', true );
+        if ( class_exists( 'GE_Organization' ) && $org && GE_Organization::PRIMARY !== $org ) { return new WP_Error( 'ge_contact_forbidden', 'Acceso denegado.' ); }
+        $email = trim( (string) $email );
+        if ( ! is_email( $email ) ) { return new WP_Error( 'email-invalid', 'Ingresá un correo válido.' ); }
+        $email = sanitize_email( $email );
+        $existing = email_exists( $email );
+        if ( $existing && (int) $existing !== (int) $id ) { return new WP_Error( 'email-exists', 'Ese correo pertenece a otra ficha de cliente.' ); }
+        if ( $user->user_email === $email ) { return (int) $id; }
+        $old = $user->user_email;
+        $suppress = function ( $send, $previous, $updated ) use ( $id ) { return (int) ( $updated['ID'] ?? 0 ) === (int) $id ? false : $send; };
+        add_filter( 'send_email_change_email', $suppress, 10, 3 );
+        try { $result = wp_update_user( array( 'ID' => $id, 'user_email' => $email ) ); }
+        finally { remove_filter( 'send_email_change_email', $suppress, 10 ); }
+        if ( is_wp_error( $result ) ) { return $result; }
+        $billing_email = get_user_meta( $id, 'billing_email', true );
+        if ( ! $billing_email || $old === $billing_email ) { update_user_meta( $id, 'billing_email', $email ); }
+        $history = get_user_meta( $id, '_ge_contact_email_history', true );
+        $history = is_array( $history ) ? $history : array();
+        $history[] = array( 'from' => $old, 'to' => $email, 'actor_id' => (int) $actor_id, 'at' => gmdate( 'c' ) );
+        update_user_meta( $id, '_ge_contact_email_history', $history );
+        return $result;
+    }
+
     public static function save() {
         if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_operations' ) ) { wp_die( 'Acceso denegado.', 403 ); }
         $id = absint( $_POST['customer_id'] ?? 0 );
@@ -36,8 +65,9 @@ final class GE_WTP_Customer_Workspace {
         $result = 'saved';
         if ( 'identity' === $section ) {
             $first = $text( 'first_name' ); $last = $text( 'last_name' );
-            $updated = wp_update_user( array( 'ID' => $id, 'first_name' => $first, 'last_name' => $last, 'display_name' => trim( $first . ' ' . $last ) ?: get_userdata( $id )->user_email ) );
-            if ( is_wp_error( $updated ) ) { $result = 'error'; }
+            $email_update = self::update_contact_email( $id, isset( $_POST['contact_email'] ) ? wp_unslash( $_POST['contact_email'] ) : get_userdata( $id )->user_email, get_current_user_id() );
+            $updated = is_wp_error( $email_update ) ? $email_update : wp_update_user( array( 'ID' => $id, 'first_name' => $first, 'last_name' => $last, 'display_name' => trim( $first . ' ' . $last ) ?: get_userdata( $id )->user_email ) );
+            if ( is_wp_error( $updated ) ) { $result = in_array( $updated->get_error_code(), array( 'email-invalid', 'email-exists' ), true ) ? $updated->get_error_code() : 'error'; }
             else {
                 update_user_meta( $id, '_ge_whatsapp', $text( 'whatsapp' ) );
                 update_user_meta( $id, 'billing_phone', $text( 'whatsapp' ) );
@@ -164,9 +194,9 @@ final class GE_WTP_Customer_Workspace {
         ?>
         <div class="ge-workspace">
             <header class="ge-workspace-header"><div><a class="ge-workspace-back" href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'customers' ) ); ?>">Clientes</a><p class="ge-workspace-eyebrow">Workspace de cliente · #<?php echo esc_html( $id ); ?></p><h1><?php echo esc_html( $name ); ?></h1><p><?php echo esc_html( $user->user_email ); ?><?php if ( get_user_meta( $id, '_ge_whatsapp', true ) ) : ?> · <?php echo esc_html( get_user_meta( $id, '_ge_whatsapp', true ) ); ?><?php endif; ?></p></div><div class="ge-workspace-actions"><a class="is-primary" href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'new' => 1, 'customer_id' => $id ) ) ); ?>">Nuevo presupuesto</a><a href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production', array( 'view' => 'new', 'customer_id' => $id ) ) ); ?>">Nuevo pedido</a><a href="<?php echo esc_url( $portal ); ?>" target="_blank" rel="noopener">Vista del portal ↗</a></div></header>
-            <?php $status = sanitize_key( wp_unslash( $_GET['workspace_status'] ?? '' ) ); if ( $status ) : ?><p class="ge-workspace-notice <?php echo 'saved' === $status ? '' : 'is-error'; ?>" role="status"><?php echo esc_html( 'saved' === $status ? 'Bloque guardado.' : 'No se pudo guardar el bloque. Revisá los datos.' ); ?></p><?php endif; ?>
+            <?php $status = sanitize_key( wp_unslash( $_GET['workspace_status'] ?? '' ) ); if ( $status ) : ?><p class="ge-workspace-notice <?php echo 'saved' === $status ? '' : 'is-error'; ?>" role="status"><?php echo esc_html( 'saved' === $status ? 'Bloque guardado.' : ( 'email-invalid' === $status ? 'Ingresá un correo válido.' : ( 'email-exists' === $status ? 'Ese correo ya pertenece a otra ficha. No se realizaron cambios.' : 'No se pudo guardar el bloque. Revisá los datos.' ) ) ); ?></p><?php endif; ?>
             <div class="ge-workspace-layout"><aside class="ge-workspace-sidebar">
-                <section class="ge-workspace-panel" id="ge-workspace-identity"><div class="ge-workspace-panel-head"><h2>Identidad y contacto</h2><small>Email verificado desde la cuenta</small></div><?php self::form_start( $id, 'identity' ); self::field( 'Nombre', 'first_name', $user->first_name ); self::field( 'Apellido', 'last_name', $user->last_name ); self::field( 'WhatsApp', 'whatsapp', get_user_meta( $id, '_ge_whatsapp', true ) ?: get_user_meta( $id, 'billing_phone', true ), 'tel' ); self::field( 'Contacto principal', 'contact_person', get_user_meta( $id, '_ge_contact_person', true ) ); self::form_end(); ?></section>
+                <section class="ge-workspace-panel" id="ge-workspace-identity"><div class="ge-workspace-panel-head"><h2>Identidad y contacto</h2><small>Correo para avisos y acceso al portal</small></div><?php self::form_start( $id, 'identity' ); self::field( 'Correo de contacto y acceso', 'contact_email', $user->user_email, 'email' ); self::field( 'Nombre', 'first_name', $user->first_name ); self::field( 'Apellido', 'last_name', $user->last_name ); self::field( 'WhatsApp', 'whatsapp', get_user_meta( $id, '_ge_whatsapp', true ) ?: get_user_meta( $id, 'billing_phone', true ), 'tel' ); self::field( 'Contacto principal', 'contact_person', get_user_meta( $id, '_ge_contact_person', true ) ); self::form_end(); ?></section>
                 <details class="ge-workspace-panel" id="ge-workspace-preferences"><summary>Preferencias</summary><?php self::form_start( $id, 'preferences' ); ?><label>Entrega habitual<select name="delivery_preference"><?php foreach ( array( '' => 'Sin preferencia', 'retiro' => 'Retiro', 'envio' => 'Envío', 'coordinar' => 'Coordinar' ) as $value => $label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( get_user_meta( $id, '_ge_delivery_preference', true ), $value ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php self::form_end(); ?></details>
                 <details class="ge-workspace-panel" id="ge-workspace-internal"><summary>Información interna</summary><p>Solo visible para el equipo.</p><?php self::form_start( $id, 'internal' ); self::field( 'Etiquetas', 'internal_tags', get_user_meta( $id, '_ge_customer_tags', true ) ); ?><label class="ge-field-wide">Notas<textarea name="internal_notes" rows="4"><?php echo esc_textarea( get_user_meta( $id, '_ge_customer_internal_notes', true ) ); ?></textarea></label><?php self::form_end(); ?></details>
             </aside><main class="ge-workspace-main">
