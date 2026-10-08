@@ -137,6 +137,7 @@ final class GE_WTP_Customer_Workspace {
         $quotes = array();
         foreach ( get_user_meta( $id ) as $key => $values ) {
             if ( 0 !== strpos( $key, 'ge_pending_quote_' ) || empty( $values[0] ) ) { continue; }
+            if ( GE_WTP_Commercial_Quote_UI::legacy_mapping( $id, $key ) ) { continue; }
             $quote = maybe_unserialize( $values[0] );
             if ( is_array( $quote ) ) {
                 $quote['_url'] = GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'legacy_user' => $id, 'legacy_key' => $key ) );
@@ -146,10 +147,11 @@ final class GE_WTP_Customer_Workspace {
         foreach ( get_posts( array( 'post_type' => GE_WTP_Commercial_Quotes::POST_TYPE, 'post_status' => 'private', 'numberposts' => 100, 'meta_key' => GE_WTP_Commercial_Quotes::CUSTOMER_META, 'meta_value' => $id ) ) as $post ) {
             $current = GE_WTP_Commercial_Quotes::get( $post->ID, get_current_user_id() );
             if ( is_wp_error( $current ) ) { continue; }
+            $origin = (array) get_post_meta( $current['id'], '_ge_legacy_source', true );
             $quotes[] = array(
-                'title' => $current['number'], 'reference' => 'Presupuesto actual', 'captured_at' => $post->post_date, '_quote_id' => $current['id'],
+                'title' => $current['number'] . ( $origin ? ' · ' . $post->post_title : '' ), 'reference' => ! empty( $origin['reference'] ) ? 'Recuperado de ' . $origin['reference'] : 'Presupuesto actual', 'captured_at' => $post->post_date, '_quote_id' => $current['id'],
                 'status' => class_exists('GE_WTP_Gestion_V3') ? GE_WTP_Gestion_V3::status_label($current['status']) : $current['status'], '_url' => GE_WTP_Staff_Portal::portal_url( 'quotes', array( 'quote_id' => $current['id'] ) ),
-                '_amount' => isset( $current['snapshot']['total_cents'] ) ? wp_strip_all_tags( wc_price( $current['snapshot']['total_cents'] / 100 ) ) : '',
+                '_amount' => GE_WTP_Quote_Selection::has_choices( $current['snapshot'] ) && empty( $current['snapshot']['customer_selection'] ) ? 'A definir según elección' : ( isset( $current['snapshot']['total_cents'] ) ? wp_strip_all_tags( wc_price( $current['snapshot']['total_cents'] / 100 ) ) : '' ),
             );
         }
         usort( $quotes, function ( $a, $b ) { return strcmp( $b['captured_at'] ?? '', $a['captured_at'] ?? '' ); } );

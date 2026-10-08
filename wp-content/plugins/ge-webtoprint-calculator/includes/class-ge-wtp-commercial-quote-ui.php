@@ -24,11 +24,8 @@ final class GE_WTP_Commercial_Quote_UI {
         $quote = $quote_id ? GE_WTP_Commercial_Quotes::get( $quote_id, get_current_user_id() ) : null;
         $legacy = self::selected_legacy_quote();
         if ( ! $quote && $legacy ) {
-            $mapped_id = absint( get_user_meta( $legacy['user_id'], '_ge_commercial_legacy_' . hash( 'sha256', $legacy['key'] ), true ) );
-            if ( $mapped_id ) {
-                $mapped = GE_WTP_Commercial_Quotes::get( $mapped_id, get_current_user_id() );
-                if ( ! is_wp_error( $mapped ) && (int) $mapped['customer_id'] === (int) $legacy['user_id'] ) { $quote = $mapped; $legacy = null; }
-            }
+            $mapped = self::legacy_mapping( $legacy['user_id'], $legacy['key'] );
+            if ( $mapped ) { $quote = $mapped; $legacy = null; }
         }
         $new = ! empty( $_GET['new'] );
         if ( is_wp_error( $quote ) ) { echo '<section class="ge-panel"><p>' . esc_html( $quote->get_error_message() ) . '</p></section>'; return; }
@@ -330,6 +327,14 @@ final class GE_WTP_Commercial_Quote_UI {
         echo '</section>';
     }
 
+    public static function legacy_mapping( $customer, $key ) {
+        if ( 0 !== strpos( $key, GE_WTP_Customer_Quotes::PREFIX ) || ( class_exists( 'GE_Organization_Runtime' ) && ! GE_Organization_Runtime::allowed( 'quotes', false ) ) ) { return false; }
+        $id = absint( get_user_meta( $customer, '_ge_commercial_legacy_' . hash( 'sha256', $key ), true ) );
+        if ( ! $id ) { return false; }
+        $quote = GE_WTP_Commercial_Quotes::get( $id, get_current_user_id() );
+        return ! is_wp_error( $quote ) && (int) $quote['customer_id'] === (int) $customer ? $quote : false;
+    }
+
     private static function selected_legacy_quote() {
         $user_id = absint( $_GET['legacy_user'] ?? 0 );
         $key = sanitize_key( wp_unslash( $_GET['legacy_key'] ?? '' ) );
@@ -381,6 +386,7 @@ final class GE_WTP_Commercial_Quote_UI {
         $legacy = $wpdb->get_results( $wpdb->prepare( "SELECT user_id, meta_key FROM {$wpdb->usermeta} WHERE meta_key LIKE %s ORDER BY umeta_id DESC", $like ), ARRAY_A );
         foreach ( (array) $legacy as $record ) {
             $user_id = absint( $record['user_id'] ); $key = (string) $record['meta_key'];
+            if ( self::legacy_mapping( $user_id, $key ) ) { continue; }
             $quote = get_user_meta( $user_id, $key, true );
             if ( ! is_array( $quote ) ) { continue; }
             $customer = get_userdata( $user_id );
