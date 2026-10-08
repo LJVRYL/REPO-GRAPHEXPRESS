@@ -800,7 +800,7 @@ final class GE_WTP_Commercial_Quotes {
     public static function check_billing_snapshot( $quote ) {
         if ( ! empty( $quote['snapshot']['draft_incomplete'] ) || empty( $quote['snapshot']['items'] ) ) { return new WP_Error( 'ge_quote_incomplete', 'Completá y revisá el borrador antes de aceptar, cobrar o convertir.' ); }
         if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] ) && in_array( $quote['status'], array( 'accepted', 'converted' ), true ) ) { return new WP_Error( 'ge_quote_selection_required', 'El cliente debe elegir las variantes antes de cobrar o convertir.' ); }
-        if ( 'pending' === ( $quote['snapshot']['fiscal_status'] ?? '' ) ) { return new WP_Error( 'ge_quote_fiscal_pending', 'El presupuesto comercial requiere verificar el emisor fiscal antes de cobrar o convertir.' ); }
+        if ( 'pending' === ( $quote['snapshot']['fiscal_status'] ?? '' ) ) { return new WP_Error( 'ge_quote_fiscal_pending', 'El presupuesto requiere verificar los datos fiscales antes de cobrar.' ); }
         $billing = $quote['snapshot']['billing'] ?? array();
         $issuer = GE_WTP_Billing_Issuers::from_snapshot( $quote['snapshot'] );
         $valid = GE_WTP_Billing_Issuers::validate_current( $issuer ); if ( is_wp_error( $valid ) ) { return $valid; }
@@ -816,27 +816,26 @@ final class GE_WTP_Commercial_Quotes {
         return true;
     }
 
-    /** Resolve a draft for staff conversion without sending an email. */
+    /** Commercial conversion preserves the saved version; fiscal readiness gates payments separately. */
     public static function prepare_for_conversion( $quote_id, $actor_id ) {
         if ( ! user_can( $actor_id, 'ge_manage_operations' ) && ! user_can( $actor_id, 'manage_woocommerce' ) ) { return new WP_Error( 'ge_quote_forbidden', 'Acceso denegado.' ); }
         $quote = self::get( $quote_id, $actor_id );
         if ( is_wp_error( $quote ) ) { return $quote; }
-        if ( ! empty( $quote['snapshot']['draft_incomplete'] ) || empty( $quote['snapshot']['items'] ) ) { return new WP_Error( 'ge_quote_incomplete', 'Completá el borrador antes de convertirlo en pedido.' ); }
-        if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] ) ) { return new WP_Error( 'ge_quote_selection_required', 'El cliente debe elegir las variantes antes de convertir.' ); }
-        if ( isset( $quote['snapshot']['total_cents'] ) ) {
-            $valid = self::check_billing_snapshot( $quote );
-            return is_wp_error( $valid ) ? $valid : $quote;
+        $snapshot = $quote['snapshot'];
+        if ( ! empty( $snapshot['draft_incomplete'] ) || empty( $snapshot['items'] ) || ! empty( $snapshot['draft_lines'] ) ) { return new WP_Error( 'ge_quote_incomplete', 'Completá y guardá los productos y precios antes de crear el pedido.' ); }
+        if ( GE_WTP_Quote_Selection::has_choices( $snapshot ) && empty( $snapshot['customer_selection'] ) ) { return new WP_Error( 'ge_quote_selection_required', 'Elegí las variantes del presupuesto antes de crear el pedido.' ); }
+        $issuer = GE_WTP_Billing_Issuers::from_snapshot( $snapshot );
+        $receiver = GE_WTP_Quote_Billing_Control::receiver( $snapshot );
+        if ( empty( $issuer['id'] ) || 'unknown' === $issuer['id'] || empty( $issuer['legal_name'] ) || empty( $snapshot['billing_profile_id'] ) || empty( $receiver['legal_name'] ) ) { return new WP_Error( 'ge_quote_parties', 'Seleccioná y guardá el emisor y el receptor antes de crear el pedido.' ); }
+        if ( ! isset( $snapshot['net_cents'], $snapshot['tax_cents'], $snapshot['total_cents'] ) || (int) $snapshot['total_cents'] <= 0 || (int) $snapshot['net_cents'] < 0 || (int) $snapshot['tax_cents'] < 0 || (int) $snapshot['net_cents'] + (int) $snapshot['tax_cents'] !== (int) $snapshot['total_cents'] ) { return new WP_Error( 'ge_quote_total', 'Revisá y guardá los importes del presupuesto antes de crear el pedido.' ); }
+        $net = 0; $tax = 0;
+        foreach ( $snapshot['items'] as $line ) {
+            if ( empty( $line['name'] ) || empty( $line['quantity'] ) || (float) $line['quantity'] <= 0 || ! isset( $line['unit_net_cents'], $line['net_cents'] ) ) { return new WP_Error( 'ge_quote_incomplete', 'Completá y guardá los productos y precios antes de crear el pedido.' ); }
+            $net += (int) ( $line['taxable_base_cents'] ?? $line['net_cents'] );
+            $tax += (int) ( $line['tax_cents'] ?? 0 );
         }
-        if ( 'draft' !== $quote['status'] ) { return new WP_Error( 'ge_quote_total', 'El presupuesto no tiene un total fiscal válido.' ); }
-        if ( self::needs_roll_reprice( $quote['snapshot'] ) ) { return new WP_Error( 'ge_quote_roll_reprice', 'Revisá y guardá el precio del vinilo antes de convertir.' ); }
-        $resolved = self::resolve_billing( $quote['customer_id'], $quote['snapshot'] );
-        if ( is_wp_error( $resolved ) ) { return $resolved; }
-        $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
-        if ( ! is_array( $versions ) ) { return new WP_Error( 'ge_quote_corrupt', 'Historial inválido.' ); }
-        $versions[ $quote['version'] ] = $resolved;
-        update_post_meta( $quote_id, self::VERSIONS_META, $versions );
-        self::event( $quote_id, $quote['version'], 'billing_resolved_for_conversion', $actor_id );
-        return self::get( $quote_id, $actor_id );
+        if ( $net !== (int) $snapshot['net_cents'] || $tax !== (int) $snapshot['tax_cents'] ) { return new WP_Error( 'ge_quote_total', 'Los productos no coinciden con el total. Revisá y guardá el presupuesto.' ); }
+        return $quote;
     }
 
     public static function mark_viewed( $quote_id, $actor_id ) {

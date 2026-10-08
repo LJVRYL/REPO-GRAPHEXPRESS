@@ -343,7 +343,7 @@ final class GE_WTP_Commercial_Checkout {
         $customer = get_userdata( $quote['customer_id'] );
         $order = wc_create_order( array( 'customer_id' => $quote['customer_id'] ) );
         if ( is_wp_error( $order ) ) { return $order; }
-        $order->set_currency( 'ARS' );
+        $order->set_currency( $snapshot['currency'] ?? 'ARS' );
         $order->set_created_via( 'ge_commercial_quote_payment' );
         GE_WTP_Billing_Issuers::inherit( $order, $quote['snapshot'] );
         $order->set_billing_email( $customer->user_email );
@@ -478,8 +478,7 @@ final class GE_WTP_Commercial_Checkout {
             if ( $quote['converted_order_id'] ) { return wc_get_order( $quote['converted_order_id'] ); }
             if ( isset( $args['expected_version'] ) && (int) $args['expected_version'] !== (int) $quote['version'] ) { return new WP_Error( 'ge_quote_version_changed', 'El presupuesto cambió. Volvé a abrirlo.' ); }
             if ( in_array( $quote['status'], array( 'rejected', 'cancelled' ), true ) ) { return new WP_Error( 'ge_quote_state', 'Este presupuesto no se puede convertir.' ); }
-            if ( in_array( 'billing_identity_changed_requires_reconciliation', (array) ( $quote['snapshot']['fiscal_blockers'] ?? array() ), true ) ) { return new WP_Error( 'ge_billing_reconcile', 'Revisá expresamente los importes fiscales antes de convertir.' ); }
-            if ( empty( $quote['snapshot']['total_cents'] ) ) { return new WP_Error( 'ge_quote_total', 'Falta resolver el total fiscal.' ); }
+            if ( empty( $quote['snapshot']['total_cents'] ) ) { return new WP_Error( 'ge_quote_total', 'Revisá y guardá el total del presupuesto.' ); }
             $initial = absint( get_post_meta( $quote_id, '_ge_commercial_initial_payment_order', true ) );
             $payment = $initial ? wc_get_order( $initial ) : false;
             $final = $payment ? (int) get_post_meta( $quote_id, '_ge_commercial_final_total_cents', true ) : (int) $quote['snapshot']['total_cents'];
@@ -566,7 +565,7 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( self::QUOTE_META, $quote['id'] );
         $order->update_meta_data( '_ge_source_quote_id', $quote['id'] );
         $order->save();
-        $order->set_currency( 'ARS' );
+        $order->set_currency( $snapshot['currency'] ?? 'ARS' );
         $order->set_billing_email( $customer->user_email );
         $order->set_billing_first_name( $customer->first_name ?: $customer->display_name );
         $order->set_billing_last_name( $customer->last_name );
@@ -634,7 +633,10 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( '_ge_commercial_quote_snapshot', $snapshot );
         $order->update_meta_data( '_ge_commercial_discounts', $snapshot['discounts'] ?? array() );
         $order->update_meta_data( '_ge_commercial_snapshot_hash', $snapshot['snapshot_hash'] ?? '' );
-        $order->update_meta_data( '_ge_commercial_billing_snapshot', $snapshot['billing'] );
+        $order->update_meta_data( '_ge_commercial_billing_snapshot', $snapshot['billing'] ?? null );
+        $order->update_meta_data( '_ge_commercial_fiscal_status', $snapshot['fiscal_status'] ?? 'pending' );
+        $order->update_meta_data( '_ge_commercial_fiscal_blockers', $snapshot['fiscal_blockers'] ?? array() );
+        $order->update_meta_data( '_ge_commercial_conversion_source', $payment ? 'payment' : 'staff' );
         $order->update_meta_data( '_ge_billing_profile_snapshot', $billing_profile );
         $order->update_meta_data( '_ge_billing_profile_id', $snapshot['billing_profile_id'] ?? 'default' );
         $order->update_meta_data( '_ge_delivery_snapshot', $delivery );

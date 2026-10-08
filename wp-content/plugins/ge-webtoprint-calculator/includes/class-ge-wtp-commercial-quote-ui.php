@@ -170,7 +170,13 @@ final class GE_WTP_Commercial_Quote_UI {
             echo '<button class="ge-staff-button" type="submit">Publicar y enviar al cliente</button></form>';
         }
         echo '</nav>';
-        if ( 'pending' === ( $quote['snapshot']['fiscal_status'] ?? '' ) || ! empty( $quote['snapshot']['fiscal_blockers'] ) ) { echo '<p class="ge-quote-fiscal-alert" role="note">Facturación pendiente de revisión. Esto no bloquea publicar el presupuesto. Antes de facturar o cobrar, revisá <a href="#ge-quote-fiscal">receptor, emisor e importes</a>.</p>'; }
+        $chosen_issuer = GE_WTP_Billing_Issuers::from_snapshot( $quote['snapshot'] );
+        $chosen_receiver = GE_WTP_Quote_Billing_Control::receiver( $quote['snapshot'] );
+        $commercial_document = $quote['snapshot']['commercial_document_type'] ?? '';
+        echo '<p class="ge-manual-help"><strong>Emisor elegido:</strong> ' . esc_html( $chosen_issuer['legal_name'] ?? 'Sin elegir' ) . ' · <strong>Receptor elegido:</strong> ' . esc_html( $chosen_receiver['legal_name'] ?? 'Sin elegir' );
+        if ( in_array( $commercial_document, array( 'A', 'C' ), true ) ) { echo ' · ' . esc_html( 'C' === $commercial_document ? 'Presupuesto sin IVA · Emisor C' : 'Presupuesto con IVA · Emisor A' ); }
+        echo '</p>';
+        if ( 'pending' === ( $quote['snapshot']['fiscal_status'] ?? '' ) || ! empty( $quote['snapshot']['fiscal_blockers'] ) ) { echo '<p class="ge-quote-fiscal-alert" role="note">Facturación pendiente de revisión. Podés publicar y crear el pedido con los datos comerciales guardados. Antes de facturar o cobrar, revisá <a href="#ge-quote-fiscal">receptor, emisor e importes</a>.</p>'; }
         if ( in_array($quote['status'],array('sent','viewed'),true) ) {
             $notice_label = array('sent'=>'Publicado · aviso enviado al sistema de correo.','failed'=>'Publicado; aviso no enviado. El cliente ya puede verlo en el portal.','unknown'=>'Publicado · resultado del aviso sin confirmar. Revisá Notificaciones antes de reintentar.','delivering'=>'Publicado · aviso en procesamiento.');
             if (isset($notice_label[$notice_status])) { echo '<p class="ge-production-notice" role="status">'.esc_html($notice_label[$notice_status]).'</p>'; }
