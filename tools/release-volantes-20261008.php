@@ -41,9 +41,13 @@ if($mode==='deploy'){
  $meta=array('_ge_storefront_config'=>GE_Volantes::config(),'_ge_reference_price_min'=>$data['minimum'],'_ge_public_price_sections'=>$data['sections'],'_ge_public_price_notes'=>$data['notes'],'_ge_supplier_source'=>$data['source_name'],'_ge_supplier_source_date'=>$data['source_date'],'_ge_supplier_source_files'=>$data['source_files'],'_ge_production_calendar'=>GE_Volantes::defaults(),'_ge_minimum_dpi'=>300,'_ge_expected_color_mode'=>'CMYK','_ge_bleed_mm'=>5,'_product_attributes'=>$attributes);
  foreach($meta as $k=>$v)update_post_meta(81,$k,$v);
  require_once ABSPATH.'wp-admin/includes/image.php';
- $upload=wp_upload_bits('volantes-graphex-20261008.webp',null,file_get_contents($root.'/wp-content/mu-plugins/ge-volantes/volantes-graphex-20261008.webp'));if($upload['error'])throw new RuntimeException($upload['error']);
- $attachment=wp_insert_attachment(array('post_title'=>'Volantes full color · Graphex','post_mime_type'=>'image/webp','post_status'=>'inherit'),$upload['file'],81,true);if(is_wp_error($attachment))throw new RuntimeException($attachment->get_error_message());
- wp_update_attachment_metadata($attachment,wp_generate_attachment_metadata($attachment,$upload['file']));update_post_meta($attachment,'_wp_attachment_image_alt','Volantes full color de Graphex en diferentes formatos');update_post_meta(81,'_thumbnail_id',$attachment);clean_post_cache(81);wc_delete_product_transients(81);
+ $image_source=$root.'/wp-content/mu-plugins/ge-volantes/volantes-graphex-20261008.webp';$attachment=(int)get_post_thumbnail_id(81);$current_image=get_attached_file($attachment);
+ if(!$current_image||!is_file($current_image)||hash_file('sha256',$current_image)!==hash_file('sha256',$image_source)) {
+  $upload=wp_upload_bits('volantes-graphex-20261008.webp',null,file_get_contents($image_source));if($upload['error'])throw new RuntimeException($upload['error']);
+  $attachment=wp_insert_attachment(array('post_title'=>'Volantes full color · Graphex','post_mime_type'=>'image/webp','post_status'=>'inherit'),$upload['file'],81,true);if(is_wp_error($attachment))throw new RuntimeException($attachment->get_error_message());
+  wp_update_attachment_metadata($attachment,wp_generate_attachment_metadata($attachment,$upload['file']));update_post_meta($attachment,'_wp_attachment_image_alt','Volantes full color de Graphex en diferentes formatos');update_post_meta(81,'_thumbnail_id',$attachment);
+ }
+ clean_post_cache(81);wc_delete_product_transients(81);
  file_put_contents($backup.'/deployed-product-state.ser',serialize(product_state($keys)));file_put_contents($backup.'/deployment.json',json_encode(array('commit'=>$manifest['commit'],'thumbnail'=>$attachment,'time'=>gmdate('c')),JSON_PRETTY_PRINT));
  verify_code($manifest,$root);echo json_encode(array('deployed'=>true,'thumbnail'=>$attachment,'commit'=>$manifest['commit']))."\n";exit;
 }
@@ -51,7 +55,8 @@ if($mode==='verify'){
  verify_code($manifest,$root);if(product_state($keys)!==unserialize(file_get_contents($backup.'/deployed-product-state.ser')))throw new RuntimeException('Product state differs');
  if(business_hash()!==$before['business_hash'])throw new RuntimeException('Commercial data differs: investigate concurrent writes');
  $c=GE_Volantes::config();$o=$c['options'][$c['option_map']['115|15x20|horizontal|double|1000']];if($o['total_net']!==81000||GE_WTP_Storefront::minimum_price(81)<=0)throw new RuntimeException('Price smoke failed');
- echo json_encode(array('verified'=>true,'business_unchanged'=>true,'files'=>count($manifest['files']),'price_net'=>81000,'price_final'=>98010,'calendar_example'=>GE_Volantes::dispatch('2026-10-13T00:00:00-03:00','115')['date'],'context_job_81'=>get_option('ge_fa_context_job_81','absent')))."\n";exit;
+ $test_item=array('data'=>wc_get_product(81),'product_id'=>81,'ge_configuration_key'=>$c['option_map']['115|15x20|horizontal|double|1000'],'quantity'=>1000);$limits=(new \Automattic\WooCommerce\StoreApi\Utilities\QuantityLimits())->get_cart_item_quantity_limits($test_item);if($limits['minimum']!==1000||$limits['maximum']!==1000||$limits['multiple_of']!==1000||$limits['editable']!==false)throw new RuntimeException('Block cart limits mismatch');
+ echo json_encode(array('verified'=>true,'business_unchanged'=>true,'store_api_limits'=>$limits,'files'=>count($manifest['files']),'price_net'=>81000,'price_final'=>98010,'calendar_example'=>GE_Volantes::dispatch('2026-10-13T00:00:00-03:00','115')['date'],'context_job_81'=>get_option('ge_fa_context_job_81','absent')))."\n";exit;
 }
 if($mode==='rollback'){
  // Refuse to overwrite any work performed after this deployment.

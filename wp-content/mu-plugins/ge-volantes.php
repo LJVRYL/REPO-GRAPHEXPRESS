@@ -12,6 +12,9 @@ final class GE_Volantes {
         // Run after the staff-preview convenience filter; manual quotes must never be purchasable.
         add_filter('woocommerce_add_to_cart_validation', array(__CLASS__, 'validate_cart'), 10001, 6);
         add_filter('woocommerce_update_cart_validation', array(__CLASS__, 'validate_update'), 10, 4);
+        foreach(array('minimum','maximum','multiple_of') as $limit) add_filter('woocommerce_store_api_product_quantity_'.$limit,array(__CLASS__,'store_api_quantity'),10,3);
+        add_filter('woocommerce_store_api_product_quantity_editable',array(__CLASS__,'store_api_editable'),10,3);
+        add_action('woocommerce_store_api_validate_cart_item',array(__CLASS__,'store_api_validate'),10,2);
         add_action('woocommerce_before_calculate_totals', array(__CLASS__, 'cart_totals'), 40);
         add_action('woocommerce_checkout_create_order_line_item',array(__CLASS__,'item_spec'),30,4);
         add_filter('ge_wtp_file_analysis_item_context',array(__CLASS__,'analysis_context'),10,3);
@@ -66,6 +69,9 @@ final class GE_Volantes {
         if((int)$quantity!==(int)$opts[$key]['fixed_qty']){wc_add_notice('La cantidad debe coincidir con el lote cotizado.','error');return false;}return $passed;
     }
     public static function validate_update($passed,$cart_key,$item,$quantity){if((int)($item['product_id']??0)!==self::product_id()||strpos($item['ge_configuration_key']??'','volantes-')!==0)return $passed;return self::validate_cart($passed,$item['product_id'],$quantity,0,array(),$item);}
+    public static function store_api_quantity($value,$product,$item){if(!$product||(int)$product->get_id()!==self::product_id()||!is_array($item))return $value;$o=self::config()['options'][$item['ge_configuration_key']??'']??array();return !empty($o['fixed_qty'])&&empty($o['manual_quote'])?(int)$o['fixed_qty']:$value;}
+    public static function store_api_editable($value,$product,$item){return self::store_api_quantity(0,$product,$item)>0?false:$value;}
+    public static function store_api_validate($product,$item){if(!$product||(int)$product->get_id()!==self::product_id()||strpos($item['ge_configuration_key']??'','volantes-')!==0)return;$o=self::config()['options'][$item['ge_configuration_key']]??array();if(!$o||!empty($o['manual_quote'])||(int)$item['quantity']!==(int)$o['fixed_qty'])throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException('ge_volantes_lot','La cantidad debe coincidir con el lote cotizado. Volvé al producto para cambiar la configuración.',400);}
     public static function cart_totals($cart){foreach($cart->get_cart() as $item){if((int)($item['product_id']??0)!==self::product_id()||strpos($item['ge_configuration_key']??'','volantes-')!==0)continue;$net=$item['ge_base_price']??null;if(is_numeric($net)&&$net>0)$item['data']->set_price((float)$net*1.21);}}
     public static function item_spec($item,$cart_key,$values,$order){if((int)($values['product_id']??0)!==self::product_id())return;$k=$values['ge_configuration_key']??'';$o=self::config()['options'][$k]??array();if(!$o||!empty($o['manual_quote']))return;$item->add_meta_data('_ge_volantes_prepress',array('scope'=>self::SLUG,'paper'=>$o['paper'],'cut_dimensions_mm'=>array($o['width_mm'],$o['height_mm']),'target_dimensions_mm'=>array($o['width_mm']+10,$o['height_mm']+10),'minimum_dpi'=>300,'expected_color_mode'=>'CMYK','bleed_mm'=>5,'safe_mm'=>5,'minimum_font_pt'=>6,'expected_pages'=>'double'===$o['faces']?2:1),true);}
     public static function production_assignment($assignment,$item,$created){$spec=$item->get_meta('_ge_volantes_prepress',true);if(!is_array($spec)||($spec['scope']??'')!==self::SLUG)return $assignment;return array('supplier'=>'druck','date'=>'','requires_confirmation'=>true,'reason'=>'Volantes: confirmar el lote al completar pago, arte aprobado y documentación. La fecha de creación no es la toma del pedido.');}

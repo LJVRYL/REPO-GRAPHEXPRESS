@@ -4,7 +4,7 @@ Producto: `volantes-full-color` (ID 81). Project: graph-express. Resource: graph
 
 ## Precios y alcance
 
-`wp-content/mu-plugins/ge-volantes/druck-prices.json` contiene 436 combinaciones verificadas por respuesta del calculador Druck: Obra 80 g (96), Ilustración 115 g (316), Ilustración 150 g (24), sin doblado. Los precios de origen son netos. Cada lote Graphex cuesta `ceil(neto Druck × 1.50)` pesos, más IVA 21%. La orientación intercambia ancho y alto sin cambiar el precio. El servidor valida la combinación y la cantidad; otros papeles requieren cotización manual y no se compran a precio cero.
+`wp-content/mu-plugins/ge-volantes/druck-prices.json` contiene 436 combinaciones verificadas por respuesta del calculador Druck: Obra 80 g (96), Ilustración 115 g (316), Ilustración 150 g (24), sin doblado. Los precios de origen son netos. Cada lote Graphex cuesta `ceil(neto Druck × 1.50)` pesos, más IVA 21%. La orientación intercambia ancho y alto sin cambiar el precio. El servidor valida la combinación y la cantidad; el carrito de bloques fija mínimo, máximo y múltiplo al lote, desactiva la edición y vuelve a validar al continuar; otros papeles requieren cotización manual y no se compran a precio cero.
 
 115 g, 20 × 15 cm horizontal, 1.000, doble faz: costo $54.000; venta $81.000 netos; IVA $17.010; final $98.010. Recargo 50% sobre costo, margen bruto 33,33% sobre venta, diferencia $27.000 antes de diseño, envío, comisiones y demás gastos. No es ganancia neta. Un descuento de 33,33% sobre el neto consume esa diferencia incluso antes de otros gastos. El pedido de referencia vino por WhatsApp, según Leo; no se encontró una venta equivalente registrada y no se creó ninguna.
 
@@ -41,4 +41,4 @@ Modos del script: `backup`, `deploy`, `verify`, `rollback`, seguidos de ruta del
 
 Diferencias previas explicadas: el analizador tiene CRLF en Git/producción (se conservan); la vista previa de producción estaba una corrección por detrás de master en el control de huella del archivo. Se despliega la corrección ya canónica junto con el selector configurable.
 
-Pruebas: `tests/volantes-20261008.php`, 3.538 comprobaciones de precios, IVA, opciones, corte temporal, cantidades, contratos, preflight e historial; PHP 7.4 y 8.3. `tests/production-closure.php` mantiene el contrato comercial. QA de navegador: opciones dependientes, manual bloqueado, prompt/copia, PDF frente/dorso y archivo inválido sin miniatura anterior, móvil sin desborde. No se generan órdenes ni se envían correos de prueba.
+Pruebas: `tests/volantes-20261008.php`, 3.544 comprobaciones de precios, IVA, opciones, corte temporal, cantidades, contratos, preflight e historial; PHP 7.4 y 8.3. `tests/production-closure.php` mantiene el contrato comercial. QA de navegador: opciones dependientes, manual bloqueado, prompt/copia, PDF frente/dorso y archivo inválido sin miniatura anterior, móvil sin desborde. No se generan órdenes ni se envían correos de prueba.
