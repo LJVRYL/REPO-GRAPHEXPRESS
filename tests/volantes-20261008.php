@@ -5,7 +5,9 @@ function wp_json_encode($value){return json_encode($value);}function apply_filte
 require __DIR__.'/../wp-content/mu-plugins/ge-volantes.php';
 require __DIR__.'/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-file-analysis.php';
 require __DIR__.'/../wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-storefront.php';
+function graphexpress_quote_url(){return 'https://graphex.ar/cliente-markcom/?seccion=personalizado&rapida=1';}
 $count=0;function check($ok,$msg){global $count;if(!$ok)throw new Exception($msg);$count++;}
+check(GE_Volantes::quote_url()===graphexpress_quote_url(),'manual quote uses canonical portal route');
 $config=GE_Volantes::config();$rows=GE_Volantes::matrix()['rows'];check(count($rows)===436,'436 verified configurations');
 foreach($rows as $r){foreach(array('vertical','horizontal') as $orientation){$values=array($r['paper'],$r['size'],$orientation,$r['faces'],(string)$r['quantity']);$k=$config['option_map'][implode('|',$values)];$o=$config['options'][$k];$net=(int)ceil($r['supplier_net']*1.5);check($net===$o['total_net'],'exact authorized ceil');check(abs($o['price']*$r['quantity']-$net)<0.00001,'unit times quantity equals net');check(abs($o['price']*1.21*$r['quantity']-round($net*1.21,2))<0.005,'VAT final cents coherent');check($o['width_mm']*$o['height_mm']===array_product(array_map('intval',explode('x',$r['size'])))*100,'orientation preserves area');}}
 check(GE_WTP_Storefront::minimum_price(81)>0,'manual quotes excluded from minimum');
