@@ -1,0 +1,31 @@
+<?php
+define('DISABLE_WP_CRON',true);define('FS_METHOD','direct');$_SERVER['HTTP_HOST']='graphex.ar';$_SERVER['SERVER_NAME']='graphex.ar';$_SERVER['HTTPS']='on';$_SERVER['REQUEST_URI']='/';
+$qa=getenv('GE_RECOVERY_QA')==='1';$root=$qa?'/home/graphexpress/job-flow-qa-20261007/site':'/home/graphexpress/public_html';require $root.'/wp-load.php';
+if(($qa&&DB_NAME!=='graph_job_flow_20261007')||(!$qa&&GE_Organization::PRIMARY!=='graph-express'))throw new Exception('Wrong resource');wp_set_current_user(1);
+add_filter('pre_wp_mail',function(){throw new Exception('Recovery must not send mail');},PHP_INT_MAX);
+$key='ge_pending_quote_full_power_exhibidor_20260929';$customer=22;
+if($qa){$ctx=json_decode(file_get_contents(dirname($root).'/context.json'),true);$customer=$ctx['customer'];$legacy=json_decode(file_get_contents(dirname($root).'/full-power-source.json'),true);}else{$legacy=get_user_meta($customer,$key,true);}
+if(!is_array($legacy)||($legacy['reference']??'')!=='FP-EXH-20260929'||count($legacy['options']??[])!==2||!empty($legacy['order_id']))throw new Exception('Legacy changed or linked to order');
+$hash=hash('sha256',wp_json_encode($legacy));$mapping='_ge_commercial_legacy_'.hash('sha256',$key);$existing=absint(get_user_meta($customer,$mapping,true));
+if($existing){$q=GE_WTP_Commercial_Quotes::get($existing,1);if(is_wp_error($q)||$q['customer_id']!==$customer||get_post_meta($existing,'_ge_legacy_source_hash',true)!==$hash)throw new Exception('Mapping conflict');echo wp_json_encode(['id'=>$existing,'number'=>$q['number'],'status'=>$q['status'],'idempotent'=>true]);exit;}
+$lock='ge_legacy_recovery_'.hash('sha256',$customer.'|'.$key);if(!add_option($lock,time(),'',false))throw new Exception('Recovery busy');
+try{
+ $backup='/home/graphexpress/job-flow-qa-20261007/'.($qa?'qa-':'').'full-power-recovery-backup-20261008.json';
+ $before=['source'=>$legacy,'source_hash'=>$hash,'organization'=>GE_Organization::get(GE_Organization::PRIMARY),'mapping'=>$existing];
+ if(file_exists($backup)){ $saved=json_decode(file_get_contents($backup),true);if(($saved['source_hash']??'')!==$hash)throw new Exception('Backup source mismatch'); }
+ else {file_put_contents($backup,wp_json_encode($before));chmod($backup,0600);if(json_decode(file_get_contents($backup),true)['source_hash']!==$hash)throw new Exception('Backup invalid');}
+ $org=GE_Organization::get(GE_Organization::PRIMARY);
+ if(($org['settings']['general']['brand_name']??'')!=='GRAPHEX'){$r=GE_Organization::save(GE_Organization::PRIMARY,1,$org['revision'],'general',['brand_name'=>'GRAPHEX']);if(is_wp_error($r))throw new Exception($r->get_error_message());}
+ $org=GE_Organization::get(GE_Organization::PRIMARY);$footer=$org['settings']['documents']['footer']??'';
+ if(stripos($footer,'Graph Express')!==false){$r=GE_Organization::save(GE_Organization::PRIMARY,1,$org['revision'],'documents',['footer'=>str_ireplace('Graph Express','GRAPHEX',$footer)]);if(is_wp_error($r))throw new Exception($r->get_error_message());}
+ $issuer=GE_WTP_Billing_Issuers::get('mardones-a');$policy=get_option('ge_commercial_tax_policy',[]);if(!$issuer||empty($issuer['active'])||!in_array('A',$issuer['invoice_types_allowed'],true)||(int)($issuer['tax_rate_basis_points']?:($policy['tax_rate_basis_points']??0))!==2100)throw new Exception('Commercial A rate requires review');
+ $lines=[];foreach($legacy['options'] as $i=>$option){$cents=GE_WTP_Quote_Balance::cents((string)$option['total']);$qty=(int)$option['quantity'];if($qty!==8||$cents%$qty!==0)throw new Exception('Quantity or price requires review');$lines[]=['source_type'=>'custom','name'=>$option['title'],'quantity'=>$qty,'unit'=>'u','unit_net'=>GE_WTP_Quote_Balance::decimal(intdiv($cents,$qty)),'details'=>$option['details'],'selection_type'=>'alternative','selection_group'=>'full-power-impression','selection_recommended'=>false];}
+ $args=['billing_profile_id'=>'default','issuer_profile_id'=>'mardones-a','issuer_change_reason'=>'Leo confirmó factura A para recuperar FP-EXH-20260929','quote_vat_mode'=>'added','valid_until'=>'','discount_value'=>'0','deposit_enabled'=>false,'payment_terms'=>'','commercial_terms'=>'','delivery_terms'=>'','notes_customer'=>$legacy['details'],'notes_internal'=>'Recuperado de FP-EXH-20260929 del '.$legacy['captured_at'].'. El original no registra vigencia, seña, archivos ni condición fiscal del receptor.','source'=>'legacy-recovery'];
+ $q=GE_WTP_Commercial_Quotes::create_draft($customer,$lines,$args,1);if(is_wp_error($q))throw new Exception($q->get_error_code().': '.$q->get_error_message());
+ update_post_meta($q['id'],'_ge_legacy_source_hash',$hash);update_post_meta($q['id'],'_ge_legacy_source',['customer_id'=>$customer,'key'=>$key,'reference'=>$legacy['reference'],'captured_at'=>$legacy['captured_at']]);
+ GE_WTP_Commercial_Quotes::record_event($q['id'],'legacy_recovered',1,['source_key'=>$key,'source_hash'=>$hash,'source_reference'=>$legacy['reference'],'source_date'=>$legacy['captured_at'],'original_preserved'=>true]);
+ update_user_meta($customer,$mapping,$q['id']);wp_update_post(['ID'=>$q['id'],'post_title'=>$legacy['title']]);
+ if(!$qa&&hash('sha256',wp_json_encode(get_user_meta($customer,$key,true)))!==$hash)throw new Exception('Original changed');
+ $pdf=GE_WTP_Commercial_Quote_PDF::build($q);if(is_wp_error($pdf))throw new Exception($pdf->get_error_message());$pdfpath=dirname($root).'/'.($qa?'qa-':'').'full-power-recovered.pdf';file_put_contents($pdfpath,$pdf);chmod($pdfpath,0600);
+ echo wp_json_encode(['id'=>$q['id'],'number'=>$q['number'],'version'=>$q['version'],'status'=>$q['status'],'url'=>GE_WTP_Staff_Portal::portal_url('quotes',['quote_id'=>$q['id']]),'source_hash'=>$hash,'alternatives'=>array_map(function($item){return ['name'=>$item['name'],'quantity'=>$item['quantity'],'net_cents'=>$item['net_cents'],'tax_cents'=>$item['tax_cents'],'total_cents'=>$item['total_cents']];},$q['snapshot']['items']),'brand'=>$q['snapshot']['organization_snapshot']['general']['brand_name'],'pdf_sha256'=>hash('sha256',$pdf),'backup'=>$backup,'pending'=>['Datos fiscales del receptor pendientes antes de facturar','Vigencia y condiciones de pago no registradas en el original']],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
+}finally{delete_option($lock);}

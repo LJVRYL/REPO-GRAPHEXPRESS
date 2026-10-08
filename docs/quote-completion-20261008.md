@@ -1,0 +1,13 @@
+# Completar presupuestos y recuperar registros anteriores
+
+La selección explícita de receptor y emisor permite guardar y completar la propuesta sin una confirmación fiscal oculta. Completar un borrador anterior crea una versión nueva. Cambiar las partes desde el control de facturación recalcula únicamente los importes comerciales usando precios, descuentos y condiciones registrados; conserva las versiones anteriores, permisos, bloqueo fiscal verificado y motivo de los cambios.
+
+Un emisor configurado exclusivamente para C produce una propuesta con IVA cero. Para A se usa la tasa del perfil o, si la configuración fiscal sigue pendiente, la política comercial registrada. Esa decisión se guarda separada como `commercial_document_type`; no modifica la condición fiscal, certificados, políticas ni tasa fiscal del emisor. Los controles fiscales para facturar o generar operaciones financieras siguen vigentes. Los precios finales históricos se restauran desde sus importes originales antes de resolver una selección explícita para evitar extraer IVA dos veces.
+
+El PDF informa campos concretos por completar. El personal puede descargar el comparativo completo de alternativas; el cliente conserva el requisito de elegir una configuración para descargar su selección. Descargar nunca publica, aprueba, envía correo, factura ni inicia producción.
+
+La recuperación puntual de Full Power usa la ficha y clave originales, respalda y conserva la fuente, crea un borrador con alternativas y registra procedencia/hash/fecha/referencia en auditoría. El vínculo `_ge_commercial_legacy_` seguido del SHA-256 de la clave permite que el enlace anterior abra el presupuesto comercial, comprobando organización, permisos y cliente. No se toman claves arbitrarias fuera del prefijo conocido. No se inventan archivos, vigencia, seña o datos fiscales ausentes. Factura A fue elegida explícitamente por Leo; se conservan los importes netos originales.
+
+La marca visible proviene de la configuración de la organización. Su actualización usa la API auditada de configuración. Un PDF ya publicado conserva la marca congelada hasta una revisión explícita de marca: esa revisión agrega una versión, preserva identidad legal, importes, estado e historia y no envía avisos. No se sustituyen documentos aceptados o vinculados a pagos/pedidos.
+
+Validación: `tests/quote-completion-wp.php` usa datos ficticios y una base aislada, con correo interceptado. Incluye completar/reabrir, selección fiscal explícita, C con receptor RI y condición fiscal pendiente, A con política comercial, descuentos, seña, permisos, versiones, precio final histórico, campos faltantes y exportación sin efectos secundarios. Las suites de publicación, aprobación, portal y flujo integral complementan esa cobertura.
