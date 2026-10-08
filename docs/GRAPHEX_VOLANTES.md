@@ -42,3 +42,7 @@ Modos del script: `backup`, `deploy`, `verify`, `rollback`, seguidos de ruta del
 Diferencias previas explicadas: el analizador tiene CRLF en Git/producción (se conservan); la vista previa de producción estaba una corrección por detrás de master en el control de huella del archivo. Se despliega la corrección ya canónica junto con el selector configurable.
 
 Pruebas: `tests/volantes-20261008.php`, 3.545 comprobaciones de precios, IVA, opciones, corte temporal, cantidades, contratos, preflight e historial; PHP 7.4 y 8.3. `tests/production-closure.php` mantiene el contrato comercial. QA de navegador: opciones dependientes, manual bloqueado, prompt/copia, PDF frente/dorso y archivo inválido sin miniatura anterior, móvil sin desborde. No se generan órdenes ni se envían correos de prueba.
+
+## Ajuste de composición solicitado el 08/10/2026
+
+Título, descripción y guía de offset se renderizan antes del bloque de imagen y compra, sólo en Volantes Full Color. Las columnas usan el mismo ancho y comienzan a la misma altura; en móvil se apilan. Se usan los callbacks existentes de WooCommerce y Knowledge Base, retirándolos de la columna de compra para evitar duplicados. El ajuste no escribe metadatos ni cambia configuraciones, precios, archivos o pedidos.
