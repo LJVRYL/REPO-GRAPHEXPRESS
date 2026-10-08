@@ -123,6 +123,7 @@ final class GE_WTP_File_Analysis {
                 $product = $item && method_exists( $item, 'get_product' ) ? $item->get_product() : false;
                 $context = self::product_context( $product );
                 if ( $item && preg_match( '/^([0-9]+(?:[.,][0-9]+)?)\s*[×x]\s*([0-9]+(?:[.,][0-9]+)?)\s*cm$/u', trim( (string) $item->get_meta( 'Configuración', true ) ), $m ) ) { $context['target_dimensions_mm'] = array( (float) str_replace( ',', '.', $m[1] ) * 10, (float) str_replace( ',', '.', $m[2] ) * 10 ); }
+                $context = apply_filters( 'ge_wtp_file_analysis_item_context', $context, $item, $product );
                 $preflight = self::run_preflight( $ref, $context );
                 if ( ! is_wp_error( $preflight ) ) { $updated[$i]['preflight_ref'] = $preflight['preflight_id']; }
             }
@@ -245,7 +246,7 @@ final class GE_WTP_File_Analysis {
         foreach ( (array) ( $facts['unverified'] ?? array() ) as $code ) { $checks[] = array( 'code' => $code, 'status' => 'UNVERIFIED' ); }
         $states = array_column( $checks, 'status' ); $state = 'PASS';
         foreach ( array( 'BLOCKER', 'WARNING', 'UNVERIFIED' ) as $s ) { if ( in_array( $s, $states, true ) ) { $state = $s; break; } }
-        return array( 'schema_version' => 1, 'status' => $state, 'context_hash' => hash( 'sha256', wp_json_encode( $context ) ), 'checks' => $checks, 'evaluated_at' => gmdate( 'c' ) );
+        return apply_filters( 'ge_wtp_file_preflight_result', array( 'schema_version' => 1, 'status' => $state, 'context_hash' => hash( 'sha256', wp_json_encode( $context ) ), 'checks' => $checks, 'evaluated_at' => gmdate( 'c' ) ), $facts, $context );
     }
 
     private static function associate( $ref, $id, $key ) {

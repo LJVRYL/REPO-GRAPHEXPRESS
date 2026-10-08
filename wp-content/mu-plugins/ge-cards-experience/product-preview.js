@@ -1,6 +1,6 @@
 (() => {
   const scriptUrl = document.currentScript.src;
-  const product = document.querySelector('#product-78, #product-83');
+  const product = document.querySelector(window.geCardsProduct?.productSelector || '#product-78, #product-83');
   const form = product?.querySelector('form[data-ge-digital-calculator], form[data-ge-storefront]');
   if (form && window.geCardsProduct) {
     const key = `ge-cards-selection:${geCardsProduct.selectionScope}:${geCardsProduct.productId}`;

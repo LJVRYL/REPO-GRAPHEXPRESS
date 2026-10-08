@@ -334,7 +334,8 @@ final class GE_WTP_Production {
         $supplier_keys = array_values( array_unique( wp_list_pluck( $assignments, 'supplier' ) ) );
         $supplier = 1 === count( $supplier_keys ) ? $supplier_keys[0] : 'multiple';
         $dates = array_filter( wp_list_pluck( $assignments, 'date' ) ); sort( $dates );
-        $date = $dates ? end( $dates ) : self::business_date( $created, 5 );
+        $requires_confirmation = array_filter( $assignments, function( $assignment ) { return ! empty( $assignment['requires_confirmation'] ); } );
+        $date = $requires_confirmation ? '' : ( $dates ? end( $dates ) : self::business_date( $created, 5 ) );
         $order->update_meta_data( '_ge_production_supplier', $supplier );
         $order->update_meta_data( '_ge_production_promised_date', $date );
         $order->update_meta_data( '_ge_estimated_date', $order->get_meta( '_ge_estimated_date' ) ?: $date );
@@ -350,6 +351,8 @@ final class GE_WTP_Production {
 
     private static function assignment_for_item( $item, $created ) {
         if(class_exists('GE_Organization_Runtime') && GE_Organization::PRIMARY!=='graph-express')return array('supplier'=>'pending','date'=>self::business_date($created,5),'reason'=>'Asigná un proveedor propio o producción interna.');
+        $product_assignment = apply_filters( 'ge_wtp_production_item_assignment', null, $item, $created );
+        if ( is_array( $product_assignment ) ) { return $product_assignment; }
         $product_id = $item->get_product_id();
         $source = $product_id ? strtolower( (string) get_post_meta( $product_id, '_ge_supplier_source', true ) ) : '';
         $catalog_key = $product_id ? strtolower( (string) get_post_meta( $product_id, '_ge_public_catalog_key', true ) ) : '';
@@ -525,6 +528,7 @@ final class GE_WTP_Production {
         ?>
         <a class="ge-admin-back" href="<?php echo esc_url( GE_WTP_Staff_Portal::portal_url( 'production' ) ); ?>">← Volver a producción</a>
         <?php self::render_notice(); ?>
+        <?php do_action( 'ge_wtp_production_product_calendar', $order ); ?>
         <?php if ( class_exists( 'GE_WTP_Manual_Orders' ) ) { GE_WTP_Manual_Orders::render_order_contact( $order ); } ?>
         <div class="ge-production-hero"><div><span>Orden de trabajo</span><h1><?php echo esc_html( $reference ); ?></h1><p><?php echo esc_html( $order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_billing_email() ); ?></p></div><b class="is-<?php echo esc_attr( $alert['key'] ); ?>"><?php echo esc_html( $alert['label'] ); ?></b></div>
         <?php if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::can_adopt( $order ) ) : ?><section class="ge-production-card"><h2>Nuevo circuito de revisión</h2><p>Este pedido manual puede pasar a revisión, preproducción opcional y aprobación final del cliente antes de producirse. Se conservan los archivos y datos ya cargados.</p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_workflow_adopt"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_workflow_adopt_' . $order->get_id() ); ?><button class="ge-staff-button" type="submit">Pasar este pedido al nuevo circuito</button></form></section><?php endif; ?>

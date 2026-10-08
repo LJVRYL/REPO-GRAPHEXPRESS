@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "product": "volantes-full-color",
+  "authority": "Leo, explicit specification 2026-10-08",
+  "final_color": "CMYK",
+  "raster_dpi_at_final_size": 300,
+  "bleed_mm_per_side": 5,
+  "safe_mm_inside_cut_per_side": 5,
+  "minimum_font_pt": 6,
+  "font_stroke": "medium or thick; avoid ultralight/light",
+  "faces": "one PDF page for front; two ordered pages for front and back",
+  "cut_marks": "not inside artwork; only if prepress requests",
+  "not_automatically_verified": [
+    "font minimum point size",
+    "font stroke weight",
+    "background bleed extension",
+    "CMYK conversion fidelity"
+  ],
+  "supplier_template_conflict": "Druck written general guide5mm, product template numeric settings2.5mm; receive Graphex5mm and resolve supplier export in prepress",
+  "source": "https://www.tienda.graficadruck.com.ar/consejos.html",
+  "template_contract": "product, final_mm, orientation, faces, bleed_mm, safe_mm, font_min_pt, color_mode, raster_dpi; activate only on configured products"
+}
