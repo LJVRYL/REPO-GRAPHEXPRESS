@@ -498,10 +498,16 @@ final class GE_WTP_Storefront {
         if (!$config || empty($config['options'])) {
             return 0;
         }
+        $priced_options = array_filter($config['options'], function ($option) {
+            return empty($option['manual_quote']);
+        });
+        if (!$priced_options) {
+            return 0;
+        }
         return min(array_map(function ($option) {
             $quantity = !empty($option['fixed_qty']) ? max(1, (int) $option['fixed_qty']) : 1;
             return (float) $option['price'] * $quantity;
-        }, $config['options']));
+        }, $priced_options));
     }
 
     private static function supplier_config($costs, $unit) {

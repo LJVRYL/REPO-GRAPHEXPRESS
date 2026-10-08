@@ -161,20 +161,7 @@ final class GE_WTP_Mardones_Catalog {
                 array('Dorso: 50% adicional.', 'Papel de color: 100% adicional.', 'Impresión en magenta, azul o rojo: 15% de recargo.', 'No incluye diseño.', 'Valores + IVA 21%.'),
                 11700
             ),
-            'volantes-full-color' => self::item(
-                'IO-VOL-002',
-                'Volantes full color',
-                'imprenta-offset',
-                'volantes',
-                'Volantes a todo color frente y dorso para campañas, promociones y comunicación institucional.',
-                array('Medidas' => array('10 × 15 cm', '20 × 15 cm', '30 × 15 cm', '20 × 30 cm'), 'Cantidades' => array('1.000', '5.000'), 'Papel' => array('Ilustración 115 g'), 'Impresión' => array('Frente y dorso full color')),
-                array(self::section('Volantes full color', array('Medida', '1.000', '5.000'), array(
-                    array('10 × 15 cm', '$ 38.870', '$ 103.870'), array('20 × 15 cm', '$ 77.740', '$ 207.740'),
-                    array('30 × 15 cm', '$ 116.610', '$ 311.610'), array('20 × 30 cm', '$ 155.480', '$ 415.480'),
-                ))),
-                array('Demora estimada: 5 a 10 días.', 'Valores + IVA 21%.'),
-                38870
-            ),
+            'volantes-full-color' => GE_Volantes::catalog_product(),
             'imanes-publicitarios' => self::item(
                 'ME-IMA-001',
                 'Imanes publicitarios',
@@ -451,10 +438,7 @@ final class GE_WTP_Mardones_Catalog {
     }
 
     private static function color_flyers_storefront_config() {
-        $fields = array('formato' => array('label' => 'Formato', 'options' => array('10x15' => '10 × 15 cm', '20x15' => '20 × 15 cm', '30x15' => '30 × 15 cm', '20x30' => '20 × 30 cm')), 'cantidad' => array('label' => 'Cantidad', 'options' => array('1000' => '1.000', '5000' => '5.000')));
-        $prices = array('10x15' => array(1000 => 38870, 5000 => 103870), '20x15' => array(1000 => 77740, 5000 => 207740), '30x15' => array(1000 => 116610, 5000 => 311610), '20x30' => array(1000 => 155480, 5000 => 415480));
-        $entries = array(); foreach ($prices as $format => $quantities) { foreach ($quantities as $quantity => $total) { $entries[] = array('values' => array('formato' => $format, 'cantidad' => (string) $quantity), 'quantity' => $quantity, 'total' => $total); } }
-        return self::fixed_config($fields, $entries);
+        return GE_Volantes::config();
     }
 
     private static function magnets_storefront_config() {
