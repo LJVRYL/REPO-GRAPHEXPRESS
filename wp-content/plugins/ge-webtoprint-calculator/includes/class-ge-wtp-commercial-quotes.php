@@ -643,7 +643,7 @@ final class GE_WTP_Commercial_Quotes {
             foreach ( array( 'reviewed_by', 'reviewed_at', 'override_reason' ) as $key ) { $snapshot['customer_tax_decision'][$key] = $snapshot['issuer_suggestion'][$key] ?? ''; }
         }
         $snapshot['issuer_fiscal_snapshot'] = GE_WTP_Billing_Issuers::entity( $snapshot['issuer_snapshot'] );
-        // Commercial C amounts do not depend on certificate availability or an
+        // Commercial document amounts do not depend on certificate availability or an
         // unverified fiscal condition. The explicitly configured document is authoritative.
         $documents = array_values( (array) ( $snapshot['issuer_snapshot']['invoice_types_allowed'] ?? array() ) );
         if ( in_array( $documents, array( array( 'C' ), array( 'A' ) ), true ) && ! empty( $snapshot['items'] ) && empty( $snapshot['draft_lines'] ) && ! empty( $snapshot['billing_profile_id'] ) ) {

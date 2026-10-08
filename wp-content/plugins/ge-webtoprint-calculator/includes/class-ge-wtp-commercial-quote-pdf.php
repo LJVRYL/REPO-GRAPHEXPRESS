@@ -60,8 +60,8 @@ final class GE_WTP_Commercial_Quote_PDF {
 
     public static function build( $quote ) {
         $s = $quote['snapshot'] ?? array();
-        if ( ! isset( $s['total_cents'], $s['net_cents'] ) || empty( $s['items'] ) ) {
-            return new WP_Error( 'ge_pdf_snapshot', empty( $s['items'] ) ? 'Agregá los productos y sus precios, guardá el presupuesto y volvé a descargar el PDF.' : 'Seleccioná receptor y emisor en Emisor / facturación y guardá el presupuesto para completar el total y descargar el PDF.' );
+        if ( ! isset( $s['total_cents'], $s['net_cents'], $s['tax_cents'] ) || empty( $s['items'] ) || ! empty( $s['draft_lines'] ) ) {
+            return new WP_Error( 'ge_pdf_snapshot', empty( $s['items'] ) || ! empty( $s['draft_lines'] ) ? 'Completá los productos, cantidades y precios, guardá el presupuesto y volvé a descargar el PDF.' : 'Seleccioná receptor y emisor en Emisor / facturación y guardá el presupuesto para completar el total y descargar el PDF.' );
         }
         $pdf = new GE_WTP_Simple_PDF();
         $organization=$s['organization_snapshot']??array();
