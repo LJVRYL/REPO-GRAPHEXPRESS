@@ -139,7 +139,8 @@ final class GE_WTP_Billing_Issuers {
         $id = $requested ?: $suggestion['issuer_profile_id'];
         if ( $old || $id !== $suggestion['issuer_profile_id'] ) {
             if ( ! self::can_manage( $actor ) ) { return new WP_Error( 'ge_issuer_forbidden', 'Sólo un rol autorizado puede cambiar o reemplazar el emisor.' ); }
-            if ( empty( trim( $args['issuer_change_reason'] ?? '' ) ) ) { return new WP_Error( 'ge_issuer_reason', 'Indicá el motivo del cambio de emisor.' ); }
+            if ( $old && empty( trim( $args['issuer_change_reason'] ?? '' ) ) ) { return new WP_Error( 'ge_issuer_reason', 'Indicá el motivo del cambio de emisor.' ); }
+            if ( ! $old && empty( trim( $args['issuer_change_reason'] ?? '' ) ) ) { $args['issuer_change_reason'] = 'Selección explícita del emisor al crear el presupuesto'; }
         }
         $p = self::get( $id );
         if ( ! $p || empty( $p['active'] ) ) { return new WP_Error( 'ge_issuer_missing', 'Seleccioná un emisor activo.' ); }

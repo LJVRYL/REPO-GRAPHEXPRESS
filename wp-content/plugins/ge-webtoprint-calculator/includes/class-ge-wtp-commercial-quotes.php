@@ -645,13 +645,29 @@ final class GE_WTP_Commercial_Quotes {
         $snapshot['issuer_fiscal_snapshot'] = GE_WTP_Billing_Issuers::entity( $snapshot['issuer_snapshot'] );
         // Commercial C amounts do not depend on certificate availability or an
         // unverified fiscal condition. The explicitly configured document is authoritative.
-        if ( array( 'C' ) === array_values( (array) ( $snapshot['issuer_snapshot']['invoice_types_allowed'] ?? array() ) ) && ! empty( $snapshot['items'] ) && empty( $snapshot['draft_lines'] ) && ! empty( $snapshot['billing_profile_id'] ) ) {
-            $snapshot['commercial_document_type'] = 'C';
-            $snapshot['tax_rates'] = array( 0 );
-            $snapshot['tax_cents'] = 0;
-            $snapshot['total_cents'] = (int) $snapshot['net_cents'];
-            $snapshot['commercial_tax_policy'] = array( 'mode' => 'added', 'tax_rate_basis_points' => 0 );
-            $snapshot['quote_vat_mode'] = 'added';
+        $documents = array_values( (array) ( $snapshot['issuer_snapshot']['invoice_types_allowed'] ?? array() ) );
+        if ( in_array( $documents, array( array( 'C' ), array( 'A' ) ), true ) && ! empty( $snapshot['items'] ) && empty( $snapshot['draft_lines'] ) && ! empty( $snapshot['billing_profile_id'] ) ) {
+            $document = $documents[0];
+            $policy = $snapshot['commercial_tax_policy'] ?? array();
+            $current_policy = get_option( 'ge_commercial_tax_policy', array() );
+            $rate = 'C' === $document ? 0 : (int) ( $snapshot['issuer_fiscal_snapshot']['tax_rate_basis_points'] ?: ( ( $policy['tax_rate_basis_points'] ?? 0 ) ?: ( $current_policy['tax_rate_basis_points'] ?? 0 ) ) );
+            if ( 'A' === $document && ( $rate <= 0 || $rate > 10000 ) ) {
+                unset( $snapshot['total_cents'], $snapshot['tax_cents'] );
+                $snapshot['fiscal_status'] = 'pending';
+                $snapshot['fiscal_blockers'] = array( 'commercial_tax_rate_required' );
+                return $snapshot;
+            }
+            $mode = 'final' === ( $snapshot['quote_vat_mode'] ?? '' ) ? 'final' : 'added';
+            $net = (int) $snapshot['net_cents'];
+            $base = 'final' === $mode ? intdiv( $net * 10000 + intdiv( 10000 + $rate, 2 ), 10000 + $rate ) : $net;
+            $tax = 'final' === $mode ? $net - $base : intdiv( $base * $rate + 5000, 10000 );
+            if ( 'final' === $mode ) { self::extract_final_net( $snapshot, array( 'subtotal_cents' => $base ), $rate ); }
+            $snapshot['commercial_document_type'] = $document;
+            $snapshot['tax_rates'] = array( $rate );
+            $snapshot['tax_cents'] = $tax;
+            $snapshot['total_cents'] = $base + $tax;
+            $snapshot['commercial_tax_policy'] = array( 'mode' => $mode, 'tax_rate_basis_points' => $rate );
+            $snapshot['quote_vat_mode'] = $mode;
             unset( $snapshot['draft_incomplete'] );
             $snapshot['billing'] = null;
             $snapshot['fiscal_status'] = 'pending';
