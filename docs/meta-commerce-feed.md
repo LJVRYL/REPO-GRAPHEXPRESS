@@ -6,7 +6,7 @@ The MU plugin reads visible, published WooCommerce products on each fetch. SKU i
 
 WebP attachments receive separate JPEG derivatives under uploads/graphex-meta, keyed by source hash. Originals are preserved. No customers, orders, private originals, costs or margins are exported. Feed GET does not create carts, quotes, orders or payments. JPEG derivatives are the only generated files.
 
-Meta scheduled fetch: daily, ARS. The selected WhatsApp catalog must be 1125151343414484, owned by Graphex 1811159106704793. Page connection alone does not prove catalog connection.
+Meta scheduled fetch: hourly, ARS. The selected WhatsApp catalog must be 1125151343414484, owned by Graphex 1811159106704793. Page connection alone does not prove catalog connection.
 
 Validation: `php tests/meta-commerce-feed.php`; preview against live catalog and validate CSV fields, positive ARS prices, IDs, image formats and exclusions. Deploy only wp-content/mu-plugins/ge-meta-commerce-feed.php from the canonical commit.
 
