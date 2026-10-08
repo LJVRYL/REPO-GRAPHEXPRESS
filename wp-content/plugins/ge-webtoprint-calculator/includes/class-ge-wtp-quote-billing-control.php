@@ -84,6 +84,24 @@ final class GE_WTP_Quote_Billing_Control {
         $s['billing'] = null; $s['fiscal_status'] = 'pending'; $s['fiscal_blockers'] = array( 'billing_identity_changed_requires_reconciliation' );
         $resolution = GE_WTP_Billing::resolve_net_quote( $s['issuer_fiscal_snapshot'], $p, (int) ( $s['net_cents'] ?? 0 ) );
         if ( empty( $resolution['blockers'] ) && (int) $resolution['total_cents'] === (int) ( $s['total_cents'] ?? -1 ) && (int) $resolution['tax_cents'] === (int) ( $s['tax_cents'] ?? -1 ) ) { $s['billing'] = GE_WTP_Billing::snapshot( $s['issuer_fiscal_snapshot'], $p, $resolution ); $s['fiscal_status'] = 'resolved'; unset( $s['fiscal_blockers'] ); }
+        if ( ! empty( $s['items'] ) && empty( $s['draft_lines'] ) ) {
+            // Legacy final prices are entered gross amounts. Restore those inputs
+            // before resolving a new explicit party selection, never extract VAT twice.
+            if ( 'final' === ( $s['quote_vat_mode'] ?? '' ) && isset( $s['entered_subtotal_cents'] ) ) {
+                $s['subtotal_cents'] = $s['entered_subtotal_cents'];
+                $s['discount_cents'] = $s['entered_discount_cents'] ?? 0;
+                $s['net_cents'] = $s['subtotal_cents'] - $s['discount_cents'];
+                foreach ( $s['items'] as &$item ) {
+                    $item['unit_net_cents'] = $item['entered_unit_cents'] ?? $item['unit_net_cents'];
+                    $item['net_cents'] = $item['entered_line_cents'] ?? $item['net_cents'];
+                    $item['discount_cents'] = $item['entered_discount_cents'] ?? 0;
+                    $item['taxable_base_cents'] = $item['final_line_cents'] ?? $item['net_cents'];
+                }
+                unset( $item );
+            }
+            unset( $s['draft_incomplete'] );
+            $s = GE_WTP_Commercial_Quotes::preview_billing( $q['customer_id'], $s );
+        }
         $s = self::capture( $s, $actor, $reason );
         $s['billing_resolution']['override'] = ! empty( $args['billing_override'] ); unset( $s['snapshot_hash'] ); $s['snapshot_hash'] = self::hash( $s );
         $versions = get_post_meta( $id, GE_WTP_Commercial_Quotes::VERSIONS_META, true );

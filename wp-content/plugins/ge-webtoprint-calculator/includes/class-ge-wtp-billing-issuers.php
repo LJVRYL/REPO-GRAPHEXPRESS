@@ -131,7 +131,7 @@ final class GE_WTP_Billing_Issuers {
         if ( $old && ( ! $requested || $requested === $old['id'] ) && empty( $args['issuer_refresh'] ) ) {
             $prior_profile = $previous['customer_billing_profile'] ?? $previous['billing']['profile'] ?? null;
             $changed_profile = null !== $prior_profile && $prior_profile !== $profile;
-            if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && $require_review && $changed_profile && empty( $args['customer_tax_confirm'] ) ) { return new WP_Error( 'ge_tax_review', 'El perfil fiscal cambió. Confirmá la revisión del comprobante previsto.' ); }
+            if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && $require_review && $changed_profile && ! $requested && empty( $args['customer_tax_confirm'] ) ) { return new WP_Error( 'ge_tax_review', 'Seleccioná el emisor para el receptor elegido.' ); }
             $review = $previous['issuer_suggestion'] ?? $suggestion;
             if ( $changed_profile || ! empty( $args['customer_tax_confirm'] ) ) { $review['reviewed_by'] = (int) $actor; $review['reviewed_at'] = gmdate( 'c' ); }
             return array( 'issuer' => $old, 'suggestion' => $review );
@@ -143,7 +143,7 @@ final class GE_WTP_Billing_Issuers {
         }
         $p = self::get( $id );
         if ( ! $p || empty( $p['active'] ) ) { return new WP_Error( 'ge_issuer_missing', 'Seleccioná un emisor activo.' ); }
-        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && $require_review && empty( $args['customer_tax_confirm'] ) ) { return new WP_Error( 'ge_tax_review', 'Confirmá la revisión del emisor y comprobante sugerido.' ); }
+        if ( GE_WTP_Customer_Tax_UI::stage() >= 3 && $require_review && ! $requested && empty( $args['customer_tax_confirm'] ) ) { return new WP_Error( 'ge_tax_review', 'Seleccioná el emisor en Emisor / facturación.' ); }
         $suggestion['reviewed_by'] = (int) $actor; $suggestion['reviewed_at'] = gmdate( 'c' );
         $suggestion['override_reason'] = sanitize_textarea_field( $args['issuer_change_reason'] ?? '' );
         $suggestion['selected_issuer_id'] = $p['id'];

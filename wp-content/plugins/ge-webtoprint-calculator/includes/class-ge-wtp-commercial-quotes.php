@@ -179,7 +179,7 @@ final class GE_WTP_Commercial_Quotes {
         $versions = get_post_meta( $quote_id, self::VERSIONS_META, true );
         if ( ! is_array( $versions ) ) { return new WP_Error( 'ge_quote_corrupt', 'Historial del presupuesto inválido.' ); }
         $was_sent = false; foreach ( (array) get_post_meta( $quote_id, '_ge_commercial_events', true ) as $event ) { if ( 'sent' === ( $event['event'] ?? $event['name'] ?? '' ) ) { $was_sent = true; } }
-        $version = $quote['status'] === 'draft' && ! $issuer_changed && ! $was_sent ? $quote['version'] : $quote['version'] + 1;
+        $version = $quote['status'] === 'draft' && ! $issuer_changed && ! $was_sent && empty( $quote['snapshot']['draft_incomplete'] ) ? $quote['version'] : $quote['version'] + 1;
         $versions[ $version ] = $snapshot;
         update_post_meta( $quote_id, self::VERSIONS_META, $versions );
         update_post_meta( $quote_id, self::CURRENT_META, $version );
@@ -581,7 +581,7 @@ final class GE_WTP_Commercial_Quotes {
     }
 
     private static function needs_draft_completion( $snapshot, $args, $previous = array() ) {
-        return empty( $snapshot['items'] ) || ! empty( $snapshot['draft_lines'] ) || empty( $snapshot['billing_profile_id'] ) || ( empty( $previous['issuer_snapshot'] ) && empty( $args['issuer_profile_id'] ) ) || ( empty( $previous ) && empty( $args['customer_tax_confirm'] ) ) || ( ! empty( $previous['draft_incomplete'] ) && empty( $args['customer_tax_confirm'] ) );
+        return empty( $snapshot['items'] ) || ! empty( $snapshot['draft_lines'] ) || empty( $snapshot['billing_profile_id'] ) || ( empty( $args['issuer_profile_id'] ) && ( empty( $previous['issuer_snapshot']['id'] ) || 'unknown' === $previous['issuer_snapshot']['id'] ) );
     }
 
     /** Store an explicitly unfinished proposal without inventing fiscal readiness. */
@@ -643,6 +643,24 @@ final class GE_WTP_Commercial_Quotes {
             foreach ( array( 'reviewed_by', 'reviewed_at', 'override_reason' ) as $key ) { $snapshot['customer_tax_decision'][$key] = $snapshot['issuer_suggestion'][$key] ?? ''; }
         }
         $snapshot['issuer_fiscal_snapshot'] = GE_WTP_Billing_Issuers::entity( $snapshot['issuer_snapshot'] );
+        // Commercial C amounts do not depend on certificate availability or an
+        // unverified fiscal condition. The explicitly configured document is authoritative.
+        if ( array( 'C' ) === array_values( (array) ( $snapshot['issuer_snapshot']['invoice_types_allowed'] ?? array() ) ) && ! empty( $snapshot['items'] ) && empty( $snapshot['draft_lines'] ) && ! empty( $snapshot['billing_profile_id'] ) ) {
+            $snapshot['commercial_document_type'] = 'C';
+            $snapshot['tax_rates'] = array( 0 );
+            $snapshot['tax_cents'] = 0;
+            $snapshot['total_cents'] = (int) $snapshot['net_cents'];
+            $snapshot['commercial_tax_policy'] = array( 'mode' => 'added', 'tax_rate_basis_points' => 0 );
+            $snapshot['quote_vat_mode'] = 'added';
+            unset( $snapshot['draft_incomplete'] );
+            $snapshot['billing'] = null;
+            $snapshot['fiscal_status'] = 'pending';
+            $snapshot['fiscal_blockers'] = array( 'fiscal_document_review_pending' );
+            self::allocate_tax( $snapshot );
+            unset( $snapshot['snapshot_hash'] );
+            $snapshot['snapshot_hash'] = hash( 'sha256', wp_json_encode( $snapshot ) );
+            return $snapshot;
+        }
         if ( empty( $snapshot['quote_vat_mode'] ) && in_array( $snapshot['issuer_fiscal_snapshot']['vat_status'] ?? '', array( 'monotributo', 'exempt' ), true ) ) { $snapshot['quote_vat_mode'] = 'final'; }
         $resolved = self::resolve_billing( $customer_id, $snapshot );
         $policy = $snapshot['commercial_tax_policy'] ?? array();

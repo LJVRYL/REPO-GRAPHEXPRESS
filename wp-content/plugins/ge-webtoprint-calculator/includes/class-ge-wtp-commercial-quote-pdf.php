@@ -27,7 +27,7 @@ final class GE_WTP_Commercial_Quote_PDF {
         if ( GE_WTP_Quote_Selection::has_choices( $quote['snapshot'] ) && empty( $quote['snapshot']['customer_selection'] ) ) {
             $quote = GE_WTP_Quote_Selection::preview_request( $quote );
             if ( is_wp_error( $quote ) ) { wp_die( esc_html( $quote->get_error_message() ), '', array( 'response' => 409 ) ); }
-            if ( empty( $quote['snapshot']['customer_selection'] ) ) { wp_die( 'Elegí una configuración antes de descargar el PDF.', '', array( 'response' => 409 ) ); }
+            if ( ! $staff && empty( $quote['snapshot']['customer_selection'] ) ) { wp_die( 'Elegí una configuración antes de descargar el PDF.', '', array( 'response' => 409 ) ); }
         }
         $pdf = self::build( $quote );
         if ( is_wp_error( $pdf ) ) { wp_die( esc_html( $pdf->get_error_message() ), '', array( 'response' => 409 ) ); }
@@ -61,7 +61,7 @@ final class GE_WTP_Commercial_Quote_PDF {
     public static function build( $quote ) {
         $s = $quote['snapshot'] ?? array();
         if ( ! isset( $s['total_cents'], $s['net_cents'] ) || empty( $s['items'] ) ) {
-            return new WP_Error( 'ge_pdf_snapshot', 'El presupuesto necesita un snapshot comercial completo antes de emitir el PDF.' );
+            return new WP_Error( 'ge_pdf_snapshot', empty( $s['items'] ) ? 'Agregá los productos y sus precios, guardá el presupuesto y volvé a descargar el PDF.' : 'Seleccioná receptor y emisor en Emisor / facturación y guardá el presupuesto para completar el total y descargar el PDF.' );
         }
         $pdf = new GE_WTP_Simple_PDF();
         $organization=$s['organization_snapshot']??array();

@@ -23,6 +23,13 @@ final class GE_WTP_Commercial_Quote_UI {
         $quote_id = absint( $_GET['quote_id'] ?? 0 );
         $quote = $quote_id ? GE_WTP_Commercial_Quotes::get( $quote_id, get_current_user_id() ) : null;
         $legacy = self::selected_legacy_quote();
+        if ( ! $quote && $legacy ) {
+            $mapped_id = absint( get_user_meta( $legacy['user_id'], '_ge_commercial_legacy_' . hash( 'sha256', $legacy['key'] ), true ) );
+            if ( $mapped_id ) {
+                $mapped = GE_WTP_Commercial_Quotes::get( $mapped_id, get_current_user_id() );
+                if ( ! is_wp_error( $mapped ) && (int) $mapped['customer_id'] === (int) $legacy['user_id'] ) { $quote = $mapped; $legacy = null; }
+            }
+        }
         $new = ! empty( $_GET['new'] );
         if ( is_wp_error( $quote ) ) { echo '<section class="ge-panel"><p>' . esc_html( $quote->get_error_message() ) . '</p></section>'; return; }
         $error = sanitize_key( wp_unslash( $_GET['quote_error'] ?? '' ) );
@@ -327,6 +334,9 @@ final class GE_WTP_Commercial_Quote_UI {
         $user_id = absint( $_GET['legacy_user'] ?? 0 );
         $key = sanitize_key( wp_unslash( $_GET['legacy_key'] ?? '' ) );
         if ( ! $user_id || 0 !== strpos( $key, GE_WTP_Customer_Quotes::PREFIX ) ) { return null; }
+        if ( class_exists( 'GE_Organization_Runtime' ) && ! GE_Organization_Runtime::allowed( 'quotes', false ) ) { return null; }
+        $organization = get_user_meta( $user_id, '_ge_organization_id', true );
+        if ( $organization && class_exists( 'GE_Organization' ) && $organization !== GE_Organization::PRIMARY ) { return null; }
         $quote = get_user_meta( $user_id, $key, true );
         if ( ! is_array( $quote ) ) { return null; }
         $quote['user_id'] = $user_id;
