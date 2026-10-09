@@ -58,6 +58,7 @@ final class GE_WTP_Workflow {
 
     public static function enable( $order ) {
         if ( ! $order instanceof WC_Order || self::enabled( $order ) ) { return; }
+        GE_WTP_Payment_Policy::freeze( $order );
         $order->update_meta_data( self::VERSION_META, '1' );
         $order->update_meta_data( self::STAGE_META, 'review' );
         foreach ( $order->get_items( 'line_item' ) as $item ) {

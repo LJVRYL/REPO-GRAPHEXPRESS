@@ -49,7 +49,10 @@ ck((int)$order->get_meta('_ge_commercial_quote_version',true)===$quote['version'
 ck($order->get_customer_id()===$customer,'Customer retained without reentry');
 ck($order->get_meta('_ge_commercial_quote_snapshot',true)['items'][0]['line_uuid']===$uuid,'Order snapshot preserves line identity');
 ck(GE_WTP_Order_Lifecycle::stage($order)==='recibido','Acceptance/payment never auto-release production');
-good(GE_WTP_Job_Flow::commercial_check($order),'Current commercial conditions valid');
+ck(is_wp_error(GE_WTP_Job_Flow::commercial_check($order)),'Unpaid accepted order blocks production');
+$total=(int)$order->get_meta('_ge_final_total_cents',true);$deposit=GE_WTP_Quote_Balance::deposit($total,5000)['deposit_cents'];
+$order->update_meta_data('_ge_commercial_credited_attempts',[['key'=>'wc:payment:isolated-qa','amount_cents'=>$deposit]]);$order->update_meta_data('_ge_amount_paid_cents',$deposit);$order->update_meta_data('_ge_amount_due_cents',$total-$deposit);$order->save();
+good(GE_WTP_Job_Flow::commercial_check($order),'Credited agreed deposit and commercial conditions valid');
 ck(GE_WTP_Job_Flow::context('orders',$order->get_id(),$other)===null,'Cross-customer order denied');
 $context=GE_WTP_Job_Flow::context('orders',$order->get_id(),1);ck($context['request']['id']===$request['id']&&$context['quote']['id']===$quote['id'],'Full chain reconstructed');
 GE_WTP_Workflow::enable($order);$order->update_meta_data('_ge_production_promised_date','2026-11-01');$order->save();

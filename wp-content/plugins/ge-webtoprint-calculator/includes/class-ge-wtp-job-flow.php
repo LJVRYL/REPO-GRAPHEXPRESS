@@ -132,9 +132,54 @@ final class GE_WTP_Job_Flow {
     }
 
     /** Existing commercial validation, evaluated against the preserved order version. */
+    /** Only credited money satisfies the production deposit or final-delivery balance. */
+    public static function payment_check( $order, $full = false ) {
+        if ( ! $order instanceof WC_Order || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { return new WP_Error( 'ge_job_inactive', 'El pedido no está activo.' ); }
+        try { $total = GE_WTP_Quote_Balance::cents( wc_format_decimal( $order->get_total(), 2 ) ); }
+        catch ( InvalidArgumentException $error ) { return new WP_Error( 'ge_job_payment', 'Revisá el importe del pedido y su conciliación.' ); }
+        if ( $total <= 0 ) { return new WP_Error( 'ge_job_payment', 'Revisá el importe del pedido antes de continuar.' ); }
+        $quote_id = absint( $order->get_meta( '_ge_commercial_quote_id', true ) );
+        $paid = 0;
+        if ( $quote_id ) {
+            if ( (int) $order->get_meta( '_ge_final_total_cents', true ) !== $total ) { return new WP_Error( 'ge_job_payment', 'El total cambió; conciliá el pedido antes de continuar.' ); }
+            $attempts = $order->get_meta( '_ge_commercial_credited_attempts', true );
+            try { $state = GE_WTP_Quote_Balance::reconcile( $total, is_array( $attempts ) ? $attempts : array() ); }
+            catch ( InvalidArgumentException | DomainException $error ) { return new WP_Error( 'ge_job_payment', 'Revisá los cobros acreditados; la conciliación no es válida.' ); }
+            $paid = $state['amount_paid_cents'];
+            if ( $paid !== (int) $order->get_meta( '_ge_amount_paid_cents', true ) ) { return new WP_Error( 'ge_job_payment', 'El registro de pagos requiere conciliación.' ); }
+        } elseif ( $order->get_meta( '_ge_payment_confirmed_by', true ) && $order->get_meta( '_ge_payment_confirmed_at', true ) && 'paid' === $order->get_meta( '_ge_payment_state', true ) ) {
+            try { $confirmed = GE_WTP_Quote_Balance::cents( (string) $order->get_meta( '_ge_payment_confirmed_total', true ) ); }
+            catch ( InvalidArgumentException $error ) { $confirmed = -1; }
+            if ( $confirmed === $total ) { $paid = $total; }
+        } elseif ( $order->is_paid() && $order->get_transaction_id() && $order->get_date_paid() ) { $paid = $total; }
+        $policy = GE_WTP_Payment_Policy::order( $order );
+        if ( is_wp_error( $policy ) ) { return $policy; }
+        if ( 'credit' === $policy['kind'] ) { return true; }
+        $required = $full ? $total : GE_WTP_Quote_Balance::deposit( $total, $policy['percent'] * 100 )['deposit_cents'];
+        if ( $paid < $required ) { return new WP_Error( 'ge_job_payment', $full ? 'Conciliá el saldo completo antes de confirmar la entrega.' : 'Acreditá el pago o la seña acordada antes de liberar producción.' ); }
+        return true;
+    }
+
+    public static function delivery_check( $order ) {
+        if ( ! $order instanceof WC_Order ) { return new WP_Error( 'ge_delivery_order', 'Pedido inválido.' ); }
+        if ( $order->get_meta( '_ge_delivery_confirmed_at', true ) && 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) ) { return true; }
+        $paid = self::payment_check( $order, true );
+        if ( is_wp_error( $paid ) ) { return $paid; }
+        if ( 'listo' !== GE_WTP_Order_Lifecycle::stage( $order ) && 'ready' !== $order->get_meta( '_ge_production_status', true ) ) { return new WP_Error( 'ge_delivery_not_ready', 'El trabajo debe estar listo para entrega antes de registrar la recepción.' ); }
+        $ready = 0;
+        foreach ( $order->get_items( 'line_item' ) as $item ) {
+            $status = GE_WTP_Production::item_status( $item, $order );
+            if ( 'cancelled' === $status ) { continue; }
+            if ( 'ready' !== $status ) { return new WP_Error( 'ge_delivery_items', 'Todavía hay productos pendientes de terminar.' ); }
+            $ready++;
+        }
+        return $ready ? true : new WP_Error( 'ge_delivery_items', 'No hay productos terminados para entregar.' );
+    }
+
     public static function commercial_check( $order ) {
         if ( in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { return new WP_Error( 'ge_job_inactive', 'El pedido no está activo. Revisá su estado comercial.' ); }
         $id = absint( $order->get_meta( '_ge_commercial_quote_id', true ) );
+        if ( $id || ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) ) { $payment = self::payment_check( $order ); if ( is_wp_error( $payment ) ) { return $payment; } }
         if ( ! $id ) { return true; }
         // Internal validation exposes no quote contents; production roles can validate an order they own.
         $quote = GE_WTP_Commercial_Quotes::get( $id );

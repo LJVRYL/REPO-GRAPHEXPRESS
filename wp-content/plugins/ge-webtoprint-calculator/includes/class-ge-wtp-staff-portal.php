@@ -422,6 +422,7 @@ final class GE_WTP_Staff_Portal {
         </aside><?php endif; ?></div>
         <?php GE_WTP_Delivery_Labels::label_form( $order ); ?>
         <?php GE_WTP_Customer_Branches::render_order_summary( $order, true ); ?>
+        <?php GE_WTP_Payment_Policy::render_order( $order ); ?>
         <?php GE_WTP_Payments::render_staff_order_payment( $order ); ?>
         <?php GE_WTP_Issued_Documents::render_staff( $order ); ?>
         <?php GE_WTP_Review_Requests::render_for_order( $order ); ?>

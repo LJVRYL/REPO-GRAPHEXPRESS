@@ -87,6 +87,13 @@ final class GE_WTP_Commercial_Quotes {
             return new WP_Error( 'ge_quote_customer', 'El cliente necesita una ficha con email válido.' );
         }
         $args['applied_by'] = $actor_id;
+        $customer_policy = GE_WTP_Payment_Policy::customer( $customer_id );
+        if ( 'deposit' !== $customer_policy['kind'] ) {
+            $args['payment_policy'] = $customer_policy;
+            $args['deposit_percent'] = $customer_policy['percent'] ?: 50;
+            $args['deposit_enabled'] = in_array( $customer_policy['kind'], array( 'deposit', 'custom' ), true );
+            $args['payment_terms'] = GE_WTP_Payment_Policy::label( $customer_policy );
+        }
         $args['allow_empty_draft'] = true;
         if ( empty( $args['billing_profile_id'] ) ) { $profiles = GE_WTP_Customer_Branches::profiles( $customer_id ); $args['billing_profile_id'] = count( $profiles ) === 1 ? $profiles[0]['id'] : ''; }
         if ( ! isset( $args['quote_vat_mode'] ) ) { $args['quote_vat_mode'] = ''; }
@@ -153,6 +160,12 @@ final class GE_WTP_Commercial_Quotes {
         $args['applied_by'] = $actor_id;
         $args['allow_empty_draft'] = true;
         if ( empty( $args['billing_profile_id'] ) ) { $args['billing_profile_id'] = $quote['snapshot']['billing_profile_id'] ?? ''; }
+        if ( isset( $quote['snapshot']['payment_policy'] ) ) {
+            $args['payment_policy'] = $quote['snapshot']['payment_policy'];
+            $args['deposit_percent'] = $args['payment_policy']['percent'] ?: 50;
+            $args['deposit_enabled'] = in_array( $args['payment_policy']['kind'], array( 'deposit', 'custom' ), true );
+            $args['payment_terms'] = GE_WTP_Payment_Policy::label( $args['payment_policy'] );
+        }
         $guard = GE_WTP_Quote_Billing_Control::guard( $quote['snapshot'], $args, $actor_id ); if ( is_wp_error( $guard ) ) { return $guard; }
         $snapshot = self::build_snapshot( $lines, $args );
         if ( is_wp_error( $snapshot ) ) { return $snapshot; }
@@ -559,6 +572,7 @@ final class GE_WTP_Commercial_Quotes {
             'currency' => $organization['general']['currency'] ?? 'ARS',
             'organization_snapshot' => $organization,
             'payment_terms' => sanitize_textarea_field($args['payment_terms'] ?? ''),
+            'payment_policy' => $args['payment_policy'] ?? null,
             'commercial_terms' => $organization['documents']['terms'] ?? '',
             'subtotal_cents' => $net,
             'discount_cents' => $item_discount + $quote_discount,
