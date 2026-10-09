@@ -86,9 +86,19 @@ add_action( 'wp_head', function () {
         if ( $product ) {
             $description = trim( wp_strip_all_tags( $product->get_short_description() ) );
             if ( ! $description ) { $description = trim( wp_strip_all_tags( $product->get_description() ) ); }
+            if ( ! $description ) { $description = $product->get_name() . ' en Graph Express. Consultá las opciones de personalización y solicitá un presupuesto para tu trabajo.'; }
             if ( $description ) {
                 echo '<meta name="description" content="' . esc_attr( wp_html_excerpt( $description, 155, '…' ) ) . '" />' . "\n";
             }
+            // Quote-only catalog: describe the real product, without fictitious offers.
+            $data = array( '@context' => 'https://schema.org', '@type' => 'Product',
+                '@id' => get_permalink( $product->get_id() ) . '#product',
+                'url' => get_permalink( $product->get_id() ), 'name' => $product->get_name(),
+                'description' => $description );
+            $image = wp_get_attachment_url( $product->get_image_id() );
+            if ( $image ) { $data['image'] = $image; }
+            if ( $product->get_sku() ) { $data['sku'] = $product->get_sku(); }
+            echo '<script type="application/ld+json">' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . '</script>' . "\n";
         }
     }
     if ( function_exists( 'is_product_category' ) && is_product_category() ) {
@@ -98,6 +108,14 @@ add_action( 'wp_head', function () {
         echo '<meta name="description" content="' . esc_attr( wp_html_excerpt( $description, 155, '…' ) ) . '" />' . "\n";
     } elseif ( function_exists( 'is_shop' ) && is_shop() ) {
         echo '<meta name="description" content="Productos de impresión de Graph Express: explorá categorías, materiales y opciones para tu próximo trabajo gráfico." />' . "\n";
+    } elseif ( is_tax( 'ge_guide_topic' ) ) {
+        $term = get_queried_object();
+        $description = trim( wp_strip_all_tags( $term->description ) );
+        if ( ! $description ) { $description = 'Guías de ' . $term->name . ' de Graph Express. Información para preparar archivos y planificar tus trabajos de producción gráfica.'; }
+        echo '<meta name="description" content="' . esc_attr( wp_html_excerpt( $description, 155, '…' ) ) . '" />' . "\n";
+    } elseif ( is_page( array( 'privacy-policy', 'privacidad-conexion-canva', 'condiciones-conexion-canva' ) ) ) {
+        $description = trim( wp_strip_all_tags( get_post_field( 'post_content', get_queried_object_id() ) ) );
+        if ( $description ) { echo '<meta name="description" content="' . esc_attr( wp_html_excerpt( $description, 155, '…' ) ) . '" />' . "\n"; }
     }
     if ( is_front_page() ) {
         $data = array( '@context' => 'https://schema.org', '@graph' => array(
