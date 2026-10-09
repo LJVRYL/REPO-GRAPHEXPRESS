@@ -1,6 +1,6 @@
 <?php
 /**
- * Graph Express alternate host. Production SEO remains on graphexpress.com.ar.
+ * Graph Express public host. SEO follows the active graphex.ar storefront.
  * Do not change database home/siteurl, orders or payment settings.
  */
 
@@ -10,7 +10,7 @@ function ge_is_alternate_host() {
 
 if (ge_is_alternate_host()) {
     // WordPress core prints a canonical only on singular pages. Emit one
-    // canonical for public pages, always pointing at the established host.
+    // canonical for public pages, always pointing at the active host.
     remove_action('wp_head', 'rel_canonical');
     add_action('wp_head', function () {
         if (is_admin() || is_404() || is_search() || is_feed()) {
@@ -23,6 +23,9 @@ if (ge_is_alternate_host()) {
         if (!is_string($path) || $path === '' || $path[0] !== '/') {
             $path = '/';
         }
-        echo '<link rel="canonical" href="' . esc_url('https://graphexpress.com.ar' . $path) . '" />' . "\n";
+        // Pagination has distinct content; tracking/filter query strings do not.
+        $paged = max( 1, (int) get_query_var( 'paged' ), (int) get_query_var( 'page' ) );
+        $query = $paged > 1 && strpos( $path, '/page/' ) === false ? '?paged=' . $paged : '';
+        echo '<link rel="canonical" href="' . esc_url('https://graphex.ar' . $path . $query) . '" />' . "\n";
     }, 10);
 }
