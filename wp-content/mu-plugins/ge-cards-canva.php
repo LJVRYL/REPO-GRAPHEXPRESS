@@ -34,7 +34,7 @@ final class GE_Cards_Canva {
     public static function available() {
         if ( 'yes' !== get_option( self::OPTION, 'no' ) || ! function_exists( 'sodium_crypto_secretbox' ) || ! class_exists( 'GE_Cards_Experience' ) || ! GE_Cards_Experience::actor_allowed() ) { return false; }
         $pilot = array_map( 'absint', (array) get_option( 'ge_cards_canva_pilot_users_v1', array() ) );
-        if ( ! current_user_can( 'manage_options' ) && ! in_array( get_current_user_id(), $pilot, true ) ) { return false; }
+        if ( ! in_array( get_current_user_id(), $pilot, true ) ) { return false; }
         try { self::credentials(); return (bool) wp_get_session_token(); } catch ( RuntimeException $e ) { return false; }
     }
     private static function guard( $nonce = true ) {
