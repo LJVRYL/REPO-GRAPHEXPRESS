@@ -4,9 +4,11 @@ defined( 'ABSPATH' ) || exit;
 
 /** Staff-issued commercial documents attached to a WooCommerce order. */
 require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
+require_once __DIR__ . '/class-ge-wtp-arca-emission.php';
 
 final class GE_WTP_Issued_Documents {
     public static function init() {
+        GE_WTP_ARCA_Emission::init();
         add_action( 'admin_post_ge_issued_document_attach', array( __CLASS__, 'handle_attach' ) );
     }
 
@@ -25,6 +27,7 @@ final class GE_WTP_Issued_Documents {
     }
 
     public static function render_staff( $order ) {
+        GE_WTP_ARCA_Emission::render_staff( $order );
         $documents = GE_WTP_Documents::issued_documents( $order->get_id(), true );
         $current = array_values( array_filter( $documents, function ( $document ) { return empty( $document['superseded_at'] ); } ) );
         echo '<section class="ge-admin-panel ge-issued-documents"><div class="ge-admin-panel-head"><div><span>Facturación</span><h2>Facturas y documentos emitidos</h2></div></div>';
@@ -52,6 +55,10 @@ final class GE_WTP_Issued_Documents {
         foreach ( $documents as $document ) {
             $label = GE_WTP_Documents::categories()[ $document['category'] ] ?? 'Documento emitido';
             echo '<p><strong>' . esc_html( $label . ( ! empty( $document['document_number'] ) ? ' ' . $document['document_number'] : '' ) ) . '</strong> · ' . esc_html( $document['issue_date'] ?: $document['uploaded_at'] ) . ' <a href="' . esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ) . '">Descargar PDF</a></p>';
+            if ( ! empty( $document['cae'] ) ) {
+                $expiry = (string) ( $document['cae_expires'] ?? '' );
+                echo '<p>CAE: ' . esc_html( $document['cae'] ) . ( preg_match( '/^[0-9]{8}$/D', $expiry ) ? ' · Vencimiento: ' . esc_html( substr( $expiry, 6, 2 ) . '/' . substr( $expiry, 4, 2 ) . '/' . substr( $expiry, 0, 4 ) ) : '' ) . '</p>';
+            }
         }
         echo '</section>';
     }

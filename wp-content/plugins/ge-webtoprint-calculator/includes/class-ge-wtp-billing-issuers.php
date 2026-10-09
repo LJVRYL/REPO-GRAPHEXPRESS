@@ -210,6 +210,7 @@ final class GE_WTP_Billing_Issuers {
     }
     public static function change_order( $order, $args, $actor ) {
         if ( ! self::can_manage( $actor ) ) { return new WP_Error( 'ge_issuer_forbidden', 'No tenés permiso.' ); }
+        if ( class_exists( 'GE_WTP_ARCA_Emission' ) && GE_WTP_ARCA_Emission::locks_order( $order->get_id() ) ) { return new WP_Error( 'ge_issuer_order_locked', 'Pedido con solicitud fiscal enviada: consultá su registro antes de cualquier rectificación.' ); }
         if ( empty( trim( $args['issuer_change_reason'] ?? '' ) ) ) { return new WP_Error( 'ge_issuer_reason', 'Indicá el motivo del cambio de emisor.' ); }
         if ( $order->is_paid() || $order->get_date_paid() || (int) $order->get_meta( '_ge_amount_paid_cents', true ) > 0 || $order->get_meta( '_ge_commercial_initial_payment_order', true ) || $order->get_meta( '_ge_commercial_payment_order', true ) || $order->get_meta( '_ge_payment_confirmed_at', true ) || $order->get_meta( '_ge_source_quote_id', true ) || ( class_exists( 'GE_WTP_Documents' ) && GE_WTP_Documents::issued_documents( $order->get_id(), true ) ) ) { return new WP_Error( 'ge_issuer_order_locked', 'Pedido vinculado a presupuesto, cobro o documento fiscal: requiere rectificación; no se cambia silenciosamente.' ); }
         $old = self::order_snapshot( $order );
