@@ -7,7 +7,7 @@
   const status = panel.querySelector('[data-canva-status]');
   const list = panel.querySelector('[data-canva-designs]');
   const more = panel.querySelector('[data-canva-more]');
-  let continuation = '', busy = false, technicalReady = false;
+  let continuation = '', busy = false, technicalReady = false, lastImport = null;
   const jobField = document.createElement('input'); jobField.type = 'hidden'; jobField.name = 'ge_canva_job'; form.append(jobField);
   const fileInput = form.querySelector('[data-ge-digital-files]');
   fileInput.addEventListener('change', () => { jobField.value = ''; technicalReady = false; });
@@ -31,7 +31,10 @@
     if (busy || form.querySelector('[data-ge-digital-upload]')?.disabled) return;
     busy = true; fileInput.disabled = true; notify('Canva está preparando el PDF…');
     try {
-      const requestId = crypto.randomUUID();
+      const fingerprint = JSON.stringify([id,selection()]);
+      const requestId = lastImport?.fingerprint === fingerprint ? lastImport.requestId : crypto.randomUUID();
+      lastImport = {id,fingerprint,requestId};
+      panel.querySelector('[data-canva-retry]').hidden = true;
       const job = await request('export', {design_id: id, selection: selection(), request_id: requestId});
       let ready = false;
       for (let attempt = 0; attempt < 100; attempt++) {
@@ -47,17 +50,18 @@
       input.files = transfer.files; input.dispatchEvent(new Event('change', {bubbles: true}));
       notify('PDF recibido. Completando la carga privada y preparando la vista previa…');
       const upload = form.querySelector('[data-ge-digital-upload]');
-      await new Promise(resolve => {
+      await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => { observer.disconnect(); reject(new Error('La carga privada tardó demasiado. Reintentá la importación.')); }, 120000);
       const observer = new MutationObserver(() => {
         const claims = form.querySelector('[data-ge-digital-claims]');
         if (!upload.disabled) {
-          observer.disconnect();
+          observer.disconnect(); clearTimeout(timeout);
           notify(input.dataset.uploadedFingerprint && claims.value && claims.value !== '[]' ? 'PDF cargado de forma privada. Revisá la vista previa; la revisión técnica sigue pendiente.' : 'El PDF llegó desde Canva, pero la carga privada no terminó. Reintentá subirlo con el botón de archivos.');
           resolve();
         }
       });
       observer.observe(upload, {attributes: true, attributeFilter: ['disabled']}); upload.click();
-      if (!upload.disabled) { observer.disconnect(); notify('PDF recibido. Pulsá «Subir archivos de forma segura» para completar la carga.'); resolve(); }
+      if (!upload.disabled) { observer.disconnect(); clearTimeout(timeout); notify('PDF recibido. Pulsá «Subir archivos de forma segura» para completar la carga.'); resolve(); }
       });
       const claims = form.querySelector('[data-ge-digital-claims]');
       if (!input.dataset.uploadedFingerprint || !claims.value || claims.value === '[]') throw new Error('La carga privada no terminó. Reintentá la importación.');
@@ -68,16 +72,21 @@
         const result=await request('preflight',{job:job.job,claims:JSON.parse(claims.value),selection:selection()});
         if (result.status==='blocked') throw new Error(result.blockers.map(code=>labels[code] || 'Revisar archivo').join('. ') + '. Corregí en Canva e importá de nuevo.');
         if (result.status==='review_required') {
-          technicalReady=true;
+          technicalReady=true; lastImport = null;
           notify('Archivo recibido: sin bloqueos en las comprobaciones automáticas. Zona segura, corte y color requieren revisión del archivo exacto antes de producción. Podés seguir con la compra.');
           return;
         }
         await new Promise(resolve=>setTimeout(resolve,3000));
       }
       throw new Error('La revisión técnica sigue pendiente. Reintentá la importación antes de continuar.');
-    } catch (error) { notify(error.message); }
+    } catch (error) {
+      notify(error.message);
+      if (error.message.includes('Corregí en Canva')) lastImport = null;
+      panel.querySelector('[data-canva-retry]').hidden = !lastImport;
+    }
     finally { busy = false; fileInput.disabled = false; }
   };
+  panel.querySelector('[data-canva-retry]').addEventListener('click', () => { if(lastImport) importDesign(lastImport.id); });
   const designs = async append => {
     if (busy) return; notify('Buscando tus diseños…');
     try {
