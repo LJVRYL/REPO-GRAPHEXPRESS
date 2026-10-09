@@ -10,7 +10,7 @@ final class GE_Cards_Canva_Review {
         add_filter('rest_pre_dispatch',array(__CLASS__,'rest_guard'),5,3);
         add_action('woocommerce_after_checkout_validation',array(__CLASS__,'checkout_guard'),5,2);
     }
-    public static function is_review($id=null) { return (array)get_user_meta($id===null ? get_current_user_id() : $id,self::META,true); }
+    public static function is_review($id=null) { $record=get_user_meta($id===null ? get_current_user_id() : $id,self::META,true); return is_array($record) ? $record : array(); }
     public static function authenticate($user,$username='',$password='') {
         if ($user instanceof WP_User) { $r=self::is_review($user->ID); if ($r && (empty($r['expires_at']) || $r['expires_at']<time())) { return new WP_Error('ge_canva_review_expired','La cuenta temporal de revisión venció. Contactá a Graphex.'); } }
         return $user;

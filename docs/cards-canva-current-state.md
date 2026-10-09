@@ -28,3 +28,11 @@ Backup: /root/ge-backups/canva-retention-20261009, tar comparado y hashes verifi
 Cuenta de revisi贸n autorizada y creada: usuario 38, cliente, sin pedidos ni emails, vencimiento 2026-12-08, pedidos/mutaciones bloqueados. 13 fixtures del guard PASS; autenticaci贸n y acceso a m贸dulo verificados. Credencial 煤nicamente en almacenamiento privado y campos cifrados de Canva; referencia graphex-canva-reviewer. Copia temporal eliminada. Piloto limitado a usuarios 8 y 38. Conservaci贸n y remoci贸n guardadas en Canva. Publicaci贸n p煤blica sigue deshabilitada.
 Textos legales preparados fuera del repositorio; identidad y domicilio informados por el titular incorporados. Pendiente revisi贸n/publicaci贸n expl铆cita. Credenciales 煤nicamente mediante referencia simb贸lica graphex-canva-production-client.
 Video: https://graphex.ar/wp-content/mu-plugins/ge-cards-canva/canva-graphex-demostracion.mp4 (capturas reales guiadas del piloto; HTTP 200 video/mp4).
+
+## Pol韙icas publicadas y estado posterior
+
+Privacidad: https://graphex.ar/privacidad-conexion-canva/ (1239); condiciones: https://graphex.ar/condiciones-conexion-canva/ (1240). Publicaci髇 autorizada, HTTP 200 y contenido verificados. Enlaces guardados en Canva. Backup: /root/ge-backups/canva-policies-20261009; rollback a borrador s髄o de estas p醙inas. Pol韙ica general preservada.
+
+Estado de Canva: 2 requisitos pendientes (seguridad y declaraci髇 legal). Datos del titular completos seg鷑 validaci髇 del portal; no se extrajeron identificadores/documentos. No enviada. No marcar autenticidad de webhooks como implementada: la integraci髇 no los recibe, debe aclararse aplicabilidad.
+
+Corregido guard de revisi髇: get_user_meta sin valor devuelve cadena vac韆; cast a array generaba un actor restringido falso. Ahora s髄o arrays activan guard. 14 fixtures PASS incluyendo ausencia real de meta, HTTP de ambas p醙inas p鷅licas recuperado.
