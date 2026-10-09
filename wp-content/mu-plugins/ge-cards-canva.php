@@ -91,7 +91,7 @@ final class GE_Cards_Canva {
         try {
             $selection = self::selection( json_decode( wp_unslash( $_POST['selection'] ?? '' ), true ) );
             $start = self::client()->start(); $flow = $start['flow']; $flow['selection'] = $selection;
-            self::put( 'oauth', '', $flow, 600 );
+            self::put( 'oauth', $flow['state'], $flow, 600 );
             nocache_headers(); header( 'Referrer-Policy: no-referrer' ); wp_redirect( $start['url'] ); exit;
         } catch ( RuntimeException $e ) { self::fail( 'connect' ); }
     }
@@ -103,7 +103,10 @@ final class GE_Cards_Canva {
         try {
             $client = self::client();
             if ( '/tarjetas/canva/callback/' === $path ) {
-                $flow = self::get( 'oauth' ); delete_transient( self::key( 'oauth' ) );
+                $state = GE_Cards_Canva_Client::id( $_GET['state'] ?? '' );
+                $flow = self::get( 'oauth', $state );
+                if ( ! add_option( 'ge_cc_used_' . hash( 'sha256', 'oauth:' . $state ), time() + 600, '', false ) ) { throw new RuntimeException( 'Esta autorización ya fue utilizada.' ); }
+                delete_transient( self::key( 'oauth', $state ) );
                 if ( ! empty( $_GET['error'] ) ) { self::fail( 'denied' ); }
                 $context = $client->callback( $flow, $_GET['state'] ?? '', $_GET['code'] ?? '' ); $context['connection_id'] = GE_Cards_Canva_Client::random( 24 ); self::save_connection( $context );
                 self::put( 'selection', '', $flow['selection'], 86400 ); self::fail( 'connected' );

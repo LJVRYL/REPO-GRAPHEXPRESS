@@ -48,4 +48,16 @@ try{GE_Cards_Canva::route();}catch(Response $r){ok(strpos($r->data['redirect'],'
 response('forget');ok(response('status')->data['connected']===false,'Disconnect forgets encrypted credentials');ok(response('status')->data['returned']===null,'Old return hidden after disconnect');
 $_POST=array('nonce'=>'good','job'=>$job);try{GE_Cards_Canva::pdf();}catch(Response $r){ok($r->getCode()===422,'Old export denied after disconnect');}
 private_call('save_connection',array(array_merge($connection,array('connection_id'=>'connection2'))));ok(response('export_status',array('job'=>$job))->getCode()===422,'New connection cannot reuse previous export');
+// Separate OAuth tabs must not replace each other's encrypted pending state.
+$oauthA = str_repeat('a',43); $oauthB = str_repeat('b',43);
+private_call('put',array('oauth',$oauthA,array('state'=>$oauthA,'expires'=>time()+600),600));
+private_call('put',array('oauth',$oauthB,array('state'=>$oauthB,'expires'=>time()+600),600));
+ok(private_call('get',array('oauth',$oauthA))['state']===$oauthA,'First OAuth tab preserved');
+ok(private_call('get',array('oauth',$oauthB))['state']===$oauthB,'Second OAuth tab preserved');
+$GLOBALS['path']='/tarjetas/canva/callback/'; $_GET=array('state'=>$oauthA,'error'=>'access_denied');
+try{GE_Cards_Canva::route();}catch(Response $r){ok(strpos($r->data['redirect'],'canva_status=denied')!==false,'Cancelled OAuth is actionable');}
+ok(private_call('get',array('oauth',$oauthB))['state']===$oauthB,'Cancellation preserves other OAuth tab');
+$before=$GLOBALS['requests'];
+try{GE_Cards_Canva::route();}catch(Response $r){ok(strpos($r->data['redirect'],'invalid_return')!==false,'Consumed OAuth cannot replay');}
+ok($GLOBALS['requests']===$before,'Cancelled and repeated OAuth do not call Canva');
 echo json_encode(array('passed'=>$passed,'wordpress_database_loaded'=>false,'network_calls'=>0,'real_credentials_used'=>false,'fixture_only'=>true)).PHP_EOL;
