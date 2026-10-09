@@ -60,4 +60,35 @@ ok(private_call('get',array('oauth',$oauthB))['state']===$oauthB,'Cancellation p
 $before=$GLOBALS['requests'];
 try{GE_Cards_Canva::route();}catch(Response $r){ok(strpos($r->data['redirect'],'invalid_return')!==false,'Consumed OAuth cannot replay');}
 ok($GLOBALS['requests']===$before,'Cancelled and repeated OAuth do not call Canva');
+$repeatArgs=array('design_id'=>'design1','selection'=>json_encode($selection),'request_id'=>'fixture-export-idempotent');
+$first=response('export',$repeatArgs);$before=$GLOBALS['requests'];$second=response('export',$repeatArgs);
+ok($first->data['job']===$second->data['job'],'Repeated export request returns same job');ok($GLOBALS['requests']===$before,'Repeated export does not call Canva again');
+$repeatArgs['selection']=json_encode(array_merge($selection,array('cantidad'=>'200')));ok(response('export',$repeatArgs)->getCode()===422,'Repeated request cannot change product configuration');
+// Bound private-PDF preflight and cart-gate fixtures; no production filesystem.
+define('GE_WTP_PRIVATE_UPLOAD_DIR',sys_get_temp_dir().'/ge-canva-pdf-fixture-'.getmypid());
+mkdir(GE_WTP_PRIVATE_UPLOAD_DIR,0700);mkdir(GE_WTP_PRIVATE_UPLOAD_DIR.'/pending',0700);
+$privateFile=GE_WTP_PRIVATE_UPLOAD_DIR.'/pending/fixture.pdf';file_put_contents($privateFile,'%PDF-1.7 fixture A');
+$GLOBALS['fileFacts']=array('status'=>'complete','facts'=>array('page_count'=>2,'page_sizes'=>array(array('page'=>1,'mm'=>array(95,65)),array('page'=>2,'mm'=>array(95,65))),'encrypted'=>false,'fonts_embedded'=>true,'images'=>array()));
+class GE_WTP_VPS_Storage { static function validate_uploaded_claims($tokens,$user){return $tokens===array('fixture-owner-claim')&&$user===7 ? array(array('mime'=>'application/pdf','relative_path'=>'pending/fixture.pdf')) : new WP_Error();} }
+class GE_WTP_File_Analysis {
+ static function safe_path($path){return realpath($path)?:'';}
+ static function ingest($path,$mime,$mode,$version){$GLOBALS['fileFacts']['sha256']=hash_file('sha256',$path);return array('file_analysis_ref'=>'fixture-ref');}
+ static function from_ref($ref){return $GLOBALS['fileFacts'];}
+}
+function wp_verify_nonce($nonce,$action){return $nonce==='good'&&$action==='ge_add_digital_product_83';}
+function wc_add_notice($message,$type){$GLOBALS['cartError']=$message;}
+$export=response('export',array('design_id'=>'design1','selection'=>json_encode($selection)));$fileJob=$export->data['job'];
+$fileData=private_call('get',array('job',$fileJob));$fileData['pdf_sha256']=hash_file('sha256',$privateFile);private_call('put',array('job',$fileJob,$fileData,600));
+$claim=array(array('token'=>'fixture-owner-claim'));
+function preflight_response($post){$_SERVER['REQUEST_METHOD']='POST';$_POST=array_merge(array('nonce'=>'good'),$post);try{GE_Cards_Canva::preflight();throw new LogicException('No preflight response');}catch(Response $r){return $r;}}
+$args=array('job'=>$fileJob,'claims'=>json_encode($claim),'selection'=>json_encode($selection));
+$r=preflight_response($args);ok($r->getCode()===200&&$r->data['status']==='review_required','Exact owner PDF is reviewed without production approval');ok($r->data['production_approved']===false,'Preflight never grants production approval');
+$changed=$args;$wrong=$selection;$wrong['impresion']='simple';$changed['selection']=json_encode($wrong);ok(preflight_response($changed)->getCode()===422,'Changed configuration rejected');
+$changed=$args;$changed['claims']=json_encode(array(array('token'=>'foreign-claim')));ok(preflight_response($changed)->getCode()===422,'Foreign upload claim rejected');
+file_put_contents($privateFile,'%PDF-1.7 fixture B');ok(preflight_response($args)->getCode()===422,'Same-size changed PDF rejected by hash');file_put_contents($privateFile,'%PDF-1.7 fixture A');
+$GLOBALS['fileFacts']['facts']['page_sizes'][1]['mm']=array(88.9,50.8);ok(preflight_response($args)->data['status']==='blocked','Wrong-sized back blocked');
+$_POST=array('ge_canva_job'=>$fileJob,'product_id'=>83,'ge_digital_nonce'=>'good','ge_digital'=>$selection,'ge_vps_uploads'=>json_encode($claim));try{GE_Cards_Canva::cart_guard();throw new LogicException('Cart not blocked');}catch(Response $r){ok($r->getCode()===302&&!empty($GLOBALS['cartError']),'Cart refuses wrong-sized PDF');}
+$GLOBALS['fileFacts']['facts']['page_sizes'][1]['mm']=array(95,65);$_POST=array('ge_canva_job'=>$fileJob,'product_id'=>83,'ge_digital_nonce'=>'good','ge_digital'=>$selection,'ge_vps_uploads'=>json_encode($claim));GE_Cards_Canva::cart_guard();ok(true,'Valid technical profile passes existing cart gate');
+$GLOBALS['fileFacts']=array('status'=>'queued');ok(preflight_response($args)->data['status']==='pending','Queued analysis remains pending');
+unlink($privateFile);rmdir(GE_WTP_PRIVATE_UPLOAD_DIR.'/pending');rmdir(GE_WTP_PRIVATE_UPLOAD_DIR);
 echo json_encode(array('passed'=>$passed,'wordpress_database_loaded'=>false,'network_calls'=>0,'real_credentials_used'=>false,'fixture_only'=>true)).PHP_EOL;

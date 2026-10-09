@@ -7,7 +7,13 @@
   const status = panel.querySelector('[data-canva-status]');
   const list = panel.querySelector('[data-canva-designs]');
   const more = panel.querySelector('[data-canva-more]');
-  let continuation = '', busy = false;
+  let continuation = '', busy = false, technicalReady = false;
+  const jobField = document.createElement('input'); jobField.type = 'hidden'; jobField.name = 'ge_canva_job'; form.append(jobField);
+  const fileInput = form.querySelector('[data-ge-digital-files]');
+  fileInput.addEventListener('change', () => { jobField.value = ''; technicalReady = false; });
+  form.addEventListener('submit', event => {
+    if (jobField.value && !technicalReady) { event.preventDefault(); notify('Esperá la revisión técnica o corregí el PDF antes de continuar.'); panel.scrollIntoView({block:'center'}); }
+  });
   const selection = () => Object.fromEntries([...form.querySelectorAll('[data-ge-field]')].map(control => [control.dataset.geField, control.value]));
   const notify = text => { status.textContent = text; };
   const request = async (op, data = {}, binary = false) => {
@@ -23,9 +29,10 @@
   const setConnected = value => { connect.hidden = value; connected.hidden = !value; };
   const importDesign = async id => {
     if (busy || form.querySelector('[data-ge-digital-upload]')?.disabled) return;
-    busy = true; notify('Canva está preparando el PDF…');
+    busy = true; fileInput.disabled = true; notify('Canva está preparando el PDF…');
     try {
-      const job = await request('export', {design_id: id, selection: selection()});
+      const requestId = crypto.randomUUID();
+      const job = await request('export', {design_id: id, selection: selection(), request_id: requestId});
       let ready = false;
       for (let attempt = 0; attempt < 100; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 3000));
@@ -52,8 +59,24 @@
       observer.observe(upload, {attributes: true, attributeFilter: ['disabled']}); upload.click();
       if (!upload.disabled) { observer.disconnect(); notify('PDF recibido. Pulsá «Subir archivos de forma segura» para completar la carga.'); resolve(); }
       });
+      const claims = form.querySelector('[data-ge-digital-claims]');
+      if (!input.dataset.uploadedFingerprint || !claims.value || claims.value === '[]') throw new Error('La carga privada no terminó. Reintentá la importación.');
+      jobField.value = job.job;
+      const labels = {page_count:'Cantidad de caras incorrecta',page_dimensions:'Cada página debe medir 95 × 65 mm',page_geometry:'Geometría de páginas inválida',page_geometry_unverified:'No pudimos verificar todas las páginas',encryption_unverified:'PDF cifrado o cifrado no verificado',fonts_not_embedded:'Hay fuentes sin incrustar',image_resolution_below_300:'Hay imágenes por debajo de 300 dpi',analysis_failed:'Falló el análisis',analysis_blocker:'El archivo tiene un bloqueo técnico',invalid_context:'Configuración inválida'};
+      for (let attempt=0; attempt<60; attempt++) {
+        notify('PDF privado recibido. Analizando medidas, caras, fuentes e imágenes…');
+        const result=await request('preflight',{job:job.job,claims:JSON.parse(claims.value),selection:selection()});
+        if (result.status==='blocked') throw new Error(result.blockers.map(code=>labels[code] || 'Revisar archivo').join('. ') + '. Corregí en Canva e importá de nuevo.');
+        if (result.status==='review_required') {
+          technicalReady=true;
+          notify('Archivo recibido: sin bloqueos en las comprobaciones automáticas. Zona segura, corte y color requieren revisión del archivo exacto antes de producción. Podés seguir con la compra.');
+          return;
+        }
+        await new Promise(resolve=>setTimeout(resolve,3000));
+      }
+      throw new Error('La revisión técnica sigue pendiente. Reintentá la importación antes de continuar.');
     } catch (error) { notify(error.message); }
-    finally { busy = false; }
+    finally { busy = false; fileInput.disabled = false; }
   };
   const designs = async append => {
     if (busy) return; notify('Buscando tus diseños…');
