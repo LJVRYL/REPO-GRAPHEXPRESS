@@ -15,9 +15,9 @@ Backup utilizable: /root/ge-backups/canva-cards-public-entry-20261009; archivo t
 
 ## Presentación pública
 
-Guardados en Canva: destinos HTTPS, textos, sitio y soporte, explicación y pasos de prueba, icono oficial 512px, destino externo del producto y almacenamiento/permisos de lectura. El perfil Graph se reconectó; el titular habilitó acceso local de la extensión para las cargas autorizadas.
+Guardados en Canva: destinos HTTPS, textos, sitio y soporte, explicación y pasos de prueba, icono oficial 512px, portada 2400x1800 con datos ficticios, destino externo del producto, almacenamiento/permisos de lectura y contacto de seguridad. El perfil Graph se reconectó; el titular habilitó acceso local de la extensión para las cargas autorizadas.
 
-La pantalla de estado mostró 11 acciones pendientes después del icono y antes de guardar el destino externo. No constituye envío ni aprobación. Falta portada, video público, cuenta de revisión dedicada, condiciones/privacidad públicas, respuestas restantes y declaración final del titular. No se marcó cumplimiento legal ni programas de seguridad no verificados.
+La pantalla de estado mostró 11 acciones pendientes después del icono y antes de guardar el destino externo. No constituye envío ni aprobación. Falta video público, cuenta de revisión dedicada, condiciones/privacidad públicas, respuestas restantes y declaración final del titular. No se marcó cumplimiento legal ni programas de seguridad no verificados.
 
 ## Conservación aprobada, implementación pendiente
 
