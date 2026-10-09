@@ -131,6 +131,7 @@ final class GE_Organization_Runtime {
         if($action==='ge_delivery_label')$module='orders';
         if($action==='ge_request_save')$module='quotes';
         if($action==='ge_save_billing_entity')$module='company';
+        if($action==='ge_google_auth')$module='customers';
         if(preg_match('/^ge_(customer_tax|tax_profile|customer_profile|customer_register|markcom_login|portal_login)/',$action))$module='customers';
         if(preg_match('/candidate|career|job|knowledge|incident|favorite/',$action))$module='communications';
         $read=preg_match('/download|preview|original|release_sheet|production_sheet|_pdf|document_file|avatar|verify_customer_email|delivery_label|export_status|open_design|^ge_alert_read$/',$action);

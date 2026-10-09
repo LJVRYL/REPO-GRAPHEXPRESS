@@ -131,6 +131,7 @@ final class GE_WTP_VPS_Storage {
 
     public static function finalize_descriptor( $descriptor, $order_id, $item_id ) {
         if ( 'vps' !== ( $descriptor['provider'] ?? '' ) || empty( $descriptor['relative_path'] ) ) { return new WP_Error( 'ge_vps_descriptor', 'El archivo privado no es válido.' ); }
+        $source_relative = $descriptor['relative_path'];
         $source = self::absolute_path( $descriptor['relative_path'] );
         if ( ! $source || ! is_file( $source ) ) { return new WP_Error( 'ge_vps_missing', 'El archivo privado no existe.' ); }
         $target_relative = 'orders/' . absint( $order_id ) . '/' . absint( $item_id ) . '/' . wp_generate_uuid4() . '-' . sanitize_file_name( $descriptor['name'] );
@@ -143,6 +144,7 @@ final class GE_WTP_VPS_Storage {
             update_option( GE_WTP_File_Analysis::PREFIX . 'index_' . hash( 'sha256', $target . ':' . $analysis['sha256'] . ':' . $analysis['mode'] . ':' . $analysis['version_id'] ), $analysis['analysis_id'], false );
         }
         $descriptor['relative_path'] = $target_relative;
+        do_action( 'ge_vps_upload_finalized', $descriptor, $source_relative, $order_id, $item_id );
         return $descriptor;
     }
 
@@ -243,7 +245,7 @@ final class GE_WTP_VPS_Storage {
         $cutoff = time() - self::limits()['pending_retention'];
         $iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $pending, FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST );
         foreach ( $iterator as $item ) {
-            if ( $item->isFile() && ! $item->isLink() && $item->getMTime() < $cutoff ) { @unlink( $item->getPathname() ); }
+            if ( $item->isFile() && ! $item->isLink() && $item->getMTime() < $cutoff && apply_filters( 'ge_vps_pending_file_expired', true, $item->getPathname() ) ) { @unlink( $item->getPathname() ); }
             elseif ( $item->isDir() && ! $item->isLink() ) { @rmdir( $item->getPathname() ); }
         }
     }

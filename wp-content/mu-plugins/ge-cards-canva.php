@@ -2,11 +2,20 @@
 /** Plugin Name: Graphex · Canva para tarjetas (piloto controlado) */
 defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-client.php';
+require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-preflight.php';
+require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-retention.php';
+require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-review.php';
 final class GE_Cards_Canva {
     const OPTION = 'ge_cards_canva_pilot_enabled_v1';
+    const PUBLIC_OPTION = 'ge_cards_canva_public_approved_v1';
+    const INTENT = 'ge_cards_canva_intent';
     const META = '_ge_cards_canva_connection_v1';
     const NONCE = 'ge_customer_cards_design';
     public static function init() {
+        GE_Cards_Canva_Retention::init();
+        GE_Cards_Canva_Review::init();
+        add_action( 'ge_cards_canva_cleanup', array( __CLASS__, 'cleanup' ) );
+        if ( function_exists('wp_next_scheduled') && !wp_next_scheduled('ge_cards_canva_cleanup') ) { wp_schedule_event(time()+3600,'hourly','ge_cards_canva_cleanup'); }
         add_action( 'template_redirect', array( __CLASS__, 'route' ), -90 );
         add_action( 'admin_post_ge_customer_cards_design_authorize', array( __CLASS__, 'authorize' ) );
         add_action( 'admin_post_nopriv_ge_customer_cards_design_authorize', array( __CLASS__, 'deny' ) );
@@ -15,6 +24,10 @@ final class GE_Cards_Canva {
         add_action( 'wp_ajax_nopriv_ge_customer_cards_design_pdf', array( __CLASS__, 'deny' ) );
         add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'panel' ), 30 );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ), 40 );
+        add_action('wp_ajax_ge_customer_cards_design_preflight',array(__CLASS__,'preflight'));
+        add_action('wp_ajax_nopriv_ge_customer_cards_design_preflight',array(__CLASS__,'deny'));
+        add_action('admin_post_ge_add_digital_product',array(__CLASS__,'cart_guard'),5);
+        add_action('admin_post_nopriv_ge_add_digital_product',array(__CLASS__,'cart_guard'),5);
     }
     public static function deny() { wp_die( 'Ingresá a tu cuenta de Graphex para conectar Canva.', '', array( 'response' => 403 ) ); }
     public static function credentials() {
@@ -29,8 +42,38 @@ final class GE_Cards_Canva {
     public static function available() {
         if ( 'yes' !== get_option( self::OPTION, 'no' ) || ! function_exists( 'sodium_crypto_secretbox' ) || ! class_exists( 'GE_Cards_Experience' ) || ! GE_Cards_Experience::actor_allowed() ) { return false; }
         $pilot = array_map( 'absint', (array) get_option( 'ge_cards_canva_pilot_users_v1', array() ) );
-        if ( ! current_user_can( 'manage_options' ) && ! in_array( get_current_user_id(), $pilot, true ) ) { return false; }
+        if ( 'yes' !== get_option(self::PUBLIC_OPTION,'no') && ! in_array( get_current_user_id(), $pilot, true ) ) { return false; }
         try { self::credentials(); return (bool) wp_get_session_token(); } catch ( RuntimeException $e ) { return false; }
+    }
+    public static function cleanup() {
+        global $wpdb;
+        // Exact module-owned names, numeric expired replay markers only, bounded work.
+        $rows = $wpdb->get_col($wpdb->prepare("SELECT option_name FROM {$wpdb->options} WHERE option_name REGEXP '^ge_cc_used_[a-f0-9]{64}$' AND option_value REGEXP '^[0-9]+$' AND CAST(option_value AS UNSIGNED) < %d LIMIT 100", time()-60));
+        foreach ($rows as $name) { delete_option($name); }
+        $locks = $wpdb->get_results($wpdb->prepare("SELECT option_name,option_value FROM {$wpdb->options} WHERE option_name REGEXP '^ge_cc_export_lock_[a-f0-9]{64}$' AND option_value REGEXP '^[0-9]+:[A-Za-z0-9_-]{32}$' AND CAST(SUBSTRING_INDEX(option_value,':',1) AS UNSIGNED) < %d LIMIT 100",time()-60));
+        foreach ($locks as $lock) { self::release_export_lock(array($lock->option_name,$lock->option_value)); }
+
+    }
+    private static function export_lock($request) {
+        $name = self::key('export_lock',$request);
+        $value = (time()+120).':'.GE_Cards_Canva_Client::random(24);
+        if (!add_option($name,$value,'',false)) {
+            global $wpdb;
+            $previous = get_option($name,'');
+            if (preg_match('/^([0-9]+):[A-Za-z0-9_-]{32}$/D',$previous,$match) && (int)$match[1]<time()) {
+                $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name=%s AND option_value=%s",$name,$previous));
+                wp_cache_delete($name,'options'); wp_cache_delete('notoptions','options');
+                if (add_option($name,$value,'',false)) { return array($name,$value); }
+            }
+            throw new RuntimeException('La importación de este diseño ya está en curso. Esperá unos segundos y reintentá.');
+        }
+        return array($name,$value);
+    }
+    private static function release_export_lock($lock) {
+        // Equality protects a newer lease if an old worker completes after expiry.
+        global $wpdb;
+        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name=%s AND option_value=%s",$lock[0],$lock[1]));
+        wp_cache_delete($lock[0],'options'); wp_cache_delete('notoptions','options');
     }
     private static function guard( $nonce = true ) {
         if ( ! self::available() ) { self::deny(); }
@@ -91,19 +134,35 @@ final class GE_Cards_Canva {
         try {
             $selection = self::selection( json_decode( wp_unslash( $_POST['selection'] ?? '' ), true ) );
             $start = self::client()->start(); $flow = $start['flow']; $flow['selection'] = $selection;
-            self::put( 'oauth', '', $flow, 600 );
+            self::put( 'oauth', $flow['state'], $flow, 600 );
             nocache_headers(); header( 'Referrer-Policy: no-referrer' ); wp_redirect( $start['url'] ); exit;
         } catch ( RuntimeException $e ) { self::fail( 'connect' ); }
     }
     private static function fail( $status ) { nocache_headers(); header( 'Referrer-Policy: no-referrer' ); wp_safe_redirect( add_query_arg( 'canva_status', $status, get_permalink( 83 ) ) ); exit; }
     public static function route() {
         $path = GE_Cards_Experience::path();
+        if ('/tarjetas/canva/start/' === $path) {
+            nocache_headers();
+            if (!is_user_logged_in()) {
+                setcookie(self::INTENT,'cards',array('expires'=>time()+1800,'path'=>'/','secure'=>is_ssl(),'httponly'=>true,'samesite'=>'Lax'));
+                wp_safe_redirect(home_url('/my-account/')); exit;
+            }
+            wp_safe_redirect(get_permalink(83).'#canva'); exit;
+        }
+        if ('cards' === ($_COOKIE[self::INTENT] ?? '') && is_user_logged_in() && in_array($path,array('/my-account/','/gestion/','/cliente-markcom/'),true)) {
+            setcookie(self::INTENT,'',array('expires'=>time()-3600,'path'=>'/','secure'=>is_ssl(),'httponly'=>true,'samesite'=>'Lax'));
+            wp_safe_redirect(get_permalink(83).'#canva'); exit;
+        }
+
         if ( ! in_array( $path, array( '/tarjetas/canva/callback/', '/tarjetas/canva/return/' ), true ) ) { return; }
         self::guard( false ); nocache_headers(); header( 'Referrer-Policy: no-referrer' ); header( 'X-Robots-Tag: noindex, nofollow' );
         try {
             $client = self::client();
             if ( '/tarjetas/canva/callback/' === $path ) {
-                $flow = self::get( 'oauth' ); delete_transient( self::key( 'oauth' ) );
+                $state = GE_Cards_Canva_Client::id( $_GET['state'] ?? '' );
+                $flow = self::get( 'oauth', $state );
+                if ( ! add_option( 'ge_cc_used_' . hash( 'sha256', 'oauth:' . $state ), time() + 600, '', false ) ) { throw new RuntimeException( 'Esta autorización ya fue utilizada.' ); }
+                delete_transient( self::key( 'oauth', $state ) );
                 if ( ! empty( $_GET['error'] ) ) { self::fail( 'denied' ); }
                 $context = $client->callback( $flow, $_GET['state'] ?? '', $_GET['code'] ?? '' ); $context['connection_id'] = GE_Cards_Canva_Client::random( 24 ); self::save_connection( $context );
                 self::put( 'selection', '', $flow['selection'], 86400 ); self::fail( 'connected' );
@@ -144,10 +203,26 @@ final class GE_Cards_Canva {
                 self::put( 'edit', $pending['correlation_state'], $pending, 86400 ); $result = array( 'url' => $edit['url'] );
             } elseif ( 'export' === $op ) {
                 $selection = self::selection( json_decode( wp_unslash( $_POST['selection'] ?? '' ), true ) );
-                $job = $client->export( $context, wp_unslash( $_POST['design_id'] ?? '' ), $selection['pages'] ); $job['connection_id'] = $context['connection_id']; $id = GE_Cards_Canva_Client::random( 24 );
+                $design_id = GE_Cards_Canva_Client::id(wp_unslash($_POST['design_id'] ?? ''));
+                $request_id = GE_Cards_Canva_Client::id(wp_unslash($_POST['request_id'] ?? GE_Cards_Canva_Client::random(24)));
+                $cache_key = self::key('export_request',$context['connection_id'].':'.$request_id);
+                $lock = self::export_lock($context['connection_id'].':'.$request_id);
+                try {
+                $existing = get_transient($cache_key);
+                if ($existing) {
+                    $cached=self::open($existing);
+                    if ($cached['selection']!==$selection || $cached['design_id']!==$design_id) { throw new RuntimeException('El reintento no corresponde al mismo diseño y configuración.'); }
+                    $previous=self::get('job',$cached['job']);
+                    if ($previous['expires']<time()) { throw new RuntimeException('La exportación anterior venció. Iniciá otra importación.'); }
+                    self::release_export_lock($lock); $lock = null;
+                    wp_send_json_success(array('job'=>$cached['job'],'status'=>'in_progress'));
+                }
+                $job = $client->export( $context, $design_id, $selection['pages'] ); $job['connection_id'] = $context['connection_id']; $job['selection'] = $selection; $id = GE_Cards_Canva_Client::random( 24 );
                 self::put( 'job', $id, $job, 600 );
+                set_transient($cache_key,self::seal(array('job'=>$id,'selection'=>$selection,'design_id'=>$design_id)),600);
                 delete_transient( self::key( 'returned' ) );
                 $result = array( 'job' => $id, 'status' => 'in_progress' );
+                } finally { if ($lock) { self::release_export_lock($lock); } }
             } elseif ( 'export_status' === $op ) {
                 $id = GE_Cards_Canva_Client::id( $_POST['job'] ?? '' ); $job = self::get( 'job', $id ); if ( $job['connection_id'] !== $context['connection_id'] ) { throw new RuntimeException( 'La conexión original cambió.' ); } $poll = $client->poll( $context, $job );
                 self::put( 'job', $id, $job, max( 1, $job['expires'] - time() ) ); $result = array( 'status' => $poll['status'] );
@@ -165,17 +240,60 @@ final class GE_Cards_Canva {
             if ( is_wp_error( $r ) || wp_remote_retrieve_response_code( $r ) !== 200 ) { throw new RuntimeException( 'No pudimos descargar el PDF de Canva.' ); }
             $bytes = wp_remote_retrieve_body( $r );
             if ( strlen( $bytes ) > 20971520 || substr( $bytes, 0, 5 ) !== '%PDF-' ) { throw new RuntimeException( 'La exportación debe ser un PDF válido de hasta 20 MB.' ); }
+            $job['pdf_sha256']=hash('sha256',$bytes); $job['expires']=time()+1800;
+            self::put('job',GE_Cards_Canva_Client::id($_POST['job'] ?? ''),$job,1800);
             nocache_headers(); header( 'X-Content-Type-Options: nosniff' ); header( 'Content-Type: application/pdf' ); header( 'Content-Disposition: attachment; filename="canva-' . $job['design_id'] . '.pdf"' ); header( 'Referrer-Policy: no-referrer' ); echo $bytes; exit;
         } catch ( RuntimeException $e ) { wp_send_json_error( array( 'message' => $e->getMessage() ), 422 ); }
     }
+    private static function checked_file($id, $claims, $input) {
+        $job = self::get('job', GE_Cards_Canva_Client::id($id));
+        $context = self::connection();
+        $selection = self::selection($input);
+        if (($job['connection_id'] ?? '') !== $context['connection_id'] || ($job['expires'] ?? 0)<time() || empty($job['pdf_sha256']) || ($job['selection'] ?? null)!==$selection) { throw new RuntimeException('El archivo o su configuración cambiaron. Volvé a importar desde Canva.'); }
+        if (!class_exists('GE_WTP_VPS_Storage') || !class_exists('GE_WTP_File_Analysis') || !is_array($claims) || count($claims)!==1 || !is_array($claims[0]) || !is_string($claims[0]['token'] ?? null)) { throw new RuntimeException('Falta completar la carga privada del PDF.'); }
+        $files = GE_WTP_VPS_Storage::validate_uploaded_claims(array($claims[0]['token']),get_current_user_id());
+        if (is_wp_error($files) || count($files)!==1 || $files[0]['mime']!=='application/pdf') { throw new RuntimeException('El PDF no está disponible para esta cuenta. Volvé a subirlo.'); }
+        $root=defined('GE_WTP_PRIVATE_UPLOAD_DIR') ? GE_WTP_PRIVATE_UPLOAD_DIR : getenv('GE_WTP_PRIVATE_UPLOAD_DIR');
+        $base=$root ? realpath($root) : false;
+        $path=$base ? GE_WTP_File_Analysis::safe_path($base.DIRECTORY_SEPARATOR.$files[0]['relative_path']) : '';
+        if (!$path || strpos($path,$base.DIRECTORY_SEPARATOR)!==0 || filesize($path)>20971520 || !hash_equals($job['pdf_sha256'],hash_file('sha256',$path))) { throw new RuntimeException('El archivo privado no coincide con el PDF exportado desde Canva.'); }
+        if (!GE_Cards_Canva_Retention::track($path,$job['pdf_sha256'],get_current_user_id(),GE_Cards_Experience::organization())) { throw new RuntimeException('No pudimos registrar la conservaci�n privada del PDF. Reintent�.'); }
+        $analysis=GE_WTP_File_Analysis::ingest($path,'application/pdf','technical','canva-cards-v1');
+        $row=GE_WTP_File_Analysis::from_ref($analysis['file_analysis_ref'] ?? '');
+        if (!$row || ($row['sha256'] ?? '')!==$job['pdf_sha256']) { throw new RuntimeException('La revisión técnica no pudo iniciarse. Reintentá.'); }
+        return GE_Cards_Canva_Preflight::evaluate($row,$selection['pages']);
+    }
+    public static function preflight() {
+        self::guard();
+        try {
+            $result=self::checked_file($_POST['job'] ?? '',json_decode(wp_unslash($_POST['claims'] ?? ''),true),json_decode(wp_unslash($_POST['selection'] ?? ''),true));
+            wp_send_json_success($result);
+        } catch (RuntimeException $e) { wp_send_json_error(array('message'=>$e->getMessage()),422); }
+    }
+    public static function cart_guard() {
+        if (empty($_POST['ge_canva_job'])) { return; }
+        try {
+            self::guard(false);
+            if (($_SERVER['REQUEST_METHOD'] ?? '')!=='POST' || (int)($_POST['product_id'] ?? 0)!==83 || !wp_verify_nonce(wp_unslash($_POST['ge_digital_nonce'] ?? ''),'ge_add_digital_product_83')) { throw new RuntimeException('Ingresá de nuevo al producto para validar la configuración.'); }
+            $result=self::checked_file(wp_unslash($_POST['ge_canva_job']),json_decode(wp_unslash($_POST['ge_vps_uploads'] ?? ''),true),(array)wp_unslash($_POST['ge_digital'] ?? array()));
+            if ($result['status']==='pending') { throw new RuntimeException('El PDF todavía se está analizando. Esperá la revisión antes de agregarlo al carrito.'); }
+            if ($result['status']==='blocked') { throw new RuntimeException('El PDF tiene errores técnicos. Corregí las advertencias e importalo de nuevo.'); }
+            // The existing cart associates the same validated private claim with its item.
+            // Production approval remains a separate customer proof workflow.
+        } catch (RuntimeException $e) { wc_add_notice($e->getMessage(),'error'); wp_safe_redirect(get_permalink(83)); exit; }
+    }
     public static function assets() {
-        if ( ! self::available() || ! function_exists( 'is_product' ) || ! is_product() || (int) get_queried_object_id() !== 83 ) { return; }
-        wp_enqueue_script( 'ge-cards-canva', content_url( '/mu-plugins/ge-cards-canva/customer.js' ), array( 'ge-cards-product-preview' ), (string) filemtime( __DIR__ . '/ge-cards-canva/customer.js' ), true );
-        wp_localize_script( 'ge-cards-canva', 'geCardsCanva', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( self::NONCE ) ) );
+        if ( ! function_exists('is_product') || !is_product() || (int)get_queried_object_id()!==83 ) { return; }
+        wp_enqueue_style('ge-cards-canva',content_url('/mu-plugins/ge-cards-canva/customer.css'),array('ge-cards-experience'),(string)filemtime(__DIR__.'/ge-cards-canva/customer.css'));
+        wp_enqueue_script('ge-cards-canva-entry',content_url('/mu-plugins/ge-cards-canva/entry.js'),array('ge-cards-product-preview'),(string)filemtime(__DIR__.'/ge-cards-canva/entry.js'),true);
+        if (!self::available()) { return; }
+        wp_enqueue_script('ge-cards-canva',content_url('/mu-plugins/ge-cards-canva/customer.js'),array('ge-cards-canva-entry'),(string)filemtime(__DIR__.'/ge-cards-canva/customer.js'),true);
+        wp_localize_script('ge-cards-canva','geCardsCanva',array('ajaxUrl'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce(self::NONCE)));
     }
     public static function panel() {
-        if ( ! self::available() || ! is_product() || (int) get_queried_object_id() !== 83 ) { return; }
-        include __DIR__ . '/ge-cards-canva/panel.php';
+        if ( !is_product() || (int)get_queried_object_id()!==83 ) { return; }
+        if (!self::available()) { include __DIR__.'/ge-cards-canva/entry.php'; return; }
+        include __DIR__.'/ge-cards-canva/panel.php';
     }
 }
 GE_Cards_Canva::init();
