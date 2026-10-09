@@ -90,14 +90,13 @@ add_action( 'wp_head', function () {
             if ( $description ) {
                 echo '<meta name="description" content="' . esc_attr( wp_html_excerpt( $description, 155, '…' ) ) . '" />' . "\n";
             }
-            // Quote-only catalog: describe the real product, without fictitious offers.
-            $data = array( '@context' => 'https://schema.org', '@type' => 'Product',
-                '@id' => get_permalink( $product->get_id() ) . '#product',
+            // Quote-only pages cannot claim Product rich results without real offers.
+            $data = array( '@context' => 'https://schema.org', '@type' => 'WebPage',
+                '@id' => get_permalink( $product->get_id() ) . '#webpage',
                 'url' => get_permalink( $product->get_id() ), 'name' => $product->get_name(),
                 'description' => $description );
             $image = wp_get_attachment_url( $product->get_image_id() );
             if ( $image ) { $data['image'] = $image; }
-            if ( $product->get_sku() ) { $data['sku'] = $product->get_sku(); }
             echo '<script type="application/ld+json">' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . '</script>' . "\n";
         }
     }
