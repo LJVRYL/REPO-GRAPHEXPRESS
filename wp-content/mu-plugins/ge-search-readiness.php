@@ -27,8 +27,14 @@ function ge_search_private_request() {
         || is_search() || is_author();
 }
 
+function ge_search_placeholder_request() {
+    return is_singular( 'post' ) && 'hello-world' === get_post_field( 'post_name', get_queried_object_id() )
+        || is_tax( 'product_cat', 'uncategorized' )
+        || is_category( 'uncategorized' );
+}
+
 add_filter( 'wp_robots', function ( $robots ) {
-    if ( ge_search_private_request() ) {
+    if ( ge_search_private_request() || ge_search_placeholder_request() ) {
         $robots['noindex'] = true;
         unset( $robots['index'] );
     }
@@ -36,6 +42,12 @@ add_filter( 'wp_robots', function ( $robots ) {
 } );
 
 add_filter( 'wp_sitemaps_posts_query_args', function ( $args, $type ) {
+    if ( 'post' === $type ) {
+        $placeholder = get_page_by_path( 'hello-world', OBJECT, 'post' );
+        if ( $placeholder ) {
+            $args['post__not_in'] = array_values( array_unique( array_merge( isset( $args['post__not_in'] ) ? $args['post__not_in'] : array(), array( (int) $placeholder->ID ) ) ) );
+        }
+    }
     if ( 'page' !== $type ) { return $args; }
     $excluded = isset( $args['post__not_in'] ) ? $args['post__not_in'] : array();
     foreach ( ge_search_excluded_pages() as $slug ) {
@@ -43,6 +55,16 @@ add_filter( 'wp_sitemaps_posts_query_args', function ( $args, $type ) {
         if ( $page ) { $excluded[] = (int) $page->ID; }
     }
     $args['post__not_in'] = array_values( array_unique( $excluded ) );
+    return $args;
+}, 10, 2 );
+
+add_filter( 'wp_sitemaps_taxonomies_query_args', function ( $args, $taxonomy ) {
+    if ( in_array( $taxonomy, array( 'category', 'product_cat' ), true ) ) {
+        $term = get_term_by( 'slug', 'uncategorized', $taxonomy );
+        if ( $term && ! is_wp_error( $term ) ) {
+            $args['exclude'] = array_values( array_unique( array_merge( isset( $args['exclude'] ) ? (array) $args['exclude'] : array(), array( (int) $term->term_id ) ) ) );
+        }
+    }
     return $args;
 }, 10, 2 );
 
@@ -58,15 +80,24 @@ add_action( 'wp_head', function () {
 }, 2 );
 
 add_action( 'wp_head', function () {
-    if ( ! ge_is_alternate_host() || ge_search_private_request() ) { return; }
+    if ( ! ge_is_alternate_host() || ge_search_private_request() || ge_search_placeholder_request() ) { return; }
     if ( function_exists( 'is_product' ) && is_product() && function_exists( 'wc_get_product' ) ) {
         $product = wc_get_product( get_queried_object_id() );
         if ( $product ) {
             $description = trim( wp_strip_all_tags( $product->get_short_description() ) );
+            if ( ! $description ) { $description = trim( wp_strip_all_tags( $product->get_description() ) ); }
             if ( $description ) {
                 echo '<meta name="description" content="' . esc_attr( wp_html_excerpt( $description, 155, '…' ) ) . '" />' . "\n";
             }
         }
+    }
+    if ( function_exists( 'is_product_category' ) && is_product_category() ) {
+        $term = get_queried_object();
+        $description = trim( wp_strip_all_tags( $term->description ) );
+        if ( ! $description ) { $description = $term->name . ' en Graph Express. Consultá los productos, materiales y opciones de impresión disponibles.'; }
+        echo '<meta name="description" content="' . esc_attr( wp_html_excerpt( $description, 155, '…' ) ) . '" />' . "\n";
+    } elseif ( function_exists( 'is_shop' ) && is_shop() ) {
+        echo '<meta name="description" content="Productos de impresión de Graph Express: explorá categorías, materiales y opciones para tu próximo trabajo gráfico." />' . "\n";
     }
     if ( is_front_page() ) {
         $data = array( '@context' => 'https://schema.org', '@graph' => array(
