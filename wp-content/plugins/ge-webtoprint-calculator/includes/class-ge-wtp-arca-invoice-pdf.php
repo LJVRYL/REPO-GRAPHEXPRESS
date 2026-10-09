@@ -4,6 +4,7 @@ require_once __DIR__ . '/vendor/qrcode-generator/qrcode.php';
 
 /** PDF from the authorized immutable fiscal journal, never from current order prices. */
 final class GE_WTP_ARCA_Invoice_PDF {
+    private static function display_date( $date ) { return substr( $date, 6, 2 ) . '/' . substr( $date, 4, 2 ) . '/' . substr( $date, 0, 4 ); }
     public static function qr_url( $row ) {
         $p = $row['payload']; $d = $p['detail'];
         $data = array( 'ver' => 1, 'fecha' => substr( $d['CbteFch'], 0, 4 ) . '-' . substr( $d['CbteFch'], 4, 2 ) . '-' . substr( $d['CbteFch'], 6, 2 ), 'cuit' => (int) $p['issuer']['cuit'],
@@ -51,7 +52,7 @@ final class GE_WTP_ARCA_Invoice_PDF {
             $y += 8; self::lines( $pdf, 'Receptor: ' . $r['legal_name'] . $recipient_document, 40, $y ); self::lines( $pdf, $r['fiscal_address'], 40, $y );
             self::lines( $pdf, 'Condición IVA: ' . ( array( 1 => 'Responsable Inscripto', 6 => 'Monotributista', 4 => 'Exento', 5 => 'Consumidor final' )[$d['CondicionIVAReceptorId']] ?? 'No informada' ), 40, $y );
             self::lines( $pdf, 'Concepto: ' . array( 1 => 'Productos', 2 => 'Servicios', 3 => 'Productos y servicios' )[$d['Concepto']], 40, $y );
-            if ( isset( $d['FchServDesde'] ) ) { self::lines( $pdf, 'Período: ' . $d['FchServDesde'] . ' a ' . $d['FchServHasta'] . ' · Vto. pago: ' . $d['FchVtoPago'], 40, $y ); }
+            if ( isset( $d['FchServDesde'] ) ) { self::lines( $pdf, 'Período: ' . self::display_date( $d['FchServDesde'] ) . ' a ' . self::display_date( $d['FchServHasta'] ) . ' · Vto. pago: ' . self::display_date( $d['FchVtoPago'] ), 40, $y ); }
             self::lines( $pdf, 'Condición de venta: ' . ( $p['sale_terms'] ?? 'NO VERIFICADO' ), 40, $y );
             $pdf->line( 40, $y + 4, 555, $y + 4, 130, 130, 130 ); return $y + 25;
         };
@@ -70,7 +71,10 @@ final class GE_WTP_ARCA_Invoice_PDF {
         if ( (float) $p['shipping_net'] !== 0.0 ) { $lines[] = array( 'name' => 'Envío', 'quantity' => 1, 'net' => $p['shipping_net'] ); }
         foreach ( $p['fees'] ?? array() as $fee ) { $lines[] = array( 'name' => $fee['name'], 'quantity' => 1, 'net' => $fee['net'] ); }
         foreach ( $lines as $item ) {
-            $text = $item['quantity'] . ' × ' . ( $item['description'] ?? $item['name'] ) . ' · Neto $' . $item['net'];
+            $quantity = (float) $item['quantity'];
+            $unit = $quantity > 0 ? number_format( (float) $item['net'] / $quantity, 4, ',', '.' ) : '';
+            $subtotal = number_format( (float) $item['net'], 2, ',', '.' );
+            $text = $item['quantity'] . ' × ' . ( $item['description'] ?? $item['name'] ) . "\nPrecio unitario neto: $" . $unit . ' · Subtotal neto: $' . $subtotal;
             // Reserve enough space for wrapped descriptions, without clipping long product names.
             foreach ( $pdf->wrap( $text, 85 ) as $line ) {
                 if ( $y > 620 ) { $footer( $page++ ); $pages[] = $pdf->end_page(); $y = $start(); }
