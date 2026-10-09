@@ -5,6 +5,16 @@
  */
 defined( 'ABSPATH' ) || exit;
 
+// Keep the previously submitted alias usable while WordPress owns the index.
+add_action( 'template_redirect', function () {
+    $path = (string) parse_url( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/', PHP_URL_PATH );
+    $method = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '';
+    if ( ge_is_alternate_host() && '/sitemap.xml' === $path && in_array( $method, array( 'GET', 'HEAD' ), true ) && empty( $_GET ) ) {
+        wp_redirect( 'https://graphex.ar/wp-sitemap.xml', 301, 'Graphex Sitemap' );
+        exit;
+    }
+}, 0 );
+
 function ge_search_excluded_pages() {
     return array( 'sample-page', 'cart', 'checkout', 'my-account', 'cliente-markcom', 'gestion', 'mi-perfil', 'preferencias-email' );
 }
