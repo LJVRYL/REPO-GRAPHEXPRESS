@@ -7,15 +7,30 @@
   const status = panel.querySelector('[data-canva-status]');
   const list = panel.querySelector('[data-canva-designs]');
   const more = panel.querySelector('[data-canva-more]');
-  let continuation = '', busy = false, technicalReady = false, lastImport = null;
+  let continuation = '', busy = false, technicalReady = false, lastImport = null, reviewedSelection = '', reviewState = 'pending';
   const jobField = document.createElement('input'); jobField.type = 'hidden'; jobField.name = 'ge_canva_job'; form.append(jobField);
   const fileInput = form.querySelector('[data-ge-digital-files]');
-  fileInput.addEventListener('change', () => { jobField.value = ''; technicalReady = false; });
+  fileInput.addEventListener('change', () => { jobField.value = ''; technicalReady = false; reviewState = 'pending'; updatePreview(); });
   form.addEventListener('submit', event => {
-    if (jobField.value && !technicalReady) { event.preventDefault(); notify('Esperá la revisión técnica o corregí el PDF antes de continuar.'); panel.scrollIntoView({block:'center'}); }
+    if (busy || (jobField.value && (!technicalReady || reviewedSelection !== JSON.stringify(selection())))) { event.preventDefault(); notify('Esperá la revisión técnica o corregí el PDF antes de continuar.'); panel.scrollIntoView({block:'center'}); }
   });
   const selection = () => Object.fromEntries([...form.querySelectorAll('[data-ge-field]')].map(control => [control.dataset.geField, control.value]));
   const notify = text => { status.textContent = text; };
+  const previewState = document.querySelector('.gxc-file-preview .gxc-preview-state');
+  const updatePreview = () => {
+    if (!previewState) return;
+    const labels = {pending:'revisión técnica pendiente.',blocked:'corregí las advertencias técnicas.',review_required:'sin bloqueos automáticos; aprobación de impresión pendiente.'};
+    const text = previewState.textContent.replace(/revisión técnica pendiente\.|corregí las advertencias técnicas\.|sin bloqueos automáticos; aprobación de impresión pendiente\./, labels[reviewState]);
+    if (text !== previewState.textContent) previewState.textContent = text;
+  };
+  if (previewState) new MutationObserver(updatePreview).observe(previewState,{childList:true,subtree:true,characterData:true});
+
+  form.addEventListener('change', event => {
+    if (event.target.matches('[data-ge-field]') && jobField.value && reviewedSelection !== JSON.stringify(selection())) {
+      technicalReady = false; reviewState = 'pending'; updatePreview();
+      notify('Cambiaste la configuración. Volvé a importar el diseño de Canva para revisar el archivo con estas opciones.');
+    }
+  });
   const request = async (op, data = {}, binary = false) => {
     const body = new FormData(); body.append('action', `ge_customer_cards_design_${op}`); body.append('nonce', geCardsCanva.nonce);
     for (const [key, value] of Object.entries(data)) body.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
@@ -29,13 +44,17 @@
   const setConnected = value => { connect.hidden = value; connected.hidden = !value; };
   const importDesign = async id => {
     if (busy || form.querySelector('[data-ge-digital-upload]')?.disabled) return;
+    const importSelection = selection();
+    const controls = [...form.querySelectorAll('[data-ge-field]')].map(control => [control, control.disabled]);
+    for (const [control] of controls) control.disabled = true;
+    technicalReady = false; reviewedSelection = ''; reviewState = 'pending'; updatePreview();
     busy = true; fileInput.disabled = true; notify('Canva está preparando el PDF…');
     try {
-      const fingerprint = JSON.stringify([id,selection()]);
+      const fingerprint = JSON.stringify([id,importSelection]);
       const requestId = lastImport?.fingerprint === fingerprint ? lastImport.requestId : crypto.randomUUID();
       lastImport = {id,fingerprint,requestId};
       panel.querySelector('[data-canva-retry]').hidden = true;
-      const job = await request('export', {design_id: id, selection: selection(), request_id: requestId});
+      const job = await request('export', {design_id: id, selection: importSelection, request_id: requestId});
       let ready = false;
       for (let attempt = 0; attempt < 100; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 3000));
@@ -69,10 +88,11 @@
       const labels = {page_count:'Cantidad de caras incorrecta',page_dimensions:'Cada página debe medir 95 × 65 mm',page_geometry:'Geometría de páginas inválida',page_geometry_unverified:'No pudimos verificar todas las páginas',encryption_unverified:'PDF cifrado o cifrado no verificado',fonts_not_embedded:'Hay fuentes sin incrustar',image_resolution_below_300:'Hay imágenes por debajo de 300 dpi',analysis_failed:'Falló el análisis',analysis_blocker:'El archivo tiene un bloqueo técnico',invalid_context:'Configuración inválida'};
       for (let attempt=0; attempt<60; attempt++) {
         notify('PDF privado recibido. Analizando medidas, caras, fuentes e imágenes…');
-        const result=await request('preflight',{job:job.job,claims:JSON.parse(claims.value),selection:selection()});
-        if (result.status==='blocked') throw new Error(result.blockers.map(code=>labels[code] || 'Revisar archivo').join('. ') + '. Corregí en Canva e importá de nuevo.');
+        const result=await request('preflight',{job:job.job,claims:JSON.parse(claims.value),selection:importSelection});
+        if (result.status==='blocked') { reviewState = 'blocked'; updatePreview(); throw new Error(result.blockers.map(code=>labels[code] || 'Revisar archivo').join('. ') + '. Corregí en Canva e importá de nuevo.'); }
         if (result.status==='review_required') {
-          technicalReady=true; lastImport = null;
+          if (JSON.stringify(selection()) !== JSON.stringify(importSelection)) throw new Error('La configuración cambió durante la revisión. Volvé a importar el diseño.');
+          technicalReady=true; reviewedSelection = JSON.stringify(importSelection); lastImport = null; reviewState = 'review_required'; updatePreview();
           notify('Archivo recibido: sin bloqueos en las comprobaciones automáticas. Zona segura, corte y color requieren revisión del archivo exacto antes de producción. Podés seguir con la compra.');
           return;
         }
@@ -84,7 +104,7 @@
       if (error.message.includes('Corregí en Canva')) lastImport = null;
       panel.querySelector('[data-canva-retry]').hidden = !lastImport;
     }
-    finally { busy = false; fileInput.disabled = false; }
+    finally { busy = false; fileInput.disabled = false; for (const [control, disabled] of controls) control.disabled = disabled; }
   };
   panel.querySelector('[data-canva-retry]').addEventListener('click', () => { if(lastImport) importDesign(lastImport.id); });
   const designs = async append => {
