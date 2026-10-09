@@ -5,6 +5,16 @@
  */
 defined( 'ABSPATH' ) || exit;
 
+// Existing legal templates omit their page heading; retain their exact content.
+add_filter( 'the_content', function ( $content ) {
+    if ( ge_is_alternate_host() && is_main_query() && in_the_loop()
+        && is_page( array( 'privacy-policy', 'privacidad-conexion-canva', 'condiciones-conexion-canva' ) )
+        && ! preg_match( '/<h1(?:\s|>)/i', $content ) ) {
+        return '<h1>' . esc_html( get_the_title() ) . '</h1>' . $content;
+    }
+    return $content;
+}, 20 );
+
 // Keep the previously submitted alias usable while WordPress owns the index.
 add_action( 'template_redirect', function () {
     $path = (string) parse_url( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '/', PHP_URL_PATH );
