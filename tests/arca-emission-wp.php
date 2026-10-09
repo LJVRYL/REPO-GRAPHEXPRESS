@@ -55,6 +55,7 @@ $before = count( $client->calls ); $again = GE_WTP_ARCA_Emission::execute( $p, $
 ae( ! is_wp_error( $again ) && count( $client->calls ) === $before, 'Double click uses existing CAE without network emission' );
 ae( empty( GE_WTP_Documents::issued_documents( $p['order_id'] ) ), 'Homologation never publishes into real invoice portal' );
 ae( is_string( $result['pdf_bytes'] ) && substr( $result['pdf_bytes'], 0, 5 ) === '%PDF-', 'Authorized PDF generated' );
+ae( strpos( $result['pdf_bytes'], 'Precio unitario neto: $50,0000' ) !== false && strpos( $result['pdf_bytes'], 'Subtotal neto: $100,00' ) !== false, 'PDF includes quantity, unit price and exact line subtotal' );
 file_put_contents( '/home/graphexpress/job-flow-qa-20261007/arca-test-invoice.pdf', $result['pdf_bytes'] );
 $url = GE_WTP_ARCA_Invoice_PDF::qr_url( $row ); $qr = json_decode( base64_decode( substr( $url, strpos( $url, '?p=' ) + 3 ) ), true );
 ae( $qr['ver'] === 1 && $qr['tipoCodAut'] === 'E' && $qr['codAut'] === 12345678901234 && $qr['cuit'] === 23336924529 && $qr['tipoCmp'] === 11 && $qr['importe'] === 100, 'Official QR schema and numeric identifiers' );
