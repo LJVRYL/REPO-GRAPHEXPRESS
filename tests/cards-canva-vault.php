@@ -8,7 +8,9 @@ class WP_Error {}
 class GE_Cards_Experience {static function organization(){return 'graph-express';}static function actor_allowed(){return $GLOBALS['actor']>0;}static function path(){return $GLOBALS['path'];}}
 class GE_WTP_Digital_Catalog {static function commercial_quote_price($id,$input){return array('values'=>$input,'price'=>22200);}}
 $GLOBALS['actor']=7;$GLOBALS['session']='fixture-session-1';$GLOBALS['path']='/';$GLOBALS['meta']=array();$GLOBALS['transients']=array();$GLOBALS['options']=array('ge_cards_canva_pilot_enabled_v1'=>'yes','ge_cards_canva_pilot_users_v1'=>array(7,8));$GLOBALS['hooks']=array();$GLOBALS['requests']=0;
+function add_filter($name,$callback,$priority=10,$accepted_args=1){}
 function add_action($name,$callback){$GLOBALS['hooks'][$name]=$callback;}function get_current_user_id(){return $GLOBALS['actor'];}function wp_get_session_token(){return $GLOBALS['session'];}function wp_salt($s){return 'fixture-salt';}
+function update_option($k,$v,$autoload=false){$GLOBALS['options'][$k]=$v;return true;}
 function get_option($k,$default=false){return $GLOBALS['options'][$k]??$default;}function add_option($k,$v){if(isset($GLOBALS['options'][$k]))return false;$GLOBALS['options'][$k]=$v;return true;}function current_user_can($cap){return false;}
 function is_user_logged_in(){return $GLOBALS['actor']>0;}
 function wp_cache_delete($key,$group){}
@@ -99,10 +101,12 @@ ok(!isset($GLOBALS['options'][$stale[0]]) && isset($GLOBALS['options'][$active[0
 private_call('release_export_lock',array($active));
 // Bound private-PDF preflight and cart-gate fixtures; no production filesystem.
 define('GE_WTP_PRIVATE_UPLOAD_DIR',sys_get_temp_dir().'/ge-canva-pdf-fixture-'.getmypid());
-mkdir(GE_WTP_PRIVATE_UPLOAD_DIR,0700);mkdir(GE_WTP_PRIVATE_UPLOAD_DIR.'/pending',0700);
-$privateFile=GE_WTP_PRIVATE_UPLOAD_DIR.'/pending/fixture.pdf';file_put_contents($privateFile,'%PDF-1.7 fixture A');
+mkdir(GE_WTP_PRIVATE_UPLOAD_DIR,0700);
+$fixtureRelative='pending/7/2026/10/11111111-1111-4111-8111-111111111111/fixture.pdf';
+mkdir(dirname(GE_WTP_PRIVATE_UPLOAD_DIR.'/'.$fixtureRelative),0700,true);
+$privateFile=GE_WTP_PRIVATE_UPLOAD_DIR.'/'.$fixtureRelative;file_put_contents($privateFile,'%PDF-1.7 fixture A');
 $GLOBALS['fileFacts']=array('status'=>'complete','facts'=>array('page_count'=>2,'page_sizes'=>array(array('page'=>1,'mm'=>array(95,65)),array('page'=>2,'mm'=>array(95,65))),'encrypted'=>false,'fonts_embedded'=>true,'images'=>array()));
-class GE_WTP_VPS_Storage { static function validate_uploaded_claims($tokens,$user){return $tokens===array('fixture-owner-claim')&&$user===7 ? array(array('mime'=>'application/pdf','relative_path'=>'pending/fixture.pdf')) : new WP_Error();} }
+class GE_WTP_VPS_Storage { static function validate_uploaded_claims($tokens,$user){return $tokens===array('fixture-owner-claim')&&$user===7 ? array(array('mime'=>'application/pdf','relative_path'=>$GLOBALS['fixtureRelative'])) : new WP_Error();} }
 class GE_WTP_File_Analysis {
  static function safe_path($path){return realpath($path)?:'';}
  static function ingest($path,$mime,$mode,$version){$GLOBALS['fileFacts']['sha256']=hash_file('sha256',$path);return array('file_analysis_ref'=>'fixture-ref');}
@@ -123,5 +127,5 @@ $GLOBALS['fileFacts']['facts']['page_sizes'][1]['mm']=array(88.9,50.8);ok(prefli
 $_POST=array('ge_canva_job'=>$fileJob,'product_id'=>83,'ge_digital_nonce'=>'good','ge_digital'=>$selection,'ge_vps_uploads'=>json_encode($claim));try{GE_Cards_Canva::cart_guard();throw new LogicException('Cart not blocked');}catch(Response $r){ok($r->getCode()===302&&!empty($GLOBALS['cartError']),'Cart refuses wrong-sized PDF');}
 $GLOBALS['fileFacts']['facts']['page_sizes'][1]['mm']=array(95,65);$_POST=array('ge_canva_job'=>$fileJob,'product_id'=>83,'ge_digital_nonce'=>'good','ge_digital'=>$selection,'ge_vps_uploads'=>json_encode($claim));GE_Cards_Canva::cart_guard();ok(true,'Valid technical profile passes existing cart gate');
 $GLOBALS['fileFacts']=array('status'=>'queued');ok(preflight_response($args)->data['status']==='pending','Queued analysis remains pending');
-unlink($privateFile);rmdir(GE_WTP_PRIVATE_UPLOAD_DIR.'/pending');rmdir(GE_WTP_PRIVATE_UPLOAD_DIR);
+unlink($privateFile);$cursor=dirname($privateFile);while($cursor!==GE_WTP_PRIVATE_UPLOAD_DIR){rmdir($cursor);$cursor=dirname($cursor);}rmdir(GE_WTP_PRIVATE_UPLOAD_DIR);
 echo json_encode(array('passed'=>$passed,'wordpress_database_loaded'=>false,'network_calls'=>0,'real_credentials_used'=>false,'fixture_only'=>true)).PHP_EOL;

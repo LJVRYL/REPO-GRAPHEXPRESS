@@ -3,6 +3,8 @@
 defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-client.php';
 require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-preflight.php';
+require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-retention.php';
+require_once __DIR__ . '/ge-cards-canva/class-ge-cards-canva-review.php';
 final class GE_Cards_Canva {
     const OPTION = 'ge_cards_canva_pilot_enabled_v1';
     const PUBLIC_OPTION = 'ge_cards_canva_public_approved_v1';
@@ -10,6 +12,8 @@ final class GE_Cards_Canva {
     const META = '_ge_cards_canva_connection_v1';
     const NONCE = 'ge_customer_cards_design';
     public static function init() {
+        GE_Cards_Canva_Retention::init();
+        GE_Cards_Canva_Review::init();
         add_action( 'ge_cards_canva_cleanup', array( __CLASS__, 'cleanup' ) );
         if ( function_exists('wp_next_scheduled') && !wp_next_scheduled('ge_cards_canva_cleanup') ) { wp_schedule_event(time()+3600,'hourly','ge_cards_canva_cleanup'); }
         add_action( 'template_redirect', array( __CLASS__, 'route' ), -90 );
@@ -253,6 +257,7 @@ final class GE_Cards_Canva {
         $base=$root ? realpath($root) : false;
         $path=$base ? GE_WTP_File_Analysis::safe_path($base.DIRECTORY_SEPARATOR.$files[0]['relative_path']) : '';
         if (!$path || strpos($path,$base.DIRECTORY_SEPARATOR)!==0 || filesize($path)>20971520 || !hash_equals($job['pdf_sha256'],hash_file('sha256',$path))) { throw new RuntimeException('El archivo privado no coincide con el PDF exportado desde Canva.'); }
+        if (!GE_Cards_Canva_Retention::track($path,$job['pdf_sha256'],get_current_user_id(),GE_Cards_Experience::organization())) { throw new RuntimeException('No pudimos registrar la conservaciÛn privada del PDF. Reintent·.'); }
         $analysis=GE_WTP_File_Analysis::ingest($path,'application/pdf','technical','canva-cards-v1');
         $row=GE_WTP_File_Analysis::from_ref($analysis['file_analysis_ref'] ?? '');
         if (!$row || ($row['sha256'] ?? '')!==$job['pdf_sha256']) { throw new RuntimeException('La revisi√≥n t√©cnica no pudo iniciarse. Reintent√°.'); }

@@ -19,8 +19,12 @@ Guardados en Canva: destinos HTTPS, textos, sitio y soporte, explicación y paso
 
 La pantalla de estado mostró 11 acciones pendientes después del icono y antes de guardar el destino externo. No constituye envío ni aprobación. Falta video público, cuenta de revisión dedicada, condiciones/privacidad públicas, respuestas restantes y declaración final del titular. No se marcó cumplimiento legal ni programas de seguridad no verificados.
 
-## Conservación aprobada, implementación pendiente
+## Conservación instalada y verificada
 
-El titular eligió 30 días sin compra y 12 meses para archivos de pedidos. No se declaró implementada en Canva. La limpieza privada compartida existente usa una retención predeterminada de 7 días para pendientes; debe añadirse una excepción por archivo identificado de Canva y seguimiento al moverlo a pedido, sin cambiar la política de archivos ajenos. Revisar derivados, análisis, respaldos y excepciones operativas antes de publicar promesas de eliminación. No se eliminaron archivos para probar.
+Instalada conservación de PDF originales de Canva: 30 días sin compra y 12 meses desde asociación a pedido. Excepción por archivo registrado al barrido compartido de 7 días; seguimiento de movimientos a pedidos, SHA y propietario verificados. Pedidos activos/retenciones preservados; reprogramación de vencidos retenidos evita inanición. No se eliminaron archivos reales para probar. 26 fixtures PASS y reimportación real con registro de 30 días verificada. Respaldos del proveedor no cubiertos por estos plazos.
 
+Backup: /root/ge-backups/canva-retention-20261009, tar comparado y hashes verificados. Para pausar eliminaciones: ge_cards_canva_retention_enabled_v1=no; preservar los hooks mientras existan registros.
+
+Cuenta de revisión autorizada y creada: usuario 38, cliente, sin pedidos ni emails, vencimiento 2026-12-08, pedidos/mutaciones bloqueados. 13 fixtures del guard PASS; autenticación y acceso a módulo verificados. Credencial únicamente en almacenamiento privado y campos cifrados de Canva; referencia graphex-canva-reviewer. Copia temporal eliminada. Piloto limitado a usuarios 8 y 38. Conservación y remoción guardadas en Canva. Publicación pública sigue deshabilitada.
 Textos legales preparados fuera del repositorio; identidad y domicilio informados por el titular incorporados. Pendiente revisión/publicación explícita. Credenciales únicamente mediante referencia simbólica graphex-canva-production-client.
+Video: https://graphex.ar/wp-content/mu-plugins/ge-cards-canva/canva-graphex-demostracion.mp4 (capturas reales guiadas del piloto; HTTP 200 video/mp4).
