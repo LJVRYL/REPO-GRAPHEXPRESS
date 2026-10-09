@@ -243,6 +243,7 @@ final class GE_WTP_Documents {
 
     /** Keep every fiscal file immutable. A replacement only supersedes its predecessor. */
     public static function attach_issued( $order_id, $type, $number, $issue_date, $replaces_id = '', $issuer_confirmation_hash = '' ) {
+        if ( 'factura' === $type && class_exists( 'GE_WTP_ARCA_Emission' ) && GE_WTP_ARCA_Emission::locks_order( $order_id ) ) { return new WP_Error( 'ge_issued_arca_locked', 'Existe una solicitud ARCA para este pedido. Recuperá su factura; no se reemplaza con otro PDF.' ); }
         $types = array( 'factura', 'nota_credito', 'nota_debito', 'presupuesto_emitido', 'otro' );
         if ( ! in_array( $type, $types, true ) ) { return new WP_Error( 'ge_issued_type', 'Tipo de documento inválido.' ); }
         if ( $issue_date && ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $issue_date ) || gmdate( 'Y-m-d', strtotime( $issue_date ) ) !== $issue_date ) ) {
