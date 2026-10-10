@@ -41,6 +41,8 @@ $bad=$draft;$bad['siguiente_paso']='liberar_produccion';fails(function()use($bad
 $bad=$draft;unset($bad['datos_pedido']['archivo']);fails(function()use($bad){GE_CRM_Agent::validate_draft($bad);},'partial order rejected');
 $bad=$draft;$bad['respuesta']=['tool'=>'send'];fails(function()use($bad){GE_CRM_Agent::validate_draft($bad);},'tool injection rejected');
 check(GE_CRM_Agent_Budget::month('2026-11-01T01:00:00Z')==='2026-10','Argentina month boundary');
+touch($dir.'/budget.json',1000000);clearstatcache();$b->summary('graph-express');clearstatcache();check(filemtime($dir.'/budget.json')===1000000,'Summary does not rewrite private ledger');
+$b->latest('graph-express','thread1');clearstatcache();check(filemtime($dir.'/budget.json')===1000000,'Draft lookup does not rewrite private ledger');
 file_put_contents($dir.'/budget.json','broken');fails(function()use($b){$b->summary('graph-express');},'corrupted ledger fails closed');
 echo json_encode(['passed'=>$count,'paid_calls'=>0,'production_data_writes'=>0]).PHP_EOL;
 // Retain isolated fixture for reproducibility; no deletion of external directories.

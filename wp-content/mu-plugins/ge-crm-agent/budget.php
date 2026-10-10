@@ -5,7 +5,7 @@ final class GE_CRM_Agent_Budget {
     const THREAD_LIMIT = 2000000;
     private $dir;
     public function __construct($dir) { $this->dir = $dir; }
-    private function transact($fn) {
+    private function transact($fn, $readonly=false) {
         if (!is_dir($this->dir) || !is_writable($this->dir)) throw new RuntimeException('Almacenamiento privado de IA no disponible.');
         $lock = fopen($this->dir . '/budget.lock', 'c');
         if (!$lock || !flock($lock, LOCK_EX)) throw new RuntimeException('No se pudo bloquear el presupuesto.');
@@ -14,6 +14,7 @@ final class GE_CRM_Agent_Budget {
             $state = is_file($path) ? json_decode(file_get_contents($path), true) : array('version'=>1,'calls'=>array());
             if (!is_array($state) || ($state['version'] ?? 0) !== 1 || !is_array($state['calls'] ?? null)) throw new RuntimeException('Registro de consumo inválido; IA pausada.');
             $out = $fn($state);
+            if ($readonly) return $out;
             $tmp = tempnam($this->dir, 'budget-');
             if (!$tmp || file_put_contents($tmp, json_encode($state, JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)) === false || !chmod($tmp, 0600) || !rename($tmp, $path)) throw new RuntimeException('No se pudo confirmar el registro de consumo.');
             return $out;
@@ -32,7 +33,7 @@ final class GE_CRM_Agent_Budget {
         $out['limit'] = self::MONTH_LIMIT;
         return $out;
     }
-    public function summary($scope) { return $this->transact(function(&$s) use ($scope) { return self::totals($s, self::month(), $scope); }); }
+    public function summary($scope) { return $this->transact(function(&$s) use ($scope) { return self::totals($s, self::month(), $scope); },true); }
     public function begin($scope, $thread, $fingerprint, $reserve) {
         if (!is_int($reserve) || $reserve < 1 || $reserve > 100000) throw new RuntimeException('Reserva de consumo inválida.');
         return $this->transact(function(&$s) use ($scope,$thread,$fingerprint,$reserve) {
@@ -67,5 +68,5 @@ final class GE_CRM_Agent_Budget {
         return $result['cost'];
     }
     public function uncertain($id) { return $this->transact(function(&$s) use ($id) { if (isset($s['calls'][$id]) && $s['calls'][$id]['status'] === 'reserved') $s['calls'][$id]['status']='uncertain'; }); }
-    public function latest($scope,$thread) { return $this->transact(function(&$s) use ($scope,$thread) { foreach (array_reverse($s['calls']) as $c) if ($c['scope']===$scope && $c['thread']===$thread && $c['status']==='done') return $c; return null; }); }
+    public function latest($scope,$thread) { return $this->transact(function(&$s) use ($scope,$thread) { foreach (array_reverse($s['calls']) as $c) if ($c['scope']===$scope && $c['thread']===$thread && $c['status']==='done') return $c; return null; },true); }
 }

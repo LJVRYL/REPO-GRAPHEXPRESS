@@ -1,7 +1,7 @@
 <?php
 // Production code with only the private-directory constant redirected into an isolated fixture.
 $dir=sys_get_temp_dir().'/ge-agent-adapter-'.bin2hex(random_bytes(6));mkdir($dir,0700);
-define('ABSPATH',__DIR__);require __DIR__.'/../wp-content/mu-plugins/ge-crm-agent/budget.php';
+define('ABSPATH',$dir.'/');require __DIR__.'/../wp-content/mu-plugins/ge-crm-agent/budget.php';
 $source=file_get_contents(__DIR__.'/../wp-content/mu-plugins/ge-crm-agent/agent.php');
 $source=str_replace("const PRIVATE_DIR = '/home/graphexpress/crm-agent';","const PRIVATE_DIR = '".$dir."';",$source,$replaced);
 if($replaced!==1)throw new RuntimeException('Fixture not isolated');
