@@ -88,6 +88,7 @@ final class GE_CRM_UI {
             echo '</article>'; }if(!$cards)echo '<p class="ge-crm-column-empty">Sin oportunidades</p>';echo '</div></section>'; }echo '</div><p id="ge-crm-status" role="status" aria-live="polite"></p>';
     }
     public static function detail($r) {
+        do_action('ge_crm_thread_agent', $r);
         if ( isset( $r['attention_event'] ) ) { GE_CRM_Attention::render_message( $r ); }
         if (class_exists('GE_Meta_Social')) GE_Meta_Social::render_message($r);
         if ( ! empty( $r['attention_automation_notes'] ) ) { echo '<p>' . esc_html( $r['attention_automation_notes'] ) . '</p>'; }
