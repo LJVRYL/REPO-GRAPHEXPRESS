@@ -44,3 +44,5 @@ Configuración `ge_logistics_config_v1`; coordinación `_ge_logistics_v1`. Se co
 ## Verificación y publicación
 
 85 controles de cálculo/validación y 40 de WordPress en PHP 7.4 y 8.1. Siete suites comerciales, 225 controles por runtime. Última suite 8.1 requirió 512 MB / 120 s por acumulación de datos sintéticos; pasó 33 controles. Ninguna prueba altera datos de producción. Vista real del renderer con datos ficticios en escritorio y móvil, sin contratación y sin formulario ejecutable. Release sólo desde commit canónico, manifiesto de 14 archivos, backup privado verificado, guardas por hash y rollback selectivo. El Result Pack externo registra estado y evidencia final.
+
+Inicio simplificado: el cliente sólo solicita «Coordinar entrega · costo a cotizar», guarda dirección y horario de recepción. Los transportistas y cálculos permanecen preparados en gestión interna. La solicitud del cliente se normaliza a coordinate; no contrata un transportista.
