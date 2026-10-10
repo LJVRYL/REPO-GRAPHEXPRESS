@@ -178,9 +178,9 @@ final class GE_CRM {
             $prob=$raw['probability']??$old['probability']??'';if($prob!==''&&(!is_numeric($prob)||$prob<0||$prob>100))throw new RuntimeException('Probabilidad entre 0 y 100.',422);$d['probability']=$prob;
         }
         if($kind==='thread') {
-            $d['status']=$d['status']?:'needs_review';if(!in_array($d['channel'],array('email','portal','whatsapp'),true) || !in_array($d['status'],array('needs_review','approved_pending_send','closed'),true))throw new RuntimeException('Canal o estado inválido.',422);
+            $d['status']=$d['status']?:'needs_review';if(!in_array($d['channel'],array('email','portal','whatsapp','instagram','messenger'),true) || !in_array($d['status'],array('needs_review','approved_pending_send','closed'),true))throw new RuntimeException('Canal o estado inválido.',422);
             $d['approval']='manual_required';$d['delivery']='not_sent';
-            foreach ( array( 'attention_event','attention_hash','attention_state','attention_attempts','attention_queued_at','conversation_key','attention_lease_at','attention_quote_started','attention_classification','attention_processed_at','attention_ack','attention_task_key' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } }
+            foreach ( array( 'attention_event','attention_hash','attention_state','attention_attempts','attention_queued_at','conversation_key','attention_lease_at','attention_quote_started','attention_classification','attention_processed_at','attention_ack','attention_task_key','meta_event','meta_transport','meta_classification' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } }
             if(!$d['suggested_reply']){$suggest=self::suggest($d['intent']);if($suggest)$d['suggested_reply']=$suggest['template'];}
             $d['unresolved_variables']=array();preg_match_all('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/',$d['suggested_reply'],$matches);$d['unresolved_variables']=array_values(array_unique($matches[1]));
             if($d['status']==='approved_pending_send' && $d['unresolved_variables'])throw new RuntimeException('Completá las variables antes de aprobar el borrador.',422);
@@ -302,7 +302,7 @@ final class GE_CRM {
                 if ( ( $existing['attention_hash'] ?? '' ) !== $hash ) { throw new RuntimeException( 'El mensaje ya recibido cambió; revisar la fuente sin reemplazarlo.', 409 ); }
                 return array( 'record_id' => (int) $id, 'duplicate' => true, 'committed' => true );
             }
-            $matches = 'email' === $event['channel'] ? self::match( array( 'email' => $event['from'] ) ) : array();
+            $matches = 'email' === $event['channel'] ? self::match( array( 'email' => $event['from'] ) ) : ( 'whatsapp' === $event['channel'] ? self::match( array( 'phone' => $event['from'] ) ) : array() );
             $customer = count( $matches ) === 1 ? (int) $matches[0]['id'] : 0;
             $record = self::validate( 'thread', array( 'title' => $event['subject'] ?: 'Mensaje recibido', 'email' => 'email' === $event['channel'] ? $event['from'] : '', 'channel' => $event['channel'], 'external_id' => $event['external_id'], 'customer_id' => $customer, 'owner_id' => self::operations_owner(), 'source' => 'attention' ) );
             $record['attention_event'] = $event;
@@ -317,6 +317,54 @@ final class GE_CRM {
         } );
     }
 
+    /** Scoped source IDs are never customer identities. Social messages require human linkage. */
+    public static function meta_ingest( $e, $receipt ) {
+        self::require_access(true);
+        if (!in_array($e['channel'] ?? '', array('instagram','messenger'),true) || ($e['kind'] ?? '') !== 'message') throw new RuntimeException('Unsupported channel');
+        return self::locked(function() use ($e,$receipt) {
+            global $wpdb;
+            $key='message:' . hash('sha256',$e['channel'] . ':' . $e['account_ref'] . ':' . $e['message_id']);
+            $id=$wpdb->get_var($wpdb->prepare('SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND dedupe_key=%s',self::org(),$key));
+            if ($id) {
+                $old=self::get($id,'thread');
+                if (($old['meta_event']['body'] ?? '') !== $e['body']) throw new RuntimeException('Original message conflict',409);
+                return array('record_id'=>(int)$id,'duplicate'=>true,'committed'=>true);
+            }
+            $record=self::validate('thread',array('title'=>ucfirst($e['channel']) . ' · Mensaje recibido','channel'=>$e['channel'],'external_id'=>$e['message_id'],'owner_id'=>self::operations_owner(),'source'=>'meta-official'));
+            $record['meta_event']=$e;
+            $record['meta_classification']=GE_CRM_Attention::classify(array('channel'=>$e['channel'],'subject'=>'','body'=>$e['body'],'headers'=>array(),'from'=>$e['peer'],'quote_request'=>array(),'reply_ambiguous'=>!empty($e['media_pending']),'body_truncated'=>!empty($e['truncated'])));
+            $record['conversation_key']=hash('sha256',$e['channel'] . ':' . $e['account_ref'] . ':' . $e['peer']);
+            $record['meta_transport']=array('receipt_ref'=>'meta-receipt:' . (int)$receipt,'received_at'=>gmdate('c'),'outbound_enabled'=>false);
+            $saved=self::persist('thread',$record,null,$key);
+            self::operations_task('meta-attention:' . $saved['id'],'Atender mensaje: ' . $record['title'],true,array('thread_id'=>$saved['id']),$record['owner_id'],'Mensaje oficial conservado. Revisar texto y adjuntos; identidad pendiente de asociación verificada. No hay envío automático.');
+            return array('record_id'=>$saved['id'],'duplicate'=>false,'committed'=>true);
+        });
+    }
+    public static function whatsapp_find_thread($account,$message,$peer='',$channel='whatsapp') {
+        self::require_access(true); global $wpdb;
+        if (!in_array($channel,array('whatsapp','instagram','messenger'),true)) return 0;
+        $key='message:' . hash('sha256',$channel . ':' . $account . ':' . $message);
+        $id=(int)$wpdb->get_var($wpdb->prepare('SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND kind=%s AND dedupe_key=%s',self::org(),'thread',$key));
+        if ($id || !$peer) return $id;
+        // Echoes may use a new outbound mid. Link only within the exact scoped conversation.
+        $conversation=hash('sha256',$channel . ':' . $account . ':' . $peer);
+        return (int)$wpdb->get_var($wpdb->prepare('SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND kind=%s AND JSON_UNQUOTE(JSON_EXTRACT(payload,%s))=%s ORDER BY id DESC LIMIT 1',self::org(),'thread','$.conversation_key',$conversation));
+    }
+    public static function whatsapp_transport_event($id,$e,$receipt) {
+        self::require_access(true);
+        return self::locked(function() use ($id,$e,$receipt) {
+            global $wpdb; $r=self::get($id,'thread'); if (!$r) throw new RuntimeException('Thread missing');
+            $channel=$e['channel'] ?? 'whatsapp';
+            $original=$r['attention_event'] ?? $r['meta_event'] ?? array();
+            if ($r['channel'] !== $channel || ($original['account_ref'] ?? '') !== $e['account_ref']) throw new RuntimeException('Foreign thread');
+            $hash=hash('sha256',wp_json_encode($e)); $type='meta_transport';
+            // A retry must not duplicate the audit. No record contents are replaced by delivery/edit events.
+            $seen=$wpdb->get_var($wpdb->prepare('SELECT id FROM ' . self::table('events') . ' WHERE organization_id=%s AND record_id=%d AND event_type=%s AND JSON_UNQUOTE(JSON_EXTRACT(payload,%s))=%s LIMIT 1',self::org(),$id,$type,'$.event_hash',$hash));
+            if ($seen) return array('duplicate'=>true);
+            self::event($id,$r['customer_id'],$type,array('event_hash'=>$hash,'receipt_ref'=>'meta-receipt:' . (int)$receipt,'event'=>$e));
+            return array('duplicate'=>false);
+        });
+    }
     public static function attention_process( $id ) {
         self::require_access( true );
         $claimed = self::locked( function () use ( $id ) {
@@ -466,6 +514,13 @@ final class GE_CRM {
             foreach ( $rows as $row ) {
                 $r = self::decode( $row );
                 update_option( 'ge_crm_attention_stale_cursor_' . self::org(), $r['id'], false );
+                if (!empty($r['meta_event']) && 'closed' !== $r['status']) {
+                    if (strtotime($r['meta_transport']['received_at'] ?? '') < time()-HOUR_IN_SECONDS) {
+                        self::operations_task('meta-attention:' . $r['id'],'Mensaje pendiente de atención: ' . $r['title'],true,array('customer_id'=>$r['customer_id'],'thread_id'=>$r['id']),$r['owner_id'],'Antigüedad mayor a una hora; revisar conversación de ' . $r['channel'] . '.');
+                        $count++;
+                    }
+                    continue;
+                }
                 if ( ! isset( $r['attention_event'] ) || 'closed' === $r['status'] || 'ignored' === $r['attention_state'] ) { continue; }
                 if ( strtotime( $r['attention_queued_at'] ) > time() - HOUR_IN_SECONDS ) { continue; }
                 self::operations_task( ( $r['attention_task_key'] ?? 'attention:' . $r['id'] ), 'Mensaje pendiente de atención: ' . $r['title'], true, array( 'customer_id' => $r['customer_id'], 'quote_id' => $r['quote_id'], 'thread_id' => $r['id'] ), $r['owner_id'], 'Antigüedad mayor a una hora. Estado: ' . $r['attention_state'] . '. Fuente: ' . $r['attention_event']['source_ref'] );

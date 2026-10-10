@@ -59,7 +59,7 @@ final class GE_CRM_UI {
         }
         if($kind==='thread'){self::input('email','Email de contacto',$r,'email');self::input('phone','Teléfono / WhatsApp de contacto',$r,'tel');self::input('external_id','ID del mensaje (opcional, evita duplicados)',$r);}
         if($kind!=='task')self::select('source','Origen',array('manual'=>'Manual','whatsapp'=>'WhatsApp','web'=>'Web / landing','portal'=>'Portal','email'=>'Email','csv'=>'CSV','quote_request'=>'Solicitud de presupuesto'),$r['source']??'manual');
-        if($kind==='thread') {self::select('channel','Canal',array('email'=>'Email','portal'=>'Portal','whatsapp'=>'WhatsApp'),$r['channel']??'whatsapp');$intents=array(''=>'Sin sugerencia');foreach(GE_CRM::replies() as $reply)if(!empty($reply['active']))$intents[$reply['intent']]=$reply['trigger'].' · '.$reply['category'];self::select('intent','Intención / respuesta rápida',$intents,$r['intent']??'');self::select('status','Revisión manual',array('needs_review'=>'Pendiente de revisión','approved_pending_send'=>'Borrador revisado, envío pendiente','closed'=>'Cerrada'),$r['status']??'needs_review');self::input('communication_id','ID comunicación existente',$r,'number');echo '<label>Sugerencia de respuesta<textarea name="suggested_reply" rows="4">'.esc_textarea($r['suggested_reply']??'').'</textarea></label><p>Al guardar se sugiere la respuesta seleccionada. Completá sus variables y revisala antes de marcar el borrador. El CRM no envía mensajes.</p>';}
+        if($kind==='thread') {self::select('channel','Canal',array('email'=>'Email','portal'=>'Portal','whatsapp'=>'WhatsApp','instagram'=>'Instagram','messenger'=>'Messenger'),$r['channel']??'whatsapp');$intents=array(''=>'Sin sugerencia');foreach(GE_CRM::replies() as $reply)if(!empty($reply['active']))$intents[$reply['intent']]=$reply['trigger'].' · '.$reply['category'];self::select('intent','Intención / respuesta rápida',$intents,$r['intent']??'');self::select('status','Revisión manual',array('needs_review'=>'Pendiente de revisión','approved_pending_send'=>'Borrador revisado, envío pendiente','closed'=>'Cerrada'),$r['status']??'needs_review');self::input('communication_id','ID comunicación existente',$r,'number');echo '<label>Sugerencia de respuesta<textarea name="suggested_reply" rows="4">'.esc_textarea($r['suggested_reply']??'').'</textarea></label><p>Al guardar se sugiere la respuesta seleccionada. Completá sus variables y revisala antes de marcar el borrador. El CRM no envía mensajes.</p>';}
         echo '</div><label><span>Notas</span><textarea name="notes" rows="3">'.esc_textarea($r['notes']??'').'</textarea></label><button class="ge-crm-primary">Guardar</button></form>';
     }
     public static function render() {
@@ -89,6 +89,7 @@ final class GE_CRM_UI {
     }
     public static function detail($r) {
         if ( isset( $r['attention_event'] ) ) { GE_CRM_Attention::render_message( $r ); }
+        if (class_exists('GE_Meta_Social')) GE_Meta_Social::render_message($r);
         if ( ! empty( $r['attention_automation_notes'] ) ) { echo '<p>' . esc_html( $r['attention_automation_notes'] ) . '</p>'; }
         if ( ! empty( $r['thread_id'] ) ) { echo '<p><a href="' . esc_url( self::url( 'inbox', array( 'record_id' => $r['thread_id'] ) ) ) . '">Abrir conversación de origen →</a></p>'; }
         echo '<div class="ge-crm-detail"><section><h2>'.esc_html($r['title']).'</h2>';
@@ -121,7 +122,8 @@ final class GE_CRM_UI {
     }
     public static function inbox() {
         GE_CRM_Attention::render_status();
-        echo '<div class="ge-crm-toolbar"><p>Email y comunicaciones existentes · WhatsApp preparado para conexión.</p><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('communications')).'">Abrir Comunicaciones →</a></div><a href="'.esc_url(self::url('inbox',array('new'=>'thread'))).'">Registrar conversación para revisión</a>';$page = max( 1, absint( $_GET['inbox_page'] ?? 1 ) );
+        do_action('ge_crm_inbox_channel_details');
+        echo '<div class="ge-crm-toolbar"><p>Email y canales Meta · WhatsApp preparado para conexión.</p><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('communications')).'">Abrir Comunicaciones →</a></div><a href="'.esc_url(self::url('inbox',array('new'=>'thread'))).'">Registrar conversación para revisión</a>';$page = max( 1, absint( $_GET['inbox_page'] ?? 1 ) );
         $rows = GE_CRM::records( 'thread', 0, '', 51, ( $page - 1 ) * 50 );
         $next = count( $rows ) > 50;
         self::list_records( array_slice( $rows, 0, 50 ) );
