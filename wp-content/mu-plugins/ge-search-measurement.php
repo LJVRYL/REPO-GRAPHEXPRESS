@@ -24,7 +24,7 @@ add_action( 'wp_enqueue_scripts', function () {
     if ( function_exists( 'is_product' ) && is_product() ) { $event = 'product_view'; $id = get_queried_object_id(); }
     elseif ( function_exists( 'is_product_category' ) && is_product_category() ) { $event = 'category_view'; }
     elseif ( function_exists( 'is_checkout' ) && is_checkout() ) { $event = 'begin_checkout'; }
-    wp_enqueue_script( 'ge-search-measurement', plugins_url( 'ge-search/measurement.js', __FILE__ ), array( 'jquery' ), '20261009', true );
+    wp_enqueue_script( 'ge-search-measurement', plugins_url( 'ge-search/measurement.js', __FILE__ ), array( 'jquery' ), '20261009sales1', true );
     wp_add_inline_script( 'ge-search-measurement', 'window.geGrowthConfig=' . wp_json_encode( array(
         'measurementId' => 'G-09DF84KP8S', 'measurementReady' => true,
         'privacyUrl' => $policy_url, 'pageEvent' => $event, 'pageId' => $id,
