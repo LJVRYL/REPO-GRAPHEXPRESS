@@ -61,6 +61,17 @@ $channels = get_option( 'ge_crm_attention_channels' ); $channels['email']['quote
 $standard = $base; $standard['external_id'] = 'qa-standard-' . wp_generate_uuid4(); $standard['quote_request'] = $request;
 $entry = GE_CRM::attention_ingest( $standard ); $prepared = GE_CRM::attention_process( $entry['record_id'] );
 ac( 'prepared' === $prepared['attention_state'] && $prepared['quote_id'], 'Verified standard request creates linked draft' );
+$linked_tasks = array_filter( GE_CRM::records( 'task', 0, '', 500 ), function ( $task ) use ( $prepared ) { return ( $task['thread_id'] ?? 0 ) === $prepared['id']; } );
+$linked_task = reset( $linked_tasks );
+ac( $linked_task && $linked_task['quote_id'] === $prepared['quote_id'], 'Attention task receives the verified draft link after processing' );
+ac( ! empty( $linked_task['attention_automation_notes'] ), 'Current classification context is visible without overwriting human notes' );
+$human_task = GE_CRM::save( 'task', array_merge( $linked_task, array( 'notes' => 'Human notes retained', 'attention_automation_notes' => 'Forged transport context', 'status' => 'done' ) ), $linked_task['id'] );
+ac( $human_task['attention_automation_notes'] === $linked_task['attention_automation_notes'], 'Human edit cannot forge classifier context' );
+GE_CRM::attention_process( $prepared['id'] ); $human_task = GE_CRM::get( $human_task['id'] );
+ac( 'Human notes retained' === $human_task['notes'], 'Reconciliation preserves human task notes' );
+ac( 'done' === $human_task['status'], 'Reconciliation preserves human task closure' );
+
+
 $quote = GE_WTP_Commercial_Quotes::get( $prepared['quote_id'] );
 ac( 'draft' === $quote['status'] && ! $quote['converted_order_id'], 'No publication or order creation' );
 ac( 5490 === $quote['snapshot']['net_cents'] && 0 === $quote['snapshot']['tax_cents'] && 5490 === $quote['snapshot']['total_cents'], 'Current calculator price, exact cents and configured C tax frozen' );

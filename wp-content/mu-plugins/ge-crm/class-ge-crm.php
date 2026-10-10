@@ -186,7 +186,7 @@ final class GE_CRM {
             if($d['status']==='approved_pending_send' && $d['unresolved_variables'])throw new RuntimeException('Completá las variables antes de aprobar el borrador.',422);
             if($d['status']==='approved_pending_send'){$d['approval']='staff_reviewed';$d['approved_by']=get_current_user_id();$d['approved_at']=gmdate('c');}
         }
-        if ( 'task' === $kind && isset( $old['attention_dispatch'] ) ) { $d['attention_dispatch'] = $old['attention_dispatch']; }
+        if ( 'task' === $kind ) { foreach ( array( 'attention_dispatch', 'attention_automation_notes' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } } }
         $d['source']=$d['source']?:'manual';return $d;
     }
     private static function persist($kind,$d,$old=null,$dedupe=null) {
@@ -322,7 +322,10 @@ final class GE_CRM {
         $claimed = self::locked( function () use ( $id ) {
             $r = self::get( $id, 'thread' );
             if ( ! isset( $r['attention_event'] ) ) { throw new RuntimeException( 'No es un mensaje de transporte.', 422 ); }
-            if ( 'closed' === $r['status'] || in_array( $r['attention_state'], array( 'review', 'ignored', 'prepared', 'failed' ), true ) ) { return $r; }
+            if ( 'closed' === $r['status'] || in_array( $r['attention_state'], array( 'review', 'ignored', 'prepared', 'failed' ), true ) ) {
+                self::operations_task( 'attention:' . $id, 'Atender mensaje: ' . $r['title'], 'closed' !== $r['status'] && 'ignored' !== $r['attention_state'], array( 'customer_id' => $r['customer_id'], 'quote_id' => $r['quote_id'], 'thread_id' => $id ), $r['owner_id'], $r['notes'] );
+                return $r;
+            }
             if ( 'processing' === $r['attention_state'] && strtotime( $r['attention_lease_at'] ?? '' ) > time() - 300 ) { throw new RuntimeException( 'El mensaje está en proceso.', 409 ); }
             if ( ! empty( $r['attention_quote_started'] ) ) {
                 $r['attention_state'] = 'review'; $r['notes'] = 'Resultado de preparación incierto: revisar antes de generar otro presupuesto.';
@@ -502,9 +505,16 @@ final class GE_CRM {
         $id = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND dedupe_key=%s', self::org(), 'operations:' . $key ) );
         $old = $id ? self::get( $id, 'task' ) : null;
         if ( ! $needed && ! $old ) { return; }
-        if ( $old && ( 'cancelled' === $old['status'] || ( $needed && 'open' === $old['status'] ) || ( ! $needed && 'done' === $old['status'] ) ) ) { return; }
-        $raw = array_merge( $old ?: array(), $links, array( 'title' => $title, 'owner_id' => $old ? $old['owner_id'] : $owner, 'status' => $needed ? 'open' : 'done', 'source' => 'operations', 'priority' => 'high', 'notes' => $notes, 'due_date' => $old ? $old['due_date'] : wp_date( 'Y-m-d' ) ) );
-        self::persist( 'task', self::validate( 'task', $raw, $old ?: array() ), $old, 'operations:' . $key );
+        if ( $old && ( 'cancelled' === $old['status'] || ( $needed && 'done' === $old['status'] ) || ( ! $needed && 'done' === $old['status'] ) ) ) { return; }
+        $raw = array_merge( $old ?: array(), $links, array( 'title' => $old ? $old['title'] : $title, 'owner_id' => $old ? $old['owner_id'] : $owner, 'status' => $needed ? 'open' : 'done', 'source' => 'operations', 'priority' => $old ? $old['priority'] : 'high', 'notes' => $old ? $old['notes'] : $notes, 'due_date' => $old ? $old['due_date'] : wp_date( 'Y-m-d' ) ) );
+        $data = self::validate( 'task', $raw, $old ?: array() );
+        $data['attention_automation_notes'] = $notes;
+        if ( $old ) {
+            $changed = false;
+            foreach ( array_merge( array_keys( $links ), array( 'title', 'status', 'attention_automation_notes' ) ) as $field ) { if ( ( $data[$field] ?? null ) !== ( $old[$field] ?? null ) ) { $changed = true; break; } }
+            if ( ! $changed ) { return; }
+        }
+        self::persist( 'task', $data, $old, 'operations:' . $key );
     }
     public static function scheduled() {
         self::system(function(){

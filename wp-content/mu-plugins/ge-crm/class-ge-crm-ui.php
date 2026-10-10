@@ -78,7 +78,7 @@ final class GE_CRM_UI {
     }
     public static function list_records($rows) {
         if(!$rows){echo '<div class="ge-crm-empty">Todavía no hay registros en esta vista.</div>';return;}
-        echo '<div class="ge-crm-list">';foreach($rows as $r){$due=$r['kind']==='task'&&$r['status']==='open'&&$r['due_date']&&$r['due_date']<wp_date('Y-m-d');echo '<a class="ge-crm-row" href="'.esc_url(self::url($r['kind']==='lead'?'leads':'tasks',array('record_id'=>$r['id']))).'"><div><strong>'.esc_html($r['title']).'</strong><small>'.esc_html($r['email']?:($r['next_action']??$r['notes']??'')).'</small></div><span class="ge-crm-badge">'.esc_html(isset($r['attention_state']) ? GE_CRM_Attention::label( $r ) : ($due?'Vencida':($r['stage']?GE_CRM::config()['stages'][$r['stage']]:$r['status']))).'</span><small>'.esc_html($r['due_date']).'</small></a>'; }echo '</div>';
+        echo '<div class="ge-crm-list">';foreach($rows as $r){$due=$r['kind']==='task'&&$r['status']==='open'&&$r['due_date']&&$r['due_date']<wp_date('Y-m-d');echo '<a class="ge-crm-row" href="'.esc_url(self::url($r['kind']==='lead'?'leads':($r['kind']==='thread'?'inbox':'tasks'),array('record_id'=>$r['id']))).'"><div><strong>'.esc_html($r['title']).'</strong><small>'.esc_html($r['email']?:($r['next_action']??$r['notes']??'')).'</small></div><span class="ge-crm-badge">'.esc_html(isset($r['attention_state']) ? GE_CRM_Attention::label( $r ) : ($due?'Vencida':($r['stage']?GE_CRM::config()['stages'][$r['stage']]:$r['status']))).'</span><small>'.esc_html($r['due_date']).'</small></a>'; }echo '</div>';
     }
     public static function pipeline($q='') {
         echo '<div class="ge-crm-toolbar"><div><strong>Pipeline comercial</strong><small>Mové una tarjeta o elegí su etapa.</small></div><div><a href="'.esc_url(self::url('pipeline',array('new'=>'opportunity'))).'">Nueva oportunidad</a> · <a href="'.esc_url(self::url('pipeline',array('layout'=>($_GET['layout']??'')==='list'?'kanban':'list'))).'">'.(($_GET['layout']??'')==='list'?'Ver Kanban':'Ver lista').'</a></div></div>';
@@ -89,6 +89,7 @@ final class GE_CRM_UI {
     }
     public static function detail($r) {
         if ( isset( $r['attention_event'] ) ) { GE_CRM_Attention::render_message( $r ); }
+        if ( ! empty( $r['attention_automation_notes'] ) ) { echo '<p>' . esc_html( $r['attention_automation_notes'] ) . '</p>'; }
         if ( ! empty( $r['thread_id'] ) ) { echo '<p><a href="' . esc_url( self::url( 'inbox', array( 'record_id' => $r['thread_id'] ) ) ) . '">Abrir conversación de origen →</a></p>'; }
         echo '<div class="ge-crm-detail"><section><h2>'.esc_html($r['title']).'</h2>';
         if($r['customer_id'])echo '<a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('customers',array('customer_id'=>$r['customer_id']))).'">Abrir ficha del cliente →</a>';
@@ -129,7 +130,7 @@ final class GE_CRM_UI {
         echo '<span>Página ' . (int) $page . '</span>';
         if ( $next ) { echo '<a href="' . esc_url( self::url( 'inbox', array( 'inbox_page' => $page + 1 ) ) ) . '">Siguientes →</a>'; }
         echo '</nav>';
-        echo '<section class="ge-crm-panel"><h2>Email registrado</h2>';foreach(GE_WTP_Notifications::get_logs(50) as $p)if(GE_CRM::mail_scope($p->ID)){echo '<div class="ge-crm-row"><div><strong>'.esc_html($p->post_title).'</strong><small>'.esc_html(get_post_meta($p->ID,'_ge_email_to',true)).'</small></div><small>'.esc_html(get_post_meta($p->ID,'_ge_email_result',true)).'</small></div>';}echo '</section><p>Las sugerencias se guardan como borrador. Los envíos y la recepción dependen del transporte verificado y de la política de cada canal.</p>';
+        echo '<details class="ge-crm-panel"><summary>Historial de correos enviados</summary>';foreach(GE_WTP_Notifications::get_logs(50) as $p)if(GE_CRM::mail_scope($p->ID)){echo '<div class="ge-crm-row"><div><strong>'.esc_html($p->post_title).'</strong><small>'.esc_html(get_post_meta($p->ID,'_ge_email_to',true)).'</small></div><small>'.esc_html(get_post_meta($p->ID,'_ge_email_result',true)).'</small></div>';}echo '</details><p>Las sugerencias se guardan como borrador. Los envíos y la recepción dependen del transporte verificado y de la política de cada canal.</p>';
     }
     public static function settings() {
         if(!in_array(GE_CRM::role(get_current_user_id()),array('owner','admin'),true)){echo '<p>Los ajustes los administra el owner o admin.</p>';return;}

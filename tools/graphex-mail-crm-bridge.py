@@ -47,7 +47,7 @@ def envelope(event, message, observed_at):
 
 
 def consume(core, deliver, limit=20, dry_run=True):
-    counts = {"read": 0, "committed": 0, "duplicates": 0, "retry": 0, "historical": 0, "external_sent": 0}
+    counts = {"read": 0, "committed": 0, "duplicates": 0, "retry": 0, "historical": 0, "external_sent": 0, "external_uncertain": 0}
     for event in core.pending("graphex", limit)["events"]:
         try:
             message = core.read_message("graphex", event["message"]["id"], 12000)
@@ -70,6 +70,8 @@ def consume(core, deliver, limit=20, dry_run=True):
             result = deliver(packet)
             if not result.get("committed") or not result.get("record_id"):
                 raise RuntimeError("CRM did not confirm durable receipt")
+            counts["external_sent"] += int(result.get("ack_state") == "sent")
+            counts["external_uncertain"] += int(result.get("ack_state") == "unknown")
             core.acknowledge("graphex", event["event_id"], "crm_persisted")
             counts["committed"] += 1
             counts["duplicates"] += int(bool(result.get("duplicate")))
