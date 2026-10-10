@@ -152,6 +152,7 @@ final class GE_WTP_Staff_Portal {
             'general' => array( 'icon' => 'GE', 'title' => 'General', 'description' => 'Identidad, datos del negocio y preferencias generales.' ),
             'billing' => array( 'icon' => 'FA', 'title' => 'Facturación', 'description' => 'Emisor, comprobantes habilitados y política de precios.' ),
             'notifications' => array( 'icon' => '✉', 'title' => 'Notificaciones', 'description' => 'Destinatarios, eventos, resúmenes y trazabilidad de correos.' ),
+            'logistics' => array( 'icon' => 'EN', 'title' => 'Logística', 'description' => 'Origen privado, entrega propia, bultos y cotización de transportistas.' ),
             'operations' => array( 'icon' => 'OT', 'title' => 'Pedidos y producción', 'description' => 'Criterios operativos, tiempos, estados y automatizaciones.' ),
             'customers' => array( 'icon' => 'CL', 'title' => 'Clientes y archivos', 'description' => 'Perfiles, direcciones, biblioteca y conservación de originales.' ),
             'integrations' => array( 'icon' => '↗', 'title' => 'Integraciones', 'description' => 'Correo saliente, pagos, almacenamiento y servicios externos.' ),
@@ -177,7 +178,7 @@ final class GE_WTP_Staff_Portal {
                     <?php foreach ( $categories as $key => $item ) : ?><a class="<?php echo $category === $key ? 'is-active' : ''; ?>" href="<?php echo esc_url( self::portal_url( 'settings', array( 'category' => $key ) ) ); ?>"><b><?php echo esc_html( $item['icon'] ); ?></b><span><?php echo esc_html( $item['title'] ); ?></span></a><?php endforeach; ?>
                 </aside>
                 <div class="ge-settings-content">
-                    <?php if ( 'notifications' === $category ) : GE_WTP_Notification_Center::render( false ); elseif ( 'integrations' === $category ) : GE_WTP_Google_Auth::render_settings(); elseif ( 'billing' === $category ) : GE_WTP_Billing::render_settings(); else : $item = $categories[ $category ]; ?>
+                    <?php if ( 'logistics' === $category && class_exists( 'GE_Logistics_UI' ) ) : GE_Logistics_UI::settings(); elseif ( 'notifications' === $category ) : GE_WTP_Notification_Center::render( false ); elseif ( 'integrations' === $category ) : GE_WTP_Google_Auth::render_settings(); elseif ( 'billing' === $category ) : GE_WTP_Billing::render_settings(); else : $item = $categories[ $category ]; ?>
                         <section class="ge-settings-placeholder"><b><?php echo esc_html( $item['icon'] ); ?></b><span>Próxima categoría</span><h2><?php echo esc_html( $item['title'] ); ?></h2><p><?php echo esc_html( $item['description'] ); ?> La estructura ya está lista para incorporar estos controles cuando los definamos.</p><a href="<?php echo esc_url( self::portal_url( 'settings' ) ); ?>">Volver a configuración</a></section>
                     <?php endif; ?>
                 </div>
@@ -434,6 +435,7 @@ final class GE_WTP_Staff_Portal {
     }
 
     private static function render_order_shipping( $order ) {
+        if ( class_exists( 'GE_Logistics_UI' ) ) { return; }
         $method = $order->get_meta( '_ge_manual_delivery_method', true ) ?: 'coordinate';
         $recipient = $order->get_meta( '_ge_delivery_recipient', true ) ?: trim( $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name() );
         ?>
@@ -452,6 +454,7 @@ final class GE_WTP_Staff_Portal {
         if ( ! self::can_access() ) { wp_die( 'Acceso denegado.', 403 ); }
         $order_id = absint( $_POST['order_id'] ?? 0 ); check_admin_referer( 'ge_staff_order_shipping_' . $order_id );
         $order = wc_get_order( $order_id ); if ( ! $order ) { wp_die( 'Pedido inválido.', 404 ); }
+        if ( class_exists( 'GE_Logistics_UI' ) && $order->get_meta( GE_Logistics::META ) ) { wp_die( 'Usá la sección Envío y retiro para conservar la cotización vigente.', '', array( 'response' => 409 ) ); }
         $method = sanitize_key( wp_unslash( $_POST['delivery_method'] ?? 'coordinate' ) );
         if ( ! in_array( $method, array( 'coordinate', 'pickup', 'delivery' ), true ) ) { wp_die( 'Modalidad inválida.', 400 ); }
         $source = sanitize_key( wp_unslash( $_POST['address_source'] ?? 'current' ) );

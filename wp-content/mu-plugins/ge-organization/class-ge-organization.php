@@ -68,9 +68,9 @@ final class GE_Organization {
         return self::locked(function() use($actor) {
             if(self::get(self::PRIMARY)) { return self::get(self::PRIMARY); }
             $s=self::defaults();
-            $s['general']=array_merge($s['general'],array('display_name'=>get_bloginfo('name'),'brand_name'=>'Graph Express','website'=>home_url('/'),'email'=>get_option('admin_email'),'address'=>'Oruro 1253 · CABA'));
+            $s['general']=array_merge($s['general'],array('display_name'=>get_bloginfo('name'),'brand_name'=>'Graph Express','website'=>home_url('/'),'email'=>get_option('admin_email'),'address'=>''));
             $s['branding']['logo_url']=GE_WTP_PLUGIN_URL.'assets/images/graphex-simbolo.svg';
-            $s['documents']['footer']='Graph Express · Oruro 1253 · CABA';
+            $s['documents']['footer']='Graph Express · Entregas a coordinar';
             $s['email']['sender_name']='Graph Express'; $s['integrations']['commerce_provider']='woocommerce';
             $mail=GE_WTP_Notification_Center::settings();
             $s['general']['email']=$mail['sender_email']??'';

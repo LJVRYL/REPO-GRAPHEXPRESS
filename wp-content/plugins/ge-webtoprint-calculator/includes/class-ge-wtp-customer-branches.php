@@ -131,6 +131,7 @@ final class GE_WTP_Customer_Branches {
         echo '<p><strong>Facturar a:</strong> ' . esc_html( $profile ? ( ( $profile['label'] ?? 'Perfil principal' ) . ' · ' . ( $profile['legal_name'] ?: 'Sin razón social' ) . ( $staff && ! empty( $profile['cuit'] ) ? ' · CUIT ' . $profile['cuit'] : '' ) ) : ( $order->get_billing_company() ?: 'Datos históricos del pedido' ) ) . '</p>';
         echo '<p><strong>Entregar en:</strong> ' . esc_html( $delivery ? ( ( $delivery['label'] ?? 'Destino' ) . ' · ' . ( $delivery['street'] ?? '' ) ) : ( $order->get_shipping_address_1() ?: 'A coordinar' ) ) . '</p>';
         echo '</section>';
+        do_action( 'ge_logistics_order', $order, $staff );
     }
 
     private static function form( $customer_id, $profile ) {

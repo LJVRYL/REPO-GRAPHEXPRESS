@@ -205,6 +205,7 @@ final class GE_WTP_Commercial_Quote_UI {
         self::render_save_selection( $proposal, GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) && empty( $proposal['snapshot']['customer_selection'] ), true, false );
         echo '</section>';
         if ( ! $quote['converted_order_id'] && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { self::render_conversion_dialog( $quote, $customer ); }
+        do_action( 'ge_logistics_quote', $quote, false );
         self::render_events( $quote );
         if ( class_exists( 'GE_WTP_Commercial_Checkout' ) && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { GE_WTP_Commercial_Checkout::render_staff_payment( $quote ); }
     }
@@ -466,6 +467,7 @@ final class GE_WTP_Commercial_Quote_UI {
             if ( class_exists( 'GE_WTP_Commercial_Checkout' ) ) { GE_WTP_Commercial_Checkout::render_quote_checkout( $quote ); }
             self::render_save_selection( $proposal, $choices, false, $preview );
             self::render_approval( $proposal, $quote, $selection_ready, $preview );
+            do_action( 'ge_logistics_quote', $quote, true );
             echo '</article>';
         }
     }
