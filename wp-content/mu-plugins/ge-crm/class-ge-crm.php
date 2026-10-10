@@ -8,6 +8,8 @@ final class GE_CRM {
     public static function table($name='records') { global $wpdb; return $wpdb->prefix.'ge_crm_'.$name; }
     public static function init() {
         require_once __DIR__ . '/class-ge-crm-attention.php';
+        require_once __DIR__ . '/class-ge-crm-origin.php';
+        GE_CRM_Origin::init();
         add_action('rest_api_init',array(__CLASS__,'routes'));
         add_action( 'ge_crm_attention_tick', array( __CLASS__, 'attention_tick' ) );
         add_action( 'init', function () { if ( get_option( 'ge_crm_attention_enabled', false ) && ! wp_next_scheduled( 'ge_crm_attention_tick' ) ) { wp_schedule_single_event( time() + 300, 'ge_crm_attention_tick' ); } } );
@@ -190,6 +192,7 @@ final class GE_CRM {
         $d['source']=$d['source']?:'manual';return $d;
     }
     private static function persist($kind,$d,$old=null,$dedupe=null) {
+        $d=GE_CRM_Origin::prepare_record($d,$old);
         global $wpdb;$now=gmdate('Y-m-d H:i:s');$r=array('organization_id'=>self::org(),'kind'=>$kind,'payload'=>wp_json_encode($d),'updated_at'=>$now);
         foreach(array('title','status','owner_id','customer_id','lead_id','opportunity_id','quote_id','order_id','stage','due_date','email','phone','cuit') as $k)$r[$k]=$d[$k]??'';
         if($old){$r['revision']=$old['revision']+1;$ok=$wpdb->update(self::table(),$r,array('id'=>$old['id'],'organization_id'=>self::org(),'revision'=>$old['revision']));if($ok!==1)throw new RuntimeException('Registro modificado; recargá.',409);$id=$old['id'];}
@@ -222,6 +225,7 @@ final class GE_CRM {
                 update_user_meta($cid,'_ge_organization_id',self::org());update_user_meta($cid,'billing_phone',$l['phone']);update_user_meta($cid,'billing_company',$l['company']);
             }
             $l['customer_id']=$cid;$l['status']='converted';$out=self::persist('lead',$l,self::get($id));
+            if(GE_CRM_Origin::enabled() && isset($l['origin'])) GE_CRM_Origin::observe_customer($cid,$l['origin']);
             global $wpdb;$related=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table().' WHERE organization_id=%s AND lead_id=%d',self::org(),$id),ARRAY_A);
             foreach($related as $raw){$r=self::decode($raw);if($r['customer_id'] && $r['customer_id']!==$cid)throw new RuntimeException('Relación comercial incompatible.',409);$d=$r;$d['customer_id']=$cid;self::persist($r['kind'],$d,$r);}
             self::event($id,$cid,'lead_converted',array('customer_id'=>$cid,'invitation_sent'=>false));return $out;

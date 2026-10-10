@@ -95,7 +95,8 @@ final class GE_WTP_Customer_Workspace {
                 }
             } else {
                 $row = array( 'id' => '' === $address_id || ctype_digit( $address_id ) ? wp_generate_uuid4() : $address_id );
-                foreach ( array( 'label', 'recipient', 'street', 'city', 'province', 'postal_code', 'phone', 'hours', 'notes' ) as $key ) { $row[ $key ] = $text( $key ); }
+                foreach ( array( 'label', 'recipient', 'street', 'city', 'province', 'postal_code', 'phone', 'hours', 'notes', 'country', 'place_id' ) as $key ) { $row[ $key ] = $text( $key ); }
+                if ( class_exists( 'GE_Logistics' ) ) { $row = GE_Logistics::address( $row ); }
                 if ( ! $row['street'] || ( null === $index && count( $addresses ) >= 4 ) ) { $result = 'error'; }
                 else { if ( null === $index ) { $addresses[] = $row; } else { $addresses[ $index ] = $row; } update_user_meta( $id, '_ge_delivery_addresses', $addresses ); }
             }
@@ -118,7 +119,7 @@ final class GE_WTP_Customer_Workspace {
         $address_id = (string) ( $address['id'] ?? ( $existing ? $index : '' ) );
         echo '<details class="ge-workspace-item"><summary><strong>' . esc_html( $existing ? ( $address['label'] ?: 'Destino ' . ( $index + 1 ) ) : 'Agregar destino' ) . '</strong><span>' . esc_html( $existing ? ( $address['street'] ?? '' ) : 'Nueva dirección de entrega' ) . '</span></summary>';
         self::form_start( $id, 'delivery', array( 'address_id' => $address_id ) );
-        foreach ( array( 'label' => 'Sede', 'recipient' => 'Quién recibe', 'street' => 'Dirección', 'city' => 'Localidad', 'province' => 'Provincia', 'postal_code' => 'Código postal', 'phone' => 'Teléfono', 'hours' => 'Días y horarios', 'notes' => 'Instrucciones' ) as $key => $label ) { self::field( $label, $key, $address[ $key ] ?? '' ); }
+        foreach ( array( 'label' => 'Sede', 'recipient' => 'Quién recibe', 'street' => 'Dirección', 'city' => 'Localidad', 'province' => 'Provincia', 'postal_code' => 'Código postal', 'phone' => 'Teléfono', 'hours' => 'Días y horarios', 'notes' => 'Instrucciones', 'country' => 'País (AR)' ) as $key => $label ) { self::field( $label, $key, $address[ $key ] ?? '' ); }
         if ( $existing ) { echo '<button class="ge-workspace-archive" type="submit" name="archive" value="1" data-ge-confirm="¿Desactivar este destino? Los pedidos anteriores conservan su snapshot.">Desactivar</button>'; }
         self::form_end(); echo '</details>';
     }

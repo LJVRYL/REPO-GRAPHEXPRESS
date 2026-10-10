@@ -667,6 +667,7 @@ final class GE_WTP_Commercial_Checkout {
         $order->set_status( 'ge-confirmado', $payment ? 'Pedido creado tras acreditarse el primer cobro del presupuesto.' : 'Pedido creado manualmente desde presupuesto; pago y arte pendientes de verificación.' );
         $order->save();
         GE_WTP_Production::ensure_order( $order );
+        do_action( 'ge_logistics_inherit', $quote, $order );
         return $order;
     }
 }

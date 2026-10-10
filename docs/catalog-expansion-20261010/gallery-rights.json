@@ -1,0 +1,8 @@
+{
+  "schema_version":1,
+  "season":2027,
+  "status":"not_enabled",
+  "assets":[],
+  "required_fields":["asset_id","source_url","creator","license_name","license_url","evidence_reference","commercial_print_allowed","modification_allowed","attribution_required","attribution_text","usage_restrictions","rights_verified_by","rights_verified_on","file_sha256"],
+  "policy":"No incorporar imágenes encontradas en buscadores ni arte de Unigraf sin licencia suficiente. Verificar uso comercial, impresión de tiradas y modificaciones. La licencia y su evidencia se guardan antes de habilitar cada imagen. Registrar la declaración de derechos del cliente para originales propios en el flujo real de archivo y aprobación."
+}

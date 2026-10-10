@@ -13,7 +13,7 @@ final class GE_WTP_Review_Requests {
 
     public static function review_url() {
         $saved = esc_url_raw( (string) get_option( self::URL_OPTION, '' ) );
-        return $saved ?: 'https://www.google.com/maps/search/?api=1&query=Imprenta%20Graph%20Express%20Oruro%201253%20Buenos%20Aires';
+        return $saved ?: 'https://www.google.com/maps/search/?api=1&query=Graph%20Express';
     }
 
     public static function render_for_order( $order ) {
@@ -87,7 +87,7 @@ final class GE_WTP_Review_Requests {
     }
 
     private static function email_body( $name, $url ) {
-        return '<!doctype html><html><body style="margin:0;background:#f3f2f6;font-family:Arial,sans-serif;color:#17152a"><div style="max-width:680px;margin:auto;padding:30px 18px"><div style="padding:20px 26px;border-radius:16px 16px 0 0;background:#111629;color:#fff"><strong style="letter-spacing:.1em">GRAPH EXPRESS</strong></div><div style="padding:34px 28px;border-radius:0 0 16px 16px;background:#fff"><h1 style="font-size:30px;margin-top:0">¿Cómo fue tu experiencia?</h1><p style="font-size:16px;line-height:1.65;color:#4f4b59">Hola ' . esc_html( $name ) . ', gracias por elegir Graph Express. Si quedaste conforme con nuestro trabajo, nos ayudaría muchísimo que compartas tu experiencia en Google.</p><p style="margin:28px 0"><a href="' . esc_url( $url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Dejar una reseña</a></p><p style="font-size:13px;line-height:1.55;color:#85818e">La reseña es completamente voluntaria. Gracias por confiar en nosotros.</p><p style="margin-top:30px;color:#898594;font-size:12px">Graph Express · Oruro 1253 · CABA</p></div></div></body></html>';
+        return '<!doctype html><html><body style="margin:0;background:#f3f2f6;font-family:Arial,sans-serif;color:#17152a"><div style="max-width:680px;margin:auto;padding:30px 18px"><div style="padding:20px 26px;border-radius:16px 16px 0 0;background:#111629;color:#fff"><strong style="letter-spacing:.1em">GRAPH EXPRESS</strong></div><div style="padding:34px 28px;border-radius:0 0 16px 16px;background:#fff"><h1 style="font-size:30px;margin-top:0">¿Cómo fue tu experiencia?</h1><p style="font-size:16px;line-height:1.65;color:#4f4b59">Hola ' . esc_html( $name ) . ', gracias por elegir Graph Express. Si quedaste conforme con nuestro trabajo, nos ayudaría muchísimo que compartas tu experiencia en Google.</p><p style="margin:28px 0"><a href="' . esc_url( $url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Dejar una reseña</a></p><p style="font-size:13px;line-height:1.55;color:#85818e">La reseña es completamente voluntaria. Gracias por confiar en nosotros.</p><p style="margin-top:30px;color:#898594;font-size:12px">Graph Express · Entregas a coordinar</p></div></div></body></html>';
     }
 
     private static function log( $order, $channel, $success ) {
