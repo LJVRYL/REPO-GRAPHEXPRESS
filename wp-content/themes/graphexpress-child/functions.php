@@ -351,7 +351,12 @@ function graphexpress_render_product_price_tables() {
     }
 
     echo '<div class="gx-price-guide">';
-    echo '<div class="gx-price-guide-intro"><span>Valores de referencia</span><h2>Elegí formato y cantidad</h2><p>Los importes publicados son valores Graph Express antes de IVA. Confirmamos disponibilidad y valor final al solicitar la cotización.</p></div>';
+    $price_intro = 'Los importes publicados son valores Graph Express antes de IVA. Confirmamos disponibilidad y valor final al solicitar la cotización.';
+    if (0 === strpos((string) $product->get_meta('_ge_public_catalog_key'), 'windbanners-') && class_exists('GE_WTP_Windbanners_Catalog')) {
+        $tax_context = GE_WTP_Windbanners_Catalog::tax_context();
+        $price_intro = 'Los importes de la tabla son valores netos Graph Express. ' . ($tax_context ? $tax_context['note'] : 'Consultanos para validar el comprobante y el precio final.');
+    }
+    echo '<div class="gx-price-guide-intro"><span>Valores de referencia</span><h2>Elegí formato y cantidad</h2><p>' . esc_html($price_intro) . '</p></div>';
 
     foreach ($sections as $section) {
         if (empty($section['columns']) || empty($section['rows'])) {

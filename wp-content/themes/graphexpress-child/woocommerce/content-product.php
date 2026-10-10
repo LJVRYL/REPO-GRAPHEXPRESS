@@ -41,6 +41,18 @@ $symbol = isset($symbols[$group_slug]) ? $symbols[$group_slug] : 'GE';
 $attributes = array_slice($product->get_attributes(), 0, 2);
 $reference_price = class_exists('GE_WTP_Storefront') ? GE_WTP_Storefront::minimum_price($product->get_id()) : $product->get_meta('_ge_reference_price_min');
 $show_reference_price = is_numeric($reference_price) && (float) $reference_price > 0;
+$is_wind = 0 === strpos((string) $product->get_meta('_ge_public_catalog_key'), 'windbanners-');
+$price_decimals = $is_wind ? 2 : 0;
+$price_suffix = '+ IVA';
+if ($is_wind && class_exists('GE_WTP_Windbanners_Catalog')) {
+    $tax_context = GE_WTP_Windbanners_Catalog::tax_context();
+    if ($tax_context) {
+        $reference_price = (float) $reference_price * $tax_context['multiplier'];
+        $price_suffix = $tax_context['label'];
+    } else {
+        $show_reference_price = false;
+    }
+}
 $action_label = $show_reference_price ? 'Configurar y comprar' : 'Ver formatos';
 ?>
 <li <?php wc_product_class('gx-product-tile gx-product-group-' . sanitize_html_class($group_slug), $product); ?>>
@@ -60,8 +72,8 @@ $action_label = $show_reference_price ? 'Configurar y comprar' : 'Ver formatos';
             <?php if ($show_reference_price) : ?>
                 <p class="gx-product-reference-price">
                     <span>Desde</span>
-                    <strong><?php echo wp_kses_post(wc_price((float) $reference_price, array('decimals' => 0))); ?></strong>
-                    <small>+ IVA</small>
+                    <strong><?php echo wp_kses_post(wc_price((float) $reference_price, array('decimals' => $price_decimals))); ?></strong>
+                    <small><?php echo esc_html($price_suffix); ?></small>
                 </p>
             <?php endif; ?>
             <?php if ($attributes) : ?>
