@@ -16,6 +16,6 @@ try {
         update_option('ge_crm_attention_channels',$channels,false);
     }
     $result=GE_WhatsApp_Inbound::drain();
-    GE_CRM::attention_stale();
+    if (GE_WhatsApp_Inbound::ready($cfg) || GE_Meta_Social::ready($cfg)) GE_CRM::attention_stale();
     echo wp_json_encode($result) . "\n";
 } catch (Throwable $e) { error_log('Graphex Meta worker requires review'); echo '{"error":"worker_review_required"}'; exit(1); }
