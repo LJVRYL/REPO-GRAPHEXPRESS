@@ -88,6 +88,8 @@ final class GE_WTP_Storefront {
         remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
         remove_action('woocommerce_single_product_summary', 'graphexpress_quote_only_product_cta', 31);
         $first = reset($config['options']);
+        $tax = $config['tax_context'] ?? array('multiplier'=>1.21,'label'=>'Total final con IVA','note'=>'');
+        $price_decimals = !empty($config['windbanners']) ? 2 : 0;
         $minimum_quantity = max(1, isset($first['min_qty']) ? (int) $first['min_qty'] : (isset($config['min_qty']) ? (int) $config['min_qty'] : 1));
         $quantity_step = max(1, isset($first['step']) ? (int) $first['step'] : (isset($config['step']) ? (int) $config['step'] : 1));
         $mode = isset($config['mode']) ? $config['mode'] : '';
@@ -99,7 +101,7 @@ final class GE_WTP_Storefront {
         $upload_description = !empty($config['upload_description']) ? $config['upload_description'] : 'Subí los originales al almacenamiento privado del VPS. Quedarán vinculados a este producto y a tu pedido.';
         $upload_hint = !empty($config['upload_hint']) ? $config['upload_hint'] : '';
         ?>
-        <form class="ge-storefront-config" method="post" enctype="multipart/form-data" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ge-storefront data-options="<?php echo esc_attr(wp_json_encode($config['options'])); ?>" data-option-map="<?php echo esc_attr(wp_json_encode(isset($config['option_map']) ? $config['option_map'] : array())); ?>" data-roll-widths="<?php echo esc_attr(wp_json_encode($config['roll_widths_cm'] ?? array())); ?>">
+        <form class="ge-storefront-config" method="post" enctype="multipart/form-data" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ge-storefront data-tax-multiplier="<?php echo esc_attr($tax['multiplier']); ?>" data-price-decimals="<?php echo esc_attr($price_decimals); ?>" data-options="<?php echo esc_attr(wp_json_encode($config['options'])); ?>" data-option-map="<?php echo esc_attr(wp_json_encode(isset($config['option_map']) ? $config['option_map'] : array())); ?>" data-roll-widths="<?php echo esc_attr(wp_json_encode($config['roll_widths_cm'] ?? array())); ?>">
             <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION); ?>">
             <input type="hidden" name="product_id" value="<?php echo esc_attr($product->get_id()); ?>">
             <?php wp_nonce_field(self::ACTION . '_' . $product->get_id(), 'ge_store_nonce'); ?>
@@ -141,8 +143,10 @@ final class GE_WTP_Storefront {
             <?php endif; ?>
             <div class="ge-storefront-buy-row<?php echo !empty($config['fixed_quantity_selector']) ? ' has-fixed-quantity' : ''; ?>">
                 <?php if (!empty($config['fixed_quantity_selector'])) : ?><input type="hidden" name="quantity" value="<?php echo esc_attr($minimum_quantity); ?>" data-ge-quantity><?php else : ?><label><span>Cantidad</span><input type="number" name="quantity" min="<?php echo esc_attr($minimum_quantity); ?>" step="<?php echo esc_attr($quantity_step); ?>" value="<?php echo esc_attr($minimum_quantity); ?>" data-ge-quantity></label><?php endif; ?>
-                <div class="ge-storefront-price"><small>Total final con IVA</small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * 1.21, array('decimals' => 0))); ?></strong><span data-ge-base>Base sin IVA: <?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity, array('decimals' => 0))); ?></span></div>
+                <div class="ge-storefront-price"><small><?php echo esc_html($tax['label']); ?></small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $tax['multiplier'], array('decimals' => $price_decimals))); ?></strong><span data-ge-base>Base sin IVA: <?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity, array('decimals' => $price_decimals))); ?></span></div>
             </div>
+            <?php if (!empty($tax['note'])) : ?><p class="ge-storefront-account-note"><?php echo esc_html($tax['note']); ?></p><?php endif; ?>
+            <?php if (!empty($config['windbanners'])) : ?><p data-ge-option-details aria-live="polite"></p><?php endif; ?>
             <?php if ($saved_artworks) : ?>
                 <fieldset class="ge-storefront-artworks">
                     <legend>Archivo de impresión</legend>
@@ -240,10 +244,16 @@ final class GE_WTP_Storefront {
             'ge_configuration'     => $configuration,
             // Preserve centavos at unit level so a large minimum quantity does
             // not accumulate a rounding difference against the displayed total.
-            'ge_calculated_price'  => round($unit_price * 1.21, 4),
+            'ge_calculated_price'  => round($unit_price * ($config['tax_context']['multiplier'] ?? 1.21), 4),
             'ge_base_price'        => $unit_price,
             'ge_unique'            => wp_generate_uuid4(),
         );
+        if (!empty($config['windbanners'])) {
+            $cart_data['ge_wind_source_id']=$option['source_id'];
+            $cart_data['ge_wind_variant_id']=$option['variant_id'];
+            $cart_data['ge_wind_reconciliation_date']=GE_WTP_Windbanners_Catalog::SOURCE_DATE;
+            $cart_data['ge_wind_tax_context']=$config['tax_context'];
+        }
         if ( ! empty( $config['roll_widths_cm'] ) ) { $cart_data['ge_internal_roll_width_cm'] = $billable_width; }
         $comments = isset($_POST['ge_order_comments']) ? sanitize_textarea_field(wp_unslash($_POST['ge_order_comments'])) : '';
         if ('' !== $comments) {
@@ -330,6 +340,9 @@ final class GE_WTP_Storefront {
     public static function order_item_data($item, $cart_key, $values, $order) {
         if (!empty($values['ge_configuration'])) {
             $item->add_meta_data('Configuración', wc_clean($values['ge_configuration']), true);
+        }
+        if (!empty($values['ge_wind_source_id'])) {
+            foreach (array('ge_wind_source_id','ge_wind_variant_id','ge_wind_reconciliation_date','ge_wind_tax_context','ge_base_price') as $field) { if (isset($values[$field])) { $item->update_meta_data('_'.$field, $values[$field]); } }
         }
         if ( ! empty( $values['ge_internal_roll_width_cm'] ) ) { $item->update_meta_data( '_ge_internal_roll_width_cm', $values['ge_internal_roll_width_cm'] ); }
         if (!empty($values['ge_order_comments'])) {
@@ -441,6 +454,10 @@ final class GE_WTP_Storefront {
     }
 
     public static function config($product_id) {
+        if (class_exists('GE_WTP_Windbanners_Catalog')) {
+            $wind=GE_WTP_Windbanners_Catalog::storefront_config($product_id);
+            if (null!==$wind) { return $wind; }
+        }
         $custom = get_post_meta($product_id, '_ge_storefront_config', true);
         if (is_array($custom) && !empty($custom['options'])) {
             return $custom;
