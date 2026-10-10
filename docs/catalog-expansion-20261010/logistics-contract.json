@@ -1,0 +1,30 @@
+{
+  "schema_version":1,
+  "project":"graph-express",
+  "owner":"product-catalog",
+  "consumer":"logistics-shipping",
+  "status":"proposed_interface_no_measurements",
+  "quantity_unit":"finished_piece",
+  "units":{"dimensions":"mm","area":"m2","grammage":"g/m2","mass":"kg","carrier_dimensions":"cm"},
+  "products":[
+    {"key":"carpetas-offset","finished_size_mm":null,"unfolded_net_area_m2":null,"grammage_g_m2":null,"folded_thickness_mm":null,"unit_net_weight_kg":null,"units_per_package":null,"packaging_profile_id":null},
+    {"key":"postales-offset","finished_size_mm":null,"unfolded_net_area_m2":null,"grammage_g_m2":null,"folded_thickness_mm":null,"unit_net_weight_kg":null,"units_per_package":null,"packaging_profile_id":null},
+    {"key":"senaladores-offset","finished_size_mm":null,"proposal":{"finished_size_mm":{"width":50,"height":180},"requires_validation":true},"unfolded_net_area_m2":null,"grammage_g_m2":null,"folded_thickness_mm":null,"unit_net_weight_kg":null,"units_per_package":null,"packaging_profile_id":null},
+    {"key":"almanaques-2027","season":2027,"finished_size_mm":null,"unfolded_net_area_m2":null,"grammage_g_m2":null,"folded_thickness_mm":null,"unit_net_weight_kg":null,"units_per_package":null,"packaging_profile_id":null}
+  ],
+  "calculation_rules":{
+    "net_paper_mass_kg":"quantity * validated_net_area_m2 * validated_grammage_g_m2 / 1000; sum sheets/parts where applicable",
+    "finished_net_mass":"paper estimate plus documented validated accessories/coatings; prefer measured sample",
+    "package_count":"ceil(quantity / validated_units_per_package); compute remainder package separately",
+    "gross_mass":"net_finished_mass_of_package + measured_packaging_tare_kg",
+    "volumetric_mass":"external_length_cm * external_width_cm * external_height_cm / carrier_documented_divisor",
+    "chargeable_mass":"carrier-specific rule from logistics worker; never assume divisor or rounding"
+  },
+  "validation":{
+    "required_evidence":["product variant and quantity", "calculation assumptions and source", "representative sample weight", "external packed dimensions", "packaging tare", "units per package and remainder", "measurement date and responsible person", "carrier contract divisor/rounding owned by logistics"],
+    "estimates_must_be_labeled":true,
+    "missing_input_result":"needs_measurement_not_zero",
+    "production_waste_in_shipping_mass":false,
+    "pricing_or_carrier_integration_in_scope":false
+  }
+}

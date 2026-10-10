@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "project": "graph-express",
+  "resource": "graph-wordpress-prod",
+  "revision": "2026-10-10",
+  "mode": "draft_only",
+  "category_slug": "imprenta-offset",
+  "sources": [
+    {"id":"leo-brief", "kind":"user_instruction", "observed_on":"2026-10-10", "facts":["Graphex ya produce carpetas offset", "Postales como producto propio", "Señaladores offset: propuesta 5 × 18 cm", "Almanaques: imagen propia o galería con derechos, tirada propuesta 2000"]},
+    {"id":"leo-calendar-year", "kind":"user_answer", "observed_on":"2026-10-10", "fact":"Temporada 2027"},
+    {"id":"unigraf-folders", "url":"https://unigraf.com.ar/productos/carpetas/", "scope":"inspiration_only", "note":"Carpetas con/sin solapa y papel ilustración 300 g observados en proveedor; no son especificaciones comerciales validadas de Graphex."},
+    {"id":"unigraf-price-link", "url":"https://www.unigraf.com.ar/gremio", "observed_on":"2026-10-10", "status":"download_link_404", "price_authority":false}
+  ],
+  "products": [
+    {
+      "key":"carpetas-offset", "slug":"carpetas-offset", "sku":"GX-OFF-CARP", "name":"Carpetas offset",
+      "short_description":"Carpetas institucionales para presentar documentos y propuestas. Cotización según formato, papel, cantidad y terminaciones.",
+      "description":"<h2>Una presentación a la medida de tu marca</h2><p>Carpetas impresas para organizar documentación, propuestas comerciales y material institucional.</p><h3>Definí tu carpeta</h3><p>Indicá medida cerrada, capacidad, cantidad, papel, caras impresas y terminaciones. Confirmaremos la alternativa con o sin solapa y su plantilla antes de preparar el diseño.</p><h3>Archivo y aprobación</h3><p>Trabajá sobre la plantilla aprobada de la carpeta. Separá corte, hendido y demás líneas técnicas del arte impreso. Confirmaremos sangrado y márgenes seguros según el troquel. La producción comienza después de aprobar la prueba del archivo exacto.</p><h3>Precio y plazo</h3><p>Se confirman en la cotización según papel, tirada, troquel y terminaciones.</p>",
+      "confirmed":{"process":"offset", "existing_graphex_capacity":true},
+      "proposed":{"formats":["Con solapa", "Sin solapa"]},
+      "pending":["medida cerrada y desarrollo", "troquel y capacidad", "papel y gramaje", "caras y tintas", "solapas, hendido, plegado y armado", "laminado u otras terminaciones", "mínimos y tiradas", "precio y vigencia", "plazo", "foto propia", "sangrado y plantilla aprobada"]
+    },
+    {
+      "key":"postales-offset", "slug":"postales-offset", "sku":"GX-OFF-POST", "name":"Postales impresas",
+      "short_description":"Postales para campañas, invitaciones y mensajes de marca. Un producto propio, cotizado según medida, papel, impresión y cantidad.",
+      "description":"<h2>Una pieza para guardar o compartir</h2><p>Postales impresas para comunicación comercial, invitaciones y mensajes personalizados.</p><h3>Definí tu postal</h3><p>Indicá tamaño final, cantidad, papel, caras impresas y terminación. Si necesitás escribir sobre el dorso, avisalo para seleccionar un soporte compatible.</p><h3>Prepará el diseño</h3><p>Entregá el archivo al tamaño final acordado y, si lleva dorso, identificá frente y reverso. Preprensa confirmará sangrado, márgenes seguros y orientación. La prueba del archivo exacto debe aprobarse antes de imprimir.</p><h3>Precio y plazo</h3><p>Se confirman para esta pieza según soporte, tirada y terminaciones.</p>",
+      "confirmed":{"standalone_product":true},
+      "proposed":{"process":"offset"},
+      "pending":["medidas", "papel y gramaje", "caras y tintas", "dorso escribible", "corte y acabados", "mínimos y tiradas", "precio y vigencia", "plazo", "foto propia", "sangrado y márgenes"]
+    },
+    {
+      "key":"senaladores-offset", "slug":"senaladores-offset", "sku":"GX-OFF-SEN", "name":"Señaladores offset",
+      "short_description":"Señaladores personalizados para libros, eventos y campañas. Cotización según formato, papel, cantidad y terminaciones.",
+      "description":"<h2>Tu marca acompaña la lectura</h2><p>Señaladores impresos para editoriales, librerías, instituciones y acciones promocionales.</p><h3>Definí tu señalador</h3><p>El formato inicial propuesto es 5 × 18 cm, sujeto a confirmación técnica. Indicá cantidad, papel, caras impresas y las terminaciones que necesitás.</p><h3>Prepará el archivo</h3><p>Usá el tamaño final confirmado. Identificá frente y dorso cuando corresponda. Confirmaremos sangrado y márgenes seguros antes de imprimir. Cortes especiales, perforaciones y accesorios requieren evaluación y cotización separada.</p><h3>Precio y plazo</h3><p>Se confirman según soporte, tirada y terminaciones, después de revisar el archivo y aprobar la prueba.</p>",
+      "confirmed":{"process":"offset"},
+      "proposed":{"finished_size_mm":{"width":50,"height":180}},
+      "pending":["validación del formato 5 × 18 cm", "papel y gramaje", "caras y tintas", "corte y acabados", "mínimos y tiradas", "precio y vigencia", "plazo", "foto propia", "sangrado y márgenes"]
+    },
+    {
+      "key":"almanaques-2027", "slug":"almanaques-2027", "sku":"GX-OFF-ALM-2027", "name":"Almanaques personalizados 2027",
+      "short_description":"Almanaques de la temporada 2027 con imagen propia o una selección con derechos de uso verificados. Formato, tirada y precio se confirman en la cotización.",
+      "description":"<h2>Tu marca durante todo 2027</h2><p>Almanaques personalizados para regalar a clientes o acompañar campañas de la temporada 2027.</p><h3>Elegí tu imagen</h3><p>Podés aportar una imagen propia con autorización para imprimirla. La alternativa de galería estará disponible cuando cada imagen tenga derechos de uso comercial e impresión verificados.</p><h3>Formato y cantidad</h3><p>Consultanos por formato, soporte y terminaciones. La tirada de 2000 unidades es una propuesta a evaluar; no representa un mínimo ni una oferta cerrada.</p><h3>Archivo y aprobación</h3><p>Confirmaremos la plantilla, el sangrado y los márgenes seguros. La grilla de fechas de 2027, los datos de marca y el archivo exacto se revisan y aprueban antes de producir.</p><h3>Precio y plazo</h3><p>Se confirman según formato, papel, cantidad, terminaciones y disponibilidad.</p>",
+      "confirmed":{"season":2027,"year_source":"leo-calendar-year"},
+      "proposed":{"quantity":2000,"image_modes":["customer_owned", "rights_verified_gallery"]},
+      "pending":["formato y cantidad de hojas", "papel y gramaje", "caras y tintas", "terminaciones y soporte", "mínimos y tiradas", "precio y vigencia", "plazo", "foto propia", "plantilla y sangrado", "galería con licencias", "revisión de grilla y fechas 2027"]
+    }
+  ]
+}
