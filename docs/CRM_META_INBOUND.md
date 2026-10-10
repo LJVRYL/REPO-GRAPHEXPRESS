@@ -4,8 +4,8 @@ Un receptor y un worker privado para WhatsApp, Instagram y Messenger. Usa las ta
 
 ## Endpoints
 
-- WhatsApp: `https://graphex.ar/wp-json/ge/v1/whatsapp/webhook`
-- Instagram/Messenger: `https://graphex.ar/wp-json/ge/v1/meta/webhook`
+- WhatsApp: `https://graphex.ar/wp-json/ge/v1/crm/whatsapp-webhook`
+- Instagram/Messenger: `https://graphex.ar/wp-json/ge/v1/crm/meta-webhook`
 
 GET valida el token y devuelve el challenge literal. POST valida HMAC SHA256 sobre bytes exactos y la lista de activos antes de confirmar. Falta de configuración o persistencia responde 503; firma/activo ajeno 403. Tamaño máximo 2 MiB. Confirmación únicamente después del INSERT durable. La misma entrega no crea otra fila; el mismo ID de mensaje no crea otra conversación ni tarea. Cambios de contenido son incidentes; nunca sustituyen el original.
 

@@ -17,7 +17,7 @@ GE_WhatsApp_Inbound::install();
 $channels=get_option('ge_crm_attention_channels',array()); $channels['whatsapp']['accounts']=array('wa:' . $cfg['waba_id'] . ':' . $cfg['phone_number_id']); update_option('ge_crm_attention_channels',$channels,false);
 $prefix='qa-' . wp_generate_uuid4();
 function wa_packet($cfg,$mid,$text='Quiero cotizar volantes') { return json_encode(array('object'=>'whatsapp_business_account','entry'=>array(array('id'=>$cfg['waba_id'],'changes'=>array(array('field'=>'messages','value'=>array('metadata'=>array('phone_number_id'=>$cfg['phone_number_id']),'messages'=>array(array('id'=>$mid,'from'=>'5491199900001','timestamp'=>(string)time(),'type'=>'text','text'=>array('body'=>$text)))))))))); }
-function signed_req($raw,$cfg,$social=false) { $r=new WP_REST_Request('POST',$social ? '/ge/v1/meta/webhook' : '/ge/v1/whatsapp/webhook'); $r->set_body($raw); $r->set_header('x-hub-signature-256','sha256=' . hash_hmac('sha256',$raw,$cfg['app_secret'])); return $r; }
+function signed_req($raw,$cfg,$social=false) { $r=new WP_REST_Request('POST',$social ? '/ge/v1/crm/meta-webhook' : '/ge/v1/crm/whatsapp-webhook'); $r->set_body($raw); $r->set_header('x-hub-signature-256','sha256=' . hash_hmac('sha256',$raw,$cfg['app_secret'])); return $r; }
 $raw=wa_packet($cfg,$prefix . '-wa'); $req=signed_req($raw,$cfg);
 mc(GE_WhatsApp_Inbound::ready($cfg),'WA ready'); mc(GE_Meta_Social::ready($cfg),'Social independently ready');
 mc(GE_WhatsApp_Inbound::verify_signature($raw,$req->get_header('x-hub-signature-256'),$cfg['app_secret']),'Raw signature valid');
@@ -52,7 +52,7 @@ foreach (array('instagram'=>'17841000000001','page'=>'1280829488457568') as $obj
     $data['entry'][0]['id']='999999'; reject(function() use ($data,$cfg) { GE_Meta_Social::events($data,$cfg); },$channel . ' foreign asset blocked');
 }
 $badReq=signed_req($raw,$cfg); $badReq->set_header('x-hub-signature-256','sha256=' . str_repeat('0',64)); mc(is_wp_error(GE_WhatsApp_Inbound::receive($badReq)),'Unsigned input rejected before queue');
-$challenge=new WP_REST_Request('GET','/ge/v1/whatsapp/webhook'); $challenge->set_param('hub.mode','subscribe'); $challenge->set_param('hub.verify_token',$cfg['verify_token']); $challenge->set_param('hub.challenge','123456');
+$challenge=new WP_REST_Request('GET','/ge/v1/crm/whatsapp-webhook'); $challenge->set_param('hub.mode','subscribe'); $challenge->set_param('hub.verify_token',$cfg['verify_token']); $challenge->set_param('hub.challenge','123456');
 mc(GE_WhatsApp_Inbound::challenge($challenge)->get_data()==='123456','Challenge data literal');
 $challenge->set_param('hub.verify_token','wrong'); mc(is_wp_error(GE_WhatsApp_Inbound::challenge($challenge)),'Challenge wrong token rejected');
 $disabled=$cfg; $disabled['enabled']=false; mc(GE_Meta_Social::ready($disabled) && !GE_WhatsApp_Inbound::ready($disabled),'Social works independently of WA API access');
@@ -71,4 +71,10 @@ mc((int)$wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . GE_CRM::table() 
 $changed=GE_CRM::get($id,'thread'); $changed['meta_transport']=array('outbound_enabled'=>true); $saved=GE_CRM::save('thread',$changed,$id);
 mc(empty($saved['meta_transport']['outbound_enabled']),'Manual editing cannot forge transport enablement');
 mc($mails===0,'No external email or Meta send path used');
+wp_set_current_user(0);
+foreach (array('/ge/v1/crm/whatsapp-webhook','/ge/v1/crm/meta-webhook') as $route) {
+    $public=new WP_REST_Request('POST',$route);
+    mc(!is_wp_error(GE_Organization_Runtime::guard_rest(null,rest_get_server(),$public)),'Signed webhook reaches module gate without WP login');
+}
+wp_set_current_user(1);
 echo json_encode(array('checks'=>$checks,'outbound_calls'=>0,'isolated_qa'=>true,'channels'=>array('whatsapp','instagram','messenger'))) . "\n";

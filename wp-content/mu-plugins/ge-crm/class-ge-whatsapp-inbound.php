@@ -52,11 +52,11 @@ final class GE_WhatsApp_Inbound {
         return $out;
     }
     public static function routes() {
-        register_rest_route('ge/v1', '/whatsapp/webhook', array(
+        register_rest_route('ge/v1', '/crm/whatsapp-webhook', array(
             array('methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => array(__CLASS__, 'challenge')),
             array('methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => array(__CLASS__, 'receive')),
         ));
-        register_rest_route('ge/v1', '/meta/webhook', array(
+        register_rest_route('ge/v1', '/crm/meta-webhook', array(
             array('methods'=>'GET','permission_callback'=>'__return_true','callback'=>array(__CLASS__,'social_challenge')),
             array('methods'=>'POST','permission_callback'=>'__return_true','callback'=>array(__CLASS__,'social_receive')),
         ));
@@ -71,7 +71,7 @@ final class GE_WhatsApp_Inbound {
         $value = $request->get_param('hub_challenge') ?? $request->get_param('hub.challenge');
         if ($mode !== 'subscribe' || !is_string($token) || !hash_equals($cfg['verify_token'], $token) || !is_string($value) || !preg_match('/^[0-9]{1,100}$/D', $value)) return new WP_Error('wa_verify', 'Verificación rechazada.', array('status' => 403));
         // Meta needs the literal challenge, not a JSON string with quotes.
-        $route=$social ? '/ge/v1/meta/webhook' : '/ge/v1/whatsapp/webhook';
+        $route=$social ? '/ge/v1/crm/meta-webhook' : '/ge/v1/crm/whatsapp-webhook';
         add_filter('rest_pre_serve_request', function ($served, $result, $req) use ($value,$route) {
             if ($req->get_route() !== $route || $req->get_method() !== 'GET') return $served;
             header('Content-Type: text/plain; charset=utf-8'); echo $value; return true;
