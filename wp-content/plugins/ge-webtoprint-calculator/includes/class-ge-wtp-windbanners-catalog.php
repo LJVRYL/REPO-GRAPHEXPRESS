@@ -11,7 +11,7 @@ defined('ABSPATH') || exit;
 final class GE_WTP_Windbanners_Catalog {
     const SOURCE_NAME = 'Grupo Wind Banners';
     const SOURCE_URL = 'https://grupowindbanners.com.ar/';
-    const SOURCE_DATE = '2026-09-08';
+    const SOURCE_DATE = '2026-10-10';
     const IMAGE_VERSION = '2026-09-09-clean-v1';
 
     public static function groups() {
@@ -26,16 +26,16 @@ final class GE_WTP_Windbanners_Catalog {
     }
 
     private static function definitions() {
-        $before_vat = 'Valores Graph Express antes de IVA.';
+        $before_vat = 'Precio unitario neto. El tratamiento de IVA depende del emisor del comprobante. En comprobantes C no se agrega IVA.';
         return array(
             'banderas-sublimadas' => array('WB-BAN-001', 'Banderas sublimadas', 'windbanners-banderas', 'Banderas textiles full color para frentes, mástiles, eventos y comunicación institucional.', array('Impresión por sublimación full color.', $before_vat)),
             'bases-estacas' => array('WB-BAS-001', 'Bases y estacas para fly banners', 'bases-windbanners', 'Accesorios para instalar windbanners sobre pisos duros, tierra, arena o pasto.', array('El sobrepeso se entrega vacío.', 'Las estacas de 40 cm se recomiendan hasta 3,20 m y las de 60 cm para alturas mayores.', $before_vat)),
             'carpas-estrella' => array('WB-CAR-001', 'Carpas estrella personalizadas', 'carpas-gazebos', 'Carpas de alto impacto visual confeccionadas en cordura impermeable e impresas full color.', array('Cordura impermeable e impresión full color.', $before_vat)),
             'gazebos-completos' => array('WB-CAR-002', 'Gazebos personalizados completos', 'carpas-gazebos', 'Gazebos plegables con estructura y techo impreso, disponibles también con paredes personalizadas.', array('Estructura de hierro o aluminio según disponibilidad.', 'Techo impermeable y paredes impresas full color.', $before_vat)),
             'gazebo-repuestos' => array('WB-CAR-003', 'Techos y paredes para gazebos', 'carpas-gazebos', 'Repuestos impresos para actualizar o completar estructuras de gazebo existentes.', array('Confirmamos medida y compatibilidad de la estructura antes de producir.', $before_vat)),
-            'fly-cube' => array('WB-FLY-001', 'Fly banner Cube', 'windbanners-banderas', 'Bandera promocional sublimada con estructura liviana y bolso de transporte.', array('Disponible simple o doble faz según el tamaño.', 'El precio no incluye base.', 'Producción estimada: 10 días.', $before_vat)),
-            'fly-drop' => array('WB-FLY-002', 'Fly banner Drop', 'windbanners-banderas', 'Bandera promocional de formato recto y curvo con impresión full color.', array('Disponible simple o doble faz según el tamaño.', 'El precio no incluye base.', 'Producción estimada: 10 días.', $before_vat)),
-            'fly-gota' => array('WB-FLY-003', 'Fly banner Gota', 'windbanners-banderas', 'Windbanner de silueta gota para promociones, veredas y eventos.', array('Incluye estructura, bandera y bolso.', 'El precio no incluye base.', 'Producción estimada: 10 días.', $before_vat)),
+            'fly-cube' => array('WB-FLY-001', 'Fly banner Cube', 'windbanners-banderas', 'Bandera promocional sublimada con estructura liviana y bolso de transporte.', array('Disponible simple o doble faz según el tamaño.', 'El precio no incluye base.', 'Plazo de producción y entrega a confirmar antes de producir.', $before_vat)),
+            'fly-drop' => array('WB-FLY-002', 'Fly banner Drop', 'windbanners-banderas', 'Bandera promocional de formato recto y curvo con impresión full color.', array('Disponible simple o doble faz según el tamaño.', 'El precio no incluye base.', 'Plazo de producción y entrega a confirmar antes de producir.', $before_vat)),
+            'fly-gota' => array('WB-FLY-003', 'Fly banner Gota', 'windbanners-banderas', 'Windbanner de silueta gota para promociones, veredas y eventos.', array('Incluye estructura, bandera y bolso.', 'El precio no incluye base.', 'Plazo de producción y entrega a confirmar antes de producir.', $before_vat)),
             'fly-oval' => array('WB-FLY-004', 'Fly banner Oval', 'windbanners-banderas', 'Windbanner ovalado compacto para exhibición y señalización.', array('Disponible simple o doble faz según el modelo.', 'El precio no incluye base.', $before_vat)),
             'fly-petalo' => array('WB-FLY-005', 'Fly banner Pétalo', 'windbanners-banderas', 'Bandera promocional con remate curvo para comunicación exterior.', array('Disponible simple o doble faz según el tamaño.', 'El precio no incluye base.', $before_vat)),
             'fly-pluma' => array('WB-FLY-006', 'Fly banner Pluma', 'windbanners-banderas', 'Windbanner estilizado de gran altura para eventos y puntos de venta.', array('Disponible simple o doble faz según el tamaño.', 'El precio no incluye base.', $before_vat)),
@@ -51,7 +51,7 @@ final class GE_WTP_Windbanners_Catalog {
             'mostradores' => array('WB-MOS-001', 'Mostradores promocionales', 'stands-backdrops', 'Mostradores portátiles personalizados para ferias, degustaciones y puntos de atención.', array('Impresión full color.', $before_vat)),
             'stands' => array('WB-STA-001', 'Stands promocionales', 'stands-backdrops', 'Soluciones modulares para montar espacios de marca en eventos y exposiciones.', array('La configuración final se confirma según el espacio disponible.', $before_vat)),
             'wall-banners' => array('WB-WAL-001', 'Wall banners', 'stands-backdrops', 'Fondos tensados autoportantes para stands, prensa y ambientación.', array('Impresión full color.', $before_vat)),
-            'cintas-colgantes' => array('WB-CIN-001', 'Cintas colgantes y llaveros', 'promocionales-textiles', 'Cintas personalizadas para credenciales, medallas, eventos y merchandising.', array('Cantidad mínima y personalización a confirmar.', 'Valores unitarios antes de IVA.')),
+            'cintas-colgantes' => array('WB-CIN-001', 'Cintas colgantes y llaveros', 'promocionales-textiles', 'Cintas personalizadas para credenciales, medallas, eventos y merchandising.', array('Cantidad mínima y personalización a confirmar.', $before_vat)),
             'puffs-personalizados' => array('WB-PUF-001', 'Puffs y fiacas personalizados', 'promocionales-textiles', 'Mobiliario textil promocional para eventos, espacios de marca y áreas de descanso.', array('Personalización full color.', $before_vat)),
             'puffs-kids' => array('WB-PUF-002', 'Puffs Kids personalizados', 'promocionales-textiles', 'Puffs compactos personalizados para espacios infantiles y activaciones familiares.', array('Personalización full color.', $before_vat)),
         );
@@ -108,6 +108,7 @@ final class GE_WTP_Windbanners_Catalog {
         } elseif ('Banderas' === $category) {
             $name = preg_replace('/^BANDERA\s*/i', '', $name);
         }
+        if (!empty($row['variant_name'])) { $name .= ' · ' . $row['variant_name']; }
         return trim($name);
     }
 
@@ -116,7 +117,7 @@ final class GE_WTP_Windbanners_Catalog {
         $products = array();
         foreach (self::source_rows() as $row) {
             $key = self::family_key($row);
-            if (!$key || !isset($definitions[$key]) || !is_numeric($row['price'])) {
+            if (!$key || !isset($definitions[$key])) {
                 continue;
             }
             if (!isset($products[$key])) {
@@ -130,12 +131,17 @@ final class GE_WTP_Windbanners_Catalog {
                     'rows' => array(),
                     'prices' => array(),
                     'source_ids' => array(),
+                    'options' => array(),
+                    'unavailable' => array(),
                 );
             }
+            if (isset($row['active']) && !$row['active']) { $products[$key]['unavailable'][] = self::variant_label($row); continue; }
+            if (!is_numeric($row['price']) || (float) $row['price'] <= 0 || empty($row['option_key'])) { continue; }
             $label = self::variant_label($row);
+            $products[$key]['options'][$row['option_key']] = array('label'=>$label, 'price'=>(float)$row['price'], 'min_qty'=>max(1,(int)$row['min_qty']), 'step'=>max(1,(int)$row['step']), 'source_id'=>(int)$row['id'], 'variant_id'=>$row['variant_id'], 'includes'=>trim(($row['variant_description'] ? 'Opción seleccionada: '.$row['variant_description'].' ' : '').$row['includes']), 'description'=>$row['description'], 'source_url'=>$row['source_url']);
             $products[$key]['rows'][] = array($label, (float) $row['price']);
             $products[$key]['prices'][] = (float) $row['price'];
-            $products[$key]['source_ids'][] = (int) $row['id'];
+            if (!in_array((int)$row['id'], $products[$key]['source_ids'], true)) { $products[$key]['source_ids'][] = (int) $row['id']; }
         }
         return $products;
     }
@@ -143,9 +149,60 @@ final class GE_WTP_Windbanners_Catalog {
     private static function public_sections($product) {
         $rows = array();
         foreach ($product['rows'] as $row) {
-            $rows[] = array($row[0], '$ ' . number_format($row[1], 0, ',', '.'));
+            $rows[] = array($row[0], '$ ' . number_format($row[1], round($row[1],2) == floor($row[1]) ? 0 : 2, ',', '.'));
         }
         return array(array('title' => $product['name'], 'columns' => array('Modelo / medida', 'Precio Graph Express'), 'rows' => $rows));
+    }
+
+    /** Live fiscal source: never infer an IVA percentage from the supplier. */
+    public static function tax_context() {
+        if (!class_exists('GE_WTP_Billing_Issuers') || !class_exists('GE_WTP_Customer_Tax')) { return array(); }
+        $matches = array();
+        foreach (GE_WTP_Billing_Issuers::all() as $issuer) {
+            if (!empty($issuer['active']) && in_array('common', (array)($issuer['default_for_scenarios'] ?? array()), true)) { $matches[]=$issuer; }
+        }
+        if (count($matches)!==1 || (function_exists('wc_tax_enabled') && wc_tax_enabled())) { return array(); }
+        $issuer=$matches[0]; $resolution=GE_WTP_Customer_Tax::resolve($issuer, array('vat_status'=>'final_consumer','country'=>'AR'));
+        if (empty($resolution['issuer_ready'])) { return array(); }
+        $rate=(int)($issuer['tax_rate_basis_points'] ?? 0);
+        if ('no_vat'===$resolution['tax_treatment'] && $rate===0) { return array('multiplier'=>1,'rate_basis_points'=>0,'issuer_id'=>$issuer['id'],'label'=>'Total final · comprobante C','note'=>'Comprobante C: no se agrega IVA. Si necesitás factura A, consultanos antes de confirmar.'); }
+        if ('vat_applies'===$resolution['tax_treatment'] && $rate>0) { return array('multiplier'=>1+$rate/10000,'rate_basis_points'=>$rate,'issuer_id'=>$issuer['id'],'label'=>'Total final con IVA','note'=>'IVA según el emisor vigente del comprobante.'); }
+        return array();
+    }
+
+    /** Stable source/variant keys avoid positional matching of different options. */
+    public static function storefront_config($product_id) {
+        $key=(string)get_post_meta($product_id, '_ge_public_catalog_key', true);
+        if (0!==strpos($key, 'windbanners-')) { return null; }
+        $data=self::products(); $family=substr($key,strlen('windbanners-')); $tax=self::tax_context();
+        if (!isset($data[$family]) || empty($data[$family]['options']) || !$tax) { return array(); }
+        return array('label'=>'Modelo y configuración', 'options'=>$data[$family]['options'], 'min_qty'=>1, 'step'=>1, 'tax_context'=>$tax, 'windbanners'=>true);
+    }
+
+    /** Selective refresh: preserve identity, images, attributes and all historical sales. */
+    public static function sync_prices() {
+        $result=array('updated'=>array(),'manual'=>array());
+        foreach (self::products() as $family=>$data) {
+            $ids=get_posts(array('post_type'=>'product','post_status'=>array('publish','draft','private'),'posts_per_page'=>2,'fields'=>'ids','meta_key'=>'_ge_public_catalog_key','meta_value'=>'windbanners-'.$family));
+            if (!$ids && !$data['options']) { $result['manual'][]=$family; continue; }
+            if (count($ids)!==1) { return new WP_Error('wind_mapping','Mapping inexistente o duplicado: '.$family); }
+            $id=(int)$ids[0]; $product=wc_get_product($id);
+            if (!$product || $product->get_sku()!==$data['sku']) { return new WP_Error('wind_sku','SKU no coincide: '.$family); }
+            $sections=$data['rows'] ? self::public_sections($data) : array(array('title'=>$data['name'],'columns'=>array('Modelo / medida','Disponibilidad'),'rows'=>array_map(function($label){return array($label,'Consultar disponibilidad');},$data['unavailable'])));
+            update_post_meta($id,'_ge_public_price_sections',$sections);
+            $notes=$data['notes'];
+            if ($data['unavailable']) { $notes[]='Opciones sin disponibilidad publicada: '.implode('; ',$data['unavailable']).'. Consultanos.'; }
+            $notes[]='Respetamos cantidades mínimas y múltiplos por opción. Stock físico, envío y fecha final a confirmar.';
+            update_post_meta($id,'_ge_public_price_notes',$notes);
+            update_post_meta($id,'_ge_reference_price_min',$data['prices'] ? min($data['prices']) : 0);
+            update_post_meta($id,'_ge_show_reference_price',$data['prices'] ? 'yes' : 'no');
+            update_post_meta($id,'_ge_supplier_source_date',self::SOURCE_DATE);
+            update_post_meta($id,'_ge_supplier_item_ids',$data['source_ids']);
+            update_post_meta($id,'_ge_wind_reconciliation_version','2026-10-10-v1');
+            wc_delete_product_transients($id); clean_post_cache($id);
+            $result[$data['prices'] ? 'updated' : 'manual'][]=$id;
+        }
+        return $result;
     }
 
     public static function sync() {

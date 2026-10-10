@@ -1,7 +1,12 @@
 (function () {
     'use strict';
-    var money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+    var legacyMoney = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
     document.querySelectorAll('[data-ge-storefront]').forEach(function (form) {
+        var decimals = Number(form.dataset.priceDecimals || 0);
+        var money = decimals ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : legacyMoney;
+        var taxMultiplier = Number(form.dataset.taxMultiplier || 1.21);
+        var catalogOptions = JSON.parse(form.dataset.options || '{}');
+        var optionDetails = form.querySelector('[data-ge-option-details]');
         var select = form.querySelector('[data-ge-option]');
         var selectors = Array.prototype.slice.call(form.querySelectorAll('[data-ge-selector]'));
         var optionMap = JSON.parse(form.dataset.optionMap || '{}');
@@ -78,8 +83,9 @@
             }
             if (length) { factor = Math.max(0.01, Number(length.value || 0) / 100); }
             var total = Number(option.dataset.price || 0) * factor * Math.max(1, Number(quantity.value || 1));
-            price.textContent = money.format(Math.round(total * 1.21));
-            if (base) { base.textContent = 'Base sin IVA: ' + money.format(Math.round(total)); }
+            price.textContent = money.format(decimals ? total * taxMultiplier : Math.round(total * taxMultiplier));
+            if (optionDetails) { var detail = catalogOptions[option.value]; optionDetails.textContent = detail && detail.source_id ? [detail.includes, detail.description, 'Cantidad mínima: ' + detail.min_qty + '. Múltiplo: ' + detail.step + '.'].filter(Boolean).join(' ') : ''; }
+            if (base) { base.textContent = 'Base sin IVA: ' + money.format(decimals ? total : Math.round(total)); }
         }
         select.addEventListener('change', function () { applyQuantityRule(true); update(); });
         selectors.forEach(function (field) {
