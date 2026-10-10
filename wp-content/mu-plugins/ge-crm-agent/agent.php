@@ -84,6 +84,7 @@ final class GE_CRM_Agent {
     }
     public static function generate($id) {
         GE_CRM::require_access(true);
+        if (GE_CRM::org()!=='graph-express') throw new RuntimeException('Esta conexión de IA está habilitada únicamente para Graphex.');
         if (!self::ready()) throw new RuntimeException('Falta configurar y habilitar la conexión privada de OpenAI.');
         $r=GE_CRM::get($id,'thread'); $input=self::context($r);
         $fingerprint=hash('sha256',GE_CRM::org().':'.$id.':'.self::MODEL.':'.self::instructions().':'.$input);
@@ -113,6 +114,7 @@ final class GE_CRM_Agent {
     public static function handle() {
         try {
             GE_CRM::require_access(true); check_admin_referer('ge_crm_agent');
+            if (GE_CRM::org()!=='graph-express') throw new RuntimeException('Configuración limitada a Graphex.');
             $id=absint($_POST['record_id']??0); $op=sanitize_key($_POST['op']??'generate');
             if ($op==='configure') { GE_CRM::admin(); self::configure(wp_unslash($_POST)); }
             elseif ($op==='generate') self::generate($id);
@@ -130,7 +132,7 @@ final class GE_CRM_Agent {
         GE_CRM::event(0,0,'ai_configured',array('label'=>'Agente supervisado configurado; tope US$50/mes','credential_ref'=>'graphex-openai-project','model'=>self::MODEL));
     }
     public static function render_summary() {
-        if (!GE_CRM::can()) return;
+        if (GE_CRM::org()!=='graph-express' || !GE_CRM::can()) return;
         echo '<section class="ge-crm-panel"><h2>Agente de Graphex</h2><p>Respuestas y datos del pedido como borradores para revisar.</p>';
         if (!empty($_GET['agent_saved'])) echo '<p role="status">Conexión privada guardada. La prueba real de IA se realiza desde una conversación.</p>';
         try { $s=self::budget()->summary(GE_CRM::org()); echo '<p>Consumo del mes: <strong>US$'.esc_html(number_format($s['charged']/1000000,4)).' / 50</strong> · Reservado o pendiente de confirmar: US$'.esc_html(number_format($s['held']/1000000,4)).'.</p>'; if($s['warning']) echo '<p role="alert">El consumo comprometido llegó al 80% del presupuesto. Revisá el gasto antes de continuar.</p>'; } catch(Throwable $e) { echo '<p>'.esc_html($e->getMessage()).'</p>'; }
@@ -142,7 +144,7 @@ final class GE_CRM_Agent {
         echo '</section>';
     }
     public static function render_thread($r) {
-        if (($r['kind']??'')!=='thread' || !GE_CRM::can()) return;
+        if (GE_CRM::org()!=='graph-express' || ($r['kind']??'')!=='thread' || !GE_CRM::can()) return;
         echo '<section class="ge-crm-panel"><h2>Asistente · Respuesta y pedido</h2><p>Revisá el borrador antes de usarlo. El análisis de archivos y la aprobación de producción se realizan en el trabajo vinculado.</p>';
         if (!empty($_GET['agent_saved'])) echo '<p role="status">Borrador preparado y consumo registrado.</p>';
         try {
