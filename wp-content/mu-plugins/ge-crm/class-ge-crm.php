@@ -7,7 +7,10 @@ final class GE_CRM {
     public static function org() { return GE_Organization::PRIMARY; }
     public static function table($name='records') { global $wpdb; return $wpdb->prefix.'ge_crm_'.$name; }
     public static function init() {
+        require_once __DIR__ . '/class-ge-crm-attention.php';
         add_action('rest_api_init',array(__CLASS__,'routes'));
+        add_action( 'ge_crm_attention_tick', array( __CLASS__, 'attention_tick' ) );
+        add_action( 'init', function () { if ( get_option( 'ge_crm_attention_enabled', false ) && ! wp_next_scheduled( 'ge_crm_attention_tick' ) ) { wp_schedule_single_event( time() + 300, 'ge_crm_attention_tick' ); } } );
         add_action('admin_post_graphex_crm',array(__CLASS__,'handle'));
         add_action('added_post_meta',array(__CLASS__,'quote_meta'),30,4);
         add_action('updated_post_meta',array(__CLASS__,'quote_meta'),30,4);
@@ -146,7 +149,7 @@ final class GE_CRM {
         $d=array();
         foreach(array('title','company','email','phone','cuit','source','status','stage','due_date','expected_close_date','next_action','priority','tags','intent','channel','external_id') as $k)$d[$k]=sanitize_text_field($raw[$k]??$old[$k]??'');
         foreach(array('notes','suggested_reply') as $k)$d[$k]=sanitize_textarea_field($raw[$k]??$old[$k]??'');
-        foreach(array('owner_id','customer_id','lead_id','opportunity_id','quote_id','order_id','quote_request_id','communication_id','supplier_id') as $k)$d[$k]=absint($raw[$k]??$old[$k]??0);
+        foreach(array('owner_id','customer_id','lead_id','opportunity_id','quote_id','order_id','quote_request_id','communication_id','supplier_id','thread_id') as $k)$d[$k]=absint($raw[$k]??$old[$k]??0);
         if(!$d['title'] || strlen($d['title'])>200)throw new RuntimeException('Título requerido, hasta 200 caracteres.',422);
         if(strlen($d['notes'])>12000 || strlen($d['suggested_reply'])>4000)throw new RuntimeException('Texto demasiado largo.',422);
         if($d['email'] && !is_email($d['email']))throw new RuntimeException('Email inválido.',422);
@@ -157,6 +160,7 @@ final class GE_CRM {
         if(!isset($o['members'][(string)$d['owner_id']]))throw new RuntimeException('Responsable fuera de la organización.',422);
         foreach(array('customer','quote','order') as $k)if(!self::scope($k,$d[$k.'_id']))throw new RuntimeException('Vínculo fuera de organización.',422);
         foreach(array('lead','opportunity') as $k)if($d[$k.'_id'])self::get($d[$k.'_id'],$k);
+        if($d['thread_id'])self::get($d['thread_id'],'thread');
         if($d['supplier_id'])throw new RuntimeException('Vínculo a proveedor requiere adaptador scoped.',422);
         if($d['quote_request_id'] && !self::request_scope($d['quote_request_id']))throw new RuntimeException('Solicitud fuera de organización.',422);
         if($d['communication_id'] && !self::mail_scope($d['communication_id']))throw new RuntimeException('Comunicación fuera de organización.',422);
@@ -176,11 +180,13 @@ final class GE_CRM {
         if($kind==='thread') {
             $d['status']=$d['status']?:'needs_review';if(!in_array($d['channel'],array('email','portal','whatsapp'),true) || !in_array($d['status'],array('needs_review','approved_pending_send','closed'),true))throw new RuntimeException('Canal o estado inválido.',422);
             $d['approval']='manual_required';$d['delivery']='not_sent';
+            foreach ( array( 'attention_event','attention_hash','attention_state','attention_attempts','attention_queued_at','conversation_key','attention_lease_at','attention_quote_started','attention_classification','attention_processed_at','attention_ack' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } }
             if(!$d['suggested_reply']){$suggest=self::suggest($d['intent']);if($suggest)$d['suggested_reply']=$suggest['template'];}
             $d['unresolved_variables']=array();preg_match_all('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/',$d['suggested_reply'],$matches);$d['unresolved_variables']=array_values(array_unique($matches[1]));
             if($d['status']==='approved_pending_send' && $d['unresolved_variables'])throw new RuntimeException('Completá las variables antes de aprobar el borrador.',422);
             if($d['status']==='approved_pending_send'){$d['approval']='staff_reviewed';$d['approved_by']=get_current_user_id();$d['approved_at']=gmdate('c');}
         }
+        if ( 'task' === $kind && isset( $old['attention_dispatch'] ) ) { $d['attention_dispatch'] = $old['attention_dispatch']; }
         $d['source']=$d['source']?:'manual';return $d;
     }
     private static function persist($kind,$d,$old=null,$dedupe=null) {
@@ -197,7 +203,9 @@ final class GE_CRM {
         self::require_access(true);return self::locked(function()use($kind,$raw,$id){
             global $wpdb;$dedupe=null;
             if(!$id && $kind==='thread' && !empty($raw['external_id'])){$dedupe='message:'.hash('sha256',($raw['channel']??'').':'.$raw['external_id']);$existing=$wpdb->get_var($wpdb->prepare('SELECT id FROM '.self::table().' WHERE organization_id=%s AND dedupe_key=%s',self::org(),$dedupe));if($existing)return self::get($existing,'thread');}
-            $old=$id?self::get($id,$kind):null;if($old && (int)($raw['revision']??0)!==$old['revision'])throw new RuntimeException('Conflicto de revisión.',409);return self::persist($kind,self::validate($kind,$raw,$old?:array()),$old,$dedupe);
+            $old=$id?self::get($id,$kind):null;if($old && (int)($raw['revision']??0)!==$old['revision'])throw new RuntimeException('Conflicto de revisión.',409);$saved = self::persist($kind,self::validate($kind,$raw,$old?:array()),$old,$dedupe);
+            if ( 'thread' === $kind && isset( $saved['attention_event'] ) && 'closed' === $saved['status'] ) { self::operations_task( 'attention:' . $saved['id'], 'Atender mensaje: ' . $saved['title'], false, array( 'customer_id' => $saved['customer_id'], 'quote_id' => $saved['quote_id'], 'thread_id' => $saved['id'] ), $saved['owner_id'] ); }
+            return $saved;
         });
     }
     public static function convert($id,$revision,$selected=0) {
@@ -279,6 +287,191 @@ final class GE_CRM {
         global $wpdb;if($wpdb->get_var($wpdb->prepare('SELECT id FROM '.self::table().' WHERE organization_id=%s AND dedupe_key=%s',self::org(),$key)))return;
         self::persist('task',self::validate('task',$raw),null,$key);
     }
+
+    /** Transport acknowledges its durable cursor only after this committed receipt. */
+    public static function attention_ingest( $raw ) {
+        self::require_access( true );
+        $event = GE_CRM_Attention::normalize( $raw );
+        return self::locked( function () use ( $event ) {
+            global $wpdb;
+            $key = 'message:' . hash( 'sha256', $event['channel'] . ':' . $event['account_ref'] . ':' . $event['external_id'] );
+            $hash = hash( 'sha256', wp_json_encode( $event ) );
+            $id = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND dedupe_key=%s', self::org(), $key ) );
+            if ( $id ) {
+                $existing = self::get( $id, 'thread' );
+                if ( ( $existing['attention_hash'] ?? '' ) !== $hash ) { throw new RuntimeException( 'El mensaje ya recibido cambió; revisar la fuente sin reemplazarlo.', 409 ); }
+                return array( 'record_id' => (int) $id, 'duplicate' => true, 'committed' => true );
+            }
+            $matches = 'email' === $event['channel'] ? self::match( array( 'email' => $event['from'] ) ) : array();
+            $customer = count( $matches ) === 1 ? (int) $matches[0]['id'] : 0;
+            $record = self::validate( 'thread', array( 'title' => $event['subject'] ?: 'Mensaje recibido', 'email' => 'email' === $event['channel'] ? $event['from'] : '', 'channel' => $event['channel'], 'external_id' => $event['external_id'], 'customer_id' => $customer, 'owner_id' => self::operations_owner(), 'source' => 'attention' ) );
+            $record['attention_event'] = $event;
+            $record['attention_hash'] = $hash;
+            $record['attention_state'] = 'queued';
+            $record['attention_attempts'] = 0;
+            $record['attention_queued_at'] = gmdate( 'c' );
+            $record['conversation_key'] = hash( 'sha256', $event['channel'] . ':' . $event['account_ref'] . ':' . $event['conversation_id'] );
+            $saved = self::persist( 'thread', $record, null, $key );
+            self::operations_task( 'attention:' . $saved['id'], 'Atender mensaje: ' . $record['title'], true, array( 'customer_id' => $customer, 'thread_id' => $saved['id'] ), $record['owner_id'], 'Recepción confirmada. Clasificación pendiente; original: ' . $event['source_ref'] );
+            return array( 'record_id' => $saved['id'], 'duplicate' => false, 'committed' => true );
+        } );
+    }
+
+    public static function attention_process( $id ) {
+        self::require_access( true );
+        $claimed = self::locked( function () use ( $id ) {
+            $r = self::get( $id, 'thread' );
+            if ( ! isset( $r['attention_event'] ) ) { throw new RuntimeException( 'No es un mensaje de transporte.', 422 ); }
+            if ( 'closed' === $r['status'] || in_array( $r['attention_state'], array( 'review', 'ignored', 'prepared', 'failed' ), true ) ) { return $r; }
+            if ( 'processing' === $r['attention_state'] && strtotime( $r['attention_lease_at'] ?? '' ) > time() - 300 ) { throw new RuntimeException( 'El mensaje está en proceso.', 409 ); }
+            if ( ! empty( $r['attention_quote_started'] ) ) {
+                $r['attention_state'] = 'review'; $r['notes'] = 'Resultado de preparación incierto: revisar antes de generar otro presupuesto.';
+                return self::persist( 'thread', $r, self::get( $id ) );
+            }
+            if ( (int) $r['attention_attempts'] >= 5 ) { $r['attention_state'] = 'failed'; $r['notes'] = 'Fallos repetidos de procesamiento; revisar sin descartar el mensaje.'; return self::persist( 'thread', $r, self::get( $id ) ); }
+            $r['attention_state'] = 'processing'; $r['attention_lease_at'] = gmdate( 'c' );
+            $r['attention_attempts'] = (int) $r['attention_attempts'] + 1;
+            return self::persist( 'thread', $r, self::get( $id ) );
+        } );
+        if ( 'processing' !== $claimed['attention_state'] ) { return $claimed; }
+        $classification = GE_CRM_Attention::classify( $claimed['attention_event'] );
+        $quote = null; $error = ''; $event = $claimed['attention_event'];
+        try {
+            if ( 'quote' === $classification['category'] && $event['quote_request'] && empty( $event['body_truncated'] ) && empty( $event['reply_ambiguous'] ) ) {
+                $lines = GE_CRM_Attention::quote_lines( $event['quote_request'] );
+                if ( is_wp_error( $lines ) ) { $error = $lines->get_error_message(); }
+                elseif ( ! $claimed['customer_id'] ) { $error = 'Revisar y vincular la ficha del cliente antes de presupuestar.'; }
+                else {
+                    $channels = get_option( 'ge_crm_attention_channels', array() );
+                    $args = $channels[$event['channel']]['quote_defaults'] ?? array();
+                    if ( empty( $args['issuer_profile_id'] ) ) { $error = 'Seleccionar emisor y receptor; no inventar impuestos ni condiciones.'; }
+                    else {
+                        $claimed = self::locked( function () use ( $id ) { $r = self::get( $id ); $r['attention_quote_started'] = gmdate( 'c' ); return self::persist( 'thread', $r, self::get( $id ) ); } );
+                        $args['source'] = 'attention'; $args['notes_internal'] = 'Mensaje CRM #' . $id . '; fuente ' . $event['source_ref'];
+                        $quote = GE_WTP_Commercial_Quotes::create_draft( $claimed['customer_id'], $lines, $args, $claimed['owner_id'] );
+                        if ( is_wp_error( $quote ) ) { $error = $quote->get_error_message(); $quote = null; }
+                    }
+                }
+            }
+        } catch ( Throwable $ex ) { $error = 'Falló la preparación; revisar la fuente y el registro de intento antes de reintentar.'; }
+        return self::locked( function () use ( $id, $classification, $quote, $error, $claimed, $event ) {
+            $r = self::get( $id, 'thread' );
+            if ( $r['revision'] !== $claimed['revision'] ) { throw new RuntimeException( 'Cambió la revisión durante el procesamiento.', 409 ); }
+            $r['attention_classification'] = $classification;
+            $r['attention_processed_at'] = gmdate( 'c' );
+            $r['attention_state'] = in_array( $classification['category'], array( 'automated', 'non_useful' ), true ) ? 'ignored' : ( $quote ? 'prepared' : 'review' );
+            $r['status'] = 'ignored' === $r['attention_state'] ? 'closed' : 'needs_review';
+            $r['notes'] = $classification['reason'] . ( $error ? "\n" . $error : '' );
+            if ( $quote ) { $r['quote_id'] = $quote['id']; $r['notes'] .= "\nPresupuesto en borrador: revisar antes de publicar."; }
+            // A prepared request is not a sent message; transport owns outbox retries and evidence.
+            $r['attention_ack'] = $classification['ack_eligible'] ? array( 'state' => 'prepared', 'key' => 'ack:' . $r['conversation_key'], 'template' => 'Recibimos tu mensaje en GRAPHEX. Lo revisaremos para continuar con tu consulta.', 'to' => $event['from'], 'source_record_id' => (int) $id ) : array( 'state' => 'suppressed' );
+            $saved = self::persist( 'thread', $r, self::get( $id ) );
+            self::operations_task( 'attention:' . $id, 'Atender mensaje: ' . $r['title'], 'ignored' !== $r['attention_state'], array( 'customer_id' => $r['customer_id'], 'quote_id' => $r['quote_id'], 'thread_id' => $r['id'] ), $r['owner_id'], $r['notes'] );
+            return $saved;
+        } );
+    }
+
+    public static function attention_tick() {
+        global $wpdb;
+        if ( empty( get_option( 'ge_crm_attention_enabled', false ) ) ) { return; }
+        $actor = self::operations_owner(); if ( ! $actor || ! self::can( true, $actor ) ) { return; }
+        $previous = get_current_user_id(); wp_set_current_user( $actor );
+        try {
+            $cursor = absint( get_option( 'ge_crm_attention_cursor_' . self::org(), 0 ) );
+            $ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND kind=%s AND id>%d ORDER BY id ASC LIMIT 50', self::org(), 'thread', $cursor ) );
+            foreach ( $ids as $id ) {
+                $r = self::get( $id );
+                if ( isset( $r['attention_event'] ) ) {
+                    try { self::attention_process( $id ); self::attention_ack_send( $id ); }
+                    catch ( Throwable $ex ) { error_log( 'Graphex CRM attention processing needs review: record #' . (int) $id ); }
+                }
+                update_option( 'ge_crm_attention_cursor_' . self::org(), (int) $id, false );
+            }
+            if ( count( $ids ) < 50 ) { update_option( 'ge_crm_attention_cursor_' . self::org(), 0, false ); }
+            self::attention_stale();
+        } finally { wp_set_current_user( $previous ); }
+        if ( ! wp_next_scheduled( 'ge_crm_attention_tick' ) ) { wp_schedule_single_event( time() + 300, 'ge_crm_attention_tick' ); }
+    }
+
+    /** Only the approved routine receipt template; commercial quote sending stays separate. */
+    public static function attention_ack_send( $id ) {
+        self::require_access( true );
+        $policy = get_option( 'ge_crm_attention_ack_policy', array() );
+        $qa = 'graph_job_flow_20261007' === DB_NAME && false !== strpos( ABSPATH, '/job-flow-qa-' );
+        if ( empty( $policy['enabled'] ) || ( $policy['classifier_sha256'] ?? '' ) !== hash_file( 'sha256', __DIR__ . '/class-ge-crm-attention.php' ) || empty( $policy['evidence_ref'] ) ) { return array( 'state' => 'disabled' ); }
+        $sender = GE_WTP_Notification_Center::mail_from( 'wordpress@graphex.ar' );
+        $smtp = GE_WTP_Notification_Center::smtp_config();
+        if ( 'servicio@graphex.ar' !== strtolower( $sender ) || false !== stripos( $smtp['host'], 'gmail' ) || ( ! $qa && empty( $smtp['host'] ) ) ) { return array( 'state' => 'sender_review_required' ); }
+        $claim = self::locked( function () use ( $id ) {
+            global $wpdb;
+            $r = self::get( $id, 'thread' );
+            if ( empty( $r['attention_event'] ) || 'closed' === $r['status'] || ! GE_CRM_Attention::classify( $r['attention_event'] )['ack_eligible'] || ! in_array( $r['attention_state'], array( 'review', 'prepared' ), true ) ) { return array( 'state' => 'suppressed' ); }
+            $key = 'attention-ack:' . $r['conversation_key'];
+            $existing = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND dedupe_key=%s', self::org(), $key ) );
+            if ( $existing ) {
+                $outbox = self::get( $existing, 'task' );
+                if ( ( $r['attention_ack']['dispatch_id'] ?? 0 ) !== (int) $existing ) {
+                    $r['attention_ack']['state'] = 'shared_dispatch'; $r['attention_ack']['dispatch_id'] = (int) $existing;
+                    self::persist( 'thread', $r, self::get( $id, 'thread' ) );
+                }
+                return array( 'state' => $outbox['attention_dispatch']['state'] ?? 'unknown', 'dispatch_id' => (int) $existing, 'duplicate' => true );
+            }
+            $data = self::validate( 'task', array( 'title' => 'Acuse de recepción de correo', 'customer_id' => $r['customer_id'], 'thread_id' => $r['id'], 'owner_id' => $r['owner_id'], 'source' => 'attention', 'status' => 'open', 'priority' => 'normal', 'notes' => 'Intento registrado antes de enviar. Un resultado incierto requiere revisión.' ) );
+            $data['attention_dispatch'] = array( 'state' => 'sending', 'to' => $r['attention_event']['from'], 'template' => 'received_ack', 'policy_version' => GE_CRM_Attention::VERSION, 'started_at' => gmdate( 'c' ) );
+            $outbox = self::persist( 'task', $data, null, $key );
+            $r['attention_ack']['state'] = 'sending'; $r['attention_ack']['dispatch_id'] = $outbox['id'];
+            self::persist( 'thread', $r, self::get( $id ) );
+            return array( 'state' => 'claimed', 'dispatch_id' => $outbox['id'], 'event' => $r['attention_event'] );
+        } );
+        if ( 'claimed' !== $claim['state'] ) { return $claim; }
+        $actual = array();
+        $capture = function ( $mailer ) use ( &$actual ) { $actual = array( 'from' => strtolower( (string) $mailer->From ), 'native' => 'smtp' === $mailer->Mailer && ! empty( $mailer->Host ) && false === stripos( (string) $mailer->Host, 'gmail' ) ); };
+        add_action( 'phpmailer_init', $capture, PHP_INT_MAX );
+        $state = 'unknown';
+        try {
+            $headers = array( 'Auto-Submitted: auto-replied', 'X-Auto-Response-Suppress: All' );
+            $mid = $claim['event']['headers']['message-id'] ?? '';
+            if ( preg_match( '/^<[^<>\s]{1,300}>$/D', $mid ) ) { $headers[] = 'In-Reply-To: ' . $mid; }
+            $ok = GE_WTP_Notifications::send( $claim['event']['from'], 'Mensaje recibido · GRAPHEX', '<p>Recibimos tu mensaje en GRAPHEX. Lo revisaremos para continuar con tu consulta.</p>', 'attention_received_ack', $claim['dispatch_id'], $headers );
+            $state = $ok ? ( $qa ? 'simulated' : ( 'servicio@graphex.ar' === ( $actual['from'] ?? '' ) && ! empty( $actual['native'] ) ? 'sent' : 'unknown' ) ) : 'failed';
+        } catch ( Throwable $ex ) { $state = 'unknown'; }
+        finally { remove_action( 'phpmailer_init', $capture, PHP_INT_MAX ); }
+        return self::locked( function () use ( $id, $claim, $state, $actual ) {
+            $logs = get_posts( array( 'post_type' => 'ge_email_log', 'post_status' => 'private', 'numberposts' => 2, 'meta_query' => array( array( 'key' => '_ge_email_context', 'value' => 'attention_received_ack' ), array( 'key' => '_ge_email_object_id', 'value' => $claim['dispatch_id'] ) ), 'orderby' => 'ID', 'order' => 'DESC' ) );
+            $log_id = $logs ? (int) $logs[0]->ID : 0;
+            $final = $state;
+            if ( 'sent' === $final && ( ! $log_id || ! self::mail_scope( $log_id ) || get_post_meta( $log_id, '_ge_email_to', true ) !== $claim['event']['from'] || 'sent' !== get_post_meta( $log_id, '_ge_email_result', true ) ) ) { $final = 'unknown'; }
+            $outbox = self::get( $claim['dispatch_id'], 'task' );
+            $outbox['attention_dispatch'] = array_merge( $outbox['attention_dispatch'], array( 'state' => $final, 'finished_at' => gmdate( 'c' ), 'communication_id' => $log_id, 'sender' => $actual['from'] ?? '', 'sender_verified' => 'sent' === $final ) );
+            $outbox['status'] = in_array( $final, array( 'sent', 'simulated' ), true ) ? 'done' : 'open';
+            $outbox['priority'] = 'open' === $outbox['status'] ? 'high' : 'normal';
+            $outbox['notes'] = 'Resultado del acuse: ' . $final . '. Registro nativo #' . $log_id . '. No reintentar a ciegas resultados inciertos.';
+            self::persist( 'task', $outbox, self::get( $outbox['id'] ) );
+            $r = self::get( $id, 'thread' ); $r['attention_ack']['state'] = $final; $r['attention_ack']['communication_id'] = $log_id;
+            self::persist( 'thread', $r, self::get( $id ) );
+            return array( 'state' => $final, 'dispatch_id' => $outbox['id'], 'communication_id' => $log_id );
+        } );
+    }
+
+    public static function attention_stale() {
+        self::require_access( true );
+        return self::locked( function () {
+            $count = 0;
+            global $wpdb;
+            $cursor = absint( get_option( 'ge_crm_attention_stale_cursor_' . self::org(), 0 ) );
+            $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE organization_id=%s AND kind=%s AND id>%d ORDER BY id ASC LIMIT 100', self::org(), 'thread', $cursor ), ARRAY_A );
+            foreach ( $rows as $row ) {
+                $r = self::decode( $row );
+                update_option( 'ge_crm_attention_stale_cursor_' . self::org(), $r['id'], false );
+                if ( ! isset( $r['attention_event'] ) || 'closed' === $r['status'] || 'ignored' === $r['attention_state'] ) { continue; }
+                if ( strtotime( $r['attention_queued_at'] ) > time() - HOUR_IN_SECONDS ) { continue; }
+                self::operations_task( 'attention:' . $r['id'], 'Mensaje pendiente de atención: ' . $r['title'], true, array( 'customer_id' => $r['customer_id'], 'quote_id' => $r['quote_id'], 'thread_id' => $r['id'] ), $r['owner_id'], 'Antigüedad mayor a una hora. Estado: ' . $r['attention_state'] . '. Fuente: ' . $r['attention_event']['source_ref'] );
+                $count++;
+            }
+            if ( count( $rows ) < 100 ) { update_option( 'ge_crm_attention_stale_cursor_' . self::org(), 0, false ); }
+            return array( 'attention_required' => $count );
+        } );
+    }
     public static function quote_meta($mid,$id,$key,$value) {
         if($key==='_ge_quote_request' && is_array($value) && ($value['status']??'')==='new') { self::request_created($id);return; }
         if(!in_array($key,array('_ge_commercial_order_id','_ge_commercial_status'),true)||!self::scope('quote',$id)||!get_option('ge_crm_schema_version'))return;
@@ -297,6 +490,21 @@ final class GE_CRM {
             $lead=$existing?self::get($existing):self::persist('lead',self::validate('lead',array('title'=>$d['name']??($customer?$customer->display_name:'Nueva solicitud'),'email'=>$d['email']??($customer?$customer->user_email:''),'phone'=>$d['phone']??($customer?get_user_meta($customer->ID,'billing_phone',true):''),'customer_id'=>$customer?$customer->ID:0,'source'=>'quote_request','quote_request_id'=>$id,'owner_id'=>$owner)),null,$key);
             self::automation_task('request-task:'.$id,array('title'=>'Contactar nueva solicitud','lead_id'=>$lead['id'],'quote_request_id'=>$id,'owner_id'=>$owner,'due_date'=>wp_date('Y-m-d')));
         });
+    }
+    private static function operations_owner( $roles = array( 'comercial', 'admin', 'owner' ) ) {
+        $org = GE_Organization::get( self::org() );
+        foreach ( $roles as $role ) { foreach ( (array) ( $org['members'] ?? array() ) as $id => $actual ) { if ( $role === $actual && get_userdata( $id ) ) { return (int) $id; } } }
+        return 0;
+    }
+    /** Only this automation's records are resolved; human tasks and cancelled tasks are preserved. */
+    private static function operations_task( $key, $title, $needed, $links, $owner, $notes = '' ) {
+        global $wpdb;
+        $id = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND dedupe_key=%s', self::org(), 'operations:' . $key ) );
+        $old = $id ? self::get( $id, 'task' ) : null;
+        if ( ! $needed && ! $old ) { return; }
+        if ( $old && ( 'cancelled' === $old['status'] || ( $needed && 'open' === $old['status'] ) || ( ! $needed && 'done' === $old['status'] ) ) ) { return; }
+        $raw = array_merge( $old ?: array(), $links, array( 'title' => $title, 'owner_id' => $old ? $old['owner_id'] : $owner, 'status' => $needed ? 'open' : 'done', 'source' => 'operations', 'priority' => 'high', 'notes' => $notes, 'due_date' => $old ? $old['due_date'] : wp_date( 'Y-m-d' ) ) );
+        self::persist( 'task', self::validate( 'task', $raw, $old ?: array() ), $old, 'operations:' . $key );
     }
     public static function scheduled() {
         self::system(function(){
@@ -337,6 +545,13 @@ final class GE_CRM {
         }
     }
     public static function routes() {
+        foreach ( array( 'inbound' => 'attention_ingest', 'process' => 'attention_process' ) as $route => $method ) {
+            register_rest_route( 'graphex-crm/v1', '/attention/' . $route, array( 'methods' => 'POST', 'permission_callback' => function () { return self::can( true ) ?: new WP_Error( 'crm_forbidden', 'Acceso denegado.', array( 'status' => 403 ) ); }, 'callback' => function ( $req ) use ( $method ) {
+                try { $raw = $req->get_json_params(); return 'attention_ingest' === $method ? self::attention_ingest( $raw ) : self::attention_process( absint( $raw['record_id'] ?? 0 ) ); }
+                catch ( Throwable $ex ) { return new WP_Error( 'crm_attention', $ex->getMessage(), array( 'status' => in_array( $ex->getCode(), array( 403,404,409,422 ), true ) ? $ex->getCode() : 500 ) ); }
+            } ) );
+        }
+
         register_rest_route('graphex-crm/v1','/records',array('methods'=>'GET','permission_callback'=>function(){return self::can()?:new WP_Error('crm_forbidden','Acceso denegado.',array('status'=>403));},'callback'=>function($req){return self::records(sanitize_key($req['kind']??''),absint($req['customer_id']??0),sanitize_text_field($req['q']??''));}));
         register_rest_route('graphex-crm/v1','/command',array('methods'=>'POST','permission_callback'=>function(){return self::can(true)?:new WP_Error('crm_forbidden','Acceso denegado.',array('status'=>403));},'callback'=>function($req){try{return self::command($req->get_json_params()?:$req->get_params());}catch(Throwable $e){return new WP_Error('crm_error',$e->getMessage(),array('status'=>in_array($e->getCode(),array(403,404,409,422),true)?$e->getCode():500));}}));
     }
