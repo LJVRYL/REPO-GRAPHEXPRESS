@@ -121,6 +121,8 @@ final class GE_CRM_Origin {
             if((int)get_post_meta($qid,'_ge_commercial_customer_id',true)!==(int)$order->get_customer_id())return;
             $o=self::read('quote',$qid);$o['provenance']=array('kind'=>'quote','id'=>$qid);
         } else {
+            // The commercial factory saves an empty order before attaching its quote.
+            if(!$order->get_item_count() && (float)$order->get_total()<=0)return;
             $created=$order->get_date_created();$active=(int)get_option('ge_crm_origin_active_since',0);
             if(!self::real_browser() || !$active || !$created || $created->getTimestamp()<$active || $created->getTimestamp()<time()-300)return;
             $o=self::browser($_COOKIE);$o['provenance']=array('kind'=>'web_order','id'=>$order->get_id());
