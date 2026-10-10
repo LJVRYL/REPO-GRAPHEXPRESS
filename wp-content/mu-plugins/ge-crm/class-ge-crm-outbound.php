@@ -157,21 +157,6 @@ final class GE_CRM_Outbound {
         return self::public_result($data);
     }
     private static function public_result($d) { return array_intersect_key($d,array_flip(array('request_id','state','provider_id','error','updated_at'))); }
-    /** Called inside the existing CRM lock, after signed/source-scoped verification. */
-    public static function transport_event($record,$e) {
-        global $wpdb;
-        $mid=$e['message_id'] ?? ''; if (!$mid) return;
-        $rows=$wpdb->get_results($wpdb->prepare('SELECT id,payload FROM '.GE_CRM::table('events').' WHERE organization_id=%s AND event_type=%s AND JSON_UNQUOTE(JSON_EXTRACT(payload,%s))=%s',GE_CRM::org(),self::TYPE,'$.provider_id',$mid),ARRAY_A);
-        foreach ($rows as $row) {
-            $d=json_decode($row['payload'],true);
-            if (($d['account_ref'] ?? '')!==($e['account_ref'] ?? '') || ($d['channel'] ?? '')!==($e['channel'] ?? 'whatsapp')) continue;
-            $next=$e['status'] ?? ''; $rank=array('accepted'=>1,'sent'=>1,'delivered'=>2,'read'=>3);
-            if ($next==='failed') { if (($rank[$d['state']] ?? 0)>=2) continue; $d['state']='failed';$d['error']='El canal informó un fallo de entrega.'; }
-            elseif (isset($rank[$next]) && $rank[$next]>($rank[$d['state']] ?? 0)) $d['state']=$next;
-            else continue;
-            $d['updated_at']=gmdate('c');self::update($row['id'],$d);
-        }
-    }
     public static function routes() {
         register_rest_route('graphex-crm/v1','/reply',array('methods'=>'POST','permission_callback'=>function(){return GE_CRM::can(true) ?: new WP_Error('crm_forbidden','Acceso denegado.',array('status'=>403));},'callback'=>function($req){
             try { return self::send($req->get_json_params() ?: array()); }

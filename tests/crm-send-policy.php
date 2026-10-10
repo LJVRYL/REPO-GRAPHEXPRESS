@@ -18,4 +18,11 @@ rejects(function()use($r,$cfg,$now){GE_CRM_Send_Policy::plan($r,$cfg,str_repeat(
 rejects(function()use($r,$cfg,$now){$r['meta_event']['peer']='https://evil.example';GE_CRM_Send_Policy::plan($r,$cfg,'Hola',$now);},422);
 foreach(array('messenger'=>'1377222212141366','whatsapp'=>'1354138734939171') as $ch=>$asset){$x=$r;$x['channel']=$ch;$x['meta_event']['channel']=$ch;$x['meta_event']['account_ref']=$ch==='whatsapp'?'wa:735912107316791:'.$asset:$ch.':'.$asset;$c=array($ch=>array('enabled'=>true,'access_token'=>'synthetic-only','asset_id'=>$asset,'waba_id'=>'735912107316791'));$p=GE_CRM_Send_Policy::plan($x,$c,'Hola',$now);check($ch==='whatsapp'?($p['payload']['messaging_product']==='whatsapp'):($p['payload']['messaging_type']==='RESPONSE'),'Correct channel payload');}
 foreach(array(array(200,'{"message_id":"mid.1"}','accepted'),array(200,'{"messages":[{"id":"wamid.1"}]}','accepted'),array(200,'{}','unknown'),array(500,'bad json','unknown'),array(400,'{"error":{"code":190,"message":"secret"}}','failed')) as $case){$p=GE_CRM_Send_Policy::result($case[0],$case[1]);check($p['state']===$case[2],'Honest transport result');check(strpos($p['error'],'secret')===false,'Provider details not exposed');}
+$email=$r;$email['channel']='email';unset($email['meta_event']);$email['attention_event']=array('from'=>'customer@example.test','to'=>'service@graphex.ar','subject'=>'Re: Presupuesto','sender_is_internal'=>false);
+$emailConfig=array('email'=>array('enabled'=>true,'recipients'=>array('service@graphex.ar')));
+$emailPlan=GE_CRM_Send_Policy::plan($email,$emailConfig,'Hola',$now);
+check($emailPlan['recipient']==='customer@example.test'&&$emailPlan['subject']==='Re: Presupuesto','Email replies preserve original contact and subject');
+rejects(function()use($email,$emailConfig,$now){$email['attention_event']['to']='other@example.test';GE_CRM_Send_Policy::plan($email,$emailConfig,'Hola',$now);},422);
+rejects(function()use($email,$emailConfig,$now){$email['attention_event']['sender_is_internal']=true;GE_CRM_Send_Policy::plan($email,$emailConfig,'Hola',$now);},422);
+rejects(function()use($email,$emailConfig,$now){$email['attention_event']['from']="customer@example.test\r\nBcc: other@example.test";GE_CRM_Send_Policy::plan($email,$emailConfig,'Hola',$now);},422);
 echo json_encode(array('passed'=>$checks,'external_calls'=>0)).PHP_EOL;

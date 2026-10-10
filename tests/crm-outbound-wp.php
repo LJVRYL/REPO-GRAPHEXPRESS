@@ -3,15 +3,15 @@ $load=getenv('GE_WP_LOAD');$config=getenv('GE_CRM_OUTBOUND_CONFIG');
 if (!$load || strpos($load,'/job-flow-qa-')===false || !$config || strpos($config,'/job-flow-qa-')===false || strpos($config,'/site/')!==false) throw new Exception('Private isolated QA required');
 define('DISABLE_WP_CRON',true);require $load;
 if(DB_NAME!=='graph_job_flow_20261007')throw new Exception('Wrong database');
-wp_set_current_user(1);$checks=0;$calls=0;$mode='ok';
+wp_set_current_user(1);$checks=0;$calls=0;$mode='ok';$run=wp_generate_uuid4();
 function oc($ok,$why){global $checks;if(!$ok)throw new Exception($why);$checks++;}
 function oreject($fn){try{$fn();}catch(Throwable $e){oc(true,'Rejected');return;}throw new Exception('Expected rejection');}
 add_filter('pre_wp_mail',function(){throw new Exception('QA must not send real mail');},PHP_INT_MAX);
-add_filter('pre_http_request',function($pre,$args,$url)use(&$calls,&$mode){
+add_filter('pre_http_request',function($pre,$args,$url)use(&$calls,&$mode,$run){
  if (strpos($url,'https://graph.facebook.com/v26.0/')!==0) throw new Exception('Unexpected remote URL');
  $calls++;if($mode==='timeout')return new WP_Error('timeout','private synthetic detail');
  $p=json_decode($args['body'],true);oc(($p['recipient']['id'] ?? '')==='55555000001','Recipient fixed to original');
- return array('response'=>array('code'=>$mode==='failed'?400:200),'body'=>$mode==='failed'?'{"error":{"code":190,"message":"private synthetic detail"}}':wp_json_encode(array('message_id'=>'qa-out-'.$calls)),'headers'=>array());
+ return array('response'=>array('code'=>$mode==='failed'?400:200),'body'=>$mode==='failed'?'{"error":{"code":190,"message":"private synthetic detail"}}':wp_json_encode(array('message_id'=>'qa-out-'.$run.'-'.$calls)),'headers'=>array());
 },PHP_INT_MAX,3);
 $orgs=GE_Organization::all();$orgs[GE_Organization::PRIMARY]['members']['1']='owner';$orgs[GE_Organization::PRIMARY]['active']=true;update_option(GE_Organization::ROOT,$orgs,false);$c=GE_CRM::config();$c['enabled']=true;update_option('ge_crm_config_'.GE_CRM::org(),$c,false);GE_CRM::install();
 $cfg=array('organization_id'=>'graph-express','outbound'=>array('instagram'=>array('enabled'=>true,'access_token'=>'synthetic-only','asset_id'=>'17841407285480956')));file_put_contents($config,wp_json_encode($cfg));chmod($config,0600);
