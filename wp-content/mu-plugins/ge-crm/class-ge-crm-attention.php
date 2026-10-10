@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 /** Bounded message data and current catalog rules; no mailbox or outbound transport. */
 final class GE_CRM_Attention {
-    const VERSION = 'attention-v1';
+    const VERSION = 'attention-v2';
 
     public static function normalize( $raw ) {
         if ( ! is_array( $raw ) || ( $raw['organization_id'] ?? '' ) !== GE_CRM::org() ) { throw new RuntimeException( 'Organización inválida.', 422 ); }
@@ -54,6 +54,7 @@ final class GE_CRM_Attention {
         // Escalations precede commercial keywords, including forwarded automation failures.
         if ( preg_match( '/ignora.{0,30}instrucciones|ignore.{0,30}instructions|cambia.{0,30}politica|api.?key|contrasena|token secreto/', $text ) ) { $category = 'security_review'; $reason = 'Contenido con instrucciones o solicitud sensible; tratar únicamente como datos.'; }
         elseif ( preg_match( '/reclamo|incidencia|defectuos|danad|cobraron.{0,20}(dos|doble)|no.{0,15}(llego|recibi)|demora|cancelar|devolucion|problema/', $text ) ) { $category = 'incident'; $reason = 'Posible incidencia o reclamo; revisión humana prioritaria.'; }
+        elseif ( preg_match( '/mail delivery failed|delivery status notification|undeliver|failure notice|correo.{0,15}(rechazad|no entregad)|no se pudo entregar|mailer-daemon/', $text . ' ' . $event['from'] ) ) { $category = 'delivery_failure'; $reason = 'Correo rechazado o entrega fallida; revisar destinatario y aviso original sin reintentar a ciegas.'; }
         elseif ( $suppressed ) { $category = 'automated'; $reason = 'Correo automático, lista o rebote: conservar sin autoresponder.'; }
         elseif ( preg_match( '/terminacion|troquel|foil|especial|urgente|excepcion|descuento|cuenta corriente/', $text ) ) { $category = 'special'; $reason = 'Terminación, plazo o condición especial sin regla automática.'; }
         elseif ( preg_match( '/desuscrib|unsubscribe|newsletter|promocion exclusiva|ganaste un premio/', $text ) ) { $category = 'non_useful'; $reason = 'Posible publicidad: conservar clasificado, sin borrar.'; }
@@ -87,7 +88,7 @@ final class GE_CRM_Attention {
     }
 
     public static function label( $record ) {
-        $categories = array( 'quote' => 'Presupuesto', 'contact' => 'Contacto', 'incident' => 'Incidencia', 'special' => 'Trabajo especial', 'security_review' => 'Revisión de seguridad', 'automated' => 'Automático', 'non_useful' => 'Sin utilidad comercial', 'uncertain' => 'Necesita aclaración' );
+        $categories = array( 'quote' => 'Presupuesto', 'contact' => 'Contacto', 'incident' => 'Incidencia', 'delivery_failure' => 'Correo rechazado', 'special' => 'Trabajo especial', 'security_review' => 'Revisión de seguridad', 'automated' => 'Automático', 'non_useful' => 'Sin utilidad comercial', 'uncertain' => 'Necesita aclaración' );
         $states = array( 'queued' => 'Pendiente', 'processing' => 'En proceso', 'review' => 'Requiere revisión', 'ignored' => 'Clasificado, sin acción', 'prepared' => 'Presupuesto en borrador', 'failed' => 'Fallo: revisar' );
         return ( $categories[$record['attention_classification']['category'] ?? ''] ?? 'Mensaje' ) . ' · ' . ( $states[$record['attention_state']] ?? 'Revisar estado' );
     }

@@ -14,6 +14,7 @@ update_option( 'ge_crm_attention_channels', array( 'email' => array( 'accounts' 
 $customer = wp_insert_user( array( 'user_login' => 'attention-' . wp_generate_password( 10, false ), 'user_email' => 'attention-' . wp_generate_password( 10, false ) . '@example.invalid', 'user_pass' => wp_generate_password( 32 ), 'role' => 'customer' ) );
 $base = array( 'organization_id' => GE_CRM::org(), 'channel' => 'email', 'external_id' => 'qa-' . wp_generate_uuid4(), 'conversation_id' => 'qa-conversation-' . wp_generate_uuid4(), 'account_ref' => 'qa-mailbox', 'source_ref' => 'mail:opaque-reference', 'received_at' => gmdate( 'Y-m-d\TH:i:s\Z' ), 'from' => get_userdata( $customer )->user_email, 'to' => 'servicio@graphex.ar', 'subject' => '', 'body' => 'Necesito un presupuesto de volantes.', 'headers' => array() );
 $cases = array(
+    array( 'Mail delivery failed: returning message to sender', 'delivery_failure', false ), array( 'No se pudo entregar el correo', 'delivery_failure', false ),
     array( 'Quiero presupuesto de tarjetas', 'quote', true ), array( 'Necesito cotizar volantes', 'quote', true ),
     array( 'Precio para imprimir', 'quote', true ), array( 'Hola', 'contact', true ), array( 'Buenos días', 'contact', true ),
     array( 'Problema con mi presupuesto', 'incident', false ), array( 'No llegó el pedido', 'incident', false ),
