@@ -12,7 +12,7 @@ final class GE_WTP_Windbanners_Catalog {
     const SOURCE_NAME = 'Grupo Wind Banners';
     const SOURCE_URL = 'https://grupowindbanners.com.ar/';
     const SOURCE_DATE = '2026-10-10';
-    const IMAGE_VERSION = '2026-09-09-clean-v1';
+    const IMAGE_VERSION = '2026-10-10-graphex-mockups-v1';
 
     public static function groups() {
         return array(
@@ -248,7 +248,7 @@ final class GE_WTP_Windbanners_Catalog {
             update_post_meta($product_id, '_ge_supplier_source_date', self::SOURCE_DATE);
             update_post_meta($product_id, '_ge_supplier_item_ids', $data['source_ids']);
             if (self::IMAGE_VERSION !== get_post_meta($product_id, '_ge_wind_catalog_image_version', true)) {
-                if (self::attach_catalog_image($key . '.png', $product_id, $data['name'])) {
+                if (self::attach_catalog_image($key . '.webp', $product_id, $data['name'])) {
                     update_post_meta($product_id, '_ge_wind_catalog_image_version', self::IMAGE_VERSION);
                 }
             }
@@ -258,12 +258,35 @@ final class GE_WTP_Windbanners_Catalog {
         return array('created' => $created, 'updated' => $updated, 'total' => $created + $updated, 'source_items' => count(self::source_rows()));
     }
 
-    /**
-     * Copia al Media Library la versión editorial limpia incluida en el plugin.
-     * Nunca enlaza archivos del proveedor ni expone su identidad en el frente.
-     */
+    /** Refresh images only; never invoke full catalog sync for a visual release. */
+    public static function sync_images($expected_thumbnails) {
+        $updated = array();
+        $planned = array();
+        foreach (self::products() as $key => $data) {
+            if (empty($data['options'])) { continue; }
+            $ids = get_posts(array('post_type'=>'product','post_status'=>array('publish','draft','private'),'posts_per_page'=>2,'fields'=>'ids','meta_key'=>'_ge_public_catalog_key','meta_value'=>'windbanners-'.$key));
+            if (count($ids)!==1) { return new WP_Error('ge_image_mapping', 'Ambiguous image mapping: '.$key); }
+            $id=(int)$ids[0];
+            if ((string)get_post_meta($id,'_sku',true)!==$data['sku'] || !array_key_exists($id,$expected_thumbnails) || (int)get_post_thumbnail_id($id)!==(int)$expected_thumbnails[$id]) {
+                return new WP_Error('ge_image_drift','Product identity or image changed: '.$key);
+            }
+            $source = GE_WTP_PLUGIN_DIR . 'assets/images/windbanners/graphex-20261010/' . $key . '.webp';
+            if (!is_readable($source)) { return new WP_Error('ge_image_missing','Image missing: '.$key); }
+            $planned[$key] = array('id'=>$id,'name'=>$data['name']);
+        }
+        foreach ($planned as $key => $data) {
+            $id = $data['id'];
+            if ((int)get_post_thumbnail_id($id)!==(int)$expected_thumbnails[$id]) { return new WP_Error('ge_image_drift','Image changed during release: '.$key); }
+            if (!self::attach_catalog_image($key.'.webp',$id,$data['name'])) { return new WP_Error('ge_image_upload','Image upload failed: '.$key); }
+            update_post_meta($id,'_ge_wind_catalog_image_version',self::IMAGE_VERSION);
+            $updated[$id]=get_post_thumbnail_id($id);
+        }
+        return $updated;
+    }
+
+    /** Original Graphex mockups, explicitly illustrative, never supplier photos. */
     private static function attach_catalog_image($filename, $product_id, $title) {
-        $source = GE_WTP_PLUGIN_DIR . 'assets/images/windbanners/clean/' . basename($filename);
+        $source = GE_WTP_PLUGIN_DIR . 'assets/images/windbanners/graphex-20261010/' . basename($filename);
         if (!is_readable($source)) {
             return false;
         }
@@ -280,17 +303,18 @@ final class GE_WTP_Windbanners_Catalog {
         $mime = wp_check_filetype($upload['file']);
         $attachment_id = wp_insert_attachment(array(
             'post_mime_type' => $mime['type'],
-            'post_title' => sanitize_text_field($title),
+            'post_title' => sanitize_text_field($title . ' — imagen ilustrativa Graphex'),
+            'post_excerpt' => 'Imagen ilustrativa. Diseño y configuración final según el pedido.',
             'post_status' => 'inherit',
         ), $upload['file'], $product_id);
         if (is_wp_error($attachment_id)) {
             return false;
         }
         wp_update_attachment_metadata($attachment_id, wp_generate_attachment_metadata($attachment_id, $upload['file']));
-        update_post_meta($attachment_id, '_wp_attachment_image_alt', sanitize_text_field($title));
-        update_post_meta($attachment_id, '_ge_catalog_asset', 'windbanners/clean/' . basename($filename));
+        update_post_meta($attachment_id, '_wp_attachment_image_alt', sanitize_text_field($title . ' — imagen ilustrativa Graphex'));
+        update_post_meta($attachment_id, '_ge_catalog_asset', 'windbanners/graphex-20261010/' . basename($filename));
+        update_post_meta($attachment_id, '_ge_image_kind', 'generated_product_mockup');
         set_post_thumbnail($product_id, $attachment_id);
-        update_post_meta($product_id, '_product_image_gallery', '');
         return true;
     }
 

@@ -1,0 +1,9 @@
+# Windbanners: imágenes ilustrativas Graphex
+
+25 fichas activas usan mockups originales generados para Graphex, con el G autorizado como única referencia visual. No se editaron fotografías ni marcas de agua del proveedor. Cada imagen muestra «Imagen ilustrativa»; los adjuntos repiten esa condición en título, descripción y texto alternativo. Los PNG originales y prompts completos se entregan fuera del repositorio; las versiones WebP y sus hashes se versionan en assets/images/windbanners/graphex-20261010/manifest.json.
+
+La publicación invoca exclusivamente GE_WTP_Windbanners_Catalog::sync_images con las miniaturas previas esperadas. Preflight completo verifica identidad, SKU, archivos y miniaturas antes de crear adjuntos. No invocar sync completo para una actualización visual. Se preservan precios, opciones, contenido y galerías anteriores. Los modelos y configuraciones definitivos dependen del pedido; los accesorios mostrados no sustituyen las condiciones comerciales de cada opción.
+
+QA: 348 controles de conciliación, 821 del configurador, escenarios fiscales de tarjetas y cuatro guardas de imágenes (mapeo ambiguo, SKU, miniatura y ausencia de expectativa, incluyendo deriva en la última familia antes de subir archivos). Revisión visual de las 25 piezas; el manifiesto conserva prompts y hashes.
+
+Release privado: /home/graphexpress/wind-images-graphex-20261010. Respaldo verificado de archivo PHP anterior, imágenes originales y metadatos de miniatura/versión. Snapshot protege el resto de los metadatos y posts de las 25 fichas y el presupuesto 10021 (post 1260). Rollback selectivo restaura sólo miniaturas/versión y código anterior bajo guardas de deriva; conserva los nuevos adjuntos para evitar borrados. El Result Pack final fuera de Git registra commit canónico, hashes reales, validaciones y estados de despliegue.
