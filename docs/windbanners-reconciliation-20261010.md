@@ -18,4 +18,14 @@ Capturar evidencia pública con acceso permitido, sin registro, compra o envío.
 
 Release: checkout aislado → pruebas → aprobación de integración canónica cuando corresponda → merge canónico → backup verificado → deploy selectivo desde ese commit → `sync_prices()` → verificar todos los mappings, precios/fiscalidad y hashes. Ante drift concurrente, detener y reconciliar; no sobrescribir. Respaldo privado de cuatro archivos y los siete metadatos afectados por ficha, con prueba de restauración y guardas. Rollback restaura únicamente ese payload y esos metadatos, bajo comparación con la versión desplegada; nunca restaura la base completa.
 
-Caso indicado por Leo: referencia 10021, presupuesto técnico 1260, borrador. Existe edición concurrente; no se modifica desde esta conciliación. La línea de banderas es manual, sin producto/medida/configuración vinculados; requiere identificar medida para conciliarla sin inferir. El catálogo nuevo no recotiza ni cobra diferencias del caso automáticamente.
+Caso indicado por Leo: referencia 10021, presupuesto técnico 1260. Leo excluyó expresamente el presupuesto de los cambios. No se modifica ni se recotiza; el catálogo nuevo no cobra diferencias del caso automáticamente.
+
+## Cierre verificado 10/10/2026
+
+Integración y publicación autorizadas por Leo. Release de catálogo `5ef0af4d3b88813e642422e7f5ce6d4b09f59753`; presentación fiscal integrada en `c68dbdde6255ff0505e05c0bfc0d913f29d60ff1`. Se verificaron 25 fichas y 164 opciones, seis archivos contra manifiestos reproducibles desde master y conservación exacta del presupuesto 10021 antes/después. Pruebas: 348 controles del catálogo y fiscalidad, 821 del configurador y cinco escenarios de tarjeta pública. El catálogo muestra centavos y el contexto fiscal real; las tablas aclaran precios netos y comprobante C.
+
+QA pública: bandera 145 × 300 a 87.750 en configurador, tabla, carrito y subtotal de checkout. Checkout aplica además el descuento existente por transferencia del 10% (8.775; total 78.975), separado del descuento gremio usado para calcular costo. Esa política de pago preexistente no fue modificada. No se confirmó pedido ni se realizó pago; el artículo de prueba fue retirado y el carrito volvió a vacío.
+
+Respaldo privado: `/home/graphexpress/wind-reconciliation-20261010/backup` para los cuatro archivos del plugin y siete metadatos por ficha; `/home/graphexpress/wind-reconciliation-20261010/presentation/backup` para los dos archivos del tema. Los seis hashes de respaldo se compararon con las versiones previas. Rollback del plugin usa `deploy.py rollback` y `rollback-meta.php` con guardas; el tema restaura sólo sus dos archivos respaldados, tras comparar el hash vivo con `presentation/manifest.json`, conservando propietario/permisos y reemplazo atómico. No usar restauración de base completa.
+
+Estado del release: merged, deployed, verified, canonical_synced. No quedaron bloqueos de publicación.
