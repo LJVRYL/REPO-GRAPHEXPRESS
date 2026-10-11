@@ -20,7 +20,7 @@ Cada imagen dice «Imagen ilustrativa». Las estampas son ejemplos de personaliz
 
 Rollback selectivo `--rollback`: verificar respaldo, huellas y asociaciones posteriores antes de restituir sólo miniatura/galería previas. Si hubo deriva, detener. No restaurar toda la DB ni borrar archivos. Ante release parcial, revisar journal y restituir sólo IDs aplicados bajo guardas; no asumir que un fallo dejó todo intacto.
 
-Autorización del milestone: publicar imágenes verificadas; **no auto merge a master**. Commit de candidato en rama aislada y publicación de datos documentada como excepción a la secuencia de merge habitual. `canonical_synced=false` hasta integración explícitamente autorizada. No cambiar código productivo del feed, que tiene un candidato ajeno pendiente de merge.
+Publicación inicial autorizada en rama aislada, como excepción documentada a la secuencia de merge habitual. El 11/10/2026 el usuario autorizó explícitamente la integración canónica («autorizo, muy bien»). Se integra el candidato b3ffb7bd3d383b8febde4370ce2a4ce550039aa2 a master y se verifica por hash la publicación existente, sin repetir la mutación de datos. Alcance de canonical_synced: exclusivamente este lote de imágenes y su herramienta de publicación. No cambiar código productivo del feed, que tiene un candidato ajeno pendiente de merge.
 
 ## Contrato Meta
 
