@@ -19,8 +19,10 @@ foreach($rows as $row){
 }
 $product=new class {function get_meta($key){return 'windbanners-fly-gota';}};
 $selected=GE_Design_Guides::wind_rows($product);ok(count($selected)===5,'five exact Gota configurations');
-ok(count(array_filter($selected,function($r){return $r['status']==='supplier_label_conflict';}))===1,'one label conflict');
+ok(count(array_filter($selected,function($r){return $r['status']==='supplier_label_conflict';}))===2,'two Gota label conflicts');
+ok(count(array_filter($rows,function($r){return $r['status']==='supplier_label_conflict';}))===6,'six supplier label conflicts');
 ob_start();GE_Design_Guides::wind_panel();$panel=ob_get_clean();ok(strpos($panel,'data-gx-design-options')!==false,'selected-option contract');
+file_put_contents(dirname(__DIR__).'/../wind-panel-fragment.html',$panel);
 $index=GE_Design_Guides::index();ok(substr_count($index,'class="gx-design-family"')===25,'25 collapsed groups');
 ok(strpos($index,'Base limpia')!==false,'clean bases visible');ok(strpos($index,'precio')===false,'index no pricing logic');
 file_put_contents(dirname(__DIR__).'/../index-fragment.html',$index);

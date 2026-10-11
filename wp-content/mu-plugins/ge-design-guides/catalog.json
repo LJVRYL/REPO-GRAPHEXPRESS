@@ -793,8 +793,8 @@
       "label": "FLY BANNER PLUMA 420 · Doble faz",
       "source_url": "https://grupowindbanners.com.ar/carrito-producto/194",
       "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780784625466-581403407.pdf",
-      "status": "supplier_original_review",
-      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "status": "supplier_label_conflict",
+      "note": "Catálogo Pluma 420; PDF rotulado Pluma 320. Confirmar matriz correcta; no escalar.",
       "source_sha256": "6a74f0328b6d9f3c911d0ac6caf1438bf595624569c122709a2eb182668b8fc5",
       "source_pages_mm": [
         [
@@ -878,8 +878,8 @@
       "label": "FLY BANNER SURF 320 · Doble faz",
       "source_url": "https://grupowindbanners.com.ar/carrito-producto/192",
       "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786280778-786447715.pdf",
-      "status": "supplier_original_review",
-      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "status": "supplier_label_conflict",
+      "note": "Catálogo Surf 320; PDF rotulado Surf 230. Confirmar matriz correcta; no escalar.",
       "source_sha256": "185085c638d12a3261ceb4a50f9824319b71c94d2bc3f0aab0be61d133b793a2",
       "source_pages_mm": [
         [
@@ -946,8 +946,8 @@
       "label": "FLY BANNER CUBE 420 · Simple faz",
       "source_url": "https://grupowindbanners.com.ar/carrito-producto/169",
       "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786838537-785502992.pdf",
-      "status": "supplier_original_review",
-      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "status": "supplier_label_conflict",
+      "note": "Catálogo Cube 420; PDF rotulado Cube 320. Confirmar matriz correcta; no escalar.",
       "source_sha256": "c56a30ae5b8268feaed9b95fcef1a820e32d9a5f01bdbdd7f783eb66e4333163",
       "source_pages_mm": [
         [
@@ -1077,8 +1077,8 @@
       "label": "FLY BANNER GOTA 420 · Simple faz",
       "source_url": "https://grupowindbanners.com.ar/carrito-producto/167",
       "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780787789814-953470424.pdf",
-      "status": "supplier_original_review",
-      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "status": "supplier_label_conflict",
+      "note": "Catálogo Gota 420; PDF rotulado Gota 430. Confirmar matriz correcta; no escalar.",
       "source_sha256": "eb33849dc1e88a478b5f26471c0abc2d325e66d4fa02cf755a66c954312314bc",
       "source_pages_mm": [
         [
@@ -1539,8 +1539,8 @@
       "label": "Arco 350",
       "source_url": "https://grupowindbanners.com.ar/carrito-producto/287",
       "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791409606-470028762.pdf",
-      "status": "supplier_original_review",
-      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "status": "supplier_label_conflict",
+      "note": "Catálogo Arco 350; PDF rotulado Wall Banner 225x200. Confirmar matriz correcta; no escalar.",
       "source_sha256": "fc9addf9be7a87621016ed7453630b04199ad4ecd60d9eae4772e771871ee18b",
       "source_pages_mm": [
         [
