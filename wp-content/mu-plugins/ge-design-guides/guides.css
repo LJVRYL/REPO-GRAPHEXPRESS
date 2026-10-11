@@ -20,3 +20,5 @@
 .gx-design-family li p{margin:5px 0;font-size:14px}
 .gx-design-family li a{display:inline-block;padding:8px 0}
 @media(max-width:640px){.gx-design-row{grid-template-columns:1fr;gap:12px}.gx-design-library{padding:18px 12px 40px}.gx-design-library h2{font-size:28px}.gx-design-family summary span{display:block;margin:4px 0 0}.gx-design-downloads h2{font-size:21px}}
+body.page-id-1340 .haru-page-title__heading--main{white-space:normal;overflow-wrap:normal;word-break:normal;line-height:1.2}
+@media(max-width:640px){body.page-id-1340 .haru-page-title__heading--main{font-size:28px}}
