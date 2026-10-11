@@ -21,8 +21,8 @@ final class GE_Design_Guides {
     public static function assets() {
         $product=function_exists('is_product')&&is_product();
         if (!$product&&!is_page('plantillas-de-diseno')) return;
-        wp_enqueue_style('ge-design-guides',self::url('guides.css'),array(), '2.0');
-        if ($product) wp_enqueue_script('ge-design-guides',self::url('guides.js'),array(),'2.0',true);
+        wp_enqueue_style('ge-design-guides',self::url('guides.css'),array(), '2.1');
+        if ($product) wp_enqueue_script('ge-design-guides',self::url('guides.js'),array(),'2.1',true);
     }
     public static function guide_link($content) {
         if (is_singular('ge_guide')&&in_the_loop()&&is_main_query()) $content.='<p><a href="'.esc_url(self::index_url()).'">Guías y plantillas PDF de diseño</a></p>';
@@ -65,3 +65,4 @@ final class GE_Design_Guides {
     }
 }
 GE_Design_Guides::init();
+
