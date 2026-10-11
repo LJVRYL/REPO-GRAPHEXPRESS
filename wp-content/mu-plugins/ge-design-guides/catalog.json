@@ -1,0 +1,2687 @@
+{
+  "version": "1.0",
+  "date": "2026-10-11",
+  "options": [
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-347",
+      "label": "BANDERA 50 x 70",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/347",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-346",
+      "label": "BANDERA 70 x 100",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/346",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1786900713324-328503586.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-207",
+      "label": "BANDERA 100 X 145",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/207",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780774613946-666638233.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-208",
+      "label": "BANDERA 145 x 200",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/208",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780774838723-328345406.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-209",
+      "label": "BANDERA 145 x 250",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/209",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780774953383-174611821.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-210",
+      "label": "BANDERA 145 x 300",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/210",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-211",
+      "label": "BANDERA 145 x 400",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/211",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780778265251-723193516.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-212",
+      "label": "BANDERA 75 x 200",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/212",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780778910200-844345350.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-213",
+      "label": "BANDERA 75 x 250",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/213",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780778992807-94199950.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-214",
+      "label": "BANDERA 75 x 300",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/214",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780779047110-282487762.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banderas-sublimadas",
+      "option_key": "wb-215",
+      "label": "BANDERA 75 x 400",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/215",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780779121952-227754801.pdf",
+      "status": "generic_supplier_template",
+      "note": "PDF genérico para varias medidas. Confirmar tamaño plano y terminación; no usar el tamaño de página como medida de bandera.",
+      "source_sha256": "ac89d7aba9ebce678ac09559e32a83b6458afe410bfe0ab3ff3293113a77dab3",
+      "source_pages_mm": [
+        [
+          3021.065,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "bases-estacas",
+      "option_key": "wb-200",
+      "label": "Base Cruz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/200",
+      "supplier_template_url": null,
+      "status": "not_applicable",
+      "note": "Accesorio sin arte impreso: no necesita plantilla de diseño.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "bases-estacas",
+      "option_key": "wb-201",
+      "label": "Base Cruz con Sobrepeso",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/201",
+      "supplier_template_url": null,
+      "status": "not_applicable",
+      "note": "Accesorio sin arte impreso: no necesita plantilla de diseño.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "bases-estacas",
+      "option_key": "wb-202",
+      "label": "Base Plana",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/202",
+      "supplier_template_url": null,
+      "status": "not_applicable",
+      "note": "Accesorio sin arte impreso: no necesita plantilla de diseño.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "bases-estacas",
+      "option_key": "wb-348",
+      "label": "Base plastica Rellenable",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/348",
+      "supplier_template_url": null,
+      "status": "not_applicable",
+      "note": "Accesorio sin arte impreso: no necesita plantilla de diseño.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "bases-estacas",
+      "option_key": "wb-203",
+      "label": "Estaca 40cms",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/203",
+      "supplier_template_url": null,
+      "status": "not_applicable",
+      "note": "Accesorio sin arte impreso: no necesita plantilla de diseño.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "bases-estacas",
+      "option_key": "wb-204",
+      "label": "Estaca 60cms",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/204",
+      "supplier_template_url": null,
+      "status": "not_applicable",
+      "note": "Accesorio sin arte impreso: no necesita plantilla de diseño.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "carpas-estrella",
+      "option_key": "wb-257-v138",
+      "label": "Carpa Estrella Large · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/257",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780779572183-843204371.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "784233adb59bd453504ba931ad50119f7e629fa5ea1de3faa8eaca46103bf7f8",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          4009.813,
+          5072.521
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "carpas-estrella",
+      "option_key": "wb-256-v139",
+      "label": "Carpa Estrella Medium · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/256",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780779649566-995054973.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c2afda6d4b47084909f61c6e74788889d834393e83005b8458ce9d52f8405809",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          4009.813,
+          5072.521
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "carpas-estrella",
+      "option_key": "wb-255-v128",
+      "label": "Carpa Estrella Small · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/255",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780779865489-81667423.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "eec4c9e4e8cc7a8996819fbbe5b1156cba50482a3fa894dfbd1499b4193781b5",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          4009.813,
+          5072.521
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-227-v1",
+      "label": "Gazebo 2x2 + Techo con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/227",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780780077129-28877687.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0582fc2de6f59e2b3d0e74bfd2bef987c4d930f4b13f3002bf273c1fb37ee9b7",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-227-v2",
+      "label": "Gazebo 2x2 + Techo con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/227",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780780077129-28877687.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0582fc2de6f59e2b3d0e74bfd2bef987c4d930f4b13f3002bf273c1fb37ee9b7",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-229-v3",
+      "label": "Gazebo 2x2 + Techo y Tres paredes con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/229",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-229-v4",
+      "label": "Gazebo 2x2 + Techo y Tres paredes con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/229",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-231-v5",
+      "label": "Gazebo 3x3 + Techo con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/231",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860493615-521775527.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "d8ddbf1fd19803798b9e76b83be42447cdd122e2dace632d9fbd4df819e046c8",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-231-v6",
+      "label": "Gazebo 3x3 + Techo con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/231",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860493615-521775527.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "d8ddbf1fd19803798b9e76b83be42447cdd122e2dace632d9fbd4df819e046c8",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-233-v7",
+      "label": "Gazebo 3x3 + Techo y Tres paredes con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/233",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860602305-436352079.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "d8ddbf1fd19803798b9e76b83be42447cdd122e2dace632d9fbd4df819e046c8",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-233-v8",
+      "label": "Gazebo 3x3 + Techo y Tres paredes con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/233",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860602305-436352079.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "d8ddbf1fd19803798b9e76b83be42447cdd122e2dace632d9fbd4df819e046c8",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-235-v9",
+      "label": "Gazebo 3x4,5 + Techo con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/235",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860768869-64690081.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "4c60528faf5c275dffd66ce0062c49d7c5148a4df53893edf906a3879b86aa54",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-235-v10",
+      "label": "Gazebo 3x4,5 + Techo con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/235",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860768869-64690081.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "4c60528faf5c275dffd66ce0062c49d7c5148a4df53893edf906a3879b86aa54",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-237-v11",
+      "label": "Gazebo 3x4,5 + Techo y Tres paredes con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/237",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860822188-680589193.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "4c60528faf5c275dffd66ce0062c49d7c5148a4df53893edf906a3879b86aa54",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-237-v12",
+      "label": "Gazebo 3x4,5 + Techo y Tres paredes con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/237",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780860822188-680589193.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "4c60528faf5c275dffd66ce0062c49d7c5148a4df53893edf906a3879b86aa54",
+      "source_pages_mm": [
+        [
+          1895.475,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-239-v13",
+      "label": "Gazebo 3x6 + Techo con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/239",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780861211161-401699188.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "817ee76887f9ffead58520f1c95f4267a1284449569cbb6a38415475f0527868",
+      "source_pages_mm": [
+        [
+          2072.929,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-239-v14",
+      "label": "Gazebo 3x6 + Techo con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/239",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780861211161-401699188.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "817ee76887f9ffead58520f1c95f4267a1284449569cbb6a38415475f0527868",
+      "source_pages_mm": [
+        [
+          2072.929,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-241-v15",
+      "label": "Gazebo 3x6 + Techo y Tres paredes con Impresion · Estructura de Hierro",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/241",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780861266653-92286123.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "817ee76887f9ffead58520f1c95f4267a1284449569cbb6a38415475f0527868",
+      "source_pages_mm": [
+        [
+          2072.929,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "gazebos-completos",
+      "option_key": "wb-241-v16",
+      "label": "Gazebo 3x6 + Techo y Tres paredes con Impresion · Estructura de Aluminio",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/241",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780861266653-92286123.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "817ee76887f9ffead58520f1c95f4267a1284449569cbb6a38415475f0527868",
+      "source_pages_mm": [
+        [
+          2072.929,
+          954.948
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-cube",
+      "option_key": "wb-184",
+      "label": "FLY BANNER CUBE 230 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/184",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780782195542-765134411.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "60c8050ad10f39d51f5f79779a63bd2667ebe318f77508b883b85db855c4b9ef",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-cube",
+      "option_key": "wb-189",
+      "label": "FLY BANNER CUBE 320 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/189",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1787659608811-75372650.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "117da17997ac5e12e8ef739ada2052f81a40b4e2923977bd1f425a85d06d87a0",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2912.142
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-cube",
+      "option_key": "wb-195",
+      "label": "FLY BANNER CUBE 420 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/195",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780782398573-613251740.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "a3421774d0815e4cac67ab04ede66b14d8f9152ccc85c36101cee5b7c10e01de",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3761.493
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-drop",
+      "option_key": "wb-179",
+      "label": "FLY BANNER DROP 230 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/179",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780782819386-421126915.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "24053cd1474f80fa09c1218364e9b23a54f58b7f7e303eff1f533aacd092ccfb",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-drop",
+      "option_key": "wb-190",
+      "label": "FLY BANNER DROP 320 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/190",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780783044476-806165281.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "93d3150c3143fd4ee606c9b2e8d1be5d7ced128fed9bf186bb1c6886c6a73875",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3123.276
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-drop",
+      "option_key": "wb-196",
+      "label": "FLY BANNER DROP 420 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/196",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780783107039-672931463.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "a3f0feabf29f5b4e87f63c948df37fc61719aa4ad2f7c70423f9e3cb0045a1ac",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3789.927
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-gota",
+      "option_key": "wb-178",
+      "label": "FLY BANNER GOTA 230 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/178",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780782433063-81521977.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "2bf1469058ec59fa74322392c9b2f8214916f3ea3aad60d90a85ef525a51f31b",
+      "source_pages_mm": [
+        [
+          1888.839,
+          2377.232
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-gota",
+      "option_key": "wb-186",
+      "label": "FLY BANNER GOTA 320 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/186",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780782745684-619152127.pdf",
+      "status": "supplier_label_conflict",
+      "note": "Catálogo Gota 320; PDF rotulado Gota 230. Confirmar matriz correcta; no escalar.",
+      "source_sha256": "4da322a77402ba731f51ac0be2d4bf6717a201cdf1731b723364682c8d582c05",
+      "source_pages_mm": [
+        [
+          1873.373,
+          2530.733
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-oval",
+      "option_key": "wb-185",
+      "label": "FLY BANNER OVAL SMALL · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/185",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780783372512-838098857.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "782d2ee0b3a5ca3f9fa0bee55cbdc8dc3209f2856c760ea541c2fc1084bde5c5",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-petalo",
+      "option_key": "wb-183",
+      "label": "FLY BANNER PETALO 230 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/183",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-petalo",
+      "option_key": "wb-193",
+      "label": "FLY BANNER PETALO 320 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/193",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-pluma",
+      "option_key": "wb-180",
+      "label": "FLY BANNER PLUMA 230 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/180",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780783922154-816200409.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c2cab6c35f13b76cb5eff0545d476260b9d0e5a75ff75a435ff7f08cbe0a7ea0",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2530.591
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-pluma",
+      "option_key": "wb-188",
+      "label": "FLY BANNER PLUMA 320 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/188",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780784210786-573396782.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "bbb74f333019b4913e8c439d3fb037c71ba8751118603c0ab1a3397da1256455",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3186.927
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-pluma",
+      "option_key": "wb-194",
+      "label": "FLY BANNER PLUMA 420 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/194",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780784625466-581403407.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "6a74f0328b6d9f3c911d0ac6caf1438bf595624569c122709a2eb182668b8fc5",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3833.389
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-sail",
+      "option_key": "wb-181",
+      "label": "FLY BANNER SAIL 230 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/181",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780784863158-847869041.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "e7bc6f16c3db7b9449bb3bbff999b083eb7cea59308ed68f75ccb1cbbc740ab3",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-sail",
+      "option_key": "wb-191",
+      "label": "FLY BANNER SAIL 320 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/191",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780785923674-329136304.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0c156084d66385225369b257b6f8c24dfd661a1cd3db84534a2d2c40c86f65ef",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3226.975
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-sail",
+      "option_key": "wb-197",
+      "label": "FLY BANNER SAIL 420 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/197",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786035434-886590550.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "a1a890ad6ef29b6d99f641e39d42f2d879a83319cf377a21678ce510e7996e3c",
+      "source_pages_mm": [
+        [
+          1740.344,
+          3937.988
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-surf",
+      "option_key": "wb-182",
+      "label": "FLY BANNER SURF 230 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/182",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786162073-109683159.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "185085c638d12a3261ceb4a50f9824319b71c94d2bc3f0aab0be61d133b793a2",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-surf",
+      "option_key": "wb-192",
+      "label": "FLY BANNER SURF 320 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/192",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786280778-786447715.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "185085c638d12a3261ceb4a50f9824319b71c94d2bc3f0aab0be61d133b793a2",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-surf",
+      "option_key": "wb-198",
+      "label": "FLY BANNER SURF 420 · Doble faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/198",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786337478-786431064.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "b12ab72d4e344c8d7b4798c297e0e2ce4ff2b87608a4bfa872ecdaf541cb595a",
+      "source_pages_mm": [
+        [
+          1714.846,
+          3642.078
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-cube",
+      "option_key": "wb-157",
+      "label": "FLY BANNER CUBE 230 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/157",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786502963-910092600.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "bae43b84d9209ac9edd09244a1ef5ebebe0cbc4f988919a7551e93896365ea51",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-cube",
+      "option_key": "wb-162",
+      "label": "FLY BANNER CUBE 320 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/162",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786589101-842787834.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "2bbbb582180f53b53c99c5f633524407c5ea8ae6370f048e9a0bb464749c2186",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2912.142
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-cube",
+      "option_key": "wb-169",
+      "label": "FLY BANNER CUBE 420 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/169",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786838537-785502992.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c56a30ae5b8268feaed9b95fcef1a820e32d9a5f01bdbdd7f783eb66e4333163",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3925.217
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-cube",
+      "option_key": "wb-175",
+      "label": "FLY BANNER CUBE 520 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/175",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780786883086-1271025.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "81bc83c1b4ac1e9ced23a89944c46ff74fc1a6e9cea5b9cda9ceb8980195b67a",
+      "source_pages_mm": [
+        [
+          1600.973,
+          5037.173
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-drop",
+      "option_key": "wb-152",
+      "label": "FLY BANNER DROP 230 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/152",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780787172994-748163250.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "9788b27cc16eb885e0dd1484bfc716e9eff2b692ae69bff0c7c624356d34c7e9",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-drop",
+      "option_key": "wb-163",
+      "label": "FLY BANNER DROP 320 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/163",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780787280587-736622198.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "9cd4453d7fb879758aa9a6bd646bc385ff4aa700c2de191a087e1971bb4e29f3",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3123.276
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-drop",
+      "option_key": "wb-170",
+      "label": "FLY BANNER DROP 420 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/170",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780787410418-995023898.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "937a91ebef1a68a50ae4fb78d8878165f317a4e0cbdc43a6f97fc1593bf87bcf",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3778.109
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-drop",
+      "option_key": "wb-176",
+      "label": "FLY BANNER DROP 520 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/176",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-gota",
+      "option_key": "wb-151",
+      "label": "FLY BANNER GOTA 230 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/151",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780787559826-15376190.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "440a6a9bc931ab3382fc0691d5fcee5fdd915d927a69011795c7dca4fb153604",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2377.232
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-gota",
+      "option_key": "wb-159",
+      "label": "FLY BANNER GOTA 320 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/159",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1789733239973-92966050.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "20674188d76178fc4e3baaeb1c17a616bddced7c8ebc47ca9c77ea06c09bdfd9",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2817.499
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-gota",
+      "option_key": "wb-167",
+      "label": "FLY BANNER GOTA 420 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/167",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780787789814-953470424.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "eb33849dc1e88a478b5f26471c0abc2d325e66d4fa02cf755a66c954312314bc",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3696.017
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-oval",
+      "option_key": "wb-160",
+      "label": "FLY BANNER OVAL LARGE · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/160",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780787927093-284082628.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "863a47dbf3a412cb108ba4e0bf1c48e3f07f553dab7aefab178df56395b8a65a",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-oval",
+      "option_key": "wb-158",
+      "label": "FLY BANNER OVAL SMALL · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/158",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-petalo",
+      "option_key": "wb-156",
+      "label": "FLY BANNER PETALO 230 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/156",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780788250400-257188490.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c977a22ac29f3549e85cc970b43868ffbcf964c0456cb71a5cf1405ed81a43bd",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-petalo",
+      "option_key": "wb-166",
+      "label": "FLY BANNER PETALO 320 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/166",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780788286098-881724247.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "73c6515973c75040a09ae02247d173f235f441e34493e9653bc3c4bdb45e2b93",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3023.972
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-pluma",
+      "option_key": "wb-153",
+      "label": "FLY BANNER PLUMA 230 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/153",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780788473706-478371362.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "13c27fa281315c425ef7672e2814e77acf05aee2ce583503d05eb534e154c529",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2530.591
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-pluma",
+      "option_key": "wb-161",
+      "label": "FLY BANNER PLUMA 320 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/161",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780788528455-980815962.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "7f7e72263cd9e6cc187dfd72e4159cea805f7a7e85408878e79c1345106982e6",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3186.927
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-pluma",
+      "option_key": "wb-168",
+      "label": "FLY BANNER PLUMA 420 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/168",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780784453680-220649290.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "19af4e71f3382c5bb525b9d2c192c384464d24814828d1463f4e36e035783507",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3830.637
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-pluma",
+      "option_key": "wb-174",
+      "label": "FLY BANNER PLUMA 520 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/174",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780789517067-502454391.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "7f820920ddaa83d44f604a663cd3c958eca0789d0bb0a0af2b6e6b918483c2d5",
+      "source_pages_mm": [
+        [
+          1600.973,
+          4877.929
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-sail",
+      "option_key": "wb-154",
+      "label": "FLY BANNER SAIL 230 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/154",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780789226217-159052501.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "e953d65cd5a7943a66b4b2b03d5e32b1013585376aa9fc04782230217a97b62f",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-sail",
+      "option_key": "wb-164",
+      "label": "FLY BANNER SAIL 320 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/164",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780789557359-835937625.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "4cef016102744ea120476d7fcd6104fb0f97679958b783f660bf22f7f9b69ad3",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3226.975
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-sail",
+      "option_key": "wb-171",
+      "label": "FLY BANNER SAIL 420 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/171",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780789664740-799098792.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "2c0aed3153a551552b6011b6846cca28628b47e2d47d05d83de2b7ebf7bb5c2a",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3996.831
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-sail",
+      "option_key": "wb-177",
+      "label": "FLY BANNER SAIL 520 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/177",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780789696633-421422801.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0840538442456c744c6de7ecc2c6fcbbb34871044bf62515af28d4e8bc4bde7d",
+      "source_pages_mm": [
+        [
+          1600.973,
+          4953.317
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-surf",
+      "option_key": "wb-155",
+      "label": "FLY BANNER SURF 230 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/155",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780789918651-625385422.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "04517aa0d304d64f29643eec7d66c7f02beef66d182d23be98725f60af9395c7",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2532.708
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-surf",
+      "option_key": "wb-165",
+      "label": "FLY BANNER SURF 320 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/165",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780789968953-71303927.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "aac92cf2a996d84e1c5cb446310e872597f3d548f571f3ed143f501e619802c4",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3055.553
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "fly-surf",
+      "option_key": "wb-172",
+      "label": "FLY BANNER SURF 420 · Simple faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/172",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790190238-546044765.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "d4d63e6a245b79f5d30bef30406558dc3a8cae81ed743d8d323558062d188465",
+      "source_pages_mm": [
+        [
+          1600.973,
+          3759.623
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banner-bow",
+      "option_key": "wb-226",
+      "label": "Banner Bow Medium",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/226",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790358086-19154204.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "e6a192fe50ae0c4c4b4d99500db6616c1097a486e3e9a9d1c0a6aa7f5b2a9927",
+      "source_pages_mm": [
+        [
+          4225.749,
+          2294.23
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "banner-bow",
+      "option_key": "wb-225",
+      "label": "Banner Bow Small",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/225",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790526156-58196661.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "7619d18a13b6d9542e0b7899062e501777052d909fa5e33df9bc9ec8e1a350b6",
+      "source_pages_mm": [
+        [
+          3539.666,
+          2294.23
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-circular",
+      "option_key": "wb-220",
+      "label": "Pop Up Circular Chico",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/220",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790637743-521699417.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "a430e0136295704e22ef4a201b328dc9ee63867489ccc1dfc1d52ddb78b2ee24",
+      "source_pages_mm": [
+        [
+          2295.514,
+          1959.074
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-circular",
+      "option_key": "wb-222",
+      "label": "Pop Up Circular Grande",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/222",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790678372-111109048.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "f809ed2595fd1e55600e34edab916dda96a1b4b6998f0b1c23d606c1db195381",
+      "source_pages_mm": [
+        [
+          2989.781,
+          2294.23
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-circular",
+      "option_key": "wb-221",
+      "label": "Pop Up Circular Mediano",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/221",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790792979-707873025.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "03ce483f3e4b9798532d8a485e2372ff3b8debdd62bdf0f50403aaa05c557277",
+      "source_pages_mm": [
+        [
+          2295.514,
+          1959.074
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-tower",
+      "option_key": "wb-224",
+      "label": "Pop Up Tower Large",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/224",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790860609-300655716.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "b435568f54e7d23933c5901b9a085356440235a588998d559c18d86e83fb9839",
+      "source_pages_mm": [
+        [
+          2638.552,
+          3212.267
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-tower",
+      "option_key": "wb-223",
+      "label": "Pop Up Tower Small",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/223",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780790984794-728236464.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "66cf762413cb6fe95aa6d0fa9cacf63cb336e513c07b5a54246ba4611e671ac0",
+      "source_pages_mm": [
+        [
+          2638.552,
+          2594.695
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-valla",
+      "option_key": "wb-216",
+      "label": "Pop Up Valla 150",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/216",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791010162-261162086.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "a87adbaa3f33e28c23d2ae9def9b01c71c899ed83ea25cf1195695029e6e76a4",
+      "source_pages_mm": [
+        [
+          1600.973,
+          2377.232
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-valla",
+      "option_key": "wb-217",
+      "label": "Pop Up Valla 200",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/217",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1788437968536-697787976.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "1b3f67546306492c97abd0b66dadaf08be0d324586d0e73afce9b2b34c451d34",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2295.514,
+          2927.784
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-vertical",
+      "option_key": "wb-218",
+      "label": "Pop Up Vertical Chico",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/218",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791212882-486663610.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0bee247708eebf6f19102d632708249572fc1ce3b7458ddb25baf8e78462d430",
+      "source_pages_mm": [
+        [
+          2295.514,
+          1959.074
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "popup-vertical",
+      "option_key": "wb-219",
+      "label": "Pop Up Vertical Mediano",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/219",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791241565-739268423.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0f0281889525c60b6c4f7f1043996022a1c211470d20bc2a9a34fc9fc8c923a7",
+      "source_pages_mm": [
+        [
+          2295.514,
+          1959.074
+        ],
+        [
+          2001.608,
+          91.3
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "arcos-totems-vallas",
+      "option_key": "wb-287",
+      "label": "Arco 350",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/287",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791409606-470028762.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "fc9addf9be7a87621016ed7453630b04199ad4ecd60d9eae4772e771871ee18b",
+      "source_pages_mm": [
+        [
+          4672.401,
+          1987.363
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "arcos-totems-vallas",
+      "option_key": "wb-288",
+      "label": "Totem Curvo",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/288",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791475630-595832669.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "bc128896021304259d24902efeea305624f51e4bd0f590bb14e5e7f7cea76b62",
+      "source_pages_mm": [
+        [
+          2078.736,
+          2880.646
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "arcos-totems-vallas",
+      "option_key": "wb-289",
+      "label": "Totem Recto",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/289",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791619333-211106799.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "7b53609d1156d144d41dcf533f222fbd0c6bff2d682f93385a8391c809c7eed7",
+      "source_pages_mm": [
+        [
+          2078.736,
+          2880.646
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "arcos-totems-vallas",
+      "option_key": "wb-290",
+      "label": "Valla de 125x200",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/290",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780791672170-537355042.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "b000917f821c323170aa4a35a63ca50aaf8aace78c102226b2c71b9ee4c2361b",
+      "source_pages_mm": [
+        [
+          2407.712,
+          3407.943
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "backdrops",
+      "option_key": "wb-278",
+      "label": "BackDrop 140",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/278",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780793115675-768053524.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "60cebc59316f92d73af2deae3c229255649c297d61e249be3bbb28c9cd68f710",
+      "source_pages_mm": [
+        [
+          3303.58,
+          2753.649
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "backdrops",
+      "option_key": "wb-279",
+      "label": "BackDrop 208",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/279",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780793166065-207018460.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "f904bb265f06209cb2e0ec648c8e44f6ef1fc6451f0878d0be8a39f565126247",
+      "source_pages_mm": [
+        [
+          3153.643,
+          2753.649
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "backdrops",
+      "option_key": "wb-280",
+      "label": "BackDrop 280",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/280",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780793375184-223385569.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "f6b34a9f423208435632f1e8fe42a046b87fd367460c3520815665b537739bc6",
+      "source_pages_mm": [
+        [
+          4160.837,
+          2881.457
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "backdrops",
+      "option_key": "wb-281",
+      "label": "BackDrop 350",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/281",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780856868056-913543302.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "2b520466f5ec413c62821e360beefa073eb6b8c6dedfc4ff2ac226a25605510b",
+      "source_pages_mm": [
+        [
+          4823.707,
+          2753.649
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "backdrops",
+      "option_key": "wb-282",
+      "label": "BackDrop 420",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/282",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780857031622-153612085.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "fd036e299f6dadea898ec44832786734edb6823435e8496e77acd1734c78454d",
+      "source_pages_mm": [
+        [
+          520.001,
+          300.0
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "backdrops",
+      "option_key": "wb-283",
+      "label": "BackDrop 560",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/283",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780857107733-732787884.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "3fa43ba8ed93da3de7c5fef3848c76c8117e0abde4a29f9d3ed2f9af34c3a98e",
+      "source_pages_mm": [
+        [
+          4171.95,
+          1911.121
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "backdrops",
+      "option_key": "wb-284",
+      "label": "BackDrop 630",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/284",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780857324006-19433093.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0d21272ac29f09dce96f8f79ecaba5b389cf61351450a2f36999f276749fd03e",
+      "source_pages_mm": [
+        [
+          4171.95,
+          1911.121
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "mostradores",
+      "option_key": "wb-285",
+      "label": "Mostrador Oval",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/285",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780857359545-485014319.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "8cfcd6df7dbe6e00e879b5951ae055accb7d5e562586720f86f59a9bbf163c2f",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2078.736,
+          2880.646
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "mostradores",
+      "option_key": "wb-286",
+      "label": "Mostrador Rectangular",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/286",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1789993207689-3869432.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "305e5db2aabdacd1ce2e498b265ced4e0896041e4a70ffe0272c2add8dd358d9",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2455.277,
+          2880.646
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "stands",
+      "option_key": "wb-291",
+      "label": "Stand de 2x2 Mts",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/291",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "stands",
+      "option_key": "wb-292",
+      "label": "Stand de 3x3 Mts",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/292",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "stands",
+      "option_key": "wb-293",
+      "label": "Stand de 6x3 Mts",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/293",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-261-v19",
+      "label": "Wall Banner 100x225 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/261",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780859600643-836463191.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "89835d0d3293f11aefdcf37eab8e41764616709259fb4a5b89cdf53b0e586042",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2304.408,
+          2902.705
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-261-v20",
+      "label": "Wall Banner 100x225 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/261",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780859600643-836463191.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "89835d0d3293f11aefdcf37eab8e41764616709259fb4a5b89cdf53b0e586042",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2304.408,
+          2902.705
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-263-v21",
+      "label": "Wall Banner 200x225 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/263",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780861516099-176324887.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0324dc88c38e6e5ffc66f91729cd53f2af90703bb94bdb4524a2b2aafdd700bf",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2159.773,
+          2752.817
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-263-v22",
+      "label": "Wall Banner 200x225 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/263",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780861516099-176324887.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0324dc88c38e6e5ffc66f91729cd53f2af90703bb94bdb4524a2b2aafdd700bf",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2159.773,
+          2752.817
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-265-v23",
+      "label": "Wall Banner 300x225 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/265",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780862026842-488368247.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c20562d6fbac65fc5dcf1278be3da8bdb6900021d1df0914318443ac69f852b7",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          3153.643,
+          2753.649
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-265-v24",
+      "label": "Wall Banner 300x225 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/265",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780862026842-488368247.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c20562d6fbac65fc5dcf1278be3da8bdb6900021d1df0914318443ac69f852b7",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          3153.643,
+          2753.649
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-267-v25",
+      "label": "Wall Banner 400x225 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/267",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780862350816-562843395.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "716dbde99ea45ffdae9a7b974053a2a65f03ddeeffbfb312b440a7787bd7e446",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          4438.756,
+          2753.649
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-267-v26",
+      "label": "Wall Banner 400x225 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/267",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780862350816-562843395.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "716dbde99ea45ffdae9a7b974053a2a65f03ddeeffbfb312b440a7787bd7e446",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          4438.756,
+          2753.649
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-269-v27",
+      "label": "Wall Banner 500x225 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/269",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780862400492-479922761.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0918aa74f341e584eeca592e9103c3804a91c46ecbfad5922c3c64d59e2b0acf",
+      "source_pages_mm": [
+        [
+          2229.189,
+          2195.054
+        ],
+        [
+          2229.189,
+          2057.559
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-269-v28",
+      "label": "Wall Banner 500x225 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/269",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780862400492-479922761.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0918aa74f341e584eeca592e9103c3804a91c46ecbfad5922c3c64d59e2b0acf",
+      "source_pages_mm": [
+        [
+          2229.189,
+          2195.054
+        ],
+        [
+          2229.189,
+          2057.559
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-271-v29",
+      "label": "Wall Banner Base Curvo 100x235 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/271",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-271-v30",
+      "label": "Wall Banner Base Curvo 100x235 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/271",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-273-v31",
+      "label": "Wall Banner Base Curvo 200x235 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/273",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780864108735-723595662.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "6aca7a750eda056c5369a0ec60699577350e817efa794b8bb13f2f3704f55815",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2278.983,
+          2937.775
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-273-v32",
+      "label": "Wall Banner Base Curvo 200x235 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/273",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780864108735-723595662.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "6aca7a750eda056c5369a0ec60699577350e817efa794b8bb13f2f3704f55815",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2278.983,
+          2937.775
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-275-v33",
+      "label": "Wall Banner Base Diagonal 100x232 · Simple Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/275",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780864147213-989666045.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "18156ede3daab63f342b7e2173882ff41158fa0798d35512eacc8f11e6645794",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2278.983,
+          2937.775
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-275-v34",
+      "label": "Wall Banner Base Diagonal 100x232 · Doble Faz",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/275",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780864147213-989666045.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "18156ede3daab63f342b7e2173882ff41158fa0798d35512eacc8f11e6645794",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2278.983,
+          2937.775
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "wall-banners",
+      "option_key": "wb-277",
+      "label": "Wall Banner Valla de 125x200",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/277",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780859508967-168526130.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "e1aa50c2dff35876e71da248ee4b9933701f1b2d54d2a99cf79fd76a7828ee96",
+      "source_pages_mm": [
+        [
+          1611.708,
+          2195.054
+        ],
+        [
+          2407.712,
+          3407.943
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-318-v61",
+      "label": "Cinta Colgante Aro y Anzuelo · 20 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/318",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-318-v62",
+      "label": "Cinta Colgante Aro y Anzuelo · 25 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/318",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-330-v73",
+      "label": "Cinta colgante con Doble Mosquetón Gatillo · 20 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/330",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-330-v74",
+      "label": "Cinta colgante con Doble Mosquetón Gatillo · 25 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/330",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-326-v69",
+      "label": "Cinta Colgante con Hebilla y Aro Sinfin · 20 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/326",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-326-v70",
+      "label": "Cinta Colgante con Hebilla y Aro Sinfin · 25 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/326",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-324-v67",
+      "label": "Cinta Colgante con Hebilla y Mosqueton Gatillo · 20 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/324",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-324-v68",
+      "label": "Cinta Colgante con Hebilla y Mosqueton Gatillo · 25 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/324",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-320-v63",
+      "label": "Cinta Colgante con Mosqueton Gatillo · 20 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/320",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-320-v64",
+      "label": "Cinta Colgante con Mosqueton Gatillo · 25 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/320",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-328-v71",
+      "label": "Cinta Colgante Porta Medalla · 20 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/328",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-328-v72",
+      "label": "Cinta Colgante Porta Medalla · 25 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/328",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-322-v65",
+      "label": "Llavero Corto con Mosquetón de Zamak · 20 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/322",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "cintas-colgantes",
+      "option_key": "wb-322-v66",
+      "label": "Llavero Corto con Mosquetón de Zamak · 25 mm",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/322",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-301-v43",
+      "label": "Cubo Chico · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/301",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780883991469-179440015.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0f6d590080fd48e75ae01119c20d6211097dcdee9709864f7f8db660b67549cc",
+      "source_pages_mm": [
+        [
+          2298.107,
+          2403.334
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-301-v44",
+      "label": "Cubo Chico · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/301",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780883991469-179440015.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "0f6d590080fd48e75ae01119c20d6211097dcdee9709864f7f8db660b67549cc",
+      "source_pages_mm": [
+        [
+          2298.107,
+          2403.334
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-303-v46",
+      "label": "Cubo Grande · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/303",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1788540344858-458274221.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "8b0b8b3f2adaee971049e1f8653ecbc3ab0f52d2541c07fd20197c07887a6bef",
+      "source_pages_mm": [
+        [
+          3800.898,
+          2720.485
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-303-v45",
+      "label": "Cubo Grande · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/303",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1788540344858-458274221.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "8b0b8b3f2adaee971049e1f8653ecbc3ab0f52d2541c07fd20197c07887a6bef",
+      "source_pages_mm": [
+        [
+          3800.898,
+          2720.485
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-309-v52",
+      "label": "Perita Medium · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/309",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884229505-382874362.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "81169e03e9f0833d8f1056681c369682710175e9557f13b207ddf0c9cdc9db93",
+      "source_pages_mm": [
+        [
+          3241.633,
+          2403.334
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-309-v51",
+      "label": "Perita Medium · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/309",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884229505-382874362.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "81169e03e9f0833d8f1056681c369682710175e9557f13b207ddf0c9cdc9db93",
+      "source_pages_mm": [
+        [
+          3241.633,
+          2403.334
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-307-v49",
+      "label": "Perita Small · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/307",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884778305-599966494.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "240d8d05d679253dee25c9ed0e8a3fd4d1e387fa69f53c1e79725e96a11aa2c3",
+      "source_pages_mm": [
+        [
+          2298.107,
+          2403.334
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-307-v50",
+      "label": "Perita Small · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/307",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884778305-599966494.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "240d8d05d679253dee25c9ed0e8a3fd4d1e387fa69f53c1e79725e96a11aa2c3",
+      "source_pages_mm": [
+        [
+          2298.107,
+          2403.334
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-297-v39",
+      "label": "Puff Fiaca XL · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/297",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884430223-251101693.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c8399ce61656e8a3243308b09b85b21c62ee890a2ac5bf074bc92483e0c116e3",
+      "source_pages_mm": [
+        [
+          2298.107,
+          3432.877
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-297-v40",
+      "label": "Puff Fiaca XL · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/297",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884430223-251101693.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c8399ce61656e8a3243308b09b85b21c62ee890a2ac5bf074bc92483e0c116e3",
+      "source_pages_mm": [
+        [
+          2298.107,
+          3432.877
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-295-v37",
+      "label": "Puff Fiaca XXL · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/295",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884471283-340196641.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "76f5c8ca1ddff2c1cf229022d511d50d147b5a432c0cbda8b55ab861572283ee",
+      "source_pages_mm": [
+        [
+          2298.107,
+          3432.877
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-295-v38",
+      "label": "Puff Fiaca XXL · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/295",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884471283-340196641.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "76f5c8ca1ddff2c1cf229022d511d50d147b5a432c0cbda8b55ab861572283ee",
+      "source_pages_mm": [
+        [
+          2298.107,
+          3432.877
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-299-v42",
+      "label": "Puff Rectangular · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/299",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884640868-425564696.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c05fa7f7658b6f4b8a857ed66beb1a01e70dcf9cbdc5a958daf0cd599b7a4e80",
+      "source_pages_mm": [
+        [
+          2298.107,
+          2814.514
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-299-v41",
+      "label": "Puff Rectangular · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/299",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884640868-425564696.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "c05fa7f7658b6f4b8a857ed66beb1a01e70dcf9cbdc5a958daf0cd599b7a4e80",
+      "source_pages_mm": [
+        [
+          2298.107,
+          2814.514
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-313-v55",
+      "label": "Puff Redondo · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/313",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884978132-799933378.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "ee0b989d23d626155a3a26ec3b7d13df765a492f85a59ae0758bc915aec39f9f",
+      "source_pages_mm": [
+        [
+          2298.107,
+          4121.362
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-313-v56",
+      "label": "Puff Redondo · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/313",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780884978132-799933378.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "ee0b989d23d626155a3a26ec3b7d13df765a492f85a59ae0758bc915aec39f9f",
+      "source_pages_mm": [
+        [
+          2298.107,
+          4121.362
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-305-v48",
+      "label": "Sillón Doble · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/305",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780885246981-716261200.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "4c24557203f6f1e59a717dbf432d024d50f514ef481d01e56e052e48c9cddc16",
+      "source_pages_mm": [
+        [
+          2905.227,
+          4048.054
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-305-v47",
+      "label": "Sillón Doble · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/305",
+      "supplier_template_url": "https://grupowindbanners.com.ar/plantillas_productos/1780885246981-716261200.pdf",
+      "status": "supplier_original_review",
+      "note": "Confirmar matriz, costura, sangrado y zona segura antes de exportar.",
+      "source_sha256": "4c24557203f6f1e59a717dbf432d024d50f514ef481d01e56e052e48c9cddc16",
+      "source_pages_mm": [
+        [
+          2905.227,
+          4048.054
+        ]
+      ],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-311-v54",
+      "label": "Sillón Largo · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/311",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-personalizados",
+      "option_key": "wb-311-v53",
+      "label": "Sillón Largo · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/311",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-kids",
+      "option_key": "wb-315-v58",
+      "label": "Puff Rectangular Kid · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/315",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-kids",
+      "option_key": "wb-315-v57",
+      "label": "Puff Rectangular Kid · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/315",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-kids",
+      "option_key": "wb-317-v59",
+      "label": "Puff Triangular Kid · Sin Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/317",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    },
+    {
+      "family": "puffs-kids",
+      "option_key": "wb-317-v60",
+      "label": "Puff Triangular Kid · Con Relleno",
+      "source_url": "https://grupowindbanners.com.ar/carrito-producto/317",
+      "supplier_template_url": null,
+      "status": "missing_supplier_matrix",
+      "note": "No hay PDF asociado a esta opción en la fuente. Solicitar matriz exacta.",
+      "source_sha256": null,
+      "source_pages_mm": [],
+      "graphex_template_1to1": null
+    }
+  ]
+}

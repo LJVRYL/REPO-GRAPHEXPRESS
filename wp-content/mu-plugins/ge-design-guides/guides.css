@@ -1,0 +1,22 @@
+.gx-design-downloads,.gx-design-library,.gx-design-crosslink{color:var(--gx-ink,#111116);font-family:Jost,Inter,sans-serif;font-size:16px;line-height:1.55}
+.gx-design-downloads{border-top:1px solid var(--gx-line,#dddcdf);border-bottom:1px solid var(--gx-line,#dddcdf);padding:18px 0;margin:20px 0;clear:both}
+.gx-design-downloads h2{font-size:22px;margin:0 0 8px;color:inherit}
+.gx-design-downloads p{margin:8px 0}
+.gx-design-downloads a,.gx-design-library a,.gx-design-crosslink a{color:var(--gx-violet-deep,#443acc);text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.gx-design-downloads summary,.gx-design-library summary{cursor:pointer;padding:12px 0;font-weight:600}
+.gx-design-downloads a:focus-visible,.gx-design-library :is(a,summary):focus-visible{outline:3px solid var(--gx-violet,#5b51f5);outline-offset:4px}
+.gx-design-small{font-size:13px;line-height:1.5;color:var(--gx-muted,#60606b)}
+.gx-design-library{max-width:1040px;margin:0 auto;padding:30px 20px 60px}
+.gx-design-library h2{font-size:clamp(26px,4vw,38px);line-height:1.15;margin:30px 0 18px;color:inherit}
+.gx-design-library h3{font-size:22px;margin:0 0 8px;color:inherit}
+.gx-design-kicker{color:var(--gx-violet-deep,#443acc);font-size:13px;font-weight:600;letter-spacing:.08em}
+.gx-design-row{display:grid;grid-template-columns:1fr minmax(190px,240px);gap:26px;border-top:1px solid var(--gx-line,#dddcdf);padding:26px 0;align-items:start}
+.gx-design-row p{margin:0;max-width:620px}
+.gx-design-row a{display:block;padding:7px 0}
+.gx-design-family{border-top:1px solid var(--gx-line,#dddcdf);padding:4px 0}
+.gx-design-family summary span{font-size:13px;color:var(--gx-muted,#60606b);margin-left:10px;white-space:nowrap}
+.gx-design-family ul{list-style:none;padding:0;margin:0}
+.gx-design-family li{border-top:1px solid var(--gx-line,#dddcdf);padding:16px 0;overflow-wrap:anywhere}
+.gx-design-family li p{margin:5px 0;font-size:14px}
+.gx-design-family li a{display:inline-block;padding:8px 0}
+@media(max-width:640px){.gx-design-row{grid-template-columns:1fr;gap:12px}.gx-design-library{padding:18px 12px 40px}.gx-design-library h2{font-size:28px}.gx-design-family summary span{display:block;margin:4px 0 0}.gx-design-downloads h2{font-size:21px}}
