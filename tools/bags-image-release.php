@@ -4,6 +4,7 @@ if(PHP_SAPI!=='cli'||count($argv)!==4||!in_array($argv[1],['--preflight','--appl
 define('DISABLE_WP_CRON',true);
 $_SERVER['HTTP_HOST']='graphex.ar';$_SERVER['SERVER_NAME']='graphex.ar';$_SERVER['HTTPS']='on';
 require '/home/graphexpress/public_html/wp-load.php';
+set_exception_handler(function($e){fwrite(STDERR,'Bag release stopped: '.$e->getMessage()."\n");exit(2);});
 if(home_url()!=='https://graphex.ar')throw new RuntimeException('Unexpected site');
 $plan=json_decode(file_get_contents($argv[2]),true);$backup=$argv[3];$mode=$argv[1];
 if(!$plan||count($plan['bindings'])!==17||count($plan['assets'])!==22||strpos($backup,'/root/ge-backups/bags-images-')!==0)throw new RuntimeException('Invalid release');
