@@ -1,0 +1,3 @@
+<FilesMatch "^(catalog\.json|(?!(?:guia-general-graphex|guia-tarjetas-graphex|guia-volantes-graphex|guia-textiles-graphex|plantilla-tarjetas-95x65|plantilla-tarjetas-95x65-con-guias|plantilla-volantes-200x150|referencia-volantes-200x150)\.pdf$).*\.pdf)$">
+Require all denied
+</FilesMatch>

@@ -1,6 +1,6 @@
 <?php
 /** Plugin Name: Graphex · Guías y plantillas de diseño
- * Description: Descargas de preparación y referencias originales por opción, sin reglas de precio ni cambios de integración.
+ * Description: Guías originales Graphex y bases limpias verificadas, separadas del arte.
  */
 defined('ABSPATH') || exit;
 final class GE_Design_Guides {
@@ -21,8 +21,8 @@ final class GE_Design_Guides {
     public static function assets() {
         $product=function_exists('is_product')&&is_product();
         if (!$product&&!is_page('plantillas-de-diseno')) return;
-        wp_enqueue_style('ge-design-guides',self::url('guides.css'),array(), '1.0');
-        if ($product) wp_enqueue_script('ge-design-guides',self::url('guides.js'),array(),'1.0',true);
+        wp_enqueue_style('ge-design-guides',self::url('guides.css'),array(), '2.0');
+        if ($product) wp_enqueue_script('ge-design-guides',self::url('guides.js'),array(),'2.0',true);
     }
     public static function guide_link($content) {
         if (is_singular('ge_guide')&&in_the_loop()&&is_main_query()) $content.='<p><a href="'.esc_url(self::index_url()).'">Guías y plantillas PDF de diseño</a></p>';
@@ -36,13 +36,8 @@ final class GE_Design_Guides {
         return array_values(array_filter(self::catalog(),function($r)use($family){return $r['family']===$family;}));
     }
     public static function wind_panel() {
-        global $product;$rows=self::wind_rows($product);if(!$rows)return;
-        $first=$rows[0];$family=$first['family'];
-        echo '<section class="gx-design-downloads" data-gx-design-options="'.esc_attr(wp_json_encode($rows)).'" aria-labelledby="gx-design-heading"><h2 id="gx-design-heading">Prepará el archivo</h2>';
-        echo '<p><a href="'.esc_url(self::url('guia-'.$family.'.pdf')).'" target="_blank" rel="noopener">Guía PDF de este producto</a> · <a href="'.esc_url(self::index_url()).'">Todas las plantillas</a></p>';
-        echo '<details><summary>Plantilla de la opción elegida</summary><p data-gx-design-label>'.esc_html($first['label']).'</p><p data-gx-design-note role="status">'.esc_html($first['note']).'</p>';
-        echo '<a data-gx-design-source href="'.esc_url($first['supplier_template_url']?:$first['source_url']).'" target="_blank" rel="noopener noreferrer">'.esc_html($first['supplier_template_url']?'PDF original Grupo Wind Banners':'Ver modelo en la fuente').'</a>';
-        echo '<p class="gx-design-small">Confirmá matriz, escala y caras antes de exportar. El PDF original conserva autoría del proveedor; la guía Graphex se entrega por separado.</p></details></section>';
+        global $product;if(!self::wind_rows($product))return;
+        echo '<section class="gx-design-downloads"><h2>Prepará el archivo</h2><p>Confirmá la medida y terminación antes de diseñar. La base 1:1 queda disponible cuando su geometría está validada.</p><p><a href="'.esc_url(self::url('guia-textiles-graphex.pdf')).'" target="_blank" rel="noopener">Guía Graphex de piezas textiles</a> · <a href="'.esc_url(home_url('/cliente-markcom/?seccion=personalizado')).'">Solicitar plantilla por medida</a> · <a href="'.esc_url(self::index_url()).'">Plantillas propias Graphex</a></p></section>';
     }
     public static function flat_panel() {
         global $product;if(!$product)return;$slug=$product->get_slug();
@@ -63,16 +58,8 @@ final class GE_Design_Guides {
             <div class="gx-design-row"><div><h3>Guía general</h3><p>Medidas, color, resolución, fuentes y entrega.</p></div><a href="<?php echo esc_url(self::url('guia-general-graphex.pdf')); ?>" target="_blank" rel="noopener">Descargar guía PDF</a></div>
             <div class="gx-design-row"><div><h3>Tarjetas · 5 × 9 cm</h3><p>Base 95 × 65 mm, corte 90 × 50 mm y seguridad 80 × 40 mm. Dos páginas: frente y dorso.</p></div><div><a href="<?php echo esc_url(self::url('plantilla-tarjetas-95x65.pdf')); ?>" download>Base limpia</a><a href="<?php echo esc_url(self::url('guia-tarjetas-graphex.pdf')); ?>" target="_blank" rel="noopener">Guía PDF</a><a href="<?php echo esc_url(self::url('plantilla-tarjetas-95x65-con-guias.pdf')); ?>" target="_blank" rel="noopener">Referencia con líneas</a></div></div>
             <div class="gx-design-row"><div><h3>Volantes · 20 × 15 cm</h3><p>Base 21 × 16 cm, sangrado y seguridad de 5 mm. Para otras medidas, seguí la guía y el configurador.</p></div><div><a href="<?php echo esc_url(self::url('plantilla-volantes-200x150.pdf')); ?>" download>Base limpia</a><a href="<?php echo esc_url(self::url('guia-volantes-graphex.pdf')); ?>" target="_blank" rel="noopener">Guía PDF</a><a href="<?php echo esc_url(self::url('referencia-volantes-200x150.pdf')); ?>" target="_blank" rel="noopener">Referencia con líneas</a></div></div>
-            <div class="gx-design-row"><div><h3>Windbanners y textiles</h3><p>Elegí forma, medida y caras. Las matrices originales conservan la autoría de Grupo Wind Banners; confirmá el archivo técnico antes de diseñar.</p></div><a href="<?php echo esc_url(self::url('guia-windbanners-graphex.pdf')); ?>" target="_blank" rel="noopener">Guía PDF de textiles</a></div>
-            <h2>Buscá tu modelo textil</h2>
-            <p>Las opciones sin matriz o con diferencias de rotulado se identifican abajo. No escales una plantilla similar para reemplazarlas.</p>
-            <?php $groups=array();foreach(self::catalog() as $row)$groups[$row['family']][]=$row;
-            $definitions=class_exists('GE_WTP_Windbanners_Catalog')?GE_WTP_Windbanners_Catalog::products():array();
-            foreach($groups as $family=>$rows):$name=isset($definitions[$family]['name'])?$definitions[$family]['name']:ucwords(str_replace('-',' ',$family)); ?>
-                <details class="gx-design-family"><summary><?php echo esc_html($name); ?> <span><?php echo count($rows); ?> opciones</span></summary><p><a href="<?php echo esc_url(self::url('guia-'.$family.'.pdf')); ?>" target="_blank" rel="noopener">Descargar guía de <?php echo esc_html($name); ?></a></p>
-                <ul><?php foreach($rows as $row): ?><li><strong><?php echo esc_html($row['label']); ?></strong><p><?php echo esc_html($row['note']); ?></p><?php if($row['supplier_template_url']): ?><a href="<?php echo esc_url($row['supplier_template_url']); ?>" target="_blank" rel="noopener noreferrer">PDF original Grupo Wind Banners<?php echo $row['status']==='supplier_label_conflict'?' · por confirmar':''; ?></a><?php elseif($row['status']!=='not_applicable'): ?><a href="<?php echo esc_url(home_url('/cliente-markcom/?seccion=personalizado')); ?>">Solicitar la matriz exacta</a><?php endif; ?></li><?php endforeach; ?></ul></details>
-            <?php endforeach; ?>
-            <p class="gx-design-small">Versión 1.0 · 11/10/2026. Las bases PDF pueden complementarse con plantillas Canva cuando estén disponibles. La exportación siempre requiere revisión técnica.</p>
+            <div class="gx-design-row"><div><h3>Piezas textiles y otras medidas</h3><p>Guía propia de preparación. Solicitá la plantilla de tu medida y terminación: no reemplaces una base pendiente por otra parecida.</p></div><div><a href="<?php echo esc_url(self::url('guia-textiles-graphex.pdf')); ?>" target="_blank" rel="noopener">Guía Graphex PDF</a><a href="<?php echo esc_url(home_url('/cliente-markcom/?seccion=personalizado')); ?>">Solicitar plantilla por medida</a></div></div>
+            <p class="gx-design-small">Versión 2.0 · 11/10/2026. Las bases PDF pueden complementarse con plantillas Canva cuando estén disponibles. La exportación siempre requiere revisión técnica.</p>
         </div>
         <?php return ob_get_clean();
     }
