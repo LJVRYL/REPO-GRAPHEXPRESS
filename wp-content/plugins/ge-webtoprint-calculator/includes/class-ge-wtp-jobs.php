@@ -179,7 +179,7 @@ final class GE_WTP_Jobs {
             update_post_meta( $post_id, $key, $value );
         }
 
-        $message = '<p>Se recibió una nueva postulación para <strong>' . esc_html( $area ) . '</strong>.</p><p><strong>' . esc_html( $name ) . '</strong> · ' . esc_html( $email ) . '</p><p><a href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'candidates' ) ) . '">Revisar candidatos</a></p>';
+        $message = GE_WTP_Email_Content::render( 'job_application', array( 'url' => esc_url( GE_WTP_Staff_Portal::portal_url( 'candidates' ) ), 'email' => esc_html( $email ), 'area' => esc_html( $area ), 'name' => esc_html( $name ) ) );
         if ( class_exists( 'GE_WTP_Notification_Center' ) ) { GE_WTP_Notification_Center::send_internal( 'new_candidate', 'Nueva postulación · ' . $name, $message, $post_id ); }
         else { wp_mail( get_option( 'admin_email' ), 'Nueva postulación · ' . $name, wp_strip_all_tags( $message ) ); }
         self::redirect( 'ok' );

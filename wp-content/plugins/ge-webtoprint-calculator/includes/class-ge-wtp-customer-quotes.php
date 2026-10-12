@@ -235,7 +235,7 @@ final class GE_WTP_Customer_Quotes {
         $quote = get_user_meta( get_current_user_id(), $key, true );
         if ( is_array( $quote ) ) { $quote['status'] = 'en_revision'; update_user_meta( get_current_user_id(), $key, $quote ); }
         if ( class_exists( 'GE_WTP_Notification_Center' ) ) {
-            GE_WTP_Notification_Center::send_internal( 'new_order', 'Presupuesto y archivos para revisar · ' . $order->get_billing_email(), '<p>El cliente aceptó el presupuesto y cargó los archivos. Revisá el precio, la versión y el arte antes de aprobar producción.</p><p><a href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order_id ) ) ) . '">Abrir presupuesto</a></p>', $order_id );
+            GE_WTP_Notification_Center::send_internal( 'new_order', 'Presupuesto y archivos para revisar · ' . $order->get_billing_email(), GE_WTP_Email_Content::render( 'internal_customer_quote_review', array( 'url' => esc_url( GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order_id ) ) ) ) ), $order_id );
         }
         wp_safe_redirect( GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order_id, 'ge_notice' => 'quote-submitted' ) ) );
         exit;

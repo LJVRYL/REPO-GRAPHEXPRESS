@@ -18,13 +18,22 @@
   function show(message) {
     var node = output(); node.replaceChildren();
     var heading = document.createElement('h3'); heading.textContent = 'Vista previa del correo'; heading.tabIndex = -1; node.appendChild(heading);
-    [['Remitente', message.sender.name + ' <' + message.sender.email + '>'], ['Destinatario', message.recipient], ['Asunto', message.subject], ['Adjunto', message.attachment], ['Plantilla', 'Versión ' + message.revision]].forEach(function (pair) {
+    [['Remitente', message.sender.name + ' <' + message.sender.email + '>'], ['Destinatario', message.recipient], ['Asunto', message.subject], ['Adjunto', message.attachment], ['Contenido', typeof message.revision === 'number' ? 'Versión ' + message.revision : message.revision]].forEach(function (pair) {
       var p = document.createElement('p'), strong = document.createElement('strong'); strong.textContent = pair[0] + ': '; p.append(strong, document.createTextNode(pair[1])); node.appendChild(p);
     });
     var notice = document.createElement('p'); notice.textContent = message.notice; node.appendChild(notice);
     var iframe = document.createElement('iframe'); iframe.title = 'Contenido del correo, sin enlaces activos'; iframe.setAttribute('sandbox', ''); iframe.referrerPolicy = 'no-referrer';
-    iframe.srcdoc = '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; navigate-to \'none\'"><style>body{font:16px/1.6 system-ui,sans-serif;color:#243244;padding:20px;margin:0}a{pointer-events:none;color:#6e3ced}table{border-collapse:collapse;width:100%}td,th{padding:8px;border:1px solid #dde2e8}p{overflow-wrap:anywhere}</style></head><body>' + message.body + '</body></html>';
+    var safeOrigin = new URL(window.geEmailTemplates.assetOrigin || window.location.origin).origin;
+    var guard = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src ' + safeOrigin + '; style-src \'unsafe-inline\'; navigate-to \'none\'"><style>a{pointer-events:none}p,td{overflow-wrap:anywhere}</style>';
+    var safeDocument = new DOMParser().parseFromString(message.body,'text/html');
+    safeDocument.querySelectorAll('a[href]').forEach(function(link) { link.removeAttribute('href'); link.setAttribute('tabindex','-1'); link.setAttribute('aria-disabled','true'); });
+    var guardedBody = '<!doctype html>' + safeDocument.documentElement.outerHTML;
+    iframe.srcdoc = guardedBody.replace('<head>', '<head>' + guard);
+    iframe.style.cssText = 'display:block;width:100%;height:800px;max-width:680px;border:1px solid #dddcdf;margin:16px auto;background:#efeeeb';
+    var sizes = document.createElement('div'); sizes.className = 'ge-template-actions';
+    [['Escritorio', '100%'], ['Móvil · 360 px', '360px']].forEach(function(pair) { var control = button(pair[0]); control.addEventListener('click', function() { iframe.style.width = pair[1]; }); sizes.appendChild(control); }); node.appendChild(sizes);
     node.appendChild(iframe);
+    if (message.plain) { var plain = document.createElement('details'), plainTitle = document.createElement('summary'), plainBody = document.createElement('pre'); plainTitle.textContent = 'Versión de texto'; plainBody.textContent = message.plain; plainBody.style.whiteSpace = 'pre-wrap'; plain.append(plainTitle, plainBody); node.appendChild(plain); }
     var parsed = new DOMParser().parseFromString(message.body, 'text/html'), links = document.createElement('details'), summary = document.createElement('summary'); summary.textContent = 'Enlaces incluidos en el correo'; links.appendChild(summary);
     parsed.querySelectorAll('a[href]').forEach(function (link) { var p = document.createElement('p'); p.textContent = link.textContent + ': ' + link.getAttribute('href'); links.appendChild(p); }); node.appendChild(links);
     node.scrollIntoView({block:'start'}); heading.focus({preventScroll:true});

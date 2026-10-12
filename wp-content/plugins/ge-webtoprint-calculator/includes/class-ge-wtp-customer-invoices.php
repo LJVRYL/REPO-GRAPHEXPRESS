@@ -299,13 +299,13 @@ final class GE_WTP_Customer_Invoices {
         if ( ! add_option( $key, 'attempting', '', false ) ) { return get_option( $key ); }
         $customer = get_userdata( $row['customer_id'] ); $result = array();
         $subject = $response ? 'Hay una respuesta sobre tu comprobante' : 'Recibimos tu consulta sobre un comprobante';
-        $html = '<p>' . esc_html( $subject ) . '.</p><p><a href="' . esc_url( self::url( $row['ref'] ) ) . '">Ver comprobante y conversación</a></p><p>Pedir una revisión no anula el comprobante ni cambia el estado de pago.</p>';
-        $result['customer'] = GE_WTP_Notifications::send( $customer->user_email, $subject . ' · Graph Express', $html, $response ? 'invoice_review_response' : 'invoice_review_received', $entity ) ? 'accepted' : 'failed';
+        $html = GE_WTP_Email_Content::render( 'invoice_review_received', array( 'url' => esc_url( self::url( $row['ref'] ) ), 'subject' => esc_html( $subject ) ) );
+        $result['customer'] = GE_WTP_Notifications::send( $customer->user_email, $subject . ' · ' . GE_WTP_Email_Branding::profile()['name'], $html, $response ? 'invoice_review_response' : 'invoice_review_received', $entity ) ? 'accepted' : 'failed';
         if ( ! $response ) {
             $alert = GE_WTP_Internal_Alerts::create( 'invoice_review_' . $event, 'Revisión de comprobante · ' . $customer->display_name, $entity, $row['customer_id'] );
             $result['alert_id'] = is_wp_error( $alert ) ? 0 : $alert;
             $ok = true; $recipients = GE_WTP_Notification_Center::recipients();
-            foreach ( $recipients as $email ) { $ok = GE_WTP_Notifications::send( $email, 'Solicitud de revisión de comprobante · Graph Express', '<p>Hay una consulta para revisar.</p><p><a href="' . esc_url( self::url( $row['ref'], true, $row['customer_id'] ) ) . '">Abrir revisión en Gestión</a></p>', 'invoice_review_staff', $entity ) && $ok; }
+            foreach ( $recipients as $email ) { $ok = GE_WTP_Notifications::send( $email, 'Solicitud de revisión de comprobante · ' . GE_WTP_Email_Branding::profile()['name'], GE_WTP_Email_Content::render( 'invoice_review_staff', array( 'url' => esc_url( self::url( $row['ref'], true, $row['customer_id'] ) ) ) ), 'invoice_review_staff', $entity ) && $ok; }
             $result['staff'] = $recipients && $ok ? 'accepted' : 'failed';
         }
         $result['at'] = gmdate( 'c' ); update_option( $key, $result, false ); return $result;
@@ -328,7 +328,7 @@ final class GE_WTP_Customer_Invoices {
         $key = 'ge_invoice_available_' . hash( 'sha256', self::organization() . ':' . $ref );
         if ( add_option( $key, 'attempting', '', false ) ) {
             $user = get_userdata( $row['customer_id'] );
-            $ok = GE_WTP_Notifications::send( $user->user_email, 'Comprobante disponible · Graph Express', '<p>Tenés un comprobante disponible en tu portal.</p><p><a href="' . esc_url( self::url( $ref ) ) . '">Ver en Mis facturas</a></p>', 'invoice_available', $user->ID );
+            $ok = GE_WTP_Notifications::send( $user->user_email, 'Comprobante disponible · ' . GE_WTP_Email_Branding::profile()['name'], GE_WTP_Email_Content::render( 'invoice_available', array( 'url' => esc_url( self::url( $ref ) ) ) ), 'invoice_available', $user->ID );
             update_option( $key, $ok ? 'accepted' : 'failed', false );
         }
         wp_safe_redirect( add_query_arg( 'invoice_status', get_option( $key ) === 'accepted' ? 'notice_accepted' : 'notice_failed', self::url( $ref, true, $row['customer_id'] ) ) ); exit;

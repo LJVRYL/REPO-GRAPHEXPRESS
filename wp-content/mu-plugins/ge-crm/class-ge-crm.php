@@ -496,7 +496,7 @@ final class GE_CRM {
             $headers = array( 'Auto-Submitted: auto-replied', 'X-Auto-Response-Suppress: All' );
             $mid = $claim['event']['headers']['message-id'] ?? '';
             if ( preg_match( '/^<[^<>\s]{1,300}>$/D', $mid ) ) { $headers[] = 'In-Reply-To: ' . $mid; }
-            $ok = GE_WTP_Notifications::send( $claim['event']['from'], 'Mensaje recibido · GRAPHEX', '<p>Recibimos tu mensaje en GRAPHEX. Lo revisaremos para continuar con tu consulta.</p>', 'attention_received_ack', $claim['dispatch_id'], $headers );
+            $ok = GE_WTP_Notifications::send( $claim['event']['from'], 'Mensaje recibido · ' . GE_WTP_Email_Branding::profile()['name'], GE_WTP_Email_Content::render( 'attention_received_ack', array(  ) ), 'attention_received_ack', $claim['dispatch_id'], $headers );
             $state = $ok ? ( $qa ? 'simulated' : ( 'servicio@graphex.ar' === ( $actual['from'] ?? '' ) && ! empty( $actual['native'] ) ? 'sent' : 'unknown' ) ) : 'failed';
         } catch ( Throwable $ex ) { $state = 'unknown'; }
         finally { remove_action( 'phpmailer_init', $capture, PHP_INT_MAX ); }
