@@ -349,6 +349,15 @@ final class GE_CRM {
         if (!in_array($channel,array('whatsapp','instagram','messenger'),true)) return 0;
         $key='message:' . hash('sha256',$channel . ':' . $account . ':' . $message);
         $id=(int)$wpdb->get_var($wpdb->prepare('SELECT id FROM ' . self::table() . ' WHERE organization_id=%s AND kind=%s AND dedupe_key=%s',self::org(),'thread',$key));
+        if (!$id) {
+            // Delivery mids identify an outgoing reply, not an incoming thread.
+            $out=$wpdb->get_row($wpdb->prepare('SELECT record_id FROM '.self::table('events').' WHERE organization_id=%s AND event_type=%s AND JSON_UNQUOTE(JSON_EXTRACT(payload,%s))=%s AND JSON_UNQUOTE(JSON_EXTRACT(payload,%s))=%s AND JSON_UNQUOTE(JSON_EXTRACT(payload,%s))=%s ORDER BY id DESC LIMIT 1',self::org(),'crm_outbound','$.provider_id',$message,'$.account_ref',$account,'$.channel',$channel),ARRAY_A);
+            if ($out) {
+                $r=self::get((int)$out['record_id'],'thread');
+                $source=$r['attention_event'] ?? $r['meta_event'] ?? array();
+                if (($r['channel'] ?? '')===$channel && ($source['account_ref'] ?? '')===$account) $id=(int)$r['id'];
+            }
+        }
         if ($id || !$peer) return $id;
         // Echoes may use a new outbound mid. Link only within the exact scoped conversation.
         $conversation=hash('sha256',$channel . ':' . $account . ':' . $peer);

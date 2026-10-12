@@ -19,6 +19,10 @@ $cfg=array('organization_id'=>'graph-express','outbound'=>array('instagram'=>arr
 $event=array('kind'=>'message','channel'=>'instagram','account_ref'=>'instagram:17841407285480956','asset_id'=>'17841407285480956','peer'=>'55555000001','timestamp'=>gmdate('c'),'message_id'=>'qa-reply-'.wp_generate_uuid4(),'body'=>'Quiero cotizar','attachments'=>array(),'media_pending'=>false);
 $r=GE_CRM::meta_ingest($event,999);$id=$r['record_id'];$request=array('record_id'=>$id,'request_id'=>wp_generate_uuid4(),'text'=>'Hola, ¿qué cantidad necesitás?');
 $answer=GE_CRM_Outbound::send($request);oc($answer['state']==='accepted','HTTP acceptance recorded');oc($calls===1,'One remote call');oc(GE_CRM_Outbound::send($request)['state']==='accepted'&&$calls===1,'Replay never sends twice');
+oc(GE_CRM::whatsapp_find_thread($event['account_ref'],$answer['provider_id'],'','instagram')===$id,'Outgoing provider id links its actual thread');
+oc(GE_CRM::whatsapp_find_thread('instagram:99999999999',$answer['provider_id'],'','instagram')===0,'Foreign account cannot link outgoing status');
+oc(GE_CRM::whatsapp_find_thread($event['account_ref'],$answer['provider_id'],'','whatsapp')===0,'Foreign channel cannot link outgoing status');
+oc(GE_CRM::whatsapp_find_thread($event['account_ref'],'unknown-provider-'.$run,'','instagram')===0,'Unknown outgoing id remains unlinked');
 oreject(function()use($request){$request['text']='Another text';GE_CRM_Outbound::send($request);});oc($calls===1,'Conflict blocked before transport');
 $delivery=$event;$delivery['kind']='status';$delivery['message_id']=$answer['provider_id'];$delivery['status']='delivered';GE_CRM::whatsapp_transport_event($id,$delivery,999);oc(GE_CRM_Outbound::send($request)['state']==='delivered','Signed transport event reflected');oc($calls===1,'Checking delivery does not send');
 $mode='timeout';$request['request_id']=wp_generate_uuid4();$answer=GE_CRM_Outbound::send($request);oc($answer['state']==='unknown','Timeout not marked failed/sent');GE_CRM_Outbound::send($request);oc($calls===2,'Unknown replay never sends twice');
