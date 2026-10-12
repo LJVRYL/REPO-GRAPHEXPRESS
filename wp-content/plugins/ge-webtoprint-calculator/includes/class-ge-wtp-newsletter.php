@@ -10,6 +10,7 @@ final class GE_WTP_Newsletter {
 
     public static function init() {
         require_once __DIR__ . '/class-ge-wtp-newsletter-review.php';
+        require_once __DIR__ . '/class-ge-wtp-newsletter-audiences.php';
         GE_WTP_Newsletter_Review::init();
         add_action( self::CRON_HOOK, array( __CLASS__, 'process_queue' ) );
         add_action( 'admin_post_nopriv_ge_newsletter_subscribe', array( __CLASS__, 'handle_subscribe' ) );
@@ -213,8 +214,7 @@ final class GE_WTP_Newsletter {
     }
 
     private static function render_contacts() {
-        global $wpdb; $contacts = $wpdb->get_results( 'SELECT * FROM ' . self::contacts_table() . ' ORDER BY id DESC LIMIT 500' ); $subscribed = (int) $wpdb->get_var( "SELECT COUNT(*) FROM " . self::contacts_table() . " WHERE status='subscribed'" );
-        ?><section class="ge-admin-panel ge-admin-tab-panel"><div class="ge-admin-panel-head"><div><span><?php echo esc_html( $subscribed ); ?> suscriptos activos</span><h2>Contactos con consentimiento</h2></div></div><?php if ( ! $contacts ) : ?><div class="ge-admin-empty">Todavía no hay contactos suscriptos.</div><?php else : ?><div class="ge-admin-table-scroll"><table class="ge-admin-table"><thead><tr><th>Email</th><th>Nombre</th><th>Origen</th><th>Estado</th><th>Consentimiento</th></tr></thead><tbody><?php foreach ( $contacts as $contact ) : ?><tr><td><strong><?php echo esc_html( $contact->email ); ?></strong></td><td><?php echo esc_html( trim( $contact->first_name . ' ' . $contact->last_name ) ?: '—' ); ?></td><td><?php echo esc_html( $contact->source ); ?></td><td><span class="ge-admin-status"><?php echo esc_html( $contact->status ); ?></span></td><td><?php echo esc_html( $contact->consent_at ? mysql2date( 'd/m/Y H:i', $contact->consent_at ) : '—' ); ?></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></section><?php
+        GE_WTP_Newsletter_Audiences::render_contacts();
     }
 
     private static function render_email_logs() {

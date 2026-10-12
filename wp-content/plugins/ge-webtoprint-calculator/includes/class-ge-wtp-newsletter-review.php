@@ -28,7 +28,7 @@ final class GE_WTP_Newsletter_Review {
     }
 
     public static function eligible( $contact ) {
-        return $contact && 'subscribed' === $contact->status && ! empty( $contact->consent_at )
+        return $contact && 'subscribed' === $contact->status && ( ! empty( $contact->consent_at ) || GE_WTP_Newsletter_Audiences::owner_authorized( $contact ) )
             && empty( $contact->unsubscribed_at ) && is_email( $contact->email )
             && preg_match( '/^[a-f0-9]{64}$/D', (string) $contact->token );
     }
@@ -36,7 +36,7 @@ final class GE_WTP_Newsletter_Review {
     /** No recipient PII is duplicated into review metadata. */
     public static function contact_fingerprint( $contact ) {
         return hash( 'sha256', wp_json_encode( array( (int) $contact->id, strtolower( $contact->email ), $contact->status,
-            $contact->consent_at, $contact->unsubscribed_at, $contact->token, $contact->source ) ) );
+            $contact->consent_at, $contact->unsubscribed_at, $contact->token, $contact->source, $contact->authorization_kind ?? '', $contact->authorization_at ?? '', $contact->audience ?? '', $contact->selection_meta ?? '' ) ) );
     }
 
     public static function create_draft( $notice = '', $source = '' ) {
@@ -151,6 +151,7 @@ final class GE_WTP_Newsletter_Review {
     public static function render() {
         global $wpdb;
         if ( ! self::allowed() ) { return; }
+        if ( ! GE_WTP_Newsletter_Audiences::ensure_schema() ) { echo '<p role="alert">No se pudo preparar la lista de contactos.</p>'; return; }
         $campaigns = $wpdb->get_results( 'SELECT * FROM ' . self::table( 'campaigns' ) . ' ORDER BY id DESC LIMIT 100' );
         $id = absint( $_GET['newsletter_campaign'] ?? 0 ); $campaign = $id ? self::campaign( $id ) : null;
         $meta = $campaign ? self::metadata( $id ) : array();
@@ -180,16 +181,16 @@ final class GE_WTP_Newsletter_Review {
                 <iframe title="Vista previa de la campaña" sandbox="" referrerpolicy="no-referrer" srcdoc="<?php echo esc_attr( $html ); ?>" style="display:block;width:100%;height:780px;border:1px solid #ddd;margin-top:16px"></iframe>
             </details>
             <p>El enlace de baja se personaliza para cada destinatario al enviar. Esta vista previa no envía correos.</p>
-            <?php $contacts = $wpdb->get_results( "SELECT * FROM " . self::table( 'contacts' ) . " WHERE status='subscribed' AND consent_at IS NOT NULL AND unsubscribed_at IS NULL ORDER BY id DESC LIMIT 500" ); ?>
+            <?php $contacts = $wpdb->get_results( "SELECT * FROM " . self::table( 'contacts' ) . " WHERE status='subscribed' AND (consent_at IS NOT NULL OR authorization_kind='owner_selected') AND unsubscribed_at IS NULL ORDER BY id DESC LIMIT 500" ); ?>
             <form class="ge-admin-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <input type="hidden" name="action" value="ge_newsletter_review_batch"><input type="hidden" name="campaign_id" value="<?php echo (int) $id; ?>">
                 <?php wp_nonce_field( 'ge_newsletter_review_batch_' . $id ); ?>
-                <fieldset><legend>Seleccionar contactos con consentimiento</legend>
+                <fieldset><legend>Seleccionar suscriptores autorizados</legend>
                     <?php $shown = 0; foreach ( $contacts as $contact ) : if ( ! self::eligible( $contact ) ) { continue; } ++$shown; ?>
-                        <label><input type="checkbox" name="contacts[]" value="<?php echo (int) $contact->id; ?>"> <?php echo esc_html( $contact->email ); ?> · Consentimiento <?php echo esc_html( mysql2date( 'd/m/Y', $contact->consent_at ) ); ?></label>
+                        <label><input type="checkbox" name="contacts[]" value="<?php echo (int) $contact->id; ?>"> <?php echo esc_html( $contact->email ); ?> · <?php echo GE_WTP_Newsletter_Audiences::owner_authorized( $contact ) ? 'Selección del titular' : 'Aceptación registrada'; ?></label>
                     <?php endforeach; if ( ! $shown ) : ?><p>No hay contactos elegibles en esta vista.</p><?php endif; ?>
                 </fieldset>
-                <p>Ser cliente o aparecer en una casilla de correo no equivale a haber aceptado publicidad.</p>
+                <p>Se distingue la selección autorizada por el titular de la aceptación registrada por el destinatario.</p>
                 <button class="button" type="submit" <?php disabled( ! $shown ); ?>>Guardar revisión del lote</button>
             </form>
             <?php if ( ! empty( $meta['review'] ) ) : ?><p role="status"><?php echo self::review_valid( $campaign ) ? 'Lote revisado: ' . count( $meta['review']['contacts'] ) . ' contactos. No se autorizó un envío.' : 'La revisión quedó desactualizada. Revisá de nuevo el contenido y los contactos.'; ?></p><?php endif; ?>
