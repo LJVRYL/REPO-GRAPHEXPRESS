@@ -68,7 +68,7 @@ try {
     $wpdb->update($mt,array('status'=>'draft'),array('id'=>$draft)); $_GET=array('newsletter_campaign'=>$draft); ob_start(); GE_WTP_Newsletter_Review::render(); $panel=ob_get_clean();
     nq(strpos($panel,'sandbox=""')!==false,'Preview sandboxed');
     nq(strpos($panel,'name="audience_key"')!==false,'Explicit whole-audience selection');
-    nq(strpos($panel,'Enviar prueba')===false,'No unsafe test button');
+    nq(strpos($panel,'ge_newsletter_engine_test')!==false&&strpos($panel,'ge_newsletter_engine_launch')!==false,'Protected test and launch forms present');
     nq($mail===0,'Zero transport calls across all scenarios');
     echo wp_json_encode(array('status'=>'passed','checks'=>$checks,'transport_calls'=>$mail,'php'=>PHP_VERSION))."\n";
 } finally {
