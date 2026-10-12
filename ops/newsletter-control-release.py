@@ -47,7 +47,7 @@ def main():
     publish_order=sorted(m['files'],key=lambda x:(m['files'][x]['before'] is not None,not x.endswith('/class-ge-wtp-newsletter.php')))
     for relative in publish_order:
         record=m['files'][relative]
-        target=ROOT/relative;temp=target.with_suffix('.newsletter-next');shutil.copy2(str(release/'candidate'/relative),str(temp));os.chmod(str(temp),0o644);shutil.chown(str(temp),user='graphexpress',group='graphexpress');os.replace(str(temp),str(target))
+        target=ROOT/relative;owner=(target if target.exists() else target.parent).stat();temp=target.with_suffix('.newsletter-next');shutil.copy2(str(release/'candidate'/relative),str(temp));os.chmod(str(temp),0o644);os.chown(str(temp),owner.st_uid,owner.st_gid);os.replace(str(temp),str(target))
         if digest(target)!=record['after']:raise RuntimeError('Published hash mismatch')
     print(json.dumps({'published':True,'files':len(m['files']),'backup':backup,'commit':m['commit']}))
 if __name__=='__main__':main()
