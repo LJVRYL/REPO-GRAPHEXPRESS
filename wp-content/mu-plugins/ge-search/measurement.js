@@ -59,16 +59,36 @@
   function companyEvents(){var field=d.querySelector('.ge-quick-register input[name="cuenta"][value="empresa"]');if(field)emit({event:'company_account_started'});if(cfg.companyCompleted)emit({event:'company_account_created'});}
   if(cfg.analyticsConsent === true)consent(true);
   if(cfg.measurementReady!==true)return;
+  var style=d.createElement('style');style.textContent=`
+    .gx-cookie-panel{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:12px;right:12px;z-index:99999;max-width:640px;max-height:50dvh;overflow:auto;box-sizing:border-box;padding:20px;background:var(--gx-paper,#f9f8f5);color:var(--gx-ink,#111116);border:1px solid var(--gx-line,#dddcdf);border-radius:16px;box-shadow:0 8px 32px #0002;font:400 15px/1.5 Jost,system-ui,sans-serif}
+    .gx-cookie-panel h2{margin:0 0 8px;font:700 20px/1.2 Jost,system-ui,sans-serif;color:inherit}
+    .gx-cookie-panel p{margin:0 0 12px;color:inherit;font:inherit}
+    .gx-cookie-panel details{margin:0 0 12px}.gx-cookie-panel summary{cursor:pointer;min-height:32px}.gx-cookie-panel details p{margin-top:8px;font-size:14px}
+    .gx-cookie-actions{display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:-20px;background:var(--gx-paper,#f9f8f5);padding:8px 0}
+    .gx-cookie-choice{min-height:44px;padding:10px 18px;border:1px solid var(--gx-ink,#111116);border-radius:10px;background:white;color:var(--gx-ink,#111116);font:600 15px/1.3 Jost,system-ui,sans-serif;cursor:pointer;flex:1}
+    .gx-cookie-choice:last-child{background:var(--gx-ink,#111116);color:white}.gx-cookie-choice:disabled{opacity:.6;cursor:wait}
+    .gx-cookie-prefs{display:inline-block;position:static;min-height:44px;padding:10px 0;margin:0 80px 0 0;border:0;background:transparent;color:inherit;font:inherit;text-decoration:underline;cursor:pointer}
+    .gx-cookie-panel a{color:var(--gx-violet-deep,#443acc);text-decoration:underline}.gx-cookie-panel :focus-visible,.gx-cookie-prefs:focus-visible{outline:3px solid var(--gx-violet,#5b51f5);outline-offset:3px}
+    .gx-whatsapp-float,.ge-whatsapp-float{bottom:calc(var(--gx-cookie-offset,24px) + env(safe-area-inset-bottom,0px))!important}
+    @media(max-width:480px){.gx-cookie-panel{padding:16px;font-size:14px}.gx-cookie-panel h2{font-size:18px}.gx-cookie-actions{bottom:-16px}}
+  `;d.head.appendChild(style);
+  function syncFloating(){var panel=d.getElementById('gx-cookie-panel');d.documentElement.style.setProperty('--gx-cookie-offset',panel?(Math.ceil(panel.getBoundingClientRect().height)+28)+'px':'24px');}
+  w.addEventListener('resize',syncFloating);
   function banner() {
-    if(d.querySelector('section[aria-label="Preferencias de medición"]'))return;
-    var box=d.createElement('section');box.setAttribute('aria-label','Preferencias de medición');
-    box.style.cssText='position:fixed;bottom:16px;left:16px;right:16px;z-index:99999;background:#fff;color:#17152a;padding:16px;border:1px solid #ddd;border-radius:12px;box-shadow:0 4px 20px #0002;max-width:680px';
-    var text=d.createElement('p');text.textContent='¿Nos permitís usar Google Analytics para medir visitas, interacciones y compras confirmadas? En las compras enviamos un identificador seudónimo, productos, moneda e importe de los productos; sin nombre, DNI ni correo. Es opcional. Recordamos la procedencia hasta 30 días y tu elección durante 180 días. Podés rechazar o retirar el permiso en Preferencias de medición. Retirarlo detiene los nuevos envíos y elimina las cookies de medición de este navegador; no borra información ya recibida por Google.';box.appendChild(text);
-    if(cfg.privacyUrl){var link=d.createElement('a');link.href=cfg.privacyUrl;link.textContent='Política de privacidad';box.appendChild(link);}
-    function choice(label,value){var button=d.createElement('button');button.type='button';button.textContent=label;button.style.cssText='padding:10px 14px;margin:4px;border:1px solid #17152a;border-radius:6px;background:white;color:#17152a';button.onclick=function(){Array.from(box.querySelectorAll('button')).forEach(function(b){b.disabled=true;});var hadSales=read('ge_sales_scope_v1')==='granted';consent(value);(value?permission('grant'):(hadSales?withdrawal:permission('revoke'))).then(function(){box.remove();}).catch(function(){Array.from(box.querySelectorAll('button')).forEach(function(b){b.disabled=false;});text.textContent='La medición del navegador se detuvo si rechazaste. No pudimos guardar la preferencia en el servidor; reintentá para detener también los envíos de compras pendientes.';});};box.appendChild(button);}
-    choice('Aceptar medición',true);choice('Rechazar medición',false);d.body.appendChild(box);
+    if(d.getElementById('gx-cookie-panel'))return;
+    var box=d.createElement('section');box.id='gx-cookie-panel';box.className='gx-cookie-panel';box.setAttribute('aria-labelledby','gx-cookie-title');
+    var title=d.createElement('h2');title.id='gx-cookie-title';title.textContent='Cookies y privacidad';box.appendChild(title);
+    var text=d.createElement('p');text.textContent='¿Aceptás cookies de Google Analytics para entender cómo se usa el sitio y medir compras confirmadas? Es opcional. Podés rechazar o cambiar tu elección cuando quieras.';box.appendChild(text);
+    var details=d.createElement('details'),summary=d.createElement('summary');summary.textContent='Qué datos usamos';details.appendChild(summary);
+    var info=d.createElement('p');info.textContent='Si aceptás, también permitís enviar a Google los productos, la moneda y el importe de las compras con un identificador seudónimo, sin nombre, DNI ni correo. Recordamos la procedencia durante 30 días y tu elección durante 180 días. Rechazar o retirar el permiso detiene los nuevos envíos y elimina las cookies de Analytics; no borra lo que Google ya recibió.';details.appendChild(info);
+    if(cfg.privacyUrl){var link=d.createElement('a');link.href=cfg.privacyUrl;link.textContent='Política de privacidad';details.appendChild(link);}box.appendChild(details);
+    var actions=d.createElement('div');actions.className='gx-cookie-actions';box.appendChild(actions);
+    function choice(label,value){var button=d.createElement('button');button.type='button';button.textContent=label;button.className='gx-cookie-choice';button.onclick=function(){Array.from(box.querySelectorAll('button')).forEach(function(b){b.disabled=true;});var hadSales=read('ge_sales_scope_v1')==='granted';consent(value);(value?permission('grant'):(hadSales?withdrawal:permission('revoke'))).then(function(){box.remove();syncFloating();prefs.focus({preventScroll:true});}).catch(function(){Array.from(box.querySelectorAll('button')).forEach(function(b){b.disabled=false;});text.setAttribute('role','alert');text.textContent='No pudimos guardar tu elección. Si rechazaste, las cookies de Analytics ya se desactivaron; volvé a intentar para detener también los envíos de compras pendientes.';});};actions.appendChild(button);}
+    choice('Rechazar',false);choice('Aceptar',true);d.body.appendChild(box);
+    syncFloating();if(w.ResizeObserver)new w.ResizeObserver(syncFloating).observe(box);
+    actions.querySelector('button').focus({preventScroll:true});
   }
-  var prefs=d.createElement('button');prefs.type='button';prefs.textContent='Preferencias de medición';prefs.style.cssText='position:fixed;bottom:4px;right:4px;z-index:99998';prefs.onclick=banner;d.body.appendChild(prefs);
+  var prefs=d.createElement('button');prefs.type='button';prefs.textContent='Cookies y privacidad';prefs.className='gx-cookie-prefs';prefs.onclick=banner;(d.querySelector('.gx-footer-bottom')||d.querySelector('footer')||d.body).appendChild(prefs);
   if(!read('ge_growth_consent') || !read('ge_sales_scope_v1'))banner();
 })(window, document);
 
