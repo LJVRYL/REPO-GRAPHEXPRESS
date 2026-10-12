@@ -6,6 +6,9 @@ function rejects($fn,$code){try{$fn();}catch(RuntimeException $e){check($e->getC
 $now=time();$r=array('kind'=>'thread','organization_id'=>'graph-express','status'=>'needs_review','channel'=>'instagram','meta_event'=>array('channel'=>'instagram','account_ref'=>'instagram:17841407285480956','peer'=>'55555000001','timestamp'=>gmdate('c',$now-60)));
 $cfg=array('instagram'=>array('enabled'=>true,'access_token'=>'synthetic-only','asset_id'=>'17841407285480956'));
 $p=GE_CRM_Send_Policy::plan($r,$cfg,'Hola',$now);
+check($p['url']==='https://graph.facebook.com/v26.0/me/messages','Instagram Facebook Login sends through the verified Page token');
+check($p['asset_id']==='17841407285480956'&&$p['account_ref']==='instagram:17841407285480956','Instagram conversation isolation preserved');
+check(!isset($p['payload']['messaging_type']),'Instagram retains its own payload contract');
 check($p['recipient']==='55555000001','Recipient from scoped event');check(strpos($p['url'],'https://graph.facebook.com/')===0,'Fixed HTTPS Graph host');check(!isset($p['payload']['access_token']),'No token in payload');
 rejects(function()use($r,$cfg,$now){$r['organization_id']='other';GE_CRM_Send_Policy::plan($r,$cfg,'Hola',$now);},403);
 rejects(function()use($r,$cfg,$now){$r['meta_event']['account_ref']='instagram:99999';GE_CRM_Send_Policy::plan($r,$cfg,'Hola',$now);},403);
