@@ -22,7 +22,7 @@ final class GE_CRM_Outbound {
         try {
             if (GE_CRM::org()!=='graph-express' || !is_writable(self::PRIVATE_DIR)) throw new RuntimeException('La configuración privada no está preparada.');
             $channel=sanitize_key($_POST['channel'] ?? '');
-            $assets=array('instagram'=>'17841407285480956','messenger'=>'1377222212141366','whatsapp'=>'1354138734939171');
+            $assets=array('instagram'=>'17841407285480956','messenger'=>'1377222212141366','whatsapp'=>'1354138734939171','whatsapp_test'=>GE_Meta_Test_Assets::PHONE);
             if ($channel==='email') {
                 $s=GE_WTP_Notification_Center::settings(); $sender=strtolower($s['sender_email'] ?? '');
                 $channels=get_option('ge_crm_attention_channels',array());
@@ -32,13 +32,20 @@ final class GE_CRM_Outbound {
                 if (!isset($assets[$channel])) throw new RuntimeException('Canal inválido.');
                 $token=wp_unslash($_POST['access_token'] ?? '');
                 if (!is_string($token) || !preg_match('/^[A-Za-z0-9_-]{40,4096}$/D',$token)) throw new RuntimeException('Pegá un identificador de acceso válido.');
-                $fields=$channel==='whatsapp' ? 'id,platform_type,is_on_biz_app' : 'id';
+                $fields=$channel==='whatsapp' ? 'id,platform_type,is_on_biz_app' : ($channel==='whatsapp_test' ? 'id,display_phone_number' : 'id');
                 $res=wp_remote_get('https://graph.facebook.com/v26.0/'.$assets[$channel].'?fields='.$fields,array('timeout'=>20,'redirection'=>0,'sslverify'=>true,'headers'=>array('Authorization'=>'Bearer '.$token)));
                 $data=is_wp_error($res) ? array() : json_decode(wp_remote_retrieve_body($res),true);
                 if (is_wp_error($res) || wp_remote_retrieve_response_code($res)!==200 || ($data['id'] ?? '')!==$assets[$channel]) throw new RuntimeException('Meta no confirmó acceso al activo Graphex seleccionado.');
                 if ($channel==='whatsapp' && (empty($data['is_on_biz_app']) || ($data['platform_type'] ?? '')!=='CLOUD_API')) throw new RuntimeException('Todavía falta habilitar la coexistencia del número real en Meta. No se modificó el número.');
+                if ($channel==='whatsapp_test') {
+                    if (preg_replace('/\D/','',$data['display_phone_number'] ?? '')!==GE_Meta_Test_Assets::NUMBER) throw new RuntimeException('Meta no confirmó el número oficial de prueba.');
+                    $account=wp_remote_get('https://graph.facebook.com/v26.0/'.GE_Meta_Test_Assets::WABA.'/phone_numbers?fields=id&limit=10',array('timeout'=>20,'redirection'=>0,'sslverify'=>true,'headers'=>array('Authorization'=>'Bearer '.$token)));
+                    $phones=is_wp_error($account) ? array() : json_decode(wp_remote_retrieve_body($account),true);
+                    if (is_wp_error($account) || wp_remote_retrieve_response_code($account)!==200 || !in_array(GE_Meta_Test_Assets::PHONE,array_column($phones['data'] ?? array(),'id'),true)) throw new RuntimeException('Meta no confirmó la pertenencia del teléfono a la cuenta de prueba.');
+                }
                 $c=array('enabled'=>true,'asset_id'=>$assets[$channel],'access_token'=>$token,'verified_at'=>gmdate('c'));
                 if ($channel==='whatsapp') $c['waba_id']='735912107316791';
+                if ($channel==='whatsapp_test') {$c['waba_id']=GE_Meta_Test_Assets::WABA;$c['mode']='meta-test';$c['verified_phone_number']=$data['display_phone_number'];}
             }
             $lock=fopen(self::PRIVATE_DIR.'/config.lock','c'); if (!$lock || !flock($lock,LOCK_EX)) throw new RuntimeException('No se pudo proteger la configuración.');
             try {
@@ -55,12 +62,16 @@ final class GE_CRM_Outbound {
     public static function render_connections() {
         if (GE_CRM::org()!=='graph-express') return;
         $cfg=self::config();echo '<section class="ge-crm-panel"><h2>Respuestas desde el CRM</h2><p>Los mensajes se envían sólo cuando un operador pulsa Enviar respuesta.</p><ul>';
-        foreach(array('email'=>'Correo','instagram'=>'Instagram','messenger'=>'Messenger','whatsapp'=>'WhatsApp') as $k=>$label) echo '<li>'.esc_html($label).' · '.(!empty($cfg[$k]['enabled'])?'Configurado · falta comprobar cada envío':'Pendiente de conexión').'</li>';
+        foreach(array('email'=>'Correo','instagram'=>'Instagram','messenger'=>'Messenger','whatsapp'=>'WhatsApp · número real','whatsapp_test'=>'WhatsApp · prueba oficial de Meta') as $k=>$label) echo '<li>'.esc_html($label).' · '.(!empty($cfg[$k]['enabled'])?'Configurado · falta comprobar cada envío':'Pendiente de conexión').'</li>';
         echo '</ul>';
+        if (!empty($cfg['whatsapp_test']['enabled']) && GE_Meta_Test_Assets::outbound($cfg['whatsapp_test'])) {
+            $test=$cfg['whatsapp_test'];
+            echo '<p><strong>Activos de prueba confirmados por Meta:</strong> '.esc_html($test['verified_phone_number'] ?? '').' · teléfono '.esc_html($test['asset_id']).' · cuenta '.esc_html($test['waba_id']).' · verificado '.esc_html($test['verified_at'] ?? '').'. Las pruebas están limitadas al teléfono del titular.</p>';
+        }
         $feedback=get_transient('ge_crm_connect_feedback_'.get_current_user_id());if ($feedback) {echo '<p role="status">'.esc_html($feedback).'</p>';delete_transient('ge_crm_connect_feedback_'.get_current_user_id());}
         if (in_array(GE_CRM::role(get_current_user_id()),array('owner','admin'),true)) {
             echo '<details><summary>Conectar un canal de Graphex</summary><form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';wp_nonce_field('ge_crm_connect_reply');
-            echo '<input type="hidden" name="action" value="ge_crm_connect_reply"><label>Canal<select name="channel"><option value="instagram">Instagram @graphex.ar</option><option value="messenger">Messenger · página Graphex</option><option value="email">Correo · remitente configurado</option><option value="whatsapp">WhatsApp · número real, requiere coexistencia</option></select></label><label>Identificador de acceso de Meta<input name="access_token" type="password" autocomplete="new-password" maxlength="4096"></label><p>Para correo no se necesita este identificador. Meta se verifica antes de guardar; la clave queda en configuración privada del servidor y no se muestra en el historial.</p><button>Verificar y guardar conexión</button></form></details>';
+            echo '<input type="hidden" name="action" value="ge_crm_connect_reply"><label>Canal<select name="channel"><option value="instagram">Instagram @graphex.ar</option><option value="messenger">Messenger · página Graphex</option><option value="email">Correo · remitente configurado</option><option value="whatsapp">WhatsApp · número real, requiere coexistencia</option><option value="whatsapp_test">WhatsApp · prueba oficial de Meta, sólo teléfono del titular</option></select></label><label>Identificador de acceso de Meta<input name="access_token" type="password" autocomplete="new-password" maxlength="4096"></label><p>Para correo no se necesita este identificador. Meta se verifica antes de guardar; la clave queda en configuración privada del servidor y no se muestra en el historial. La conexión de prueba no habilita ni migra el número comercial.</p><button>Verificar y guardar conexión</button></form></details>';
         }
         echo '</section>';
     }
@@ -170,7 +181,8 @@ final class GE_CRM_Outbound {
         foreach (self::history($r) as $out) { $d=$out['details'];$messages[]=array('time'=>$out['created_at'].'Z','label'=>'Graphex','body'=>$d['text'] ?? '','state'=>$d['state'] ?? 'unknown','out'=>true); }
         usort($messages,function($a,$b){return strtotime($a['time'])<=>strtotime($b['time']);});
         $labels=array('sending'=>'Enviando / pendiente de confirmar','accepted'=>'Aceptado por el canal · entrega pendiente','sent'=>'Aceptado por el canal · entrega pendiente','delivered'=>'Entregado','read'=>'Leído','failed'=>'Falló el envío','unknown'=>'Resultado sin confirmar · revisar antes de reenviar','simulated'=>'Simulado en pruebas');
-        echo '<section class="ge-crm-panel ge-crm-chat"><h2>Conversación · '.esc_html(ucfirst($r['channel'])).'</h2><ol class="ge-crm-chat-messages">';
+        $label=$r['channel']==='whatsapp' && (($r['meta_event']['account_ref'] ?? $r['attention_event']['account_ref'] ?? '')===GE_Meta_Test_Assets::account()) ? 'WhatsApp de prueba · Meta' : ucfirst($r['channel']);
+        echo '<section class="ge-crm-panel ge-crm-chat"><h2>Conversación · '.esc_html($label).'</h2><ol class="ge-crm-chat-messages">';
         foreach ($messages as $m) echo '<li class="'.($m['out']?'is-outgoing':'is-incoming').'"><strong>'.esc_html($m['label']).'</strong><p>'.nl2br(esc_html($m['body'])).'</p><small>'.esc_html($m['time']).($m['state']?' · '.esc_html($labels[$m['state']] ?? $m['state']):'').'</small></li>';
         echo '</ol>';
         if (!GE_CRM::can(true)) {echo '</section>';return;}

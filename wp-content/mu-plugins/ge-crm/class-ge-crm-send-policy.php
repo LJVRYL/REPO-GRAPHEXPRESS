@@ -1,5 +1,6 @@
 <?php
 defined('ABSPATH') || exit;
+require_once __DIR__.'/class-ge-meta-test-assets.php';
 
 /** Pure request planner. Recipients come only from the original scoped event. */
 final class GE_CRM_Send_Policy {
@@ -17,12 +18,16 @@ final class GE_CRM_Send_Policy {
             return array('channel'=>'email','recipient'=>$from,'asset_id'=>$to,'account_ref'=>'email:'.strtolower($to),'text'=>$text,'subject'=>'Re: '.preg_replace('/^(Re:\s*)+/i','',(string)($e['subject'] ?? 'Consulta a Graphex')),'headers'=>$e['headers'] ?? array());
         }
         if (!in_array($channel,array('whatsapp','instagram','messenger'),true)) throw new RuntimeException('Este canal no permite enviar desde el CRM.',409);
-        $c=$config[$channel] ?? array();
+        $test=$channel==='whatsapp' && ($e['account_ref'] ?? '')===GE_Meta_Test_Assets::account();
+        $configChannel=$test ? 'whatsapp_test' : $channel;
+        $c=$config[$configChannel] ?? array();
+        if ($test && !GE_Meta_Test_Assets::outbound($c)) throw new RuntimeException('Falta conectar el número oficial de prueba de Meta.',409);
         if (empty($c['enabled']) || empty($c['access_token']) || empty($c['asset_id'])) throw new RuntimeException('Falta conectar el envío de '.ucfirst($channel).'.',409);
         $asset=(string)$c['asset_id']; $peer=(string)($e['peer'] ?? $e['from'] ?? '');
         if (!preg_match('/^[0-9]{5,30}$/D',$asset) || !preg_match('/^[0-9]{5,40}$/D',$peer)) throw new RuntimeException('Falta la identidad verificada del canal.',422);
         $account=$channel === 'whatsapp' ? 'wa:'.($c['waba_id'] ?? '').':'.$asset : $channel.':'.$asset;
         if (($e['account_ref'] ?? '') !== $account || ($e['channel'] ?? $channel) !== $channel) throw new RuntimeException('La cuenta configurada no coincide con la conversación.',403);
+        if ($test && $peer!==GE_Meta_Test_Assets::RECIPIENT) throw new RuntimeException('La prueba de Meta está limitada al teléfono autorizado del titular.',403);
         $stamp=strtotime($e['timestamp'] ?? $e['received_at'] ?? '');
         if (!$stamp || $stamp>$now+300 || $now-$stamp>=86400) throw new RuntimeException('Pasaron las 24 horas para responder por este canal. Esperá un nuevo mensaje del cliente.',409);
         $message=$channel === 'whatsapp' ? array('messaging_product'=>'whatsapp','recipient_type'=>'individual','to'=>$peer,'type'=>'text','text'=>array('preview_url'=>false,'body'=>$text)) : array('recipient'=>array('id'=>$peer),'message'=>array('text'=>$text));
@@ -30,7 +35,7 @@ final class GE_CRM_Send_Policy {
         // Facebook Login uses the linked Page access token for Instagram's Send API.
         // Keep the Instagram asset above for conversation isolation; /me resolves the verified Page.
         $sendAsset=$channel === 'instagram' ? 'me' : $asset;
-        return array('channel'=>$channel,'recipient'=>$peer,'asset_id'=>$asset,'account_ref'=>$account,'text'=>$text,'url'=>'https://graph.facebook.com/v26.0/'.$sendAsset.'/messages','payload'=>$message);
+        return array('channel'=>$configChannel,'recipient'=>$peer,'asset_id'=>$asset,'account_ref'=>$account,'text'=>$text,'url'=>'https://graph.facebook.com/v26.0/'.$sendAsset.'/messages','payload'=>$message);
     }
     /** Ambiguous responses never become sent, and must never trigger automatic retry. */
     public static function result($status,$body) {
