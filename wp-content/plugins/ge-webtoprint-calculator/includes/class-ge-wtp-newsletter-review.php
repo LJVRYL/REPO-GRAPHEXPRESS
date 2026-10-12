@@ -8,6 +8,8 @@ final class GE_WTP_Newsletter_Review {
     const META = 'ge_newsletter_review_';
 
     public static function init() {
+        require_once __DIR__ . '/class-ge-wtp-campaign-actions.php';
+        GE_WTP_Campaign_Actions::init();
         add_action( 'admin_post_ge_newsletter_review_draft', array( __CLASS__, 'handle_draft' ) );
         add_action( 'admin_post_ge_newsletter_review_batch', array( __CLASS__, 'handle_batch' ) );
     }
@@ -66,7 +68,7 @@ final class GE_WTP_Newsletter_Review {
         $organization = GE_Organization::get( GE_Organization::PRIMARY );
         return hash( 'sha256', wp_json_encode( array( $campaign->subject, $campaign->preview_text, $campaign->content,
             $meta['statutory_notice'] ?? '', $meta['notice_source'] ?? '', $meta['template_sha256'] ?? '',
-            $organization['settings']['email'] ?? array(), $organization['settings']['general']['email'] ?? '' ) ) );
+            $meta['audience_key'] ?? '', $organization['settings']['email'] ?? array(), $organization['settings']['general']['email'] ?? '' ) ) );
     }
 
     public static function render_html( $campaign, $unsubscribe_url = '' ) {
@@ -119,6 +121,10 @@ final class GE_WTP_Newsletter_Review {
         $meta = self::metadata( $campaign->id ); $review = $meta['review'] ?? array();
         if ( empty( $review['contacts'] ) || empty( $review['content_sha256'] )
             || ! hash_equals( $review['content_sha256'], self::content_fingerprint( $campaign, $meta ) ) ) { return false; }
+        if ( ($review['selection_mode'] ?? '') === 'whole_audience' ) {
+            $snapshot = GE_WTP_Campaign_Actions::snapshot($review['audience_key']);
+            return !is_wp_error($snapshot) && hash_equals($review['membership_sha256'], $snapshot['membership_sha256']);
+        }
         foreach ( $review['contacts'] as $id => $fingerprint ) {
             $contact = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table( 'contacts' ) . ' WHERE id=%d', $id ) );
             if ( ! self::eligible( $contact ) || ! hash_equals( $fingerprint, self::contact_fingerprint( $contact ) ) ) { return false; }
@@ -144,7 +150,7 @@ final class GE_WTP_Newsletter_Review {
     }
     public static function handle_batch() {
         $id = absint( $_POST['campaign_id'] ?? 0 ); self::guard( 'ge_newsletter_review_batch_' . $id );
-        $review = self::review_batch( $id, $_POST['contacts'] ?? array() );
+        $review = GE_WTP_Campaign_Actions::select_audience( $id, $_POST['audience_key'] ?? '' );
         self::redirect( $id, is_wp_error( $review ) ? $review->get_error_code() : '' );
     }
 
@@ -152,7 +158,8 @@ final class GE_WTP_Newsletter_Review {
         global $wpdb;
         if ( ! self::allowed() ) { return; }
         if ( ! GE_WTP_Newsletter_Audiences::ensure_schema() ) { echo '<p role="alert">No se pudo preparar la lista de contactos.</p>'; return; }
-        $campaigns = $wpdb->get_results( 'SELECT * FROM ' . self::table( 'campaigns' ) . ' ORDER BY id DESC LIMIT 100' );
+        $show_deleted = isset($_GET['show_deleted']) && '1' === (string)$_GET['show_deleted'];
+        $campaigns = $wpdb->get_results( 'SELECT * FROM ' . self::table( 'campaigns' ) . ($show_deleted ? " WHERE status='deleted'" : " WHERE status<>'deleted'") . ' ORDER BY id DESC LIMIT 100' );
         $id = absint( $_GET['newsletter_campaign'] ?? 0 ); $campaign = $id ? self::campaign( $id ) : null;
         $meta = $campaign ? self::metadata( $id ) : array();
         ?>
@@ -172,7 +179,7 @@ final class GE_WTP_Newsletter_Review {
                 <button class="button button-primary" type="submit">Crear versión de borrador</button>
             </form>
         </section>
-        <?php if ( $campaign && ! empty( $meta['version'] ) ) : $html = self::render_html( $campaign ); ?>
+        <?php if ( $campaign && 'draft' === $campaign->status && ! empty( $meta['version'] ) ) : $html = self::render_html( $campaign ); ?>
         <section class="ge-admin-panel">
             <h2>Revisar contenido y destinatarios</h2>
             <p><strong><?php echo esc_html( $campaign->subject ); ?></strong><br>Versión <?php echo esc_html( $meta['version'] ); ?> · Borrador #<?php echo (int) $id; ?></p>
@@ -181,28 +188,34 @@ final class GE_WTP_Newsletter_Review {
                 <iframe title="Vista previa de la campaña" sandbox="" referrerpolicy="no-referrer" srcdoc="<?php echo esc_attr( $html ); ?>" style="display:block;width:100%;height:780px;border:1px solid #ddd;margin-top:16px"></iframe>
             </details>
             <p>El enlace de baja se personaliza para cada destinatario al enviar. Esta vista previa no envía correos.</p>
-            <?php $contacts = $wpdb->get_results( "SELECT * FROM " . self::table( 'contacts' ) . " WHERE status='subscribed' AND (consent_at IS NOT NULL OR authorization_kind='owner_selected') AND unsubscribed_at IS NULL ORDER BY id DESC LIMIT 500" ); ?>
-            <form class="ge-admin-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-                <input type="hidden" name="action" value="ge_newsletter_review_batch"><input type="hidden" name="campaign_id" value="<?php echo (int) $id; ?>">
-                <?php wp_nonce_field( 'ge_newsletter_review_batch_' . $id ); ?>
-                <fieldset><legend>Seleccionar suscriptores autorizados</legend>
-                    <?php $shown = 0; foreach ( $contacts as $contact ) : if ( ! self::eligible( $contact ) ) { continue; } ++$shown; ?>
-                        <label><input type="checkbox" name="contacts[]" value="<?php echo (int) $contact->id; ?>"> <?php echo esc_html( $contact->email ); ?> · <?php echo GE_WTP_Newsletter_Audiences::owner_authorized( $contact ) ? 'Selección del titular' : 'Aceptación registrada'; ?></label>
-                    <?php endforeach; if ( ! $shown ) : ?><p>No hay contactos elegibles en esta vista.</p><?php endif; ?>
-                </fieldset>
-                <p>Se distingue la selección autorizada por el titular de la aceptación registrada por el destinatario.</p>
-                <button class="button" type="submit" <?php disabled( ! $shown ); ?>>Guardar revisión del lote</button>
+            <form class="ge-admin-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <input type="hidden" name="action" value="ge_newsletter_review_batch"><input type="hidden" name="campaign_id" value="<?php echo (int)$id; ?>">
+                <?php wp_nonce_field('ge_newsletter_review_batch_'.$id); ?>
+                <label>Audiencia completa<select name="audience_key" required><option value="">Elegí una audiencia</option>
+                    <?php foreach(GE_WTP_Campaign_Actions::audiences() as $key=>$label): ?><option value="<?php echo esc_attr($key); ?>" <?php selected($meta['audience_key']??'',$key); ?>><?php echo esc_html($label); ?></option><?php endforeach; ?>
+                </select></label>
+                <p>Al elegir una audiencia se selecciona todo el grupo. Las bajas y los rebotes se conservan como excluidos; los posibles suscriptores mantienen su autorización pendiente.</p>
+                <button class="button button-primary" type="submit">Guardar audiencia completa</button>
             </form>
-            <?php if ( ! empty( $meta['review'] ) ) : ?><p role="status"><?php echo self::review_valid( $campaign ) ? 'Lote revisado: ' . count( $meta['review']['contacts'] ) . ' contactos. No se autorizó un envío.' : 'La revisión quedó desactualizada. Revisá de nuevo el contenido y los contactos.'; ?></p><?php endif; ?>
+            <?php if(!empty($meta['review'])): $review=$meta['review']; ?><p role="status"><?php echo self::review_valid($campaign)?'Audiencia registrada: '.count($review['contacts']).' contactos.':'La audiencia o el contenido cambió. Volvé a guardar la selección.'; ?> No se autorizó un envío.</p>
+                <?php if(($review['selection_mode']??'')==='whole_audience'): ?><p><?php echo (int)$review['eligible']; ?> autorizados · <?php echo (int)$review['suppressed']; ?> excluidos por baja o rebote · <?php echo (int)$review['pending_authorization']; ?> pendientes de autorización.</p><?php endif; ?>
+                <a href="<?php echo esc_url(GE_WTP_Staff_Portal::portal_url('crm',array('view'=>'activity'))); ?>">Ver registro de actividad en el CRM</a>
+            <?php endif; ?>
             <details><summary>Qué falta para enviar</summary><ul><li>Revisión final del contenido, aviso legal y lote exacto.</li><li>Cuota del proveedor, frecuencia y tratamiento de rebotes verificados.</li><li>Activación del envío con control de concurrencia y conciliación de resultados inciertos.</li></ul></details>
             <?php endif; ?>
         </section>
         <?php endif; ?>
-        <section class="ge-admin-panel"><h2>Versiones y campañas</h2>
+        <section class="ge-admin-panel"><h2><?php echo $show_deleted?'Campañas eliminadas':'Versiones y campañas'; ?></h2>
+        <a href="<?php echo esc_url(add_query_arg('show_deleted',$show_deleted?'0':'1',remove_query_arg('newsletter_campaign'))); ?>"><?php echo $show_deleted?'Ver campañas activas':'Ver eliminadas'; ?></a>
         <?php if ( ! $campaigns ) : ?><p>Todavía no hay campañas.</p><?php else : ?><div class="ge-admin-campaigns">
         <?php foreach ( $campaigns as $row ) : $row_meta = self::metadata( $row->id ); ?>
-            <article><div><h3><?php echo esc_html( $row->subject ); ?></h3><p><?php echo esc_html( $row->status ); ?> · <?php echo esc_html( mysql2date( 'd/m/Y H:i', $row->created_at ) ); ?> · <?php echo (int) $row->sent_count; ?> aceptados por correo</p></div>
-                <?php if ( ! empty( $row_meta['version'] ) ) : ?><a class="button" href="<?php echo esc_url( add_query_arg( 'newsletter_campaign', $row->id ) ); ?>">Revisar versión</a><?php else : ?><span>Versión anterior: requiere preparar una nueva revisión.</span><?php endif; ?>
+            <article><div><h3><?php echo esc_html( $row->subject ); ?></h3><p><?php echo esc_html(array('draft'=>'Borrador','deleted'=>'Eliminada','queued'=>'En cola','sent'=>'Enviada')[$row->status]??$row->status); ?> · <?php echo esc_html( mysql2date( 'd/m/Y H:i', $row->created_at ) ); ?> · <?php echo (int) $row->sent_count; ?> aceptados por correo</p></div>
+                <?php if ( 'draft' === $row->status && ! empty( $row_meta['version'] ) ) : ?><a class="button" href="<?php echo esc_url( add_query_arg( 'newsletter_campaign', $row->id ) ); ?>">Revisar versión</a><?php else : ?><span><?php echo $row->status==='deleted'?'Eliminada; podés restaurar este borrador.':'Versión anterior: requiere preparar una nueva revisión.'; ?></span><?php endif; ?>
+                <?php if(in_array($row->status,array('draft','deleted'),true)): $delete=$row->status==='draft'; ?>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"><input type="hidden" name="action" value="ge_newsletter_campaign_<?php echo $delete?'delete':'restore'; ?>"><input type="hidden" name="campaign_id" value="<?php echo (int)$row->id; ?>">
+                    <?php wp_nonce_field('ge_newsletter_campaign_'.($delete?'delete':'restore').'_'.$row->id); ?>
+                    <button class="button" type="submit"><?php echo $delete?'Eliminar borrador':'Restaurar borrador'; ?></button>
+                </form><?php endif; ?>
             </article>
         <?php endforeach; ?></div><?php endif; ?></section>
         </div><?php
