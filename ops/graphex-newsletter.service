@@ -1,0 +1,14 @@
+[Unit]
+Description=Graphex native newsletter queue and correlated mail feedback
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/graphexpress/releases/newsletter-control-20261012-d19620c1c410
+ExecStart=/usr/bin/python3 -B /home/graphexpress/releases/newsletter-control-20261012-d19620c1c410/newsletter-worker.py --release /home/graphexpress/releases/newsletter-control-20261012-d19620c1c410
+Restart=on-failure
+RestartSec=10
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
