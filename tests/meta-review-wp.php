@@ -22,6 +22,11 @@ $cfg=array('organization_id'=>'graph-express','enabled'=>true,'reviewer_user_id'
 function save_review($c){global $review;file_put_contents($review,wp_json_encode($c));chmod($review,0600);}
 save_review($cfg);file_put_contents($outbound,wp_json_encode(array('organization_id'=>'graph-express','outbound'=>array('instagram'=>array('enabled'=>true,'access_token'=>'synthetic-only','asset_id'=>'17841407285480956')))));chmod($outbound,0600);
 wp_set_current_user($uid);rc(!GE_CRM::can(false),'Subscriber cannot enter general CRM');
+rc(GE_Meta_Review_Policy::restricted_actor($cfg,(int)$uid),'Exact reviewer remains restricted');
+$disabled=$cfg;$disabled['enabled']=false;$disabled['expires_at']=1;rc(GE_Meta_Review_Policy::restricted_actor($disabled,(int)$uid),'Restriction survives disable and expiry');
+rc(!GE_Meta_Review_Policy::restricted_actor($cfg,1),'Owner not restricted');
+foreach(array('/cliente-markcom/','/gestion/','/wp-admin/','/wp-json/wp/v2/users/me','/wp-comments-post.php','/meta-review/../cliente-markcom/','/meta-review/?rest_route=/wp/v2/users','/meta-review/?preview=true') as $uri)rc(!GE_Meta_Review_Policy::allowed_path($uri),'Other site surfaces blocked');
+rc(GE_Meta_Review_Policy::allowed_path('/meta-review/?record_id=1'),'Review route allowed');rc(GE_Meta_Review_Policy::allowed_path('/wp-login.php?action=logout','logout'),'Logout allowed');rc(!GE_Meta_Review_Policy::allowed_path('/wp-login.php?action=lostpassword','lostpassword'),'No credential changes');
 $view=GE_Meta_Review::view($id);rc(count($view['messages'])===1&&$view['messages'][0]['text']===$event['body'],'Only scoped synthetic message');rc(get_current_user_id()===$uid,'View restores reviewer');rc(strpos(wp_json_encode($view),'synthetic-only')===false,'No token exposure');
 $request=array('record_id'=>$id,'nonce'=>wp_create_nonce('ge_meta_review_reply'),'request_id'=>wp_generate_uuid4(),'text'=>'Synthetic review response');
 $sent=GE_Meta_Review::send($request);rc($sent['state']==='accepted'&&$calls===1,'One mocked send');rc(get_current_user_id()===$uid,'Send restores reviewer');

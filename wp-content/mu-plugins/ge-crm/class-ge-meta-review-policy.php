@@ -4,6 +4,16 @@ require_once __DIR__.'/class-ge-meta-test-assets.php';
 
 /** Reviewer access is a private, expiring list of exact owned test conversations. */
 final class GE_Meta_Review_Policy {
+    /** Restriction remains in force when review access is disabled or expired. */
+    public static function restricted_actor($cfg,$actor) {
+        return is_array($cfg) && is_int($cfg['reviewer_user_id'] ?? null) && $actor>0 && $cfg['reviewer_user_id']===$actor;
+    }
+    public static function allowed_path($uri,$action='') {
+        $path=rtrim((string)parse_url($uri,PHP_URL_PATH),'/');
+        $query=array();parse_str((string)parse_url($uri,PHP_URL_QUERY),$query);
+        if ($path==='/meta-review') return !array_diff(array_keys($query),array('record_id'));
+        return $path==='/wp-login.php' && $action==='logout' && !array_diff(array_keys($query),array('action','redirect_to','_wpnonce'));
+    }
     public static function authorize($cfg,$actor,$now) {
         if (!is_array($cfg) || ($cfg['organization_id'] ?? '')!=='graph-express' || ($cfg['enabled'] ?? false)!==true
             || !is_int($cfg['reviewer_user_id'] ?? null) || $actor!==$cfg['reviewer_user_id'] || $actor<1
