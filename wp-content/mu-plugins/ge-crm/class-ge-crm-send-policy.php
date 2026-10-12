@@ -31,11 +31,12 @@ final class GE_CRM_Send_Policy {
         $stamp=strtotime($e['timestamp'] ?? $e['received_at'] ?? '');
         if (!$stamp || $stamp>$now+300 || $now-$stamp>=86400) throw new RuntimeException('Pasaron las 24 horas para responder por este canal. Esperá un nuevo mensaje del cliente.',409);
         $message=$channel === 'whatsapp' ? array('messaging_product'=>'whatsapp','recipient_type'=>'individual','to'=>$peer,'type'=>'text','text'=>array('preview_url'=>false,'body'=>$text)) : array('recipient'=>array('id'=>$peer),'message'=>array('text'=>$text));
+        if ($test) $message['to']=GE_Meta_Test_Assets::SEND_RECIPIENT;
         if ($channel === 'messenger') $message['messaging_type']='RESPONSE';
         // Facebook Login uses the linked Page access token for Instagram's Send API.
         // Keep the Instagram asset above for conversation isolation; /me resolves the verified Page.
         $sendAsset=$channel === 'instagram' ? 'me' : $asset;
-        return array('channel'=>$configChannel,'recipient'=>$peer,'asset_id'=>$asset,'account_ref'=>$account,'text'=>$text,'url'=>'https://graph.facebook.com/v26.0/'.$sendAsset.'/messages','payload'=>$message);
+        return array('channel'=>$configChannel,'message_channel'=>$channel,'recipient'=>$peer,'asset_id'=>$asset,'account_ref'=>$account,'text'=>$text,'url'=>'https://graph.facebook.com/v26.0/'.$sendAsset.'/messages','payload'=>$message);
     }
     /** Ambiguous responses never become sent, and must never trigger automatic retry. */
     public static function result($status,$body) {
