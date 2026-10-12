@@ -55,18 +55,18 @@ final class GE_WTP_Mail_Log_View {
         $f=self::filters($_GET);$query=self::query($f);if(is_wp_error($query))return;
         $groups=array(''=>'Todos','operational'=>'Operativos','campaigns'=>'Campañas y pruebas','other'=>'Sin clasificar');
         $results=array(''=>'Todos','sent'=>'Aceptado por el correo','failed'=>'No enviado','simulated'=>'Simulado','unknown'=>'Sin confirmar');
-        ?><section class="ge-admin-panel ge-admin-tab-panel"><div class="ge-admin-panel-head"><div><span>Trazabilidad</span><h2>Correos enviados</h2></div></div>
+        ?><style>.ge-mail-log-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.ge-mail-log-primary label{min-width:0}@media(max-width:760px){.ge-mail-log-primary{grid-template-columns:1fr}}</style><section class="ge-admin-panel ge-admin-tab-panel"><div class="ge-admin-panel-head"><div><span>Trazabilidad</span><h2>Correos enviados</h2></div></div>
         <form method="get" class="ge-admin-form"><input type="hidden" name="section" value="communications"><input type="hidden" name="subsection" value="emails">
-            <label>Grupo<select name="mail_group"><?php foreach($groups as $key=>$label):?><option value="<?php echo esc_attr($key);?>" <?php selected($f['group'],$key);?>><?php echo esc_html($label);?></option><?php endforeach;?></select></label>
+            <div class="ge-mail-log-primary"><label>Grupo<select name="mail_group"><?php foreach($groups as $key=>$label):?><option value="<?php echo esc_attr($key);?>" <?php selected($f['group'],$key);?>><?php echo esc_html($label);?></option><?php endforeach;?></select></label>
             <label>Tipo de correo<select name="mail_type"><option value="">Todos los tipos</option><?php foreach(self::contexts() as $type):if($f['group']&&self::group($type)!==$f['group'])continue;?><option value="<?php echo esc_attr($type);?>" <?php selected($f['type'],$type);?>><?php echo esc_html(self::label($type));?></option><?php endforeach;?></select></label>
             <label>Resultado<select name="mail_result"><?php foreach($results as $key=>$label):?><option value="<?php echo esc_attr($key);?>" <?php selected($f['result'],$key);?>><?php echo esc_html($label);?></option><?php endforeach;?></select></label>
-            <details <?php echo $f['recipient']||$f['subject']||$f['from']||$f['until']?'open':'';?>><summary>Fecha y búsqueda</summary>
+            </div><details <?php echo $f['recipient']||$f['subject']||$f['from']||$f['until']?'open':'';?>><summary>Fecha y búsqueda</summary>
                 <label>Destinatario<input name="mail_recipient" type="search" value="<?php echo esc_attr($f['recipient']);?>"></label>
                 <label>Buscar en el correo<input name="mail_subject" type="search" value="<?php echo esc_attr($f['subject']);?>"></label>
                 <label>Desde<input name="mail_from" type="date" value="<?php echo esc_attr($f['from']);?>"></label><label>Hasta<input name="mail_until" type="date" value="<?php echo esc_attr($f['until']);?>"></label>
             </details><button type="submit" class="button button-primary">Filtrar correos</button>
             <a href="<?php echo esc_url(remove_query_arg(array('mail_group','mail_type','mail_result','mail_recipient','mail_subject','mail_from','mail_until','mail_page')));?>">Limpiar filtros</a>
-        </form><p role="status"><?php echo number_format_i18n($query->found_posts);?> correos · Página <?php echo (int)$f['page'];?></p>
+        </form><p role="status"><?php echo number_format_i18n($query->found_posts);?> <?php echo 1===(int)$query->found_posts?'correo':'correos';?> · Página <?php echo (int)$f['page'];?></p>
         <?php if(!$query->posts):?><div class="ge-admin-empty">No hay correos que coincidan con estos filtros.</div><?php else:?>
         <div class="ge-admin-table-scroll"><table class="ge-admin-table"><thead><tr><th>Fecha</th><th>Destinatario</th><th>Asunto</th><th>Grupo</th><th>Tipo</th><th>Referencia</th><th>Resultado</th></tr></thead><tbody>
         <?php foreach($query->posts as $log):$context=(string)get_post_meta($log->ID,'_ge_email_context',true);$ref=absint(get_post_meta($log->ID,'_ge_email_object_id',true));$result=(string)get_post_meta($log->ID,'_ge_email_result',true);?>
