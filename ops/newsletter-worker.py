@@ -69,7 +69,7 @@ def main():
         cycle_started=time.monotonic()
         try:
             inventory=call({'operation':'inventory'})
-            if time.time()>inventory['policy_expires_at']:break
+            expired=time.time()>inventory['policy_expires_at']
             # Exim rotates this local trusted log; no email body is interpreted as authority.
             lines=Path('/var/spool/exim/log/mainlog').read_text(errors='replace').splitlines()
             events=feedback(lines,inventory['deliveries'])
@@ -88,11 +88,11 @@ def main():
                 if e['freeze'] and QUEUE.fullmatch(e['queue_id']):
                     subprocess.run(['/opt/exim/bin/exim','-Mf',e['queue_id']],stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=15)
             reconciled=call({'operation':'reconcile','events':events})
-            result=call({'operation':'process'})
+            result={'blocked':True} if expired else call({'operation':'process'})
             print(json.dumps({'at':int(time.time()),'feedback':reconciled,'dispatch':result}),flush=True)
         except Exception:
             print(json.dumps({'at':int(time.time()),'state':'review_required'}),flush=True)
         if args.once:break
-        time.sleep(max(1,10-(time.monotonic()-cycle_started)))
+        time.sleep(max(1,(60 if 'expired' in locals() and expired else 10)-(time.monotonic()-cycle_started)))
 
 if __name__=='__main__':main()

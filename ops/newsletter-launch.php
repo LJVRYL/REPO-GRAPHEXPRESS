@@ -16,6 +16,8 @@ if($op==='prepare'){
     $policy=$input['policy']??array();if(($policy['audience_key']??'')!=='first'||($policy['hourly_limit']??0)>400||($policy['daily_limit']??0)>2500||empty($policy['authority_ref']))throw new RuntimeException('Policy outside authorized scope');
     $policy['authorized_campaign_ids']=array($id);$policy['verified_by']=get_current_user_id();update_option(GE_WTP_Newsletter_Engine::POLICY,$policy,false);
     $r=GE_WTP_Newsletter_Engine::queue($id);if(is_wp_error($r))throw new RuntimeException($r->get_error_message());$out=array('campaign_id'=>$id,'queued'=>$r,'first_execution'=>GE_WTP_Newsletter_Engine::process(1));
+}elseif($op==='policy_end_of_day'){
+    $p=get_option(GE_WTP_Newsletter_Engine::POLICY,array());if(($p['audience_key']??'')!=='first'||($p['authorized_campaign_ids']??array())!==array($id))exit(2);$p['expires_at']=strtotime('2026-10-13T02:59:59Z');update_option(GE_WTP_Newsletter_Engine::POLICY,$p,false);$out=array('campaign_id'=>$id,'expires_at'=>gmdate('c',$p['expires_at']));
 }elseif($op==='status'){
     $c=GE_WTP_Newsletter_Review::campaign($id);$rows=$wpdb->get_results($wpdb->prepare('SELECT status,COUNT(*) total FROM '.$wpdb->prefix.'ge_newsletter_deliveries WHERE campaign_id=%d GROUP BY status',$id),ARRAY_A);
     $out=array('campaign_id'=>$id,'status'=>$c?$c->status:null,'total'=>$c?(int)$c->total_count:0,'accepted'=>$c?(int)$c->sent_count:0,'deliveries'=>$rows,'engine_enabled'=>GE_WTP_Newsletter_Engine::enabled(),'heartbeat'=>get_option('ge_newsletter_engine_heartbeat',array()),'feedback'=>get_option('ge_newsletter_feedback_heartbeat',array()),'reception'=>get_option('ge_crm_attention_channels',array())['email']['consumer_health']??array());
