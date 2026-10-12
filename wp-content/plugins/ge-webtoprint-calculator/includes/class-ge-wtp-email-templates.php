@@ -56,7 +56,7 @@ final class GE_WTP_Email_Templates {
         $html = $text = array();
         foreach ($record['placeholders'] as $key) {
             $value = (string)($values[$key] ?? '');
-            $html[$key] = in_array($key, array('summary','first_access'), true) ? self::clean_html($value) : ($key === 'portal_url' ? esc_url($value) : esc_html($value));
+            $html[$key] = in_array($key, array('summary','first_access'), true) ? self::clean_html($value) : ($key === 'portal_url' ? GE_WTP_Email_Branding::operational_url($value) : esc_html($value));
             $text[$key] = sanitize_text_field(wp_strip_all_tags($value));
         }
         $replace = function($content, $map) { return preg_replace_callback('/\{\{\s*([a-z_]+)\s*\}\}/', function($m) use ($map) { return $map[$m[1]] ?? ''; }, $content); };
@@ -68,10 +68,10 @@ final class GE_WTP_Email_Templates {
         return self::render('commercial_quote_sent', array(
             'customer_name'=>$customer->first_name ?: $customer->display_name,
             'quote_number'=>$quote['number'] ?? 'BORRADOR', 'portal_url'=>$url,
-            'intro'=>$resend ? 'Podés volver a revisar tu presupuesto de Graph Express.' : 'Tenés un nuevo presupuesto de Graph Express para revisar.',
+            'intro'=>$resend ? 'Podés volver a revisar tu presupuesto.' : 'Tenés un nuevo presupuesto para revisar.',
             'summary'=>GE_WTP_Commercial_Quotes::email_summary($snapshot),
             'first_access'=>$invite ? '<p>Si es tu primer acceso, usá “¿Olvidaste tu contraseña?” en el portal para definirla con este email.</p>' : '',
-            'brand_name'=>class_exists('GE_Organization') ? GE_Organization::brand('brand_name','Graph Express') : 'Graph Express',
+            'brand_name'=>GE_WTP_Email_Branding::profile()['name'],
         ));
     }
     public static function attachment_notice($version) { return '<p>Adjuntamos el PDF comercial de tu presupuesto (versión ' . absint($version) . '). Podés revisarlo y aceptarlo desde el portal.</p>'; }
@@ -80,7 +80,7 @@ final class GE_WTP_Email_Templates {
         $message['sender'] = array('email'=>apply_filters('wp_mail_from','wordpress@' . wp_parse_url(home_url(),PHP_URL_HOST)), 'name'=>apply_filters('wp_mail_from_name','WordPress'));
         $message['attachment'] = $version ? 'PDF comercial · versión ' . absint($version) : 'PDF comercial de la versión que se guarde';
         if ($version) $message['body'] .= self::attachment_notice($version);
-        $message['body'] = self::clean_html($message['body']);
+        $message = array_merge($message,GE_WTP_Email_Branding::prepare($message['subject'],self::clean_html($message['body'])));
         return $message;
     }
     public static function preview_quote() {
@@ -113,13 +113,19 @@ final class GE_WTP_Email_Templates {
     }
     public static function preview_template() {
         check_ajax_referer('ge_email_preview','nonce'); if (!self::permitted()) wp_send_json_error('Acceso denegado.',403);
-        $id=sanitize_key($_POST['template_id']??''); $record=self::get($id); if (!$record) wp_send_json_error('Plantilla no disponible.',404);
+        $id=sanitize_key($_POST['template_id']??''); $record=self::get($id);
+        if (!$record && GE_WTP_Email_Preview::supports($id)) {
+            $preview=GE_WTP_Email_Preview::render($id);
+            if (is_wp_error($preview)) wp_send_json_error($preview->get_error_message(),422);
+            wp_send_json_success($preview);
+        }
+        if (!$record) wp_send_json_error('Plantilla no disponible.',404);
         if (isset($_POST['body'])) {
             if (!self::permitted(true)) wp_send_json_error('Edición reservada al administrador.',403);
             $clean=self::validate($id,wp_unslash($_POST['title']??''),wp_unslash($_POST['subject']??''),wp_unslash($_POST['body']));
             if (is_wp_error($clean)) wp_send_json_error($clean->get_error_message(),422); $record=array_merge($record,$clean);
         }
-        $message=self::render($id,array('customer_name'=>'Cliente de ejemplo','quote_number'=>'10001','intro'=>'Tenés un nuevo presupuesto de Graph Express para revisar.','portal_url'=>home_url('/portal-de-ejemplo/'),'summary'=>'<p>Producto de ejemplo · 100 unidades</p><p>Total: ARS 12.100</p>','first_access'=>'<p>Si es tu primer acceso, usá “¿Olvidaste tu contraseña?” en el portal.</p>','brand_name'=>'Graph Express'),$record);
+        $message=self::render($id,array('customer_name'=>'Cliente de ejemplo','quote_number'=>'10001','intro'=>'Tenés un nuevo presupuesto para revisar.','portal_url'=>'https://example.invalid/presupuestos','summary'=>'<p>Producto de ejemplo · 100 unidades</p><p>Total: ARS 12.100</p>','first_access'=>'<p>Si es tu primer acceso, usá “¿Olvidaste tu contraseña?” en el portal.</p>','brand_name'=>GE_WTP_Email_Branding::profile()['name']),$record);
         $message=self::envelope($message,'cliente@example.invalid',$id==='commercial_quote_sent'?1:0);
         if ($id!=='commercial_quote_sent') $message['attachment']='Sin adjuntos; plantilla manual sin envío automático';
         $message['notice']='Ejemplo con datos ficticios. No se envía correo y los enlaces están desactivados en la vista previa.';
@@ -159,7 +165,7 @@ final class GE_WTP_Email_Templates {
         if (!is_user_logged_in() || !in_array(sanitize_key($_GET['section']??''),array('quotes','communications'),true)) return;
         wp_enqueue_style('ge-email-templates',GE_WTP_PLUGIN_URL.'assets/css/email-templates.css',array(),(string)filemtime(GE_WTP_PLUGIN_DIR.'assets/css/email-templates.css'));
         wp_enqueue_script('ge-email-templates',GE_WTP_PLUGIN_URL.'assets/js/email-templates.js',array(),(string)filemtime(GE_WTP_PLUGIN_DIR.'assets/js/email-templates.js'),true);
-        wp_localize_script('ge-email-templates','geEmailTemplates',array('ajaxUrl'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('ge_email_preview')));
+        wp_localize_script('ge-email-templates','geEmailTemplates',array('ajaxUrl'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('ge_email_preview'),'assetOrigin'=>home_url('/')));
     }
     public static function catalog() {
         $rows=self::defaults();foreach(self::stored() as $id=>$record) if(strpos($id,'manual_')===0)$rows[$id]=$record;
@@ -169,6 +175,11 @@ final class GE_WTP_Email_Templates {
         if (function_exists('WC') && WC()->mailer()) foreach(WC()->mailer()->get_emails() as $email) {
             $id='woocommerce_'.$email->id;$rows[$id]=array('title'=>$email->get_title(),'group'=>'WooCommerce','trigger'=>wp_strip_all_tags($email->get_description()),'recipient'=>$email->is_customer_email()?'Cliente':'Personal configurado en WooCommerce','editable'=>false,'source'=>'WooCommerce · '.$email->id,'enabled'=>$email->is_enabled());
         }
+        if (isset($rows['order_status_*'])) { $rows['order_status_example']=$rows['order_status_*']; $rows['order_status_example']['id']='order_status_example'; unset($rows['order_status_*']); }
+        unset($rows['internal_*']);
+        $rows=array_merge($rows,GE_WTP_Email_Preview::extra_catalog());
+        foreach(array('internal_new_order'=>'Nuevo pedido · aviso interno','internal_new_customer'=>'Nuevo cliente · aviso interno') as $key=>$title) $rows[$key]=array('id'=>$key,'title'=>$title,'group'=>'Internos','trigger'=>'Alta y notificación interna configurada','recipient'=>'Personal','editable'=>false,'source'=>'GE_WTP_Notifications');
+        foreach($rows as $key=>&$row) { if(isset(GE_WTP_Email_Core::catalog()[$key]))$row['activation']=GE_WTP_Email_Core::catalog()[$key]['activation']; $row['preview_available']=!empty($row['editable'])||GE_WTP_Email_Preview::supports($key); $row['identity']='Firma compartida de la organización'; } unset($row);
         return $rows;
     }
     private static function form_head($id,$record,$mode='save') {
@@ -198,15 +209,17 @@ final class GE_WTP_Email_Templates {
                 if($edit && isset(self::defaults()[$id])) { self::form_head($id,$record,'default');echo '<button type="submit">Restaurar plantilla predeterminada</button></form>'; }
                 if($edit && !empty($record['history'])) { echo '<details><summary>Versiones anteriores</summary>';foreach(array_reverse($record['history']) as $old){self::form_head($id,$record,'restore');echo '<input type="hidden" name="restore_revision" value="'.absint($old['revision']).'"><p>Versión '.absint($old['revision']).' · '.esc_html($old['at']).' · '.esc_html($old['subject']).'</p><button type="submit">Restaurar esta versión</button></form>';}echo '</details>'; }
             } else {
-                echo '<p><strong>Heredada · administrada en su sistema de origen.</strong> El editor central todavía no modifica este envío.</p><p>Fuente: '.esc_html($record['source']).'</p>';
-                if(!empty($record['excerpt']))echo '<details open><summary>Referencia de contenido en código</summary><pre>'.esc_html($record['excerpt']).'</pre></details>';
+                echo '<p><strong>Contenido del sistema.</strong> Usa la firma compartida y conserva sus variables, condiciones y enlaces de seguridad. El texto se administra en su sistema de origen.</p><p>Fuente: '.esc_html($record['source']).'</p>';
+                if(!empty($record['activation']))echo '<p>Uso: '.esc_html($record['activation']).'</p>';
+                if(!empty($record['preview_available'])) echo '<div class="ge-template-actions"><button type="button" data-ge-template-preview="'.esc_attr($id).'">'.(strpos($id,'wordpress_')===0?'Ver referencia de firma sin ejecutar el aviso':'Vista previa sin enviar').'</button></div>';
+                if(!empty($record['excerpt']))echo '<details><summary>Referencia técnica del sistema de origen</summary><pre>'.esc_html($record['excerpt']).'</pre></details>';
                 if(strpos($id,'woocommerce_')===0 && current_user_can('manage_woocommerce'))echo '<a href="'.esc_url(admin_url('admin.php?page=wc-settings&tab=email')).'">Configuración de correos de WooCommerce</a>';
             }
         } else {
             echo '<div class="ge-template-filters"><label>Buscar plantilla<input type="search" data-ge-template-search placeholder="Presupuesto, aprobación, pago…"></label><label>Grupo<select data-ge-template-group><option value="">Todos los grupos</option>';
             foreach(array_unique(array_column($catalog,'group')) as $group)echo '<option value="'.esc_attr($group).'">'.esc_html($group).'</option>';
             echo '</select></label></div><p data-ge-template-count role="status">'.count($catalog).' plantillas y familias de correo</p><div class="ge-template-list">';
-            foreach($catalog as $key=>$row)echo '<article data-template-group="'.esc_attr($row['group']).'"><div><small>'.esc_html($row['group']).' · '.(strpos($key,'manual_')===0?'Manual · sin envío automático':(!empty($row['editable'])?'Editable y conectada':(isset($row['enabled'])&&!$row['enabled']?'Heredada · desactivada':'Heredada / código'))).'</small><h3>'.esc_html($row['title']).'</h3><p>'.esc_html($row['trigger']).'</p><p>Para: '.esc_html($row['recipient']).'</p></div><a href="'.esc_url(self::url(array('template_id'=>$key))).'">'.(!empty($row['editable'])?'Ver y previsualizar':'Ver referencia').'</a></article>';
+            foreach($catalog as $key=>$row)echo '<article data-template-group="'.esc_attr($row['group']).'"><div><small>'.esc_html($row['group']).' · '.(strpos($key,'manual_')===0?'Manual · sin envío automático':(!empty($row['editable'])?'Editable y conectada':(isset($row['enabled'])&&!$row['enabled']?'Desactivada en su sistema de origen':(strpos($key,'wordpress_')===0?'Sistema · referencia de firma':'Sistema · firma conectada')))).'</small><h3>'.esc_html($row['title']).'</h3><p>'.esc_html($row['trigger']).'</p><p>Para: '.esc_html($row['recipient']).'</p></div><a href="'.esc_url(self::url(array('template_id'=>$key))).'">'.(!empty($row['preview_available'])?'Ver y previsualizar':'Ver referencia').'</a></article>';
             echo '</div>';
             if(self::permitted(true)){echo '<details><summary>Crear plantilla manual</summary>';self::form_head('',array(),'create');echo '<label>Título<input name="title" required maxlength="200"></label><label>Asunto<input name="subject" required maxlength="500"></label>';self::content_editor('<p>Hola {{customer_name}},</p>','ge_template_new_body',true);echo '<p>Variables: {{customer_name}}, {{brand_name}}. Guardarla no activa un envío automático.</p><button type="submit">Crear plantilla</button></form></details>';}
         }

@@ -70,10 +70,10 @@ final class GE_WTP_Quote_Requests {
             $data['status']=$submit?'new':'draft';$data['created_at']=$old['created_at']??gmdate('c');$data['updated_at']=gmdate('c');$data['quote_id']=0;$data['artwork_session']=$session;$data['staff_message']='';
             update_post_meta($id,self::META,$data);GE_WTP_Quote_Artwork_V2::commit($id,$files,$actor);
             if($submit){$u=get_userdata($actor);GE_WTP_Internal_Alerts::create('quote_request',$u->display_name.' solicitó un presupuesto personalizado',$id,$actor);
-                $url=GE_WTP_Staff_Portal::portal_url('requests',array('request_id'=>$id));$body='<p>Solicitud #'.$id.' · '.count($data['items']).' ítems</p><p><a href="'.esc_url($url).'">Ver solicitud en Gestión</a></p>';
+                $url=GE_WTP_Staff_Portal::portal_url('requests',array('request_id'=>$id));$body= GE_WTP_Email_Content::render( 'quote_request_internal', array( 'count' => count($data['items']), 'url' => esc_url($url), 'id' => $id ) );
                 $recipients=GE_WTP_Notification_Center::recipients();$sent=!empty($recipients);foreach($recipients as $recipient){$sent=GE_WTP_Notifications::send($recipient,'Nueva solicitud de presupuesto · #'.$id,$body,'quote_request_internal',$id)&&$sent;}
                 update_post_meta($id,'_ge_internal_email_result',$sent?'sent':'failed');
-                GE_WTP_Notifications::send($u->user_email,'Recibimos tu solicitud de presupuesto · #'.$id,'<p>Recibimos tu solicitud con '.count($data['items']).' ítems. Nuestro equipo la revisará.</p><p><a href="'.esc_url(GE_WTP_Portal::portal_url('solicitudes')).'">Mis solicitudes</a></p>','quote_request_received',$id);
+                GE_WTP_Notifications::send($u->user_email,'Recibimos tu solicitud de presupuesto · #'.$id,GE_WTP_Email_Content::render( 'quote_request_received', array( 'url' => esc_url(GE_WTP_Portal::portal_url('solicitudes')), 'count' => count($data['items']) ) ),'quote_request_received',$id);
             }
             return self::get($id,$actor);
         }finally{flock($lock,LOCK_UN);fclose($lock);}

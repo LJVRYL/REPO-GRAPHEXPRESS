@@ -227,6 +227,10 @@ final class GE_Organization {
     public static function mail($args) {
         $o=self::get(self::PRIMARY);if(!$o)return $args;
         $s=$o['settings'];
+        $type=apply_filters('wp_mail_content_type','text/plain');
+        $headers=$args['headers']??array(); if(is_string($headers))$headers=preg_split('/\r?\n/',$headers);
+        foreach($headers as $value)if(preg_match('/^\s*Content-Type:\s*([^;]+)/i',$value,$mime))$type=strtolower(trim($mime[1]));
+        if(strtolower($type)!=='text/html')return $args; // Plaintext user content is never a legacy template slot.
         $header='<strong style="letter-spacing:.1em">GRAPH EXPRESS</strong>';
         if(!is_string($args['message']??null) || strpos($args['message'],$header)===false)return $args;
         $brand=$s['general']['brand_name']?:$s['general']['display_name'];

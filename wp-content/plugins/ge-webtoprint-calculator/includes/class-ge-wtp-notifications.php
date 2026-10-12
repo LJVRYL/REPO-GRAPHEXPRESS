@@ -45,27 +45,35 @@ final class GE_WTP_Notifications {
         }
     }
 
+    public static function verification_intro($welcome) {
+        $brand=GE_WTP_Email_Branding::profile()['name'];
+        return $welcome ? 'Tu cuenta de '.$brand.' ya está creada. Desde tu perfil vas a poder guardar datos de contacto, direcciones y preferencias para agilizar los próximos pedidos.' : 'Recibimos una solicitud para verificar este email en tu cuenta de '.$brand.'.';
+    }
+    public static function verification_content($name, $intro, $verification_url) { return '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>' . esc_html( $intro ) . '</p><p style="margin:26px 0"><a href="' . esc_url( $verification_url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Verificar mi email</a></p><p style="color:#777382;font-size:13px">El enlace vence en 24 horas. Si no pediste esta verificación, podés ignorar el mensaje.</p>'; }
+    public static function invitation_content($name, $reset_url) { return '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>Ya tenés acceso a tu portal de ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . '. Para ingresar, definí tu contraseña desde este enlace privado:</p><p style="margin:26px 0"><a href="' . esc_url( $reset_url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Definir mi contraseña</a></p><p>Después podés ingresar en <a href="' . esc_url( GE_WTP_Portal::portal_url() ) . '">tu portal</a> con este email.</p><p style="color:#777382;font-size:13px">El enlace vence en 24 horas. Si no esperabas esta invitación, podés ignorarla.</p>'; }
+    public static function new_customer_content($user, $url) { return '<p>Se registró un nuevo cliente en la web.</p><table style="width:100%;border-collapse:collapse"><tr><td style="padding:9px 0;border-bottom:1px solid #eceaf0">Nombre</td><td style="padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right"><strong>' . esc_html( $user->display_name ) . '</strong></td></tr><tr><td style="padding:9px 0;border-bottom:1px solid #eceaf0">Email</td><td style="padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right"><strong>' . esc_html( $user->user_email ) . '</strong></td></tr></table><p style="margin:26px 0"><a href="' . esc_url( $url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#17152a;color:#fff;text-decoration:none;font-weight:700">Ver ficha del cliente</a></p>'; }
+
     public static function send_customer_welcome_verification( $user, $email, $verification_url, $welcome = false ) {
         if ( ! $user instanceof WP_User ) { return false; }
         $name = $user->first_name ?: $user->display_name;
-        $intro = $welcome ? 'Tu cuenta de Graph Express ya está creada. Desde tu perfil vas a poder guardar datos de contacto, direcciones y preferencias para agilizar los próximos pedidos.' : 'Recibimos una solicitud para verificar este email en tu cuenta de Graph Express.';
-        $content = '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>' . esc_html( $intro ) . '</p><p style="margin:26px 0"><a href="' . esc_url( $verification_url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Verificar mi email</a></p><p style="color:#777382;font-size:13px">El enlace vence en 24 horas. Si no pediste esta verificación, podés ignorar el mensaje.</p>';
-        return self::send( $email, ( $welcome ? 'Bienvenido a Graph Express' : 'Verificá tu email' ) . ' · confirmación requerida', self::basic_email( $welcome ? 'Tu cuenta está lista' : 'Verificá tu email', $content ), $welcome ? 'customer_welcome_verification' : 'customer_email_verification', $user->ID );
+        $intro = self::verification_intro($welcome);
+        $content = self::verification_content($name, $intro, $verification_url);
+        return self::send( $email, ( $welcome ? 'Bienvenido a ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . '' : 'Verificá tu email' ) . ' · confirmación requerida', self::basic_email( $welcome ? 'Tu cuenta está lista' : 'Verificá tu email', $content ), $welcome ? 'customer_welcome_verification' : 'customer_email_verification', $user->ID );
     }
 
     public static function send_customer_portal_invitation( $user, $reset_url ) {
         if ( ! $user instanceof WP_User || ! is_email( $user->user_email ) ) { return false; }
         $name = $user->first_name ?: $user->display_name;
-        $content = '<p>Hola ' . esc_html( $name ?: '¿cómo estás?' ) . ',</p><p>Ya tenés acceso a tu portal de Graph Express. Para ingresar, definí tu contraseña desde este enlace privado:</p><p style="margin:26px 0"><a href="' . esc_url( $reset_url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Definir mi contraseña</a></p><p>Después podés ingresar en <a href="' . esc_url( GE_WTP_Portal::portal_url() ) . '">tu portal</a> con este email.</p><p style="color:#777382;font-size:13px">El enlace vence en 24 horas. Si no esperabas esta invitación, podés ignorarla.</p>';
-        return self::send( $user->user_email, 'Acceso a tu portal · Graph Express', self::basic_email( 'Tu acceso a Graph Express', $content ), 'customer_portal_invite', $user->ID );
+        $content = self::invitation_content($name, $reset_url);
+        return self::send( $user->user_email, 'Acceso a tu portal · ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . '', self::basic_email( 'Tu acceso a ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . '', $content ), 'customer_portal_invite', $user->ID );
     }
 
     public static function send_new_customer_admin( $user ) {
         if ( ! $user instanceof WP_User ) { return false; }
         $url = class_exists( 'GE_WTP_Staff_Portal' ) ? GE_WTP_Staff_Portal::portal_url( 'customers', array( 'customer_id' => $user->ID ) ) : admin_url( 'user-edit.php?user_id=' . $user->ID );
-        $content = '<p>Se registró un nuevo cliente en la web.</p><table style="width:100%;border-collapse:collapse"><tr><td style="padding:9px 0;border-bottom:1px solid #eceaf0">Nombre</td><td style="padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right"><strong>' . esc_html( $user->display_name ) . '</strong></td></tr><tr><td style="padding:9px 0;border-bottom:1px solid #eceaf0">Email</td><td style="padding:9px 0;border-bottom:1px solid #eceaf0;text-align:right"><strong>' . esc_html( $user->user_email ) . '</strong></td></tr></table><p style="margin:26px 0"><a href="' . esc_url( $url ) . '" style="display:inline-block;padding:14px 20px;border-radius:10px;background:#17152a;color:#fff;text-decoration:none;font-weight:700">Ver ficha del cliente</a></p>';
-        if ( class_exists( 'GE_WTP_Notification_Center' ) ) { $result = GE_WTP_Notification_Center::send_internal( 'new_customer', 'Nuevo cliente registrado · Graph Express', self::basic_email( 'Nuevo cliente', $content ), $user->ID ); return null === $result ? true : $result; }
-        return self::send( get_option( 'admin_email' ), 'Nuevo cliente registrado · Graph Express', self::basic_email( 'Nuevo cliente', $content ), 'new_customer_admin', $user->ID );
+        $content = self::new_customer_content($user, $url);
+        if ( class_exists( 'GE_WTP_Notification_Center' ) ) { $result = GE_WTP_Notification_Center::send_internal( 'new_customer', 'Nuevo cliente registrado · ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . '', self::basic_email( 'Nuevo cliente', $content ), $user->ID ); return null === $result ? true : $result; }
+        return self::send( get_option( 'admin_email' ), 'Nuevo cliente registrado · ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . '', self::basic_email( 'Nuevo cliente', $content ), 'new_customer_admin', $user->ID );
     }
 
     public static function handle_order_status_changed( $order_id, $old_status, $new_status, $order ) {
@@ -121,7 +129,7 @@ final class GE_WTP_Notifications {
         $customer_body = self::order_email_body(
             $order,
             'Recibimos tu pedido',
-            'Hola ' . ( $customer_name ?: '¿cómo estás?' ) . ', la orden <strong>' . esc_html( $reference ) . '</strong> ya ingresó a Graph Express. Te avisaremos cada vez que avance de etapa.' . $guest_invitation
+            'Hola ' . ( $customer_name ?: '¿cómo estás?' ) . ', la orden <strong>' . esc_html( $reference ) . '</strong> ya ingresó a ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . '. Te avisaremos cada vez que avance de etapa.' . $guest_invitation
         );
         $customer_ok = $customer_email ? self::send( $customer_email, 'Pedido recibido · ' . $reference, $customer_body, 'order_customer', $order->get_id() ) : false;
 
@@ -132,8 +140,8 @@ final class GE_WTP_Notifications {
             class_exists( 'GE_WTP_Staff_Portal' ) ? GE_WTP_Staff_Portal::portal_url( 'orders', array( 'order_id' => $order->get_id() ) ) : admin_url( 'admin.php?page=ge-backoffice-orders&order_id=' . $order->get_id() ),
             'Revisar pedido'
         );
-        if ( class_exists( 'GE_WTP_Notification_Center' ) ) { $admin_result = GE_WTP_Notification_Center::send_internal( 'new_order', 'Nuevo pedido Graph Express · ' . $reference, $admin_body, $order->get_id() ); $admin_ok = null === $admin_result ? true : $admin_result; $admin_state = null === $admin_result ? 'disabled' : ( $admin_ok ? 'sent' : 'failed' ); }
-        else { $admin_email = sanitize_email( get_option( 'admin_email' ) ); $admin_ok = $admin_email ? self::send( $admin_email, 'Nuevo pedido Graph Express · ' . $reference, $admin_body, 'order_admin', $order->get_id() ) : false; $admin_state = $admin_ok ? 'sent' : 'failed'; }
+        if ( class_exists( 'GE_WTP_Notification_Center' ) ) { $admin_result = GE_WTP_Notification_Center::send_internal( 'new_order', 'Nuevo pedido ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . ' · ' . $reference, $admin_body, $order->get_id() ); $admin_ok = null === $admin_result ? true : $admin_result; $admin_state = null === $admin_result ? 'disabled' : ( $admin_ok ? 'sent' : 'failed' ); }
+        else { $admin_email = sanitize_email( get_option( 'admin_email' ) ); $admin_ok = $admin_email ? self::send( $admin_email, 'Nuevo pedido ' . esc_html( GE_WTP_Email_Branding::profile()['name'] ) . ' · ' . $reference, $admin_body, 'order_admin', $order->get_id() ) : false; $admin_state = $admin_ok ? 'sent' : 'failed'; }
 
         $order->update_meta_data( '_ge_customer_order_email', $customer_ok ? 'sent' : 'failed' );
         $order->update_meta_data( '_ge_admin_order_email', $admin_state );
@@ -217,10 +225,14 @@ final class GE_WTP_Notifications {
             }
             $html .= class_exists('GE_WTP_Email_Templates') ? GE_WTP_Email_Templates::attachment_notice($attachment['version']) : '<p>Adjuntamos el PDF comercial de tu presupuesto (versión ' . absint( $attachment['version'] ) . '). Podés revisarlo y aceptarlo desde el portal.</p>';
         }
+        $transport_started=false;
         try {
+            $prepared = GE_WTP_Email_Branding::prepare($subject, $html, $context);
+            $subject = $prepared['subject']; $html = $prepared['body'];
+            $transport_started=true;
             $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : array() );
         } catch ( Throwable $error ) {
-            self::log( $to, $subject, $html, $context, $object_id, 'unknown', 'Resultado del transporte sin confirmar. Revisar antes de reenviar.' );
+            self::log( $to, $subject, self::safe_log_body($html,$context), $context, $object_id, $transport_started?'unknown':'failed', $transport_started?'Resultado del transporte sin confirmar. Revisar antes de reenviar.':'No se pudo preparar el correo.' );
             throw $error;
         } finally {
             if ( $attachment && is_file( $attachment['path'] ) ) { unlink( $attachment['path'] ); }
@@ -228,11 +240,17 @@ final class GE_WTP_Notifications {
         $result = $ok ? ( self::is_local_environment() ? 'simulated' : 'sent' ) : 'failed';
         $logged_html = 'customer_portal_invite' === $context ? '<p>Invitación con enlace privado para definir contraseña. El enlace se omitió del historial.</p>' : $html;
         if ( 'workflow_supplier_portal' === $context ) { $logged_html = '<p>Orden técnica enviada al proveedor. El enlace privado se omite del historial. Consultá la versión y el detalle en Producción.</p>'; }
+        $logged_html = self::safe_log_body($logged_html, $context);
         self::log( $to, $subject, $logged_html, $context, $object_id, $result, self::$last_mail_error );
         if ( $attachment && $ok ) {
             GE_WTP_Commercial_Quotes::record_event( $object_id, 'pdf_attached', get_current_user_id(), array( 'pdf_version' => $attachment['version'], 'pdf_sha256' => $attachment['sha256'] ) );
         }
         return $ok;
+    }
+
+    public static function safe_log_body($html, $context) {
+        if (in_array($context,array('customer_portal_invite','customer_welcome_verification','customer_email_verification','workflow_supplier_portal'),true)) return '<p>Correo con enlace privado. El enlace se omitió del historial.</p>';
+        return $html;
     }
 
     private static function log( $to, $subject, $html, $context, $object_id, $result, $error = '' ) {
@@ -271,7 +289,11 @@ final class GE_WTP_Notifications {
         return get_posts( array( 'post_type' => self::LOG_POST_TYPE, 'post_status' => 'private', 'posts_per_page' => absint( $limit ), 'orderby' => 'date', 'order' => 'DESC', 'meta_key' => '_ge_email_to', 'meta_value' => sanitize_email( $email ) ) );
     }
 
-    private static function order_email_body( $order, $heading, $intro, $button_url = '', $button_label = '' ) {
+    public static function order_content($heading, $intro, $items, $details, $button, $total) {
+        return '<h1 style="font-size:30px;line-height:38px;margin:0 0 24px;color:#111116">'.esc_html($heading).'</h1><p>'.wp_kses_post($intro).'</p><table style="width:100%;border-collapse:collapse">'.$items.'<tr><td style="padding:18px 0"><strong>Total</strong></td><td style="padding:18px 0;text-align:right"><strong>'.wp_kses_post($total).'</strong></td></tr></table>'.$details.$button;
+    }
+
+    public static function order_email_body( $order, $heading, $intro, $button_url = '', $button_label = '' ) {
         $tax = $order->get_meta( '_ge_customer_tax_decision', true );
         if ( is_array( $tax ) && $tax ) {
             $label = GE_WTP_Customer_Tax_UI::decision_label( array( 'customer_tax_decision' => $tax, 'customer_billing_profile' => (array) $order->get_meta( '_ge_billing_profile_snapshot', true ) ) );
@@ -289,10 +311,10 @@ final class GE_WTP_Notifications {
         $documents = class_exists( 'GE_WTP_Documents' ) ? GE_WTP_Documents::get_documents( $order->get_id() ) : array();
         $po = $order->get_meta( '_ge_markcom_po_reference' );
         $details = '<table style="width:100%;margin-top:22px;border-collapse:collapse;background:#f8f7fa"><tr><td style="padding:11px 13px">Pago</td><td style="padding:11px 13px;text-align:right"><strong>' . esc_html( $order->get_payment_method_title() ?: 'A coordinar' ) . '</strong></td></tr><tr><td style="padding:11px 13px">Entrega</td><td style="padding:11px 13px;text-align:right"><strong>' . wp_kses_post( $delivery ) . '</strong></td></tr>' . ( $po ? '<tr><td style="padding:11px 13px">Referencia PO</td><td style="padding:11px 13px;text-align:right"><strong>' . esc_html( $po ) . '</strong></td></tr>' : '' ) . ( $documents ? '<tr><td style="padding:11px 13px">Archivos asociados</td><td style="padding:11px 13px;text-align:right"><strong>' . esc_html( count( $documents ) ) . '</strong></td></tr>' : '' ) . ( $estimated ? '<tr><td style="padding:11px 13px">Fecha estimada</td><td style="padding:11px 13px;text-align:right"><strong>' . esc_html( wp_date( 'd/m/Y', strtotime( $estimated ) ) ) . '</strong></td></tr>' : '' ) . '</table>';
-        return '<!doctype html><html><body style="margin:0;background:#f3f2f6;font-family:Arial,sans-serif;color:#17152a"><div style="max-width:680px;margin:0 auto;padding:30px 18px"><div style="padding:18px 24px;background:#111629;color:#fff;border-radius:16px 16px 0 0"><strong style="letter-spacing:.1em">GRAPH EXPRESS</strong></div><div style="padding:34px 28px;background:#fff;border-radius:0 0 16px 16px"><span style="color:#6d45ef;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em">Pedido online</span><h1 style="font-size:30px;margin:10px 0 16px">' . esc_html( $heading ) . '</h1><p style="font-size:16px;line-height:1.6;color:#5f5b69">' . wp_kses_post( $intro ) . '</p><table style="width:100%;border-collapse:collapse;margin-top:24px">' . $items . '<tr><td style="padding-top:18px;font-size:16px"><strong>Total</strong></td><td style="padding-top:18px;text-align:right;font-size:20px"><strong>' . wp_kses_post( $order->get_formatted_order_total() ) . '</strong></td></tr></table>' . $details . $button . '<p style="margin-top:30px;color:#85818e;font-size:12px;line-height:1.5">Este es un correo operativo relacionado con tu pedido. Graph Express · Entregas a coordinar.</p></div></div></body></html>';
+        return self::order_content($heading, $intro, $items, $details, $button, $order->get_formatted_order_total());
     }
 
-    private static function basic_email( $heading, $content ) {
-        return '<!doctype html><html><body style="margin:0;background:#f3f2f6;font-family:Arial,sans-serif;color:#17152a"><div style="max-width:680px;margin:auto;padding:30px 18px"><div style="padding:20px 26px;border-radius:16px 16px 0 0;background:#111629;color:#fff"><strong style="letter-spacing:.1em">GRAPH EXPRESS</strong></div><div style="padding:34px 28px;border-radius:0 0 16px 16px;background:#fff"><h1 style="font-size:30px;margin-top:0">' . esc_html( $heading ) . '</h1><div style="font-size:16px;line-height:1.65;color:#4f4b59">' . wp_kses_post( $content ) . '</div><p style="margin-top:30px;color:#898594;font-size:12px">Graph Express · Entregas a coordinar</p></div></div></body></html>';
+    public static function basic_email( $heading, $content ) {
+        return '<h1 style="font-size:30px;line-height:38px;color:#111116;margin:0 0 24px">'.esc_html($heading).'</h1>'.wp_kses_post($content);
     }
 }

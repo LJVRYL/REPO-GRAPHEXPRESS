@@ -224,7 +224,9 @@ final class GE_Organization_Runtime {
         $o=$snapshot['organization_snapshot']??array();if(!$o)return '';
         $g=$o['general'];$d=$o['documents'];$html='<div class="ge-org-document">';
         if(!empty($o['branding']['logo_url']))$html.='<img src="'.esc_url($o['branding']['logo_url']).'" width="48" alt="">';
-        $html.='<p><strong>'.esc_html($g['brand_name']?:$g['display_name']).'</strong><br>'.esc_html($g['legal_name']).'<br>'.esc_html(implode(' · ',array_filter(array($g['email'],$g['phone'],$g['address'])))).'</p>';
+        $brand=$g['brand_name']?:$g['display_name'];
+        if(class_exists('GE_WTP_Email_Branding') && ($o['organization_id']??$o['id']??GE_Organization::PRIMARY)===GE_Organization::PRIMARY)$brand=GE_WTP_Email_Branding::profile()['name'];
+        $html.='<p><strong>'.esc_html($brand).'</strong><br>'.esc_html($g['legal_name']).'<br>'.esc_html(implode(' · ',array_filter(array($g['email'],$g['phone'],$g['address'])))).'</p>';
         $html.='<p>'.nl2br(esc_html($d['email_text'])).'<br>'.nl2br(esc_html($d['terms'])).'<br>'.nl2br(esc_html($d['payment_terms'])).'</p></div>';
         return $html;
     }

@@ -375,7 +375,7 @@ final class GE_WTP_Payments {
         $portal_url = class_exists( 'GE_WTP_Portal' ) ? GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order->get_id() ) ) : home_url( '/' );
         $base = self::base_total( $order );
         $mp_total = $base + round( $base * self::MP_SURCHARGE / 100, wc_get_price_decimals() );
-        $body = '<p>Hola ' . esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ) . ',</p><p>Tu pedido ya tiene disponibles las opciones de pago.</p><p><strong>Transferencia bancaria:</strong> ' . wp_kses_post( wc_price( $base, array( 'currency' => $order->get_currency() ) ) ) . '<br>CBU: ' . esc_html( $bank['cbu'] ) . '<br>Alias: ' . esc_html( $bank['alias'] ) . '</p><p><strong>Mercado Pago:</strong> ' . wp_kses_post( wc_price( $mp_total, array( 'currency' => $order->get_currency() ) ) ) . ' (incluye recargo del ' . self::MP_SURCHARGE . '%).</p><p style="margin:24px 0"><a href="' . esc_url( $portal_url ) . '" style="display:inline-block;padding:13px 18px;border-radius:9px;background:#6d45ef;color:#fff;text-decoration:none;font-weight:700">Ver pedido y pagar</a></p><p>Si transferís, cargá el comprobante dentro del mismo pedido.</p>';
+        $body = GE_WTP_Email_Content::render( 'payment_instructions', array( 'mp_total' => wp_kses_post( wc_price( $mp_total, array( 'currency' => $order->get_currency() ) ) ), 'base' => wp_kses_post( wc_price( $base, array( 'currency' => $order->get_currency() ) ) ), 'name' => esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ), 'alias' => esc_html( $bank['alias'] ), 'cbu' => esc_html( $bank['cbu'] ), 'portal' => esc_url( $portal_url ), 'surcharge' => self::MP_SURCHARGE ) );
         $sent = GE_WTP_Notifications::send( $order->get_billing_email(), 'Opciones de pago · ' . GE_WTP_Manual_Orders::reference( $order ), $body, 'payment_instructions', $order->get_id() );
         self::staff_redirect( $order, $sent ? 'instructions-sent' : 'failed' );
     }
@@ -428,7 +428,7 @@ final class GE_WTP_Payments {
     private static function send_payment_confirmed_email( $order ) {
         if ( ! is_email( $order->get_billing_email() ) ) { return false; }
         $portal_url = class_exists( 'GE_WTP_Portal' ) ? GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order->get_id() ) ) : home_url( '/' );
-        $body = '<p>Hola ' . esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ) . ',</p><p>Confirmamos la acreditación del pago correspondiente al pedido <strong>' . esc_html( GE_WTP_Manual_Orders::reference( $order ) ) . '</strong>.</p><p><strong>Total acreditado:</strong> ' . wp_kses_post( wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) ) ) . '</p><p><a href="' . esc_url( $portal_url ) . '">Consultar el pedido</a></p>';
+        $body = GE_WTP_Email_Content::render( 'payment_confirmed', array( 'total' => wp_kses_post( wc_price( $order->get_total(), array( 'currency' => $order->get_currency() ) ) ), 'name' => esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ), 'reference' => esc_html( GE_WTP_Manual_Orders::reference( $order ) ), 'portal' => esc_url( $portal_url ) ) );
         return GE_WTP_Notifications::send( $order->get_billing_email(), 'Pago confirmado · ' . GE_WTP_Manual_Orders::reference( $order ), $body, 'payment_confirmed', $order->get_id() );
     }
 

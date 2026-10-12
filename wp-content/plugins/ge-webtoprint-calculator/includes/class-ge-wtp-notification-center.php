@@ -142,7 +142,7 @@ final class GE_WTP_Notification_Center {
 
     public static function handle_test() {
         self::guard(); check_admin_referer( 'ge_notification_test' ); $ok = true; $sent = 0;
-        foreach ( self::recipients() as $email ) { $sent++; if ( ! GE_WTP_Notifications::send( $email, 'Prueba de notificaciones · Graph Express', '<p>El centro de notificaciones está conectado correctamente.</p><p>Fecha: ' . esc_html( current_time( 'd/m/Y H:i' ) ) . '</p>', 'internal_test' ) ) { $ok = false; } }
+        foreach ( self::recipients() as $email ) { $sent++; if ( ! GE_WTP_Notifications::send( $email, 'Prueba de notificaciones · '.GE_WTP_Email_Branding::profile()['name'], GE_WTP_Email_Content::render( 'internal_test', array( 'date' => esc_html( current_time( 'd/m/Y H:i' ) ) ) ), 'internal_test' ) ) { $ok = false; } }
         $result = class_exists( 'GE_WTP_Notifications' ) && GE_WTP_Notifications::is_local_environment() && $sent && $ok ? 'simulated' : ( $sent && $ok ? 'sent' : 'failed' );
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'settings', array( 'category' => 'notifications', 'notification_test' => $result ) ) ); exit;
     }
@@ -163,7 +163,7 @@ final class GE_WTP_Notification_Center {
         $orders = function_exists( 'wc_get_orders' ) ? wc_get_orders( array( 'limit' => 300, 'orderby' => 'date', 'order' => 'DESC', 'status' => array_values( array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) ) ) ) ) : array(); $active = 0; $due = 0; $delayed = 0; $pending_supplier = 0;
         foreach ( $orders as $order ) { if ( 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) || in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { continue; } $active++; $date = $order->get_meta( '_ge_production_promised_date' ); if ( $date === $today ) { $due++; } elseif ( $date && $date < $today ) { $delayed++; } if ( in_array( $order->get_meta( '_ge_production_supplier' ), array( '', 'pending', 'multiple', 'merch-pending', 'sublimation-pending' ), true ) ) { $pending_supplier++; } }
         if ( ! $active && ! $delayed && ! $due ) { update_option( self::LAST_DIGEST, $today, false ); return; }
-        $url = GE_WTP_Staff_Portal::portal_url( 'production' ); $html = '<h2>Resumen de producción</h2><ul><li>Trabajos activos: <strong>' . absint( $active ) . '</strong></li><li>Vencen hoy: <strong>' . absint( $due ) . '</strong></li><li>Demorados: <strong>' . absint( $delayed ) . '</strong></li><li>Proveedor pendiente: <strong>' . absint( $pending_supplier ) . '</strong></li></ul><p><a href="' . esc_url( $url ) . '">Abrir Producción</a></p>';
+        $url = GE_WTP_Staff_Portal::portal_url( 'production' ); $html = GE_WTP_Email_Content::render( 'internal_production_digest', array( 'pending_supplier' => absint( $pending_supplier ), 'delayed' => absint( $delayed ), 'active' => absint( $active ), 'url' => esc_url( $url ), 'due' => absint( $due ) ) );
         self::send_internal( 'production_digest', 'Resumen diario de producción · Graph Express', $html ); update_option( self::LAST_DIGEST, $today, false );
     }
 

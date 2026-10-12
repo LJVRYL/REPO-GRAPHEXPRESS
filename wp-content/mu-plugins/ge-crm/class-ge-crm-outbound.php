@@ -148,7 +148,7 @@ final class GE_CRM_Outbound {
                 if (strtolower($settings['sender_email'] ?? '')!==strtolower($plan['asset_id'])) throw new RuntimeException('El remitente configurado no coincide con el correo recibido.');
                 $headers=array(); $mid=$plan['headers']['message-id'] ?? '';
                 if (preg_match('/^<[^<>\r\n]{1,180}>$/D',$mid)) $headers=array('In-Reply-To: '.$mid,'References: '.$mid);
-                $ok=GE_WTP_Notifications::send($plan['recipient'],$plan['subject'],'<p>'.nl2br(esc_html($text)).'</p>','crm_reply',$id,$headers);
+                $ok=GE_WTP_Notifications::send($plan['recipient'],$plan['subject'],GE_WTP_Email_Content::render( 'crm_reply', array( 'text' => nl2br(esc_html($text)) ) ),'crm_reply',$id,$headers);
                 $result=array('state'=>$ok ? (GE_WTP_Notifications::is_local_environment() ? 'simulated' : 'accepted') : 'failed','provider_id'=>'','error'=>$ok ? '' : 'Falló el transporte de correo.');
             } else {
                 $token=$config[$plan['channel']]['access_token'];

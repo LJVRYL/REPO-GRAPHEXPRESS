@@ -124,8 +124,8 @@ final class GE_WTP_Manual_Orders {
 
     public static function handle_invite_email() {
         self::guard(); $order = self::order(); check_admin_referer( 'ge_manual_invite_' . $order->get_id() ); $email = $order->get_billing_email(); $url = wc_get_page_permalink( 'myaccount' );
-        $html = '<p>Hola ' . esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ) . ',</p><p>Podés crear tu cuenta de Graph Express para consultar pedidos y repetir trabajos más rápido.</p><p><a href="' . esc_url( $url ) . '">Crear mi cuenta</a></p><p>Registrate con el mismo email utilizado en tu pedido.</p>';
-        $sent = $email ? GE_WTP_Notifications::send( $email, 'Guardá tus pedidos · Graph Express', $html, 'manual_customer_invite', $order->get_id() ) : false;
+        $html = GE_WTP_Email_Content::render( 'manual_customer_invite', array( 'name' => esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ), 'url' => esc_url( $url ) ) );
+        $sent = $email ? GE_WTP_Notifications::send( $email, 'Guardá tus pedidos · ' . GE_WTP_Email_Branding::profile()['name'], $html, 'manual_customer_invite', $order->get_id() ) : false;
         wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'manual_invite' => $sent ? 'sent' : 'failed' ) ) ); exit;
     }
 

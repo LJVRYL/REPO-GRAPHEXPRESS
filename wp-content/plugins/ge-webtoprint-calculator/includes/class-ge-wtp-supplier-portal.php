@@ -180,17 +180,9 @@ final class GE_WTP_Supplier_Portal {
             return $row;
         } finally { self::unlock( $id ); }
     }
-    public static function message( $row, $url ) {
-        $s = $row['snapshot']; $profile = GE_WTP_Supplier_Dispatch::profile( $row['supplier'] );
-        $text = 'Hola ' . $profile['name'] . ", te envío este trabajo para producir.\n\nOrden: " . $s['reference'] . "\n";
-        foreach ( $s['items'] as $item ) {
-            $text .= "Trabajo: " . $item['name'] . "\nCantidad: " . $item['quantity'] . "\n";
-            foreach ( $item['specs'] as $key => $value ) { $text .= $key . ': ' . $value . "\n"; }
-            $text .= 'Terminación: ' . ( implode( ', ', $item['finishes'] ) ?: 'Sin terminación adicional' ) . "\n";
-        }
-        $text .= 'Fecha requerida: ' . ( $s['required_date'] ?: 'A coordinar' ) . "\nNotas técnicas: " . ( $s['notes'] ?: 'Sin observaciones adicionales' ) . "\n";
-        foreach ( $s['files'] as $file ) { $text .= 'Archivo: ' . $file['record']['name'] . "\n"; }
-        return $text . "\nPortal y descarga segura: " . $url . "\n\nPor favor confirmame recepción y, si podés, fecha estimada de entrega.\n\nGracias, Graphex.\nContacto: " . $s['contact'];
+    public static function message( $row, $url, $profile = null ) {
+        $profile = null === $profile ? GE_WTP_Supplier_Dispatch::profile( $row['supplier'] ) : $profile;
+        return GE_WTP_Email_Content::supplier_message( $row, $url, $profile );
     }
     public static function notify( $id, $dispatch_id, $manual = false, $retry = false ) {
         if ( ! GE_WTP_Staff_Portal::can_access() ) { return new WP_Error( 'forbidden', 'Acceso denegado.' ); }
@@ -212,8 +204,7 @@ final class GE_WTP_Supplier_Portal {
                 $rows[ $index ] = $row;
                 $order->update_meta_data( self::META, $rows ); $order->save();
                 $url = self::url( $id, $row );
-                $html = nl2br( esc_html( self::message( $row, $url ) ) );
-                $html = str_replace( esc_html( $url ), '<a href="' . esc_url( $url ) . '">Abrir portal y descargar archivos</a>', $html );
+                $html = GE_WTP_Email_Content::render( 'workflow_supplier_portal', array( 'row' => $row, 'url' => $url, 'profile' => GE_WTP_Supplier_Dispatch::profile( $row['supplier'] ) ) );
                 $sent = $manual || GE_WTP_Notifications::send( $email, 'Orden de producción ' . $row['snapshot']['reference'] . ' · Graphex', $html, 'workflow_supplier_portal', $id );
                 if ( ! $manual && $sent && isset( $GLOBALS['phpmailer'] ) && method_exists( $GLOBALS['phpmailer'], 'getLastMessageID' ) ) { $row['message_id'] = sanitize_text_field( $GLOBALS['phpmailer']->getLastMessageID() ); }
                 $row['email_status'] = $manual ? 'not_sent' : ( $sent ? 'sent' : 'failed' );
