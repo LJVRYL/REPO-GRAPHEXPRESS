@@ -1,9 +1,38 @@
 """Private Graphex worker. Correlates local Exim evidence; never blindly retries SMTP."""
-import argparse, hashlib, json, os, re, subprocess, time
+import argparse, hashlib, json, os, re, subprocess, time, email.policy
+from email.parser import BytesParser
 from pathlib import Path
 
 MID = re.compile(r'\bid=<?(ge-nl-[a-f0-9]{64}@graphex\.ar)>?')
 QUEUE = re.compile(r'^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{2,6}$')
+TRUSTED_PEERS={'200.58.125.43','200.58.116.136','200.58.116.111'}
+
+def delivery_reports(raw_messages, lines, deliveries):
+    by_mid={r['message_id'].strip('<>'):r for r in deliveries};trusted=set()
+    for line in lines:
+        if ' <= <> ' not in line:continue
+        peer=re.search(r'\[([0-9.]+)\]',line);mid=re.search(r'\bid=<?([^\s<>]+)>?',line)
+        if peer and mid and peer.group(1) in TRUSTED_PEERS:trusted.add(mid.group(1))
+    result=[]
+    for raw in raw_messages:
+        msg=BytesParser(policy=email.policy.default).parsebytes(raw)
+        if msg.get_content_type()!='multipart/report' or str(msg.get('Message-ID','')).strip('<>') not in trusted:continue
+        if str(msg.get_param('report-type','')).lower()!='delivery-status':continue
+        originals=[];reports=[]
+        for part in msg.walk():
+            if part.get_content_type()=='message/rfc822':
+                for original in part.get_payload() if isinstance(part.get_payload(),list) else []:originals.append(str(original.get('Message-ID','')).strip('<>'))
+            elif part.get_content_type()=='text/rfc822-headers':
+                original=BytesParser(policy=email.policy.default).parsebytes(part.get_payload(decode=True) or b'');originals.append(str(original.get('Message-ID','')).strip('<>'))
+            elif part.get_content_type()=='message/delivery-status':reports.extend(part.get_payload() if isinstance(part.get_payload(),list) else [])
+        for original_mid in set(originals):
+            row=by_mid.get(original_mid)
+            if not row:continue
+            for report in reports:
+                recipient=str(report.get('Final-Recipient','')).split(';')[-1].strip().lower();action=str(report.get('Action','')).lower();status=str(report.get('Status',''))
+                if action not in ('failed','delayed') or not status.startswith(('4.','5.')) or hashlib.sha256(recipient.encode()).hexdigest()!=row['recipient_sha256']:continue
+                result.append({'delivery_id':int(row['id']),'message_id':row['message_id'],'recipient_sha256':row['recipient_sha256'],'kind':'temporary_bounce' if status.startswith('4.') else 'hard_bounce','diagnostic':'Informe del relay de correo, estado '+status[:20],'evidence_ref':'dsn:'+hashlib.sha256(raw).hexdigest(),'queue_id':'','freeze':False})
+    return result
 
 def feedback(lines, deliveries):
     by_mid = {r['message_id'].strip('<>'): r for r in deliveries}
@@ -43,6 +72,17 @@ def main():
             # Exim rotates this local trusted log; no email body is interpreted as authority.
             lines=Path('/var/spool/exim/log/mainlog').read_text(errors='replace').splitlines()
             events=feedback(lines,inventory['deliveries'])
+            mailbox=Path('/home/graphex/mail/graphexpress.com.ar/servicio/Maildir')
+            candidates=[]
+            for folder in ('new','cur'):
+                for path in (mailbox/folder).glob('*'):
+                    if path.is_file() and path.stat().st_mtime>time.time()-86400 and path.stat().st_size<2*1024*1024:candidates.append(path)
+            # Only inspect bounded recent reports in the configured service mailbox; do not mark/read/delete mail.
+            raws=[]
+            for path in sorted(candidates,key=lambda p:p.stat().st_mtime,reverse=True)[:200]:
+                with path.open('rb') as stream:headers=stream.read(8192).split(b'\n\n',1)[0].lower()
+                if b'report-type=delivery-status' in headers or b'report-type="delivery-status"' in headers:raws.append(path.read_bytes())
+            events.extend(delivery_reports(raws,lines,inventory['deliveries']))
             for e in events:
                 if e['freeze'] and QUEUE.fullmatch(e['queue_id']):
                     subprocess.run(['/opt/exim/bin/exim','-Mf',e['queue_id']],stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=15)

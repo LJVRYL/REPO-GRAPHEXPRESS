@@ -16,6 +16,8 @@ Una transacción registra el lote exacto y el evento CRM antes de enviar. La cla
 
 El worker privado reside fuera del document root y valida sus archivos con SHA-256. Correlaciona los fallos del log local de Exim con Message-ID y hash del destinatario. Suspende el contacto ante fallos permanentes o diferimientos y conserva las bajas voluntarias. Un mensaje diferido correlacionado se congela en Exim: no se borra la cola. El log no prueba lectura ni entrega al buzón. Los DSN externos que no puedan correlacionarse requieren revisión; no se interpretan instrucciones del cuerpo del correo.
 
+Los DSN MIME delivery-status del relay también se correlacionan leyendo únicamente informes recientes de la Maildir del servicio, sin marcarlos, moverlos ni eliminarlos. Exige prueba local Exim de recepción con envelope vacío desde los peers verificados del relay, Message-ID del informe, Message-ID original y Final-Recipient exactos. Otros informes quedan para revisión; no se confía en texto libre ni en un remitente declarado. La supresión del contacto no garantiza que un relay externo cancele un mensaje que ya tenía pendiente.
+
 Las respuestas recibidas por el consumidor existente se vinculan al envío si mantienen References/In-Reply-To y coinciden con el destinatario; excluye Auto-Submitted. Conserva el mensaje en su registro CRM original. Los correos sin referencia siguen en el CRM, sin atribución inventada. No se habilitan píxeles ni se identifica una visita anónima como destinatario.
 
 ## Operación y rollback

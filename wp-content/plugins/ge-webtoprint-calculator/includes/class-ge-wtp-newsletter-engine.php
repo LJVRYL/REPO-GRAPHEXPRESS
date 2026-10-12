@@ -141,7 +141,7 @@ final class GE_WTP_Newsletter_Engine {
     public static function reconcile_mta(array $events){
         global $wpdb;if(!GE_WTP_Newsletter_Review::allowed())return new WP_Error('denied','Acceso denegado.');$changed=0;
         foreach(array_slice($events,0,500) as $e){
-            if(!is_array($e)||!in_array($e['kind']??'',array('hard_bounce','temporary_bounce'),true)||!preg_match('/^exim:[a-f0-9]{64}$/D',$e['evidence_ref']??''))continue;
+            if(!is_array($e)||!in_array($e['kind']??'',array('hard_bounce','temporary_bounce'),true)||!preg_match('/^(?:exim|dsn):[a-f0-9]{64}$/D',$e['evidence_ref']??''))continue;
             $d=$wpdb->get_row($wpdb->prepare('SELECT d.*,c.email FROM '.self::table('deliveries').' d JOIN '.self::table('contacts').' c ON c.id=d.contact_id WHERE d.id=%d',absint($e['delivery_id']??0)));
             if(!$d||!hash_equals($d->message_id,(string)($e['message_id']??''))||!hash_equals(hash('sha256',strtolower($d->email)),(string)($e['recipient_sha256']??'')))continue;
             $r=GE_WTP_Newsletter_Audiences::suppress_delivery($d->id,$e['kind'],'Fallo confirmado por el servidor de correo: '.sanitize_text_field($e['diagnostic']??''),$e['evidence_ref']);

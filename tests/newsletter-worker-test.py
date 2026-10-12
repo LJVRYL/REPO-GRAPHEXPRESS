@@ -9,4 +9,11 @@ assert not m.feedback([received,'2026-10-12 12:00:01 abc123-def456-AB ** other@e
 assert not m.feedback(['2026-10-12 12:00:01 other1-other2-AB ** one@example.invalid SMTP 550'],[row])
 assert not m.feedback([received,'2026-10-12 12:00:01 abc123-def456-AB => one@example.invalid SMTP accepted'],[row])
 assert not m.feedback([received.replace(mid,'unrelated@example.invalid'),'2026-10-12 12:00:01 abc123-def456-AB ** one@example.invalid SMTP 550'],[row])
-print('passed: 6 trusted-MTA correlation checks; zero mail calls')
+dsn=('From: Mail Delivery System <mailer-daemon@dattaweb.com>\r\nMessage-ID: <report@example.invalid>\r\nContent-Type: multipart/report; report-type=delivery-status; boundary="b"\r\n\r\n--b\r\nContent-Type: text/plain\r\n\r\nDelivery failed\r\n--b\r\nContent-Type: message/delivery-status\r\n\r\nReporting-MTA: dns; smarthost.dattaweb.com\r\n\r\nFinal-Recipient: rfc822; one@example.invalid\r\nAction: failed\r\nStatus: 5.2.2\r\n\r\n--b\r\nContent-Type: message/rfc822\r\n\r\nMessage-ID: <'+mid+'>\r\nTo: one@example.invalid\r\n\r\nOriginal\r\n--b--\r\n').encode()
+arrival='2026-10-12 12:00:01 abc123-def456-AB <= <> H=smarthost [200.58.116.136] P=esmtps id=report@example.invalid'
+assert m.delivery_reports([dsn],[arrival],[row])[0]['kind']=='hard_bounce'
+assert not m.delivery_reports([dsn],[arrival.replace('200.58.116.136','203.0.113.1')],[row])
+assert not m.delivery_reports([dsn.replace(b'one@example.invalid',b'other@example.invalid')],[arrival],[row])
+assert not m.delivery_reports([dsn.replace(mid.encode(),b'unrelated@example.invalid')],[arrival],[row])
+assert not m.delivery_reports([dsn],[arrival.replace('<= <>','<= attacker@example.invalid')],[row])
+print('passed: 11 trusted-MTA and MIME-DSN correlation checks; zero mail calls')
