@@ -105,7 +105,8 @@ final class GE_WTP_Newsletter_Engine {
         $data=array('sent_count'=>$accepted,'failed_count'=>($n['unknown']??0)+($n['failed']??0)+($n['bounced']??0));
         $c=GE_WTP_Newsletter_Review::campaign($id);
         if($c&&$c->status==='queued'&&empty($n['pending'])&&empty($n['sending'])&&empty($n['unknown'])){$data['status']='sent';$data['sent_at']=current_time('mysql');}
-        $wpdb->update(self::table('campaigns'),$data,array('id'=>(int)$id));
+        if(($data['status']??'')==='sent'){$wpdb->query('START TRANSACTION');try{if(1===$wpdb->update(self::table('campaigns'),$data,array('id'=>(int)$id,'status'=>'queued')))self::event($id,'newsletter_campaign_completed',array('accepted'=>$accepted,'bounced'=>$n['bounced']??0,'suppressed'=>$n['suppressed']??0,'notes'=>'Campaña #'.(int)$id.' finalizada; '.$accepted.' mensajes aceptados por el correo. La aceptación no confirma entrega ni lectura.'));if(false===$wpdb->query('COMMIT'))throw new RuntimeException('No se pudo registrar el cierre de campaña.');}catch(Throwable $e){$wpdb->query('ROLLBACK');throw $e;}}
+        else $wpdb->update(self::table('campaigns'),$data,array('id'=>(int)$id));
     }
     public static function pause($id,$reason){global $wpdb;$changed=$wpdb->update(self::table('campaigns'),array('status'=>'paused'),array('id'=>absint($id),'status'=>'queued'));if($changed)self::event($id,'newsletter_campaign_paused',array('notes'=>sanitize_text_field($reason)));}
     public static function handle_launch(){if(!GE_WTP_Newsletter_Review::allowed())wp_die('Acceso denegado.',403);$id=absint($_POST['campaign_id']??0);check_admin_referer('ge_newsletter_engine_launch_'.$id);$r=self::queue($id);if(is_wp_error($r))wp_die(esc_html($r->get_error_message()));wp_safe_redirect(GE_WTP_Communications_Panel::url('engine'));exit;}
