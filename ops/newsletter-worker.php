@@ -10,4 +10,5 @@ if($op==='inventory'){
 }elseif($op==='reconcile'){$r=GE_WTP_Newsletter_Engine::reconcile_mta($input['events']??array());$out=array('matched'=>is_wp_error($r)?0:$r,'replies'=>GE_WTP_Newsletter_Engine::correlate_replies(),'unsubscribes'=>GE_WTP_Newsletter_Engine::record_unsubscribes(),'failed'=>is_wp_error($r));}
 elseif($op==='process'){$out=GE_WTP_Newsletter_Engine::process(1);}
 else exit(2);
+if($op==='reconcile'){$h=(array)get_option('ge_newsletter_feedback_heartbeat',array());$h['server_verified']=DB_NAME==='graphexpress_wp'&&is_readable('/var/spool/exim/log/mainlog')&&is_dir('/home/graphex/mail/graphexpress.com.ar/servicio/Maildir/new')&&is_dir('/home/graphex/mail/graphexpress.com.ar/servicio/Maildir/cur');update_option('ge_newsletter_feedback_heartbeat',$h,false);}
 echo wp_json_encode($out,JSON_UNESCAPED_UNICODE)."\n";
