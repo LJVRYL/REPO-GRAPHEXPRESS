@@ -11,6 +11,7 @@ final class GE_WTP_Newsletter {
     public static function init() {
         require_once __DIR__ . '/class-ge-wtp-newsletter-review.php';
         require_once __DIR__ . '/class-ge-wtp-newsletter-audiences.php';
+        require_once __DIR__ . '/class-ge-wtp-mail-log-view.php';
         GE_WTP_Newsletter_Review::init();
         add_action( self::CRON_HOOK, array( __CLASS__, 'process_queue' ) );
         add_action( 'admin_post_nopriv_ge_newsletter_subscribe', array( __CLASS__, 'handle_subscribe' ) );
@@ -218,7 +219,7 @@ final class GE_WTP_Newsletter {
     }
 
     private static function render_email_logs() {
-        $logs = GE_WTP_Notifications::get_logs( 200 ); ?><section class="ge-admin-panel ge-admin-tab-panel"><div class="ge-admin-panel-head"><div><span>Trazabilidad</span><h2>Correos transaccionales y campañas</h2></div></div><?php if ( ! $logs ) : ?><div class="ge-admin-empty">Todavía no hay correos registrados.</div><?php else : ?><div class="ge-admin-table-scroll"><table class="ge-admin-table"><thead><tr><th>Fecha</th><th>Destinatario</th><th>Asunto</th><th>Contexto</th><th>Resultado</th></tr></thead><tbody><?php foreach ( $logs as $log ) : ?><tr><td><?php echo esc_html( get_the_date( 'd/m/Y H:i', $log ) ); ?></td><td><?php echo esc_html( get_post_meta( $log->ID, '_ge_email_to', true ) ); ?></td><td><strong><?php echo esc_html( $log->post_title ); ?></strong></td><td><?php echo esc_html( get_post_meta( $log->ID, '_ge_email_context', true ) ); ?></td><td><span class="ge-admin-status ge-mail-<?php echo esc_attr( get_post_meta( $log->ID, '_ge_email_result', true ) ); ?>"><?php echo esc_html( array('sent'=>'Enviado al sistema de correo','failed'=>'No enviado','simulated'=>'Simulado','unknown'=>'Resultado sin confirmar')[get_post_meta( $log->ID, '_ge_email_result', true )] ?? 'Sin resultado' ); ?></span></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></section><?php
+        GE_WTP_Mail_Log_View::render();
     }
 
     public static function handle_save_campaign() {
