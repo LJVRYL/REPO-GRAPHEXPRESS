@@ -30,6 +30,9 @@ tc($p['channel']==='whatsapp_test','Test token separated from real sender');tc($
 tc($p['payload']['to']===GE_Meta_Test_Assets::SEND_RECIPIENT&&$p['payload']['messaging_product']==='whatsapp','Verified Meta test list dial form used');
 tc($p['recipient']===GE_Meta_Test_Assets::RECIPIENT,'Signed original owner identity retained');
 tc($p['message_channel']==='whatsapp','Delivery events use the original message channel, not the credential key');
+$future=$out;$future['whatsapp_test']['usable_until']=time()+3600;tc(GE_CRM_Send_Policy::plan($r,$future,'Hola',time())['channel']==='whatsapp_test','Authorized local credential window accepted');
+$expired=$out;$expired['whatsapp_test']['usable_until']=time();tr(function()use($r,$expired){GE_CRM_Send_Policy::plan($r,$expired,'Hola',time());},'Credential cut off at exact authorized expiry');
+$invalid=$out;$invalid['whatsapp_test']['usable_until']='tomorrow';tr(function()use($r,$invalid){GE_CRM_Send_Policy::plan($r,$invalid,'Hola',time());},'Malformed credential expiry fails closed');
 tr(function()use($r){GE_CRM_Send_Policy::plan($r,array('whatsapp'=>array('enabled'=>true,'asset_id'=>'1354138734939171','waba_id'=>'735912107316791','access_token'=>'synthetic-only')),'Reply',time());},'Test message cannot use real credential');
 $bad=$r;$bad['meta_event']['peer']='5491100000000';tr(function()use($bad,$out){GE_CRM_Send_Policy::plan($bad,$out,'Reply',time());},'Test replies cannot reach others');
 $bad=$out;$bad['whatsapp_test']['asset_id']='1354138734939171';tr(function()use($r,$bad){GE_CRM_Send_Policy::plan($r,$bad,'Reply',time());},'Real phone cannot replace test sender');
