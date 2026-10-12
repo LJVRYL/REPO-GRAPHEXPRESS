@@ -4,7 +4,21 @@ defined('ABSPATH') || exit;
 /** Dedicated test-only surface. Reviewer never becomes a CRM/organization member. */
 final class GE_Meta_Review {
     const CONFIG='/home/graphexpress/meta-review/config.json';
-    public static function init() { add_action('template_redirect',array(__CLASS__,'route'),0); }
+    public static function init() {
+        add_action('init',array(__CLASS__,'isolate'),0);
+        add_filter('login_redirect',function($redirect,$requested,$user) {
+            return $user instanceof WP_User && GE_Meta_Review_Policy::restricted_actor(self::config(),(int)$user->ID) ? home_url('/meta-review/') : $redirect;
+        },PHP_INT_MAX,3);
+        add_action('template_redirect',array(__CLASS__,'route'),0);
+    }
+    public static function isolate() {
+        if (PHP_SAPI==='cli' || !GE_Meta_Review_Policy::restricted_actor(self::config(),(int)get_current_user_id())) return;
+        $action=is_string($_GET['action'] ?? null) ? $_GET['action'] : '';
+        if (GE_Meta_Review_Policy::allowed_path($_SERVER['REQUEST_URI'] ?? '',$action)) return;
+        nocache_headers();header('X-Robots-Tag: noindex, nofollow');
+        if (!in_array($_SERVER['REQUEST_METHOD'] ?? '',array('GET','HEAD'),true)) { status_header(403);exit('This account is restricted to Meta review.'); }
+        wp_safe_redirect(home_url('/meta-review/'));exit;
+    }
     public static function config() {
         $p=self::CONFIG;
         if (PHP_SAPI==='cli') {
