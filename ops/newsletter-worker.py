@@ -66,6 +66,7 @@ def main():
         if proc.returncode:raise RuntimeError('Native worker failed; no replay of a claimed attempt')
         output=proc.stdout.decode('utf-8','replace');return json.loads(output[output.index('{'):])
     while True:
+        cycle_started=time.monotonic()
         try:
             inventory=call({'operation':'inventory'})
             if time.time()>inventory['policy_expires_at']:break
@@ -92,6 +93,6 @@ def main():
         except Exception:
             print(json.dumps({'at':int(time.time()),'state':'review_required'}),flush=True)
         if args.once:break
-        time.sleep(10)
+        time.sleep(max(1,10-(time.monotonic()-cycle_started)))
 
 if __name__=='__main__':main()
