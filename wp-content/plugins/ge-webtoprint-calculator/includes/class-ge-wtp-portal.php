@@ -55,7 +55,7 @@ final class GE_WTP_Portal {
 
     public static function is_markcom_user( $user = null ) {
         $user = $user instanceof WP_User ? $user : wp_get_current_user();
-        return $user && $user->exists() && ! self::is_staff_user( $user ) && user_can( $user, 'ge_access_markcom_portal' );
+        return $user && $user->exists() && ! self::is_staff_user( $user ) && self::customer_in_organization($user) && user_can($user,'ge_access_markcom_portal') && (in_array('ge_markcom_client',(array)$user->roles,true) || !empty($user->caps['ge_access_markcom_portal']));
     }
 
     public static function is_customer_user( $user = null ) {
@@ -63,7 +63,24 @@ final class GE_WTP_Portal {
         if ( ! $user || ! $user->exists() || self::is_staff_user( $user ) ) {
             return false;
         }
-        return self::is_markcom_user( $user ) || (bool) array_intersect( array( 'customer', 'subscriber' ), (array) $user->roles );
+        return self::customer_in_organization($user) && (self::is_markcom_user($user) || in_array('customer',(array)$user->roles,true) || (in_array('subscriber',(array)$user->roles,true) && in_array(get_user_meta($user->ID,'_ge_registration_source',true),array('portal','landing-v1'),true)));
+    }
+
+    private static function customer_in_organization($user) {
+        $org=get_user_meta($user->ID,'_ge_organization_id',true);$primary=class_exists('GE_Organization')?GE_Organization::PRIMARY:'graph-express';
+        return $org===$primary || (!$org && $primary==='graph-express');
+    }
+
+    /** Customer identity is canonical; an email alone is never an ownership grant. */
+    public static function customer_owns_order($order,$customer_id) {
+        $customer_id=absint($customer_id);$user=$customer_id?get_userdata($customer_id):false;
+        if(!$order || !$user || !self::is_customer_user($user))return false;
+        $primary=class_exists('GE_Organization')?GE_Organization::PRIMARY:'graph-express';$org=$order->get_meta('_ge_organization_id',true);
+        if($org!==$primary && ($org || $primary!=='graph-express'))return false;
+        $owner=(int)$order->get_customer_id();
+        if($owner>0)return $owner===$customer_id;
+        // Reserved for an explicit, audited staff association; never populated from login/email.
+        return (int)$order->get_meta('_ge_verified_guest_customer_id',true)===$customer_id;
     }
 
     public static function can_access() {
@@ -83,7 +100,7 @@ final class GE_WTP_Portal {
 
     public static function portal_customer_id() {
         $preview_id = self::preview_customer_id();
-        return $preview_id ?: get_current_user_id();
+        return $preview_id ?: (self::is_customer_user()?get_current_user_id():0);
     }
 
     public static function portal_user() {
@@ -105,8 +122,7 @@ final class GE_WTP_Portal {
     private static function portal_order_belongs_to_customer( $order ) {
         if ( ! $order || 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) ) { return false; }
         $user = self::portal_user();
-        return (int) $order->get_customer_id() === (int) $user->ID
-            || ( 0 === (int) $order->get_customer_id() && $order->get_billing_email() && 0 === strcasecmp( $order->get_billing_email(), $user->user_email ) );
+        return self::customer_owns_order($order,(int)$user->ID);
     }
 
     public static function preview_url( $customer_id, $section = 'inicio', $extra = array() ) {
@@ -122,7 +138,8 @@ final class GE_WTP_Portal {
 
     public static function destination_for_user( $user ) {
         if ($user instanceof WP_User) { $quick = GE_WTP_Quick_Quote::destination($user); if ($quick) return $quick; }
-        return $user instanceof WP_User && self::is_staff_user( $user ) ? self::staff_url() : self::portal_url();
+        if($user instanceof WP_User && self::is_staff_user($user))return self::staff_url();
+        return $user instanceof WP_User && self::is_customer_user($user)?self::portal_url():home_url('/');
     }
 
     public static function login_redirect( $redirect_to, $requested_redirect_to, $user ) {

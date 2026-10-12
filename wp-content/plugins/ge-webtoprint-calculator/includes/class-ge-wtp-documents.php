@@ -330,19 +330,11 @@ final class GE_WTP_Documents {
     }
 
     public static function can_access_order( $order ) {
-        if ( ! $order || ! is_user_logged_in() ) {
-            return false;
-        }
-
-        if ( current_user_can( 'manage_woocommerce' ) || current_user_can( 'ge_manage_operations' ) || (int) $order->get_customer_id() === get_current_user_id() ) {
-            return true;
-        }
-
-        $user = wp_get_current_user();
-        return 0 === (int) $order->get_customer_id()
-            && $user->exists()
-            && $order->get_billing_email()
-            && 0 === strcasecmp( $order->get_billing_email(), $user->user_email );
+        if(!$order || !is_user_logged_in())return false;
+        $primary=class_exists('GE_Organization')?GE_Organization::PRIMARY:'graph-express';$org=$order->get_meta('_ge_organization_id',true);
+        if($org!==$primary && ($org || $primary!=='graph-express'))return false;
+        if(current_user_can('manage_woocommerce')||current_user_can('ge_manage_operations'))return !class_exists('GE_Organization_Runtime') || GE_Organization_Runtime::allowed('orders',false,get_current_user_id()) || GE_Organization_Runtime::allowed('production',false,get_current_user_id());
+        return GE_WTP_Portal::customer_owns_order($order,get_current_user_id());
     }
 
     public static function download_url( $order_id, $document_id, $inline = false ) {
