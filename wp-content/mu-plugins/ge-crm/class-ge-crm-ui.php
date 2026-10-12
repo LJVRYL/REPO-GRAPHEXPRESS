@@ -66,7 +66,9 @@ final class GE_CRM_UI {
         GE_CRM::require_access();$view=sanitize_key($_GET['view']??'pipeline');$q=sanitize_text_field(wp_unslash($_GET['q']??''));
         echo '<section class="ge-crm"><header class="ge-crm-heading"><div><span>RELACIONES COMERCIALES</span><h1>CRM</h1><p>Del primer contacto al próximo trabajo.</p></div><a class="ge-crm-primary" href="'.esc_url(self::url('leads',array('new'=>'lead'))).'">Nuevo lead</a></header>';
         if(isset($_GET['saved']))echo '<p role="status" class="ge-crm-notice">Cambios guardados.</p>';
-        echo '<nav class="ge-crm-tabs" aria-label="Vistas CRM">';foreach(array('dashboard'=>'Resumen','pipeline'=>'Pipeline','leads'=>'Leads','tasks'=>'Tareas','activity'=>'Actividad','inbox'=>'Conversaciones','origin'=>'Origen','settings'=>'Ajustes') as $k=>$label)echo '<a href="'.esc_url(self::url($k)).'"'.($k===$view?' aria-current="page"':'').'>'.esc_html($label).'</a>';echo '</nav>';
+        $tabs=array('dashboard'=>'Resumen','pipeline'=>'Pipeline','leads'=>'Leads','tasks'=>'Tareas','activity'=>'Actividad','inbox'=>'Conversaciones','origin'=>'Origen','settings'=>'Ajustes');
+        if (class_exists('GE_CRM_Meta_Assets') && in_array(GE_CRM::role(get_current_user_id()),array('owner','admin'),true)) $tabs['meta_assets']='Activos Meta';
+        echo '<nav class="ge-crm-tabs" aria-label="Vistas CRM">';foreach($tabs as $k=>$label)echo '<a href="'.esc_url(self::url($k)).'"'.($k===$view?' aria-current="page"':'').'>'.esc_html($label).'</a>';echo '</nav>';
         if(isset($_GET['record_id'])){$r=GE_CRM::get(absint($_GET['record_id']));self::detail($r);echo '</section>';return;}
         if(isset($_GET['new']) && in_array($_GET['new'],array('lead','opportunity','task','thread'),true)){self::editor($_GET['new']);echo '</section>';return;}
         if($view==='pipeline')self::pipeline($q);
@@ -75,6 +77,7 @@ final class GE_CRM_UI {
         elseif($view==='inbox')self::inbox();
         elseif($view==='origin')GE_CRM_Origin::render();
         elseif($view==='settings')self::settings();
+        elseif($view==='meta_assets')do_action('ge_crm_meta_assets');
         else self::dashboard();echo '</section>';
     }
     public static function list_records($rows) {

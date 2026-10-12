@@ -94,7 +94,9 @@ final class GE_Meta_Review {
         echo '<main class="ge-crm ge-meta-review"><header class="ge-crm-heading"><div>'.($logo?'<img class="ge-meta-review-logo" src="'.esc_url($logo).'" alt="Graphex" width="64" height="64">':'').'<span>GRAPHEX · META REVIEW</span><h1>Test conversations</h1><p>Messages received through Meta and manual replies from Graphex CRM.</p></div><a href="'.esc_url(wp_logout_url(home_url('/meta-review/'))).'">Sign out</a></header><nav class="ge-crm-tabs" aria-label="Test channels">';
         $labels=array('instagram'=>'Instagram @graphex.ar','messenger'=>'Messenger · Graphex','whatsapp'=>'WhatsApp · official Meta test');
         foreach ($cfg['bindings'] as $record=>$binding) echo '<a '.((int)$record===$id?'aria-current="page"':'').' href="'.esc_url(add_query_arg('record_id',(int)$record,home_url('/meta-review/'))).'">'.esc_html($labels[$binding['channel']]).'</a>';
-        echo '</nav><section class="ge-crm-panel ge-crm-chat"><h2>'.esc_html($labels[$data['channel']]).'</h2><p>This access covers the owner’s test conversations only. Customer records and administration are unavailable.</p>';
+        echo '</nav>';
+        if (class_exists('GE_CRM_Meta_Assets')) { echo '<details class="ge-crm-panel"><summary>Verified Meta assets · read-only</summary>';GE_CRM_Meta_Assets::render_summary(true);echo '</details>'; }
+        echo '<section class="ge-crm-panel ge-crm-chat"><h2>'.esc_html($labels[$data['channel']]).'</h2><p>This access covers the owner’s test conversations only. Customer records and administration are unavailable.</p>';
         if ($error) echo '<p role="alert">'.esc_html($error).'</p>';
         if (is_array($feedback)) echo '<p role="status">'.esc_html($feedback['state']==='accepted'?'Meta accepted the reply; delivery confirmation follows.':($feedback['error'] ?: self::state_label($feedback['state']))).'</p>';
         echo '<ol class="ge-crm-chat-messages" aria-label="Conversation messages">';
