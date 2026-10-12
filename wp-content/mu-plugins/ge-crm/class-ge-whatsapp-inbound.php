@@ -1,5 +1,6 @@
 <?php
 defined('ABSPATH') || exit;
+require_once __DIR__.'/class-ge-meta-test-assets.php';
 
 /** Official signed Meta input only. This module deliberately has no send API. */
 final class GE_WhatsApp_Inbound {
@@ -25,10 +26,11 @@ final class GE_WhatsApp_Inbound {
     }
     public static function ready($cfg) {
         foreach (array('waba_id','phone_number_id','number','app_secret','verify_token','storage_key') as $k) if (!is_string($cfg[$k] ?? null)) return false;
+        $test=GE_Meta_Test_Assets::inbound($cfg);
         return !empty($cfg['enabled']) && ($cfg['organization_id'] ?? '') === 'graph-express'
-            && ($cfg['waba_id'] ?? '') === '735912107316791'
+            && ($test || (in_array($cfg['mode'] ?? '',array('','production'),true) && ($cfg['waba_id'] ?? '') === '735912107316791'))
             && preg_match('/^[0-9]{5,30}$/D', $cfg['phone_number_id'] ?? '')
-            && ($cfg['number'] ?? '') === '5491151393899'
+            && ($test || ($cfg['number'] ?? '') === '5491151393899')
             && strlen($cfg['app_secret'] ?? '') >= 32 && strlen($cfg['verify_token'] ?? '') >= 32
             && strlen(base64_decode($cfg['storage_key'] ?? '', true) ?: '') === 32;
     }
@@ -143,14 +145,17 @@ final class GE_WhatsApp_Inbound {
                 if (!is_array($change)) throw new InvalidArgumentException('Invalid change');
                 $value = $change['value'] ?? null; $field = $change['field'] ?? '';
                 if (!is_array($value)) throw new InvalidArgumentException('Invalid change');
+                if (GE_Meta_Test_Assets::inbound($cfg) && $field!=='messages') throw new InvalidArgumentException('Unsupported test field');
                 foreach (array('messages','statuses','message_echoes','history','state_sync') as $list) if (isset($value[$list]) && !is_array($value[$list])) throw new InvalidArgumentException('Invalid event list');
                 $phone = $value['metadata']['phone_number_id'] ?? null;
                 if ($phone !== null && (string)$phone !== $cfg['phone_number_id']) throw new InvalidArgumentException('Foreign phone');
                 if (in_array($field, array('messages','smb_message_echoes','history','smb_app_state_sync'), true) && $phone === null) throw new InvalidArgumentException('Missing phone');
                 $base = array('field' => $field, 'account_ref' => 'wa:' . $cfg['waba_id'] . ':' . $cfg['phone_number_id'], 'waba_id' => $cfg['waba_id'], 'phone_number_id' => $cfg['phone_number_id']);
+                if (GE_Meta_Test_Assets::inbound($cfg)) $base['test_mode']=true;
                 if ($field === 'messages') {
                     foreach (($value['messages'] ?? array()) as $message) $out[] = self::message($message, $base, false, false, $cfg);
                     foreach (($value['statuses'] ?? array()) as $status) {
+                        if (GE_Meta_Test_Assets::inbound($cfg) && ($status['recipient_id'] ?? '')!==GE_Meta_Test_Assets::RECIPIENT) throw new InvalidArgumentException('Foreign test recipient');
                         $out[] = array_merge($base, array('kind' => 'status', 'message_id' => self::id($status['id'] ?? ''), 'timestamp' => self::stamp($status['timestamp'] ?? ''), 'status' => self::id($status['status'] ?? ''), 'errors' => array_map(function($e) { return (int)($e['code'] ?? 0); }, $status['errors'] ?? array())));
                     }
                     if (empty($value['messages']) && empty($value['statuses'])) $out[] = array_merge($base, array('kind'=>'review', 'code'=>'unsupported_messages', 'data'=>$value));
@@ -178,6 +183,7 @@ final class GE_WhatsApp_Inbound {
         $id = self::id($m['id'] ?? ''); $type = self::id($m['type'] ?? 'unknown');
         $peer = $outbound ? ($m['to'] ?? $thread) : ($m['from'] ?? '');
         if (!preg_match('/^[0-9]{5,20}$/D', (string)$peer)) throw new InvalidArgumentException('Invalid peer');
+        if (GE_Meta_Test_Assets::inbound($cfg) && (string)$peer!==GE_Meta_Test_Assets::RECIPIENT) throw new InvalidArgumentException('Foreign test sender');
         if ($outbound && preg_replace('/\D/', '', $m['from'] ?? '') !== $cfg['number']) throw new InvalidArgumentException('Foreign outbound sender');
         $kind = in_array($type, array('edit','revoke'), true) ? $type : ($outbound ? 'echo' : 'message');
         $body = $type === 'text' ? (string)($m['text']['body'] ?? '') : '[' . $type . '] ' . (string)($m[$type]['caption'] ?? '');
@@ -277,6 +283,7 @@ final class GE_WhatsApp_Inbound {
         $cfg = self::config(); $channels = get_option('ge_crm_attention_channels',array()); $wa = $channels['whatsapp'] ?? array(); $h = $wa['consumer_health'] ?? array();
         echo '<section class="ge-crm-panel"><h2>Recepción oficial de WhatsApp, Instagram y Messenger</h2>';
         echo '<p>' . esc_html(self::ready($cfg) ? 'Receptor oficial configurado; verificar mensajes reales en esta bandeja.' : 'Receptor preparado en el servidor. Falta habilitar Meta y conectar el número existente mediante coexistencia.') . '</p>';
+        if (self::ready($cfg) && GE_Meta_Test_Assets::inbound($cfg)) echo '<p><strong>WhatsApp de prueba de Meta: sólo se reciben mensajes del teléfono autorizado del titular. El número comercial todavía no está conectado a la API.</strong></p>';
         if (!empty($wa['account_disconnected'])) echo '<p><strong>Meta informó una desconexión. Requiere revisión.</strong></p>';
         if ($h) echo '<p>Control del servidor: ' . esc_html($h['checked_at']) . ' · Pendientes: ' . (int)$h['pending_events'] . ' · Eventos para revisar: ' . (int)$h['review_events'] . '.</p>';
         foreach (array('instagram','messenger') as $channel) echo '<p><strong>' . esc_html(ucfirst($channel)) . ':</strong> ' . esc_html(!empty($channels[$channel]['transport_verified_at']) ? 'Evento entrante recibido en CRM: ' . $channels[$channel]['transport_verified_at'] : 'Sin recepción real verificada. Falta habilitación y suscripción de la aplicación Meta.') . '</p>';
