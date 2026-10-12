@@ -7,7 +7,7 @@ if($op==='inventory'){
     $rows=$wpdb->get_results('SELECT d.id,d.campaign_id,d.message_id,c.email FROM '.$wpdb->prefix.'ge_newsletter_deliveries d JOIN '.$wpdb->prefix."ge_newsletter_contacts c ON c.id=d.contact_id WHERE d.message_id<>'' AND d.status IN ('sent','sending','unknown')",ARRAY_A);
     foreach($rows as &$r){$r['recipient_sha256']=hash('sha256',strtolower($r['email']));unset($r['email']);}unset($r);
     $out=array('deliveries'=>$rows,'policy_expires_at'=>get_option(GE_WTP_Newsletter_Engine::POLICY,array())['expires_at']??0);
-}elseif($op==='reconcile'){$r=GE_WTP_Newsletter_Engine::reconcile_mta($input['events']??array());$out=array('matched'=>is_wp_error($r)?0:$r,'replies'=>GE_WTP_Newsletter_Engine::correlate_replies(),'failed'=>is_wp_error($r));}
+}elseif($op==='reconcile'){$r=GE_WTP_Newsletter_Engine::reconcile_mta($input['events']??array());$out=array('matched'=>is_wp_error($r)?0:$r,'replies'=>GE_WTP_Newsletter_Engine::correlate_replies(),'unsubscribes'=>GE_WTP_Newsletter_Engine::record_unsubscribes(),'failed'=>is_wp_error($r));}
 elseif($op==='process'){$out=GE_WTP_Newsletter_Engine::process(1);}
 else exit(2);
 echo wp_json_encode($out,JSON_UNESCAPED_UNICODE)."\n";

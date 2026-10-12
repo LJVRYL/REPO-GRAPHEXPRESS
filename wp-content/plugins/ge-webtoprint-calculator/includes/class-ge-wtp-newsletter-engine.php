@@ -173,4 +173,16 @@ final class GE_WTP_Newsletter_Engine {
             }
         }update_option('ge_newsletter_reply_cursor',$cursor,false);return $matched;
     }
+    public static function record_unsubscribes(){
+        global $wpdb;if(!GE_WTP_Newsletter_Review::allowed())return 0;$recorded=0;
+        $cursor=(int)get_option('ge_newsletter_unsubscribe_cursor',0);$rows=$wpdb->get_results($wpdb->prepare('SELECT d.id,d.campaign_id,d.contact_id,c.unsubscribed_at FROM '.self::table('deliveries').' d JOIN '.self::table('contacts')." c ON c.id=d.contact_id WHERE c.status='unsubscribed' AND c.unsubscribed_at IS NOT NULL AND d.id>%d ORDER BY d.id LIMIT 500",$cursor));
+        foreach($rows as $row){$lock='ge_newsletter_review_'.(int)$row->campaign_id;if('1'!==(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,0)',$lock)))continue;
+            try{$m=GE_WTP_Newsletter_Review::metadata($row->campaign_id);if(empty($m['launch'])||($m['unsubscribe_receipts'][$row->contact_id]??'')===$row->unsubscribed_at)continue;
+                $wpdb->query('START TRANSACTION');$m['unsubscribe_receipts'][$row->contact_id]=$row->unsubscribed_at;if(!update_option(GE_WTP_Newsletter_Review::META.(int)$row->campaign_id,$m,false))throw new RuntimeException('No se pudo registrar la baja.');
+                self::event($row->campaign_id,'newsletter_contact_unsubscribed',array('contact_id'=>(int)$row->contact_id,'delivery_id'=>(int)$row->id,'source'=>'native_contact_preferences','unsubscribed_at'=>$row->unsubscribed_at,'recorded_by_service'=>true,'notes'=>'Baja voluntaria registrada en la base de contactos. La dirección queda excluida de próximos envíos.'));
+                if(false===$wpdb->query('COMMIT'))throw new RuntimeException('No se pudo confirmar la baja.');$recorded++;
+            }catch(Throwable $e){$wpdb->query('ROLLBACK');wp_cache_delete(GE_WTP_Newsletter_Review::META.(int)$row->campaign_id,'options');throw $e;}
+            finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$lock));}
+        }update_option('ge_newsletter_unsubscribe_cursor',count($rows)===500?(int)end($rows)->id:0,false);return $recorded;
+    }
 }
