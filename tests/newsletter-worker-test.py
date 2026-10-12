@@ -16,4 +16,5 @@ assert not m.delivery_reports([dsn],[arrival.replace('200.58.116.136','203.0.113
 assert not m.delivery_reports([dsn.replace(b'one@example.invalid',b'other@example.invalid')],[arrival],[row])
 assert not m.delivery_reports([dsn.replace(mid.encode(),b'unrelated@example.invalid')],[arrival],[row])
 assert not m.delivery_reports([dsn],[arrival.replace('<= <>','<= attacker@example.invalid')],[row])
-print('passed: 11 trusted-MTA and MIME-DSN correlation checks; zero mail calls')
+for peer in ('200.58.114.24','200.58.124.17'):assert m.delivery_reports([dsn],[arrival.replace('200.58.116.136',peer)],[row])
+print('passed: 13 trusted-MTA and MIME-DSN correlation checks; zero mail calls')

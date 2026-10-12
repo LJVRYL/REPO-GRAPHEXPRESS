@@ -5,7 +5,7 @@ from pathlib import Path
 
 MID = re.compile(r'\bid=<?(ge-nl-[a-f0-9]{64}@graphex\.ar)>?')
 QUEUE = re.compile(r'^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{2,6}$')
-TRUSTED_PEERS={'200.58.125.43','200.58.116.136','200.58.116.111'}
+TRUSTED_PEERS={'200.58.125.43','200.58.116.136','200.58.116.111','200.58.114.24','200.58.124.17'}
 
 def delivery_reports(raw_messages, lines, deliveries):
     by_mid={r['message_id'].strip('<>'):r for r in deliveries};trusted=set()
