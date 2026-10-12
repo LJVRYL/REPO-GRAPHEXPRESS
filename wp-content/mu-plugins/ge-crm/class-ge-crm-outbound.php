@@ -135,7 +135,7 @@ final class GE_CRM_Outbound {
                 $settings=GE_WTP_Notification_Center::settings();
                 if (strtolower($settings['sender_email'] ?? '')!==strtolower($plan['asset_id'])) throw new RuntimeException('El remitente configurado no coincide con el correo recibido.',422);
             }
-            $data=array('request_id'=>$key,'fingerprint'=>$hash,'conversation_key'=>self::conversation($r),'channel'=>$plan['channel'],'account_ref'=>$plan['account_ref'],'recipient'=>$plan['recipient'],'text'=>$text,'state'=>'sending','provider_id'=>'','error'=>'','updated_at'=>gmdate('c'));
+            $data=array('request_id'=>$key,'fingerprint'=>$hash,'conversation_key'=>self::conversation($r),'channel'=>$plan['message_channel'] ?? $plan['channel'],'account_ref'=>$plan['account_ref'],'recipient'=>$plan['recipient'],'text'=>$text,'state'=>'sending','provider_id'=>'','error'=>'','updated_at'=>gmdate('c'));
             GE_CRM::event($id,$r['customer_id'],self::TYPE,$data); $eid=(int)$wpdb->insert_id;
             return array('cached'=>false,'event_id'=>$eid,'data'=>$data,'plan'=>$plan);
         });

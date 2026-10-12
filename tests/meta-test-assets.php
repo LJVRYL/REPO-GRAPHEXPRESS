@@ -27,7 +27,9 @@ $r=array('kind'=>'thread','organization_id'=>'graph-express','status'=>'needs_re
 $out=array('whatsapp_test'=>array('enabled'=>true,'mode'=>'meta-test','waba_id'=>GE_Meta_Test_Assets::WABA,'asset_id'=>GE_Meta_Test_Assets::PHONE,'access_token'=>'synthetic-only'));
 $p=GE_CRM_Send_Policy::plan($r,$out,'Synthetic reply',time());
 tc($p['channel']==='whatsapp_test','Test token separated from real sender');tc($p['url']==='https://graph.facebook.com/v26.0/'.GE_Meta_Test_Assets::PHONE.'/messages','Only official test sender used');
-tc($p['payload']['to']===GE_Meta_Test_Assets::RECIPIENT&&$p['payload']['messaging_product']==='whatsapp','Original owner recipient preserved');
+tc($p['payload']['to']===GE_Meta_Test_Assets::SEND_RECIPIENT&&$p['payload']['messaging_product']==='whatsapp','Verified Meta test list dial form used');
+tc($p['recipient']===GE_Meta_Test_Assets::RECIPIENT,'Signed original owner identity retained');
+tc($p['message_channel']==='whatsapp','Delivery events use the original message channel, not the credential key');
 tr(function()use($r){GE_CRM_Send_Policy::plan($r,array('whatsapp'=>array('enabled'=>true,'asset_id'=>'1354138734939171','waba_id'=>'735912107316791','access_token'=>'synthetic-only')),'Reply',time());},'Test message cannot use real credential');
 $bad=$r;$bad['meta_event']['peer']='5491100000000';tr(function()use($bad,$out){GE_CRM_Send_Policy::plan($bad,$out,'Reply',time());},'Test replies cannot reach others');
 $bad=$out;$bad['whatsapp_test']['asset_id']='1354138734939171';tr(function()use($r,$bad){GE_CRM_Send_Policy::plan($r,$bad,'Reply',time());},'Real phone cannot replace test sender');
