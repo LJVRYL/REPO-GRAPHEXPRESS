@@ -5,6 +5,7 @@ if(!defined('ABSPATH'))exit;
 final class GE_WTP_Newsletter_Engine {
     const POLICY='ge_newsletter_engine_policy_v1';
     const LOCK='ge_newsletter_dispatch_v1';
+    public static function lock_name(){global $wpdb;return DB_NAME==='graphexpress_wp'&&GE_Organization::PRIMARY==='graph-express'?self::LOCK:self::LOCK.'_'.substr(hash('sha256',DB_NAME.'|'.$wpdb->prefix.'|'.GE_Organization::PRIMARY),0,16);}
     public static function init(){add_action('admin_post_ge_newsletter_engine_launch',array(__CLASS__,'handle_launch'));add_action('admin_post_ge_newsletter_engine_pause',array(__CLASS__,'handle_pause'));add_action('admin_post_ge_newsletter_engine_resume',array(__CLASS__,'handle_resume'));add_action('admin_post_ge_newsletter_engine_notice',array(__CLASS__,'handle_notice'));add_action('admin_post_ge_newsletter_engine_test',array(__CLASS__,'handle_test'));}
     private static function table($s){global $wpdb;return $wpdb->prefix.'ge_newsletter_'.$s;}
     public static function enabled(){
@@ -57,7 +58,7 @@ final class GE_WTP_Newsletter_Engine {
     public static function process($limit=5){
         global $wpdb;
         if(!self::enabled()||!self::ensure_schema())return array('blocked'=>true);
-        if('1'!==(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,0)',self::LOCK)))return array('busy'=>true);
+        if('1'!==(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,0)',self::lock_name())))return array('busy'=>true);
         $result=array('attempted'=>0,'accepted'=>0,'suppressed'=>0,'uncertain'=>0,'rate_limited'=>false);
         try{
             // A persisted sending row from a terminated worker cannot be safely resent.
@@ -97,7 +98,7 @@ final class GE_WTP_Newsletter_Engine {
             update_option('ge_newsletter_engine_heartbeat',array('at'=>gmdate('c'),'result'=>$result),false);
             if((int)$wpdb->get_var('SELECT COUNT(*) FROM '.self::table('deliveries').' d JOIN '.self::table('campaigns')." c ON c.id=d.campaign_id WHERE d.status='pending' AND c.status='queued'")&&!wp_next_scheduled(GE_WTP_Newsletter::CRON_HOOK))wp_schedule_single_event(time()+max(10,$spacing),GE_WTP_Newsletter::CRON_HOOK);
             return $result;
-        }finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',self::LOCK));}
+        }finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',self::lock_name()));}
     }
     public static function refresh($id){global $wpdb;$rows=$wpdb->get_results($wpdb->prepare('SELECT status,COUNT(*) total FROM '.self::table('deliveries').' WHERE campaign_id=%d GROUP BY status',$id));$n=array();foreach($rows as $r)$n[$r->status]=(int)$r->total;
         $accepted=(int)$wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM '.self::table('deliveries').' WHERE campaign_id=%d AND sent_at IS NOT NULL',$id));
@@ -108,15 +109,15 @@ final class GE_WTP_Newsletter_Engine {
     }
     public static function pause($id,$reason){global $wpdb;$changed=$wpdb->update(self::table('campaigns'),array('status'=>'paused'),array('id'=>absint($id),'status'=>'queued'));if($changed)self::event($id,'newsletter_campaign_paused',array('notes'=>sanitize_text_field($reason)));}
     public static function handle_launch(){if(!GE_WTP_Newsletter_Review::allowed())wp_die('Acceso denegado.',403);$id=absint($_POST['campaign_id']??0);check_admin_referer('ge_newsletter_engine_launch_'.$id);$r=self::queue($id);if(is_wp_error($r))wp_die(esc_html($r->get_error_message()));wp_safe_redirect(GE_WTP_Communications_Panel::url('engine'));exit;}
-    public static function handle_pause(){global $wpdb;if(!GE_WTP_Newsletter_Review::allowed())wp_die('Acceso denegado.',403);$id=absint($_POST['campaign_id']??0);check_admin_referer('ge_newsletter_engine_pause_'.$id);if('1'!==(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,5)',self::LOCK)))wp_die('Un envío está terminando. Volvé a intentar la pausa.');try{self::pause($id,'Pausada por el operador.');}finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',self::LOCK));}wp_safe_redirect(GE_WTP_Communications_Panel::url('engine'));exit;}
+    public static function handle_pause(){global $wpdb;if(!GE_WTP_Newsletter_Review::allowed())wp_die('Acceso denegado.',403);$id=absint($_POST['campaign_id']??0);check_admin_referer('ge_newsletter_engine_pause_'.$id);if('1'!==(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,5)',self::lock_name())))wp_die('Un envío está terminando. Volvé a intentar la pausa.');try{self::pause($id,'Pausada por el operador.');}finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',self::lock_name()));}wp_safe_redirect(GE_WTP_Communications_Panel::url('engine'));exit;}
     public static function resume($id){
         global $wpdb;if(!GE_WTP_Newsletter_Review::allowed()||!self::enabled())return new WP_Error('denied','Falta una autorización vigente y recepción conectada.');$id=absint($id);$p=get_option(self::POLICY,array());
         if(!in_array($id,array_map('intval',$p['authorized_campaign_ids']??array()),true))return new WP_Error('authority','La campaña no está autorizada.');
-        if('1'!==(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,5)',self::LOCK)))return new WP_Error('busy','El motor está procesando un envío.');
+        if('1'!==(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,5)',self::lock_name())))return new WP_Error('busy','El motor está procesando un envío.');
         try{$c=GE_WTP_Newsletter_Review::campaign($id);$m=GE_WTP_Newsletter_Review::metadata($id);if(!$c||$c->status!=='paused'||empty($m['launch']['content_sha256'])||!hash_equals($m['launch']['content_sha256'],GE_WTP_Newsletter_Review::content_fingerprint($c,$m)))return new WP_Error('content','Revisá el estado y el contenido de esta campaña.');
             if((int)$wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM '.self::table('deliveries')." WHERE campaign_id=%d AND status IN ('unknown','sending')",$id)))return new WP_Error('uncertain','Hay resultados sin confirmar. Conciliá esos intentos antes de reanudar.');
             $wpdb->query('START TRANSACTION');try{if(1!==$wpdb->update(self::table('campaigns'),array('status'=>'queued'),array('id'=>$id,'status'=>'paused')))throw new RuntimeException('La campaña cambió de estado.');self::event($id,'newsletter_campaign_resumed',array('notes'=>'Campaña reanudada por el operador; no se repiten intentos previos.'));if(false===$wpdb->query('COMMIT'))throw new RuntimeException('No se pudo confirmar la reanudación.');return true;}catch(Throwable $e){$wpdb->query('ROLLBACK');return new WP_Error('save','No se pudo registrar la reanudación.');}
-        }finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',self::LOCK));}
+        }finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',self::lock_name()));}
     }
     public static function handle_resume(){if(!GE_WTP_Newsletter_Review::allowed())wp_die('Acceso denegado.',403);$id=absint($_POST['campaign_id']??0);check_admin_referer('ge_newsletter_engine_resume_'.$id);$r=self::resume($id);if(is_wp_error($r))wp_die(esc_html($r->get_error_message()));wp_safe_redirect(GE_WTP_Communications_Panel::url('engine'));exit;}
     public static function notice($id,$notice,$source){
