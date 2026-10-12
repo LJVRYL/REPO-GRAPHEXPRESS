@@ -22,6 +22,7 @@ final class GE_CRM_Send_Policy {
         $configChannel=$test ? 'whatsapp_test' : $channel;
         $c=$config[$configChannel] ?? array();
         if ($test && !GE_Meta_Test_Assets::outbound($c)) throw new RuntimeException('Falta conectar el número oficial de prueba de Meta.',409);
+        if ($test && isset($c['usable_until']) && (!is_int($c['usable_until']) || $now>=$c['usable_until'])) throw new RuntimeException('Venció el plazo autorizado de la conexión de prueba. Renovala antes de responder.',409);
         if (empty($c['enabled']) || empty($c['access_token']) || empty($c['asset_id'])) throw new RuntimeException('Falta conectar el envío de '.ucfirst($channel).'.',409);
         $asset=(string)$c['asset_id']; $peer=(string)($e['peer'] ?? $e['from'] ?? '');
         if (!preg_match('/^[0-9]{5,30}$/D',$asset) || !preg_match('/^[0-9]{5,40}$/D',$peer)) throw new RuntimeException('Falta la identidad verificada del canal.',422);
