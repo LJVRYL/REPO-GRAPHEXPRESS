@@ -143,8 +143,8 @@ final class GE_CRM {
         $ids=array();if($email){$u=get_user_by('email',$email);if($u)$ids[]=$u->ID;}
         // Normalize legacy metadata in PHP; no fuzzy/last-digits auto-match.
         if($phone || $cuit) {
-            $keys=array('billing_phone','billing_cuit','_ge_customer_cuit','billing_tax_id');
-            $rows=$wpdb->get_results("SELECT user_id,meta_key,meta_value FROM $wpdb->usermeta WHERE meta_key IN ('billing_phone','billing_cuit','_ge_customer_cuit','billing_tax_id')",ARRAY_A);
+            $keys=array('billing_phone','billing_cuit','_ge_customer_cuit','billing_tax_id','_ge_cuit');
+            $rows=$wpdb->get_results("SELECT user_id,meta_key,meta_value FROM $wpdb->usermeta WHERE meta_key IN ('billing_phone','billing_cuit','_ge_customer_cuit','billing_tax_id','_ge_cuit')",ARRAY_A);
             foreach($rows as $r)if(($r['meta_key']==='billing_phone' && $phone && self::phone($r['meta_value'])===$phone)||($r['meta_key']!=='billing_phone' && $cuit && self::phone($r['meta_value'])===$cuit))$ids[]=(int)$r['user_id'];
         }
         $out=array();foreach(array_unique($ids) as $id)if(self::scope('customer',$id)){$u=get_userdata($id);$out[]=array('id'=>$id,'name'=>$u->display_name,'email'=>$u->user_email);}
@@ -186,7 +186,7 @@ final class GE_CRM {
         if($kind==='thread') {
             $d['status']=$d['status']?:'needs_review';if(!in_array($d['channel'],array('email','portal','whatsapp','instagram','messenger'),true) || !in_array($d['status'],array('needs_review','approved_pending_send','closed'),true))throw new RuntimeException('Canal o estado inválido.',422);
             $d['approval']='manual_required';$d['delivery']='not_sent';
-            foreach ( array( 'attention_event','attention_hash','attention_state','attention_attempts','attention_queued_at','conversation_key','attention_lease_at','attention_quote_started','attention_classification','attention_processed_at','attention_ack','attention_task_key','attention_mailbox','attention_notice_context','meta_event','meta_transport','meta_classification' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } }
+            foreach ( array( 'attention_event','attention_hash','attention_state','attention_attempts','attention_queued_at','conversation_key','attention_lease_at','attention_quote_started','attention_classification','attention_processed_at','attention_ack','attention_task_key','attention_mailbox','attention_notice_context','mail_private_attachments','mail_reception_runtime','mail_reception_complete','mail_reception_alert_id','meta_event','meta_transport','meta_classification' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } }
             if(!$d['suggested_reply']){$suggest=self::suggest($d['intent']);if($suggest)$d['suggested_reply']=$suggest['template'];}
             $d['unresolved_variables']=array();preg_match_all('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/',$d['suggested_reply'],$matches);$d['unresolved_variables']=array_values(array_unique($matches[1]));
             if($d['status']==='approved_pending_send' && $d['unresolved_variables'])throw new RuntimeException('Completá las variables antes de aprobar el borrador.',422);

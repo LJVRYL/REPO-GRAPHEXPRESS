@@ -33,6 +33,7 @@ final class GE_CRM_Attention {
         }
         if ( count( $out['attachment_refs'] ) > 20 ) { throw new RuntimeException( 'Revisar adjuntos en transporte.', 422 ); }
         foreach ( array( 'historical_backfill', 'body_truncated', 'reply_ambiguous' ) as $flag ) { $out[$flag] = ! empty( $raw[$flag] ); }
+        if ( ! empty( $raw['external_reply_suppressed'] ) ) { $out['external_reply_suppressed'] = true; }
         $out['quote_request'] = is_array( $raw['quote_request'] ?? null ) ? $raw['quote_request'] : array();
         if ( strlen( wp_json_encode( $out['quote_request'] ) ) > 8000 ) { throw new RuntimeException( 'Solicitud demasiado grande.', 422 ); }
         $out['body'] = wp_strip_all_tags( $out['body'] );
@@ -61,7 +62,7 @@ final class GE_CRM_Attention {
         elseif ( preg_match( '/presupuest|cotiz|precio|quiero.{0,20}(imprimir|comprar|volantes|tarjetas)/', $text ) || $event['quote_request'] ) { $category = 'quote'; $reason = 'Solicitud comercial; verificar configuración y catálogo vigente.'; $ack = true; }
         elseif ( preg_match( '/^(hola|buenas|buen dia|buenos dias)[.!\s]*$/', trim( $text ) ) ) { $category = 'contact'; $reason = 'Contacto inicial; acuse acotado, sin promesas.'; $ack = true; }
         if ( ! $reason ) { $reason = 'Intención incierta; conservar y elevar para revisión.'; }
-        if ( $suppressed || ! empty( $event['historical_backfill'] ) || ! empty( $event['body_truncated'] ) || ! empty( $event['reply_ambiguous'] ) || 'email' !== $event['channel'] ) { $ack = false; }
+        if ( $suppressed || ! empty( $event['external_reply_suppressed'] ) || ! empty( $event['historical_backfill'] ) || ! empty( $event['body_truncated'] ) || ! empty( $event['reply_ambiguous'] ) || 'email' !== $event['channel'] ) { $ack = false; }
         return array( 'category' => $category, 'reason' => $reason, 'ack_eligible' => $ack, 'policy_version' => self::VERSION );
     }
 

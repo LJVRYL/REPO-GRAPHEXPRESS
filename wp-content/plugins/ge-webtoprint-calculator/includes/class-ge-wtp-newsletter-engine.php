@@ -11,9 +11,9 @@ final class GE_WTP_Newsletter_Engine {
     public static function enabled(){
         $p=(array)get_option(self::POLICY,array());
         $channels=(array)get_option('ge_crm_attention_channels',array());$h=$channels['email']['consumer_health']??array();
-        $reception=!empty($h['checked_at'])&&strtotime($h['checked_at'])>time()-300&&!empty($h['receiver_running'])&&empty($h['poll_failed'])&&($h['oldest_pending_age_seconds']??0)<300;
-        $feedback=(array)get_option('ge_newsletter_feedback_heartbeat',array());$server_reception=!empty($feedback['server_verified'])&&!empty($feedback['at'])&&strtotime($feedback['at'])>time()-120;
-        return ($reception||$server_reception)&&!empty($p['enabled'])&&!empty($p['provider_evidence_ref'])&&!empty($p['reception_evidence_ref'])&&!empty($p['verified_by'])&&($p['expires_at']??0)>time()&&($p['hourly_limit']??0)>0&&($p['daily_limit']??0)>0;
+        $reception=!empty($h['checked_at'])&&strtotime($h['checked_at'])>time()-300&&!empty($h['receiver_running'])&&empty($h['poll_failed'])&&empty($h['pending_events'])&&($h['oldest_pending_age_seconds']??0)<300;
+        // Delivery-feedback health does not prove commercial queries reached the CRM.
+        return $reception&&!empty($p['enabled'])&&!empty($p['provider_evidence_ref'])&&!empty($p['reception_evidence_ref'])&&!empty($p['verified_by'])&&($p['expires_at']??0)>time()&&($p['hourly_limit']??0)>0&&($p['daily_limit']??0)>0;
     }
     public static function ensure_schema(){
         global $wpdb;$t=self::table('deliveries');

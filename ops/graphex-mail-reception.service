@@ -1,0 +1,23 @@
+[Unit]
+Description=Graphex commercial mail reception into native CRM
+After=dovecot.service mariadb.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/graphexpress/mail-reception/mail-reception-server.py --watch
+WorkingDirectory=/home/graphexpress/mail-reception
+Restart=on-failure
+RestartSec=15
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateNetwork=true
+RestrictAddressFamilies=AF_UNIX
+ProtectSystem=strict
+ReadWritePaths=/home/graphexpress/mail-reception
+ReadOnlyPaths=/home/graphex/mail/graphexpress.com.ar/servicio/Maildir
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
