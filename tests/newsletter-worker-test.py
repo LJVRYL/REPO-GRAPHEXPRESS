@@ -22,4 +22,7 @@ for code,kind in [('5.1.1','hard_bounce'),('5.7.1','policy_bounce'),('4.2.2','te
  assert m.delivery_reports([dsn.replace(b'5.2.2',code.encode())],[arrival],[row])[0]['kind']==kind
 assert m.failure_kind('5.0.0','smtp; 550 5.7.1 blocked')[0]=='policy_bounce'
 assert m.failure_kind('5.0.0','smtp; 550 5.1.1 mailbox unknown')[0]=='hard_bounce'
-print('passed: 25 trusted-MTA and MIME-DSN correlation checks; zero mail calls')
+assert not m.delivery_reports([dsn],[],[row])
+assert m.delivery_reports([dsn],[],[row],allow_unverified=True)[0]['kind']=='review_bounce'
+assert m.delivery_reports([dsn],[],[row],allow_unverified=True)[0]['evidence_ref'].startswith('maildir_review:')
+print('passed: 28 trusted-MTA and MIME-DSN correlation checks; zero mail calls')

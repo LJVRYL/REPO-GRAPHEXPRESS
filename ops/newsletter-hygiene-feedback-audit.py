@@ -23,7 +23,7 @@ for line in lines:
  midmatch=re.search(r'\bid=<?([^\s<>]+)>?',line)
  if ' <= <> ' in line and midmatch and midmatch.group(1) in report_ids:
   peer=re.search(r'\[([0-9.]+)\]',line);peers[peer.group(1) if peer else 'local']=peers[peer.group(1) if peer else 'local']+1;arrival_ids.add(midmatch.group(1))
-events=m.feedback(lines,inventory['deliveries'])+m.delivery_reports(raws,lines,inventory['deliveries'])
+events=m.feedback(lines,inventory['deliveries'])+m.delivery_reports(raws,lines,inventory['deliveries'],allow_unverified=True)
 rank={'review_bounce':0,'temporary_bounce':1,'policy_bounce':2,'hard_bounce':3};by_delivery={}
 for e in events:
  old=by_delivery.get(e['delivery_id'])

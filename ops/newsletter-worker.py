@@ -16,7 +16,7 @@ def failure_kind(status, diagnostic='', delayed=False):
     if code.startswith('5.7.'):return 'policy_bounce',code
     return 'review_bounce',code or 'sin código específico'
 
-def delivery_reports(raw_messages, lines, deliveries):
+def delivery_reports(raw_messages, lines, deliveries, allow_unverified=False):
     by_mid={r['message_id'].strip('<>'):r for r in deliveries};trusted=set();received=set()
     for line in lines:
         if ' <= <> ' not in line:continue
@@ -27,7 +27,7 @@ def delivery_reports(raw_messages, lines, deliveries):
     result=[]
     for raw in raw_messages:
         msg=BytesParser(policy=email.policy.default).parsebytes(raw)
-        if msg.get_content_type()!='multipart/report' or str(msg.get('Message-ID','')).strip('<>') not in received:continue
+        if msg.get_content_type()!='multipart/report' or (str(msg.get('Message-ID','')).strip('<>') not in received and not allow_unverified):continue
         if str(msg.get_param('report-type','')).lower()!='delivery-status':continue
         originals=[];reports=[]
         for part in msg.walk():
@@ -45,7 +45,7 @@ def delivery_reports(raw_messages, lines, deliveries):
                 kind,code=failure_kind(status,str(report.get('Diagnostic-Code','')),action=='delayed')
                 if str(msg.get('Message-ID','')).strip('<>') not in trusted:
                     kind='review_bounce';code='revisar origen; '+code
-                result.append({'delivery_id':int(row['id']),'message_id':row['message_id'],'recipient_sha256':row['recipient_sha256'],'kind':kind,'diagnostic':'Informe del relay de correo, estado '+code[:80],'evidence_ref':'dsn:'+hashlib.sha256(raw).hexdigest(),'queue_id':'','freeze':False})
+                result.append({'delivery_id':int(row['id']),'message_id':row['message_id'],'recipient_sha256':row['recipient_sha256'],'kind':kind,'diagnostic':'Informe del relay de correo, estado '+code[:80],'evidence_ref':('dsn:' if str(msg.get('Message-ID','')).strip('<>') in received else 'maildir_review:')+hashlib.sha256(raw).hexdigest(),'queue_id':'','freeze':False})
     return result
 
 def feedback(lines, deliveries):

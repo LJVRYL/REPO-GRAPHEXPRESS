@@ -27,3 +27,5 @@ No integrar automáticamente a la rama canónica. La revisión de higiene depend
 ## Recepción de textos largos
 
 El consumidor limita asunto y cuerpo en bytes UTF-8 (180 / 12.000), preserva caracteres completos y marca el recorte para revisión. El original sigue en el archivo privado del receptor. Los eventos se confirman en la cola local sólo después de una respuesta nativa `committed` con ID del CRM. La corrección del límite evita reintentos interminables de reportes que ocupan más bytes que caracteres. El consumidor local mantiene su mecanismo existente de inicio oculto y credenciales.
+
+Los avisos locales sin recepción corroborada en Exim quedan fuera del conciliador automático. Un mantenimiento de administrador expresamente autorizado puede poner en pausa los casos con Message-ID y destinatario exactos, usando evidencia `maildir_review:` y revisión de origen pendiente. Esta acción no confirma una dirección inválida y conserva el original.

@@ -12,6 +12,13 @@ if(getenv('GE_HYGIENE_APPLY')==='1'){
  $out['archive']=GE_CRM::archive_server_notices(null,$contexts);
  $events=json_decode(file_get_contents($release.'/verified-feedback.json'),true);
  $out['feedback']=GE_WTP_Newsletter_Engine::reconcile_mta($events);
+ $out['manual_review_holds']=0;
+ foreach($events as $e)if($e['kind']==='review_bounce'&&preg_match('/^maildir_review:[a-f0-9]{64}$/D',$e['evidence_ref'])){
+  $d=$wpdb->get_row($wpdb->prepare("SELECT d.message_id,c.email FROM $dt d JOIN $ct c ON c.id=d.contact_id WHERE d.id=%d AND d.campaign_id=4",$e['delivery_id']));
+  if(!$d||!hash_equals($d->message_id,$e['message_id'])||!hash_equals(hash('sha256',strtolower($d->email)),$e['recipient_sha256']))continue;
+  $r=GE_WTP_Newsletter_Audiences::suppress_delivery($e['delivery_id'],'review_bounce','Revisión autorizada: aviso conservado en casilla local; origen pendiente de verificar.',$e['evidence_ref']);if(!is_wp_error($r))$out['manual_review_holds']++;
+ }
+ GE_WTP_Newsletter_Engine::refresh(4);
  $out['applied']=true;
 }
 $out['campaign']=$wpdb->get_row("SELECT status,total_count,sent_count,failed_count FROM {$wpdb->prefix}ge_newsletter_campaigns WHERE id=4",ARRAY_A);
