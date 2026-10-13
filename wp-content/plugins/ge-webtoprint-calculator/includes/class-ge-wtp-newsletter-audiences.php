@@ -94,7 +94,7 @@ final class GE_WTP_Newsletter_Audiences {
     /** Trusted staff/service call only; an inbound email alone is never suppression authority. */
     public static function suppress_delivery( $delivery_id, $kind, $reason, $evidence_ref ) {
         global $wpdb;
-        if ( ! GE_WTP_Newsletter_Review::allowed() || ! in_array( $kind, array( 'hard_bounce', 'temporary_bounce', 'complaint' ), true )
+        if ( ! GE_WTP_Newsletter_Review::allowed() || ! in_array( $kind, array( 'hard_bounce', 'temporary_bounce', 'policy_bounce', 'review_bounce', 'complaint' ), true )
             || ! is_string( $reason ) || ! is_string( $evidence_ref ) || ! preg_match( '/^[a-zA-Z0-9:_-]{8,160}$/D', $evidence_ref ) ) { return new WP_Error( 'feedback', 'Evidencia de rebote inválida.' ); }
         $delivery = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'ge_newsletter_deliveries WHERE id=%d', absint( $delivery_id ) ) );
         if ( ! $delivery || ! in_array( $delivery->status, array( 'sent', 'unknown', 'sending', 'bounced' ), true ) ) { return new WP_Error( 'delivery', 'No existe un intento de envío correlacionado.' ); }
@@ -105,14 +105,17 @@ final class GE_WTP_Newsletter_Audiences {
             $contact = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id=%d FOR UPDATE', $delivery->contact_id ) );
             if ( ! $contact ) { return new WP_Error( 'contact', 'Contacto inexistente.' ); }
             $meta = (array) json_decode( $contact->selection_meta ?? '', true );
-            if ( ( $meta['suppression']['evidence_ref'] ?? '' ) === $evidence_ref ) { $wpdb->query('ROLLBACK'); return true; }
-            $meta['suppression'] = array( 'delivery_id' => (int) $delivery->id, 'kind' => $kind, 'reason' => sanitize_text_field( $reason ),
+            $rank = array( 'review_bounce' => 0, 'temporary_bounce' => 1, 'policy_bounce' => 2, 'hard_bounce' => 3, 'complaint' => 4 );
+            if ( ( $meta['suppression']['taxonomy_version'] ?? 0 ) === 2 && ( $rank[$meta['suppression']['kind'] ?? 'review_bounce'] ?? 0 ) > $rank[$kind] ) { $wpdb->query('ROLLBACK'); return true; }
+            if ( ( $meta['suppression']['taxonomy_version'] ?? 0 ) === 2 && ( $meta['suppression']['kind'] ?? '' ) === $kind ) { $wpdb->query('ROLLBACK'); return true; }
+            if ( ! empty( $meta['suppression'] ) ) { $meta['suppression_previous'] = $meta['suppression']; }
+            $meta['suppression'] = array( 'taxonomy_version' => 2, 'delivery_id' => (int) $delivery->id, 'kind' => $kind, 'reason' => sanitize_text_field( $reason ),
                 'evidence_ref' => $evidence_ref, 'at' => gmdate( 'c' ), 'actor' => get_current_user_id(), 'auto_retry' => false );
             // Never overwrite a voluntary unsubscribe with a transport failure.
-            $status = 'unsubscribed' === $contact->status || $contact->unsubscribed_at ? 'unsubscribed' : 'bounced';
+            $status = 'unsubscribed' === $contact->status || $contact->unsubscribed_at ? 'unsubscribed' : ( in_array( $kind, array( 'hard_bounce', 'complaint' ), true ) ? 'bounced' : 'paused' );
             if ( false === $wpdb->update( self::table(), array( 'status' => $status, 'selection_meta' => wp_json_encode( $meta ), 'updated_at' => current_time( 'mysql' ) ), array( 'id' => $contact->id ) ) ) { return new WP_Error( 'database', 'No se pudo suspender la dirección.' ); }
             if ( false === $wpdb->update( $wpdb->prefix . 'ge_newsletter_deliveries', array( 'status' => 'bounced', 'last_error' => substr( sanitize_text_field( $reason ), 0, 500 ) ), array( 'id' => $delivery->id ) ) ) { return new WP_Error( 'database', 'Dirección suspendida; falta conciliar el intento de envío.' ); }
-            if(class_exists('GE_CRM'))GE_CRM::event(0,0,'newsletter_delivery_suppressed',array('campaign_id'=>(int)$delivery->campaign_id,'delivery_id'=>(int)$delivery->id,'kind'=>$kind,'evidence_ref'=>$evidence_ref,'notes'=>'Dirección suspendida por '.($kind==='temporary_bounce'?'fallo temporal':($kind==='complaint'?'reclamo':'rebote permanente')).'; sin reactivación automática.'));
+            if(class_exists('GE_CRM'))GE_CRM::event(0,0,'newsletter_delivery_suppressed',array('campaign_id'=>(int)$delivery->campaign_id,'delivery_id'=>(int)$delivery->id,'kind'=>$kind,'evidence_ref'=>$evidence_ref,'notes'=>'Dirección suspendida por '.($kind==='temporary_bounce'?'fallo temporal':($kind==='complaint'?'reclamo':($kind==='policy_bounce'?'bloqueo del proveedor':($kind==='review_bounce'?'causa pendiente de revisión':'dirección inválida')))).'; sin reactivación automática.'));
             if(false===$wpdb->query('COMMIT'))throw new RuntimeException('No se pudo confirmar la supresión.');
             return true;
         } catch(Throwable $e) { $wpdb->query('ROLLBACK');return new WP_Error('database','No se pudo registrar la supresión completa.'); }
