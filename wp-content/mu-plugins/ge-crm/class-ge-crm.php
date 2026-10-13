@@ -103,10 +103,14 @@ final class GE_CRM {
         if(!$r || ($kind && $kind!==$r['kind']))throw new RuntimeException('Registro no encontrado.',404);
         return $r;
     }
-    public static function records($kind='',$customer=0,$q='',$limit=100,$offset=0) {
+    public static function records($kind='',$customer=0,$q='',$limit=100,$offset=0,$mailbox='') {
         global $wpdb;$where=$wpdb->prepare('organization_id=%s',self::org());
         if($kind)$where.=$wpdb->prepare(' AND kind=%s',$kind);
         if($customer)$where.=$wpdb->prepare(' AND customer_id=%d',$customer);
+        if ( in_array( $mailbox, array( 'commercial', 'server' ), true ) ) {
+            $technical = "(payload LIKE '%\"attention_mailbox\":\"server\"%' OR payload LIKE '%\"category\":\"delivery_failure\"%' OR payload LIKE '%\"category\":\"automated\"%')";
+            $where .= ' AND ' . ( 'commercial' === $mailbox ? 'NOT ' : '' ) . $technical;
+        }
         if($q){$like='%'.$wpdb->esc_like($q).'%';$where.=$wpdb->prepare(' AND (title LIKE %s OR email LIKE %s OR phone LIKE %s OR cuit LIKE %s OR payload LIKE %s)',$like,$like,$like,$like,$like);}
         return array_map(array(__CLASS__,'decode'),$wpdb->get_results('SELECT * FROM '.self::table()." WHERE $where ORDER BY updated_at DESC,id DESC LIMIT ".max(1,min(500,(int)$limit)).' OFFSET '.max(0,(int)$offset),ARRAY_A));
     }
@@ -182,7 +186,7 @@ final class GE_CRM {
         if($kind==='thread') {
             $d['status']=$d['status']?:'needs_review';if(!in_array($d['channel'],array('email','portal','whatsapp','instagram','messenger'),true) || !in_array($d['status'],array('needs_review','approved_pending_send','closed'),true))throw new RuntimeException('Canal o estado inválido.',422);
             $d['approval']='manual_required';$d['delivery']='not_sent';
-            foreach ( array( 'attention_event','attention_hash','attention_state','attention_attempts','attention_queued_at','conversation_key','attention_lease_at','attention_quote_started','attention_classification','attention_processed_at','attention_ack','attention_task_key','meta_event','meta_transport','meta_classification' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } }
+            foreach ( array( 'attention_event','attention_hash','attention_state','attention_attempts','attention_queued_at','conversation_key','attention_lease_at','attention_quote_started','attention_classification','attention_processed_at','attention_ack','attention_task_key','attention_mailbox','attention_notice_context','meta_event','meta_transport','meta_classification' ) as $key ) { if ( isset( $old[$key] ) ) { $d[$key] = $old[$key]; } }
             if(!$d['suggested_reply']){$suggest=self::suggest($d['intent']);if($suggest)$d['suggested_reply']=$suggest['template'];}
             $d['unresolved_variables']=array();preg_match_all('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/',$d['suggested_reply'],$matches);$d['unresolved_variables']=array_values(array_unique($matches[1]));
             if($d['status']==='approved_pending_send' && $d['unresolved_variables'])throw new RuntimeException('Completá las variables antes de aprobar el borrador.',422);
@@ -312,11 +316,14 @@ final class GE_CRM {
             $record['attention_event'] = $event;
             $record['attention_hash'] = $hash;
             $record['attention_state'] = 'queued';
+            $server_notice = self::server_notice( $record );
+            $record['attention_mailbox'] = $server_notice ? 'server' : 'commercial';
+            if ( $server_notice ) { $record['customer_id'] = 0; $customer = 0; }
             $record['attention_attempts'] = 0;
             $record['attention_queued_at'] = gmdate( 'c' );
             $record['conversation_key'] = hash( 'sha256', $event['channel'] . ':' . $event['account_ref'] . ':' . $event['conversation_id'] );
             $saved = self::persist( 'thread', $record, null, $key );
-            self::operations_task( ( $saved['attention_task_key'] ?? 'attention:' . $saved['id'] ), 'Atender mensaje: ' . $record['title'], true, array( 'customer_id' => $customer, 'thread_id' => $saved['id'] ), $record['owner_id'], 'Recepción confirmada. Clasificación pendiente; original: ' . $event['source_ref'] );
+            self::operations_task( ( $saved['attention_task_key'] ?? 'attention:' . $saved['id'] ), 'Atender mensaje: ' . $record['title'], ! $server_notice, array( 'customer_id' => $customer, 'thread_id' => $saved['id'] ), $record['owner_id'], 'Recepción confirmada. Clasificación pendiente; original: ' . $event['source_ref'] );
             return array( 'record_id' => $saved['id'], 'duplicate' => false, 'committed' => true );
         } );
     }
@@ -378,13 +385,56 @@ final class GE_CRM {
             return array('duplicate'=>false);
         });
     }
+    /** Machine messages retain their original source but never create commercial work. */
+    public static function server_notice( $record ) {
+        if ( empty( $record['attention_event'] ) ) { return false; }
+        $event = $record['attention_event'];
+        if ( 'email' === $event['channel'] && preg_match( '/multipart\/report|delivery-status/i', $event['headers']['content-type'] ?? '' ) ) { return true; }
+        $classification = GE_CRM_Attention::classify( $event );
+        return 'email' === $event['channel'] && in_array( $classification['category'], array( 'delivery_failure', 'automated' ), true );
+    }
+    /** Explicit staff maintenance; reversible, audited and idempotent. */
+    public static function archive_server_notices( $only_ids = null, $contexts = array() ) {
+        self::admin();
+        return self::locked( function () use ( $only_ids, $contexts ) {
+            global $wpdb; $changed = 0; $closed = 0;
+            $ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . self::table() . " WHERE organization_id=%s AND kind='thread' ORDER BY id", self::org() ) );
+            foreach ( $ids as $id ) {
+                if ( is_array( $only_ids ) && ! in_array( (int) $id, $only_ids, true ) ) { continue; }
+                $r = self::get( $id, 'thread' );
+                if ( ! self::server_notice( $r ) ) { continue; }
+                $key = hash( 'sha256', trim( $r['attention_event']['headers']['message-id'] ?? '', '<> ' ) );
+                $context = $contexts[$key] ?? ( $r['attention_notice_context'] ?? array() );
+                $report = (bool) preg_match( '/multipart\/report|delivery-status/i', $r['attention_event']['headers']['content-type'] ?? '' );
+                if ( 'server' !== ( $r['attention_mailbox'] ?? '' ) || 'closed' !== $r['status'] || $context !== ( $r['attention_notice_context'] ?? array() ) || ( $report && 'delivery_failure' !== ( $r['attention_classification']['category'] ?? '' ) ) ) {
+                    $old = $r; $r['attention_mailbox'] = 'server'; $r['attention_state'] = 'ignored'; $r['status'] = 'closed';
+                    $r['attention_notice_context'] = $context;
+                    if ( $report ) { $r['attention_classification'] = array( 'category' => 'delivery_failure', 'reason' => 'Informe automático de entrega; original conservado para diagnóstico.', 'ack_eligible' => false, 'policy_version' => GE_CRM_Attention::VERSION ); }
+                    $r['attention_ack'] = array( 'state' => 'suppressed' );
+                    self::persist( 'thread', $r, $old ); $changed++;
+                }
+                // Only reception-generated tasks; preserve human follow-ups and all task history.
+                $tasks = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . self::table() . " WHERE organization_id=%s AND kind='task' AND status='open' AND dedupe_key LIKE %s", self::org(), 'operations:attention:%' ) );
+                foreach ( $tasks as $task_id ) {
+                    $task = self::get( $task_id, 'task' );
+                    if ( (int) ( $task['thread_id'] ?? 0 ) !== (int) $id ) { continue; }
+                    $old = $task; $task['status'] = 'done';
+                    $task['attention_automation_notes'] = 'Aviso del servidor conservado en Rebotes / avisos del servidor; sin tarea comercial.';
+                    self::persist( 'task', $task, $old ); $closed++;
+                }
+            }
+            if ( $changed || $closed ) { self::event( 0, 0, 'server_notices_archived', array( 'threads' => $changed, 'tasks_closed' => $closed, 'retained' => true ) ); }
+            return array( 'threads' => $changed, 'tasks_closed' => $closed );
+        } );
+    }
+
     public static function attention_process( $id ) {
         self::require_access( true );
         $claimed = self::locked( function () use ( $id ) {
             $r = self::get( $id, 'thread' );
             if ( ! isset( $r['attention_event'] ) ) { throw new RuntimeException( 'No es un mensaje de transporte.', 422 ); }
             if ( 'closed' === $r['status'] || in_array( $r['attention_state'], array( 'review', 'ignored', 'prepared', 'failed' ), true ) ) {
-                self::operations_task( ( $r['attention_task_key'] ?? 'attention:' . $id ), 'Atender mensaje: ' . $r['title'], 'closed' !== $r['status'] && 'ignored' !== $r['attention_state'], array( 'customer_id' => $r['customer_id'], 'quote_id' => $r['quote_id'], 'thread_id' => $id ), $r['owner_id'], $r['notes'] );
+                self::operations_task( ( $r['attention_task_key'] ?? 'attention:' . $id ), 'Atender mensaje: ' . $r['title'], 'closed' !== $r['status'] && 'ignored' !== $r['attention_state'] && ! self::server_notice( $r ), array( 'customer_id' => $r['customer_id'], 'quote_id' => $r['quote_id'], 'thread_id' => $id ), $r['owner_id'], $r['notes'] );
                 return $r;
             }
             if ( 'processing' === $r['attention_state'] && strtotime( $r['attention_lease_at'] ?? '' ) > time() - 300 ) { throw new RuntimeException( 'El mensaje está en proceso.', 409 ); }
@@ -399,9 +449,12 @@ final class GE_CRM {
         } );
         if ( 'processing' !== $claimed['attention_state'] ) { return $claimed; }
         $classification = GE_CRM_Attention::classify( $claimed['attention_event'] );
+        if ( preg_match( '/multipart\/report|delivery-status/i', $claimed['attention_event']['headers']['content-type'] ?? '' ) ) {
+            $classification = array( 'category' => 'delivery_failure', 'reason' => 'Informe automático de entrega; original conservado para diagnóstico.', 'ack_eligible' => false, 'policy_version' => GE_CRM_Attention::VERSION );
+        }
         $quote = null; $error = ''; $event = $claimed['attention_event'];
         try {
-            if ( 'quote' === $classification['category'] && $event['quote_request'] && empty( $event['body_truncated'] ) && empty( $event['reply_ambiguous'] ) ) {
+            if ( ! self::server_notice( $claimed ) && 'quote' === $classification['category'] && $event['quote_request'] && empty( $event['body_truncated'] ) && empty( $event['reply_ambiguous'] ) ) {
                 $lines = GE_CRM_Attention::quote_lines( $event['quote_request'] );
                 if ( is_wp_error( $lines ) ) { $error = $lines->get_error_message(); }
                 elseif ( ! $claimed['customer_id'] ) { $error = 'Revisar y vincular la ficha del cliente antes de presupuestar.'; }
@@ -422,8 +475,9 @@ final class GE_CRM {
             $r = self::get( $id, 'thread' );
             if ( $r['revision'] !== $claimed['revision'] ) { throw new RuntimeException( 'Cambió la revisión durante el procesamiento.', 409 ); }
             $r['attention_classification'] = $classification;
+            $r['attention_mailbox'] = self::server_notice( $r ) ? 'server' : 'commercial';
             $r['attention_processed_at'] = gmdate( 'c' );
-            $r['attention_state'] = in_array( $classification['category'], array( 'automated', 'non_useful' ), true ) ? 'ignored' : ( $quote ? 'prepared' : 'review' );
+            $r['attention_state'] = self::server_notice( $r ) || in_array( $classification['category'], array( 'delivery_failure', 'automated', 'non_useful' ), true ) ? 'ignored' : ( $quote ? 'prepared' : 'review' );
             $r['status'] = 'ignored' === $r['attention_state'] ? 'closed' : 'needs_review';
             $r['notes'] = $classification['reason'] . ( $error ? "\n" . $error : '' );
             if ( $quote ) { $r['quote_id'] = $quote['id']; $r['notes'] .= "\nPresupuesto en borrador: revisar antes de publicar."; }
@@ -534,7 +588,7 @@ final class GE_CRM {
                     }
                     continue;
                 }
-                if ( ! isset( $r['attention_event'] ) || 'closed' === $r['status'] || 'ignored' === $r['attention_state'] ) { continue; }
+                if ( ! isset( $r['attention_event'] ) || 'closed' === $r['status'] || 'ignored' === $r['attention_state'] || self::server_notice( $r ) ) { continue; }
                 if ( strtotime( $r['attention_queued_at'] ) > time() - HOUR_IN_SECONDS ) { continue; }
                 self::operations_task( ( $r['attention_task_key'] ?? 'attention:' . $r['id'] ), 'Mensaje pendiente de atención: ' . $r['title'], true, array( 'customer_id' => $r['customer_id'], 'quote_id' => $r['quote_id'], 'thread_id' => $r['id'] ), $r['owner_id'], 'Antigüedad mayor a una hora. Estado: ' . $r['attention_state'] . '. Fuente: ' . $r['attention_event']['source_ref'] );
                 $count++;

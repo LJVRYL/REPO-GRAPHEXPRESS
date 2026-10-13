@@ -7,16 +7,27 @@ MID = re.compile(r'\bid=<?(ge-nl-[a-f0-9]{64}@graphex\.ar)>?')
 QUEUE = re.compile(r'^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{2,6}$')
 TRUSTED_PEERS={'200.58.125.43','200.58.116.136','200.58.116.111','200.58.114.24','200.58.124.17'}
 
-def delivery_reports(raw_messages, lines, deliveries):
-    by_mid={r['message_id'].strip('<>'):r for r in deliveries};trusted=set()
+def failure_kind(status, diagnostic='', delayed=False):
+    # Enhanced recipient diagnostics take precedence over a generic DSN 5.0.0.
+    codes=re.findall(r'(?<![0-9])([45]\.[0-9]{1,3}\.[0-9]{1,3})(?![0-9])',diagnostic)
+    code=next((c for c in codes if c!='5.0.0'),status.strip())
+    if delayed or code.startswith('4.') or code in ('5.2.2','5.2.3'):return 'temporary_bounce',code
+    if code.startswith('5.1.'):return 'hard_bounce',code
+    if code.startswith('5.7.'):return 'policy_bounce',code
+    return 'review_bounce',code or 'sin código específico'
+
+def delivery_reports(raw_messages, lines, deliveries, allow_unverified=False):
+    by_mid={r['message_id'].strip('<>'):r for r in deliveries};trusted=set();received=set()
     for line in lines:
         if ' <= <> ' not in line:continue
         peer=re.search(r'\[([0-9.]+)\]',line);mid=re.search(r'\bid=<?([^\s<>]+)>?',line)
-        if peer and mid and peer.group(1) in TRUSTED_PEERS:trusted.add(mid.group(1))
+        if peer and mid:
+            received.add(mid.group(1))
+            if peer.group(1) in TRUSTED_PEERS:trusted.add(mid.group(1))
     result=[]
     for raw in raw_messages:
         msg=BytesParser(policy=email.policy.default).parsebytes(raw)
-        if msg.get_content_type()!='multipart/report' or str(msg.get('Message-ID','')).strip('<>') not in trusted:continue
+        if msg.get_content_type()!='multipart/report' or (str(msg.get('Message-ID','')).strip('<>') not in received and not allow_unverified):continue
         if str(msg.get_param('report-type','')).lower()!='delivery-status':continue
         originals=[];reports=[]
         for part in msg.walk():
@@ -31,7 +42,10 @@ def delivery_reports(raw_messages, lines, deliveries):
             for report in reports:
                 recipient=str(report.get('Final-Recipient','')).split(';')[-1].strip().lower();action=str(report.get('Action','')).lower();status=str(report.get('Status',''))
                 if action not in ('failed','delayed') or not status.startswith(('4.','5.')) or hashlib.sha256(recipient.encode()).hexdigest()!=row['recipient_sha256']:continue
-                result.append({'delivery_id':int(row['id']),'message_id':row['message_id'],'recipient_sha256':row['recipient_sha256'],'kind':'temporary_bounce' if status.startswith('4.') else 'hard_bounce','diagnostic':'Informe del relay de correo, estado '+status[:20],'evidence_ref':'dsn:'+hashlib.sha256(raw).hexdigest(),'queue_id':'','freeze':False})
+                kind,code=failure_kind(status,str(report.get('Diagnostic-Code','')),action=='delayed')
+                if str(msg.get('Message-ID','')).strip('<>') not in trusted:
+                    kind='review_bounce';code='revisar origen; '+code
+                result.append({'delivery_id':int(row['id']),'message_id':row['message_id'],'recipient_sha256':row['recipient_sha256'],'kind':kind,'diagnostic':'Informe del relay de correo, estado '+code[:80],'evidence_ref':('dsn:' if str(msg.get('Message-ID','')).strip('<>') in received else 'maildir_review:')+hashlib.sha256(raw).hexdigest(),'queue_id':'','freeze':False})
     return result
 
 def feedback(lines, deliveries):
@@ -48,9 +62,10 @@ def feedback(lines, deliveries):
         if len(fields)<5 or fields[2] not in incoming or fields[3] not in ('**','=='):continue
         row=incoming[fields[2]];recipient=fields[4].strip('<>').lower()
         if hashlib.sha256(recipient.encode()).hexdigest()!=row['recipient_sha256']:continue
+        kind,code=failure_kind('',line,fields[3]=='==')
         events.append({'delivery_id':int(row['id']),'message_id':row['message_id'],'recipient_sha256':row['recipient_sha256'],
-                       'kind':'hard_bounce' if fields[3]=='**' else 'temporary_bounce',
-                       'diagnostic':'Fallo permanente' if fields[3]=='**' else 'Entrega diferida; dirección suspendida',
+                       'kind':kind,
+                       'diagnostic':'Fallo del servidor, estado '+code[:80],
                        'evidence_ref':'exim:'+hashlib.sha256(line.encode()).hexdigest(),'queue_id':fields[2],
                        'freeze':fields[3]=='=='})
     return events
@@ -71,7 +86,10 @@ def main():
             inventory=call({'operation':'inventory'})
             expired=time.time()>inventory['policy_expires_at']
             # Exim rotates this local trusted log; no email body is interpreted as authority.
-            lines=Path('/var/spool/exim/log/mainlog').read_text(errors='replace').splitlines()
+            lines=[]
+            for logname in ('mainlog.01','mainlog'):
+                logpath=Path('/var/spool/exim/log')/logname
+                if logpath.is_file():lines.extend(logpath.read_text(errors='replace').splitlines())
             events=feedback(lines,inventory['deliveries'])
             mailbox=Path('/home/graphex/mail/graphexpress.com.ar/servicio/Maildir')
             candidates=[]

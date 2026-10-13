@@ -15,6 +15,10 @@ import os
 from pathlib import Path
 
 
+def utf8_prefix(value, limit):
+    return value.encode("utf-8")[:limit].decode("utf-8", "ignore")
+
+
 def envelope(event, message, observed_at):
     if event.get("type") != "mail.received" or event.get("account") != "graphex":
         raise ValueError("Only registered Graphex mail events")
@@ -37,11 +41,11 @@ def envelope(event, message, observed_at):
         "external_id": event["event_id"], "conversation_id": conversation,
         "source_ref": "mail:" + message["id"],
         "received_at": datetime.datetime.fromtimestamp(observed_at, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "from": sender, "to": "servicio@graphex.ar", "subject": subject[:180],
-        "body": message.get("body_text", "")[:12000], "headers": headers,
+        "from": sender, "to": "servicio@graphex.ar", "subject": utf8_prefix(subject, 180),
+        "body": utf8_prefix(message.get("body_text", ""), 12000), "headers": headers,
         "attachment_refs": ["mail-part:" + message["id"] + ":" + str(a["part_index"]) for a in message.get("attachments", [])],
         "historical_backfill": bool(event.get("historical_backfill", False)),
-        "body_truncated": bool(message.get("body_truncated", False) or len(subject) > 180 or len(message.get("body_text", "")) > 12000),
+        "body_truncated": bool(message.get("body_truncated", False) or len(subject.encode("utf-8")) > 180 or len(message.get("body_text", "").encode("utf-8")) > 12000),
         "reply_ambiguous": ambiguous,
     }
 

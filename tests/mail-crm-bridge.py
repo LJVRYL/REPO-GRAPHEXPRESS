@@ -51,6 +51,16 @@ class Tests(unittest.TestCase):
         message['body_text'] = 'x' * 12001
         packet = bridge.envelope(event, message, 1791540000)
         self.assertTrue(packet['body_truncated']); self.assertEqual(12000, len(packet['body']))
+    def test_utf8_bounds_preserve_valid_characters(self):
+        core = Core(); event = core.pending('graphex', 1)['events'][0]; message = core.read_message('graphex', 'opaque', 1)
+        for body in ['á' * 6001, '🙂' * 3001, 'x' * 11999 + 'ñ']:
+            message['body_text'] = body; message['headers']['Subject'] = 'á' * 181
+            packet = bridge.envelope(event, message, 1791540000)
+            self.assertLessEqual(len(packet['body'].encode('utf-8')), 12000)
+            self.assertLessEqual(len(packet['subject'].encode('utf-8')), 180)
+            self.assertTrue(packet['body_truncated'])
+            self.assertNotIn('�', packet['body'])
+
     def test_absent_reply_header_requires_review(self):
         core = Core(); event = core.pending('graphex', 1)['events'][0]; message = core.read_message('graphex', 'opaque', 1)
         del message['headers']['Reply-To']
