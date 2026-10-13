@@ -405,9 +405,11 @@ final class GE_CRM {
                 if ( ! self::server_notice( $r ) ) { continue; }
                 $key = hash( 'sha256', trim( $r['attention_event']['headers']['message-id'] ?? '', '<> ' ) );
                 $context = $contexts[$key] ?? ( $r['attention_notice_context'] ?? array() );
-                if ( 'server' !== ( $r['attention_mailbox'] ?? '' ) || 'closed' !== $r['status'] || $context !== ( $r['attention_notice_context'] ?? array() ) ) {
+                $report = (bool) preg_match( '/multipart\/report|delivery-status/i', $r['attention_event']['headers']['content-type'] ?? '' );
+                if ( 'server' !== ( $r['attention_mailbox'] ?? '' ) || 'closed' !== $r['status'] || $context !== ( $r['attention_notice_context'] ?? array() ) || ( $report && 'delivery_failure' !== ( $r['attention_classification']['category'] ?? '' ) ) ) {
                     $old = $r; $r['attention_mailbox'] = 'server'; $r['attention_state'] = 'ignored'; $r['status'] = 'closed';
                     $r['attention_notice_context'] = $context;
+                    if ( $report ) { $r['attention_classification'] = array( 'category' => 'delivery_failure', 'reason' => 'Informe automático de entrega; original conservado para diagnóstico.', 'ack_eligible' => false, 'policy_version' => GE_CRM_Attention::VERSION ); }
                     $r['attention_ack'] = array( 'state' => 'suppressed' );
                     self::persist( 'thread', $r, $old ); $changed++;
                 }
@@ -447,6 +449,9 @@ final class GE_CRM {
         } );
         if ( 'processing' !== $claimed['attention_state'] ) { return $claimed; }
         $classification = GE_CRM_Attention::classify( $claimed['attention_event'] );
+        if ( preg_match( '/multipart\/report|delivery-status/i', $claimed['attention_event']['headers']['content-type'] ?? '' ) ) {
+            $classification = array( 'category' => 'delivery_failure', 'reason' => 'Informe automático de entrega; original conservado para diagnóstico.', 'ack_eligible' => false, 'policy_version' => GE_CRM_Attention::VERSION );
+        }
         $quote = null; $error = ''; $event = $claimed['attention_event'];
         try {
             if ( ! self::server_notice( $claimed ) && 'quote' === $classification['category'] && $event['quote_request'] && empty( $event['body_truncated'] ) && empty( $event['reply_ambiguous'] ) ) {

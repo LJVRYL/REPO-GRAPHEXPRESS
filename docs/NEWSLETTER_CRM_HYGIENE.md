@@ -23,3 +23,7 @@ Para revertir código, detener el trabajador, restaurar únicamente los archivos
 Para revertir estados, usar los estados anteriores de la auditoría y el respaldo privado, comprobar revisiones antes de modificar cada registro y añadir un evento de reversión. No reemplazar la base completa ni restablecer contactos dados de baja después del respaldo. Conservar todos los intentos, mensajes y eventos posteriores; las exclusiones requieren revisión explícita antes de reactivarlas.
 
 No integrar automáticamente a la rama canónica. La revisión de higiene depende de PR16 y no concede autorización para integrarlo.
+
+## Recepción de textos largos
+
+El consumidor limita asunto y cuerpo en bytes UTF-8 (180 / 12.000), preserva caracteres completos y marca el recorte para revisión. El original sigue en el archivo privado del receptor. Los eventos se confirman en la cola local sólo después de una respuesta nativa `committed` con ID del CRM. La corrección del límite evita reintentos interminables de reportes que ocupan más bytes que caracteres. El consumidor local mantiene su mecanismo existente de inicio oculto y credenciales.

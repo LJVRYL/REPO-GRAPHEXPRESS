@@ -16,6 +16,7 @@ try {
   sncheck(count($tasks)===0,'No commercial task at ingestion');
   $processed=GE_CRM::attention_process($id);
   sncheck($processed['status']==='closed'&&$processed['attention_mailbox']==='server','Technical notice closed and retained');
+  sncheck($processed['attention_classification']['category']==='delivery_failure','Root DSN classified as server delivery report');
   sncheck(empty($processed['quote_id']),'DSN quoted content never creates quote');
   GE_CRM::attention_process($id);GE_CRM::attention_stale();
   sncheck(in_array((int)$id,array_column(GE_CRM::records('thread',0,'',500,0,'server'),'id'),true),'Visible in server view');
