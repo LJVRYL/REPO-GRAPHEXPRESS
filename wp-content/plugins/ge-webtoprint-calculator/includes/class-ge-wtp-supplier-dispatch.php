@@ -73,6 +73,7 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     private static function attempt_auto_dispatch( $order, $profile ) {
+        if ( is_wp_error( GE_Production_Payment_Guard::check( $order ) ) ) { return; }
         $sent = self::send_email( $order, $profile ); self::log( $order, 'auto-email', $sent );
         $attempts = absint( $order->get_meta( '_ge_supplier_auto_dispatch_attempts' ) ) + 1;
         $order->update_meta_data( '_ge_supplier_auto_dispatch_attempts', $attempts );
@@ -108,11 +109,14 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     public static function handle_whatsapp() {
+        self::guard(); $payment = GE_Production_Payment_Guard::check(self::order());
+        if (is_wp_error($payment)) { wp_die(esc_html($payment->get_error_message()), '', array('response'=>409)); }
         self::guard(); $order = self::order(); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { wp_die( 'Usá la salida a proveedor del nuevo circuito.', 403 ); } check_admin_referer( 'ge_supplier_whatsapp_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $phone = $profile ? self::normalize_phone( $profile['whatsapp'] ) : ''; if ( ! $phone ) { self::redirect_order( $order, 'supplier-failed' ); }
         self::log( $order, 'whatsapp', true ); wp_redirect( 'https://wa.me/' . rawurlencode( $phone ) . '?text=' . rawurlencode( self::whatsapp_message( $order ) ) ); exit;
     }
 
     private static function send_email( $order, $profile ) {
+        if ( is_wp_error( GE_Production_Payment_Guard::check( $order ) ) ) { return false; }
         $reference = class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : ( $order->get_meta( '_ge_markcom_reference' ) ?: '#' . $order->get_id() ); $rows = '';
         $production_items = class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::actionable_items( $order, false ) : $order->get_items( 'line_item' );
         if ( ! $production_items ) { return false; }

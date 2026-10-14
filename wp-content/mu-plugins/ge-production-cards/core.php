@@ -127,6 +127,7 @@ final class GE_WTP_Production_Cards {
    if($d['state']!=='preparing')return array('saved'=>true,'duplicate'=>true,'state'=>$d['state']);
    if((int)$revision!==(int)$d['revision'])return new WP_Error('conflict','El control cambió. Revisá el resumen vigente antes de terminar.');
    $check=self::check($order);if(is_wp_error($check))return $check;
+   $payment=GE_Production_Payment_Guard::check($order);if(is_wp_error($payment))return $payment;
    if(count($d['routes'])!==count(self::items($order)))return new WP_Error('route','Elegí el destino de cada producto en Salida.');
    $suppliers=array();$d['authorized']=array();
    foreach(self::items($order) as $item_id=>$item){
