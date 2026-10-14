@@ -39,7 +39,7 @@ final class GE_Work_Invoice_Mail {
         $lock='ge_work_invoice_'.$id.'_'.$doc_id;if(!GE_Work_Finance::lock($lock))return new WP_Error('busy','El envío se está procesando; no lo repitas.');
         $attachment=null;$started=false;
         try {
-            clean_post_cache($id);
+            GE_Work_Finance::clear_order_cache($id);
             $order=GE_Work_Finance::order($id);$doc=self::document($order,$doc_id);if(is_wp_error($doc))return $doc;
             $order=GE_Work_Finance::strict_order($id);
             $to=self::recipient($order);$with_pdf=!empty($input['attach_pdf']);
