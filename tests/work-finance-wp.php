@@ -34,4 +34,3 @@ try {
     file_put_contents(dirname(ABSPATH).'/finance-admin.html','<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#f5f5fa;font:16px/1.5 Arial,sans-serif}.ge-staff-main{max-width:1160px;margin:auto;padding:20px}input,textarea,select{box-sizing:border-box;max-width:100%}</style><style>'.$styles.'</style><main class="ge-staff-main">'.$html.'</main><script>'.file_get_contents(WPMU_PLUGIN_DIR.'/ge-work-master/master.js').'</script></html>');
     echo wp_json_encode(array('passed'=>true,'checks'=>$count,'qa_only'=>true,'actual_external_emails'=>0,'intercepted_mail_calls'=>count($calls),'fixture_order'=>$render->get_id(),'invoice_original_preserved'=>true));
 } finally {update_option(GE_Organization::ROOT,$org);}
-
