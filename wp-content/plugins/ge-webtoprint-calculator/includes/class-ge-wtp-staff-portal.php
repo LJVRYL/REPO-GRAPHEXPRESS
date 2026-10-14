@@ -433,7 +433,7 @@ final class GE_WTP_Staff_Portal {
         <?php GE_WTP_Customer_Branches::render_order_summary( $order, true ); ?>
         <?php if (!class_exists('GE_Work_Master') || !GE_Work_Master::active()) GE_WTP_Payment_Policy::render_order( $order ); ?>
         <?php if (!class_exists('GE_Work_Master') || !GE_Work_Master::active()) GE_WTP_Payments::render_staff_order_payment( $order ); ?>
-        <?php GE_WTP_Issued_Documents::render_staff( $order ); ?>
+        <?php if(!class_exists('GE_Work_Master') || !is_callable(array('GE_Work_Master','render_finance')) || !GE_Work_Master::active()) GE_WTP_Issued_Documents::render_staff( $order ); ?>
         <?php GE_WTP_Review_Requests::render_for_order( $order ); ?>
         <?php if ( ! GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { self::render_order_shipping( $order ); } ?>
         <?php if ( ! GE_WTP_Customer_Quotes::is_quote_order( $order ) && self::can_edit_order_lines( $order ) ) { self::order_editor( $order ); } ?>
@@ -448,7 +448,7 @@ final class GE_WTP_Staff_Portal {
         GE_WTP_Customer_Branches::render_order_summary($order,true);
         self::render_order_shipping($order);
         GE_WTP_Delivery_Labels::label_form($order);
-        GE_WTP_Issued_Documents::render_staff($order);
+        if(!class_exists('GE_Work_Master') || !is_callable(array('GE_Work_Master','render_finance')) || !GE_Work_Master::active()) GE_WTP_Issued_Documents::render_staff($order);
         GE_WTP_Review_Requests::render_for_order($order);
     }
 

@@ -130,6 +130,7 @@ final class GE_Organization_Runtime {
         if(preg_match('/^ge_(workflow_|send_review_email|open_review_whatsapp|save_review_url|confirm_delivery)/',$action))$module='production';
         if($action==='ge_delivery_label')$module='orders';
         if($action==='ge_request_save')$module='quotes';
+        if(in_array($action,array('ge_work_manual_payment','ge_work_invoice_send','ge_issued_document_attach'),true))$module='finance';
         if($action==='ge_save_billing_entity')$module='company';
         if($action==='ge_google_auth')$module='customers';
         if(self::role(get_current_user_id())==='administracion' && ($action==='ge_order_payment_policy' || ($action==='ge_customer_workspace_save' && ($_POST['section']??'')==='payment_policy')))$module='finance';

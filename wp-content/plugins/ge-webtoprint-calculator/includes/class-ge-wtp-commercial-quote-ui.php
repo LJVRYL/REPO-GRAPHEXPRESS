@@ -221,7 +221,7 @@ final class GE_WTP_Commercial_Quote_UI {
         if ( ! $quote['converted_order_id'] && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { self::render_conversion_dialog( $quote, $customer ); }
         do_action( 'ge_logistics_quote', $quote, false );
         self::render_events( $quote );
-        if ( class_exists( 'GE_WTP_Commercial_Checkout' ) && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { GE_WTP_Commercial_Checkout::render_staff_payment( $quote ); }
+        if (class_exists('GE_Work_Master') && is_callable(array('GE_Work_Master','render_finance')) && GE_Work_Master::active() && $quote['converted_order_id']) { $main=wc_get_order($quote['converted_order_id']); if($main)GE_Work_Master::render_finance($main,$quote); } elseif ( class_exists( 'GE_WTP_Commercial_Checkout' ) && ( ! GE_WTP_Quote_Selection::has_choices( $proposal['snapshot'] ) || in_array( $proposal['status'], array( 'accepted', 'converted' ), true ) ) ) { GE_WTP_Commercial_Checkout::render_staff_payment( $quote ); }
     }
 
     private static function render_files( $quote, $customer_view ) {
