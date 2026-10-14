@@ -838,9 +838,7 @@ final class GE_WTP_Commercial_Quotes {
         $snapshot = $quote['snapshot'];
         if ( ! empty( $snapshot['draft_incomplete'] ) || empty( $snapshot['items'] ) || ! empty( $snapshot['draft_lines'] ) ) { return new WP_Error( 'ge_quote_incomplete', 'Completá y guardá los productos y precios antes de crear el pedido.' ); }
         if ( GE_WTP_Quote_Selection::has_choices( $snapshot ) && empty( $snapshot['customer_selection'] ) ) { return new WP_Error( 'ge_quote_selection_required', 'Elegí las variantes del presupuesto antes de crear el pedido.' ); }
-        $issuer = GE_WTP_Billing_Issuers::from_snapshot( $snapshot );
-        $receiver = GE_WTP_Quote_Billing_Control::receiver( $snapshot );
-        if ( empty( $issuer['id'] ) || 'unknown' === $issuer['id'] || empty( $issuer['legal_name'] ) || empty( $snapshot['billing_profile_id'] ) || empty( $receiver['legal_name'] ) ) { return new WP_Error( 'ge_quote_parties', 'Seleccioná y guardá el emisor y el receptor antes de crear el pedido.' ); }
+        // Fiscal parties may be assigned later; preserve the commercial snapshot.
         if ( ! isset( $snapshot['net_cents'], $snapshot['tax_cents'], $snapshot['total_cents'] ) || (int) $snapshot['total_cents'] <= 0 || (int) $snapshot['net_cents'] < 0 || (int) $snapshot['tax_cents'] < 0 || (int) $snapshot['net_cents'] + (int) $snapshot['tax_cents'] !== (int) $snapshot['total_cents'] ) { return new WP_Error( 'ge_quote_total', 'Revisá y guardá los importes del presupuesto antes de crear el pedido.' ); }
         $net = 0; $tax = 0;
         foreach ( $snapshot['items'] as $line ) {
