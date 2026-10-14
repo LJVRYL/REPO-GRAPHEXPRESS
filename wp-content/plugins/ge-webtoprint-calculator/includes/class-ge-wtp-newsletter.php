@@ -12,6 +12,9 @@ final class GE_WTP_Newsletter {
         require_once __DIR__ . '/class-ge-wtp-newsletter-review.php';
         require_once __DIR__ . '/class-ge-wtp-newsletter-audiences.php';
         require_once __DIR__ . '/class-ge-wtp-mail-log-view.php';
+        require_once __DIR__ . '/class-ge-wtp-communications-panel.php';
+        require_once __DIR__ . '/class-ge-wtp-newsletter-engine.php';
+        GE_WTP_Newsletter_Engine::init();
         GE_WTP_Newsletter_Review::init();
         add_action( self::CRON_HOOK, array( __CLASS__, 'process_queue' ) );
         add_action( 'admin_post_nopriv_ge_newsletter_subscribe', array( __CLASS__, 'handle_subscribe' ) );
@@ -198,9 +201,9 @@ final class GE_WTP_Newsletter {
         }
         self::$portal_context = true;
         $view = isset( $_GET['subsection'] ) ? sanitize_key( wp_unslash( $_GET['subsection'] ) ) : 'campaigns';
-        echo '<div class="ge-staff-heading"><div><span>Comunicaciones</span><h1>Newsletter y correos</h1><p>Contactos, campañas y trazabilidad.</p></div></div>';
-        echo '<nav class="ge-staff-tabs"><a class="' . ( 'campaigns' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'campaigns' ) ) ) . '">Campañas</a><a class="' . ( 'contacts' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'contacts' ) ) ) . '">Contactos</a><a class="' . ( 'emails' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Staff_Portal::portal_url( 'communications', array( 'subsection' => 'emails' ) ) ) . '">Correos enviados</a><a class="' . ( 'templates' === $view ? 'is-active' : '' ) . '" href="' . esc_url( GE_WTP_Email_Templates::url() ) . '">Plantillas</a></nav>';
-        if ( 'templates' === $view ) { GE_WTP_Email_Templates::render_portal(); } elseif ( 'contacts' === $view ) { self::render_contacts(); } elseif ( 'emails' === $view ) { self::render_email_logs(); } else { self::render_campaigns(); }
+        echo '<div class="ge-staff-heading"><div><span>Centro de comunicación</span><h1>Contactos y campañas</h1><p>Organizá tu base, prepará el contenido y seguí cada envío.</p></div></div>';
+        GE_WTP_Communications_Panel::navigation($view);
+        if ( 'templates' === $view ) { GE_WTP_Email_Templates::render_portal(); } elseif ( 'contacts' === $view ) { self::render_contacts(); } elseif ( 'emails' === $view ) { self::render_email_logs(); } elseif (in_array($view,array('audiences','engine','metrics','diagnostics'),true)) { GE_WTP_Communications_Panel::render($view); } else { self::render_campaigns(); }
         self::$portal_context = false;
     }
 
@@ -237,8 +240,7 @@ final class GE_WTP_Newsletter {
     }
 
     public static function process_queue() {
-        // Review-only release: no SMTP dispatch, retry or legacy queue processing.
-        return;
+        return GE_WTP_Newsletter_Engine::process();
     }
 
     public static function campaign_html( $campaign, $unsubscribe_url, $first_name ) {

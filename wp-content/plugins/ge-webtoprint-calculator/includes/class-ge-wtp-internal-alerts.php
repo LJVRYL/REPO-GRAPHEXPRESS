@@ -22,6 +22,10 @@ final class GE_WTP_Internal_Alerts {
         update_option($key,$id,false);return $id;
     }
     public static function url($data) {
+        if (strpos($data['type']??'', 'crm_mail_')===0 && class_exists('GE_CRM')) {
+            try { GE_CRM::get($data['entity_ref'],'thread'); return home_url('/gestion/?section=crm&view=inbox&record_id='.(int)$data['entity_ref']); }
+            catch(Throwable $e) { return home_url('/gestion/?section=crm&view=inbox'); }
+        }
         if ( get_post_type($data['entity_ref']) === 'ge_invoice_case' ) { $case=get_post_meta($data['entity_ref'],'_ge_invoice_case',true); return GE_WTP_Customer_Invoices::url($case['ref']??'',true,$case['customer_id']??0); }
         $kind=get_post_type($data['entity_ref']);$section=GE_WTP_Quote_Requests::TYPE===$kind?'requests':(GE_WTP_Commercial_Quotes::POST_TYPE===$kind?'quotes':'orders');
         $arg='requests'===$section?'request_id':('quotes'===$section?'quote_id':'order_id');
@@ -38,7 +42,7 @@ final class GE_WTP_Internal_Alerts {
         if(self::TYPE!==get_post_type($id)){wp_die('Aviso inexistente.');}
         $data=get_post_meta($id,'_ge_alert',true);if(get_post_type($data['entity_ref']??0)==='ge_invoice_case' && !GE_WTP_Customer_Invoices::staff(get_current_user_id())){wp_die('Acceso denegado.','',array('response'=>403));}
         update_post_meta($id,'_ge_read_'.get_current_user_id(),gmdate('c'));
-        wp_safe_redirect(GE_WTP_Staff_Portal::portal_url('requests'));exit;
+        wp_safe_redirect(strpos($data['type']??'','crm_mail_')===0?self::url($data):GE_WTP_Staff_Portal::portal_url('requests'));exit;
     }
     public static function bell() {
         if(!GE_WTP_Staff_Portal::can_access())return;$rows=self::unread(get_current_user_id());

@@ -130,13 +130,31 @@ final class GE_CRM_UI {
         GE_CRM_Attention::render_status();
         do_action('ge_crm_inbox_channel_details');
         echo '<div class="ge-crm-toolbar"><p>Email y canales Meta · WhatsApp preparado para conexión.</p><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('communications')).'">Abrir Comunicaciones →</a></div><a href="'.esc_url(self::url('inbox',array('new'=>'thread'))).'">Registrar conversación para revisión</a>';$page = max( 1, absint( $_GET['inbox_page'] ?? 1 ) );
-        $rows = GE_CRM::records( 'thread', 0, '', 51, ( $page - 1 ) * 50 );
+        $mailbox = 'server' === ( $_GET['mailbox'] ?? '' ) ? 'server' : 'commercial';
+        echo '<nav class="ge-crm-tabs" aria-label="Tipo de mensaje">';
+        foreach ( array( 'commercial' => 'Bandeja comercial', 'server' => 'Rebotes / avisos del servidor' ) as $key => $label ) {
+            echo '<a href="' . esc_url( self::url( 'inbox', array( 'mailbox' => $key ) ) ) . '"' . ( $key === $mailbox ? ' aria-current="page"' : '' ) . '>' . esc_html( $label ) . '</a>';
+        }
+        echo '</nav>';
+        if ( 'server' === $mailbox ) { echo '<p>Avisos automáticos conservados para diagnóstico. No generan consultas ni tareas comerciales y no reciben respuestas automáticas.</p>'; }
+        $rows = GE_CRM::records( 'thread', 0, '', 51, ( $page - 1 ) * 50, $mailbox );
         $next = count( $rows ) > 50;
-        self::list_records( array_slice( $rows, 0, 50 ) );
+        if ( 'server' === $mailbox ) {
+            $groups = array();
+            foreach ( array_slice( $rows, 0, 50 ) as $row ) {
+                $campaign = absint( $row['attention_notice_context']['campaign_id'] ?? 0 );
+                $label = $campaign ? 'Campaña #' . $campaign : 'Otros avisos / referencia pendiente';
+                $groups[$label][] = $row;
+            }
+            foreach ( $groups as $label => $group ) {
+                echo '<details class="ge-crm-panel"><summary>' . esc_html( $label ) . ' · ' . count( $group ) . ' avisos en esta página</summary>';
+                self::list_records( $group ); echo '</details>';
+            }
+        } else { self::list_records( array_slice( $rows, 0, 50 ) ); }
         echo '<nav aria-label="Páginas de conversaciones" class="ge-crm-tabs">';
-        if ( $page > 1 ) { echo '<a href="' . esc_url( self::url( 'inbox', array( 'inbox_page' => $page - 1 ) ) ) . '">← Anteriores</a>'; }
+        if ( $page > 1 ) { echo '<a href="' . esc_url( self::url( 'inbox', array( 'inbox_page' => $page - 1, 'mailbox' => $mailbox ) ) ) . '">← Anteriores</a>'; }
         echo '<span>Página ' . (int) $page . '</span>';
-        if ( $next ) { echo '<a href="' . esc_url( self::url( 'inbox', array( 'inbox_page' => $page + 1 ) ) ) . '">Siguientes →</a>'; }
+        if ( $next ) { echo '<a href="' . esc_url( self::url( 'inbox', array( 'inbox_page' => $page + 1, 'mailbox' => $mailbox ) ) ) . '">Siguientes →</a>'; }
         echo '</nav>';
         echo '<details class="ge-crm-panel"><summary>Historial de correos enviados</summary>';foreach(GE_WTP_Notifications::get_logs(50) as $p)if(GE_CRM::mail_scope($p->ID)){echo '<div class="ge-crm-row"><div><strong>'.esc_html($p->post_title).'</strong><small>'.esc_html(get_post_meta($p->ID,'_ge_email_to',true)).'</small></div><small>'.esc_html(get_post_meta($p->ID,'_ge_email_result',true)).'</small></div>';}echo '</details><p>Las sugerencias se guardan como borrador. Los envíos y la recepción dependen del transporte verificado y de la política de cada canal.</p>';
     }
