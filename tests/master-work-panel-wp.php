@@ -33,6 +33,9 @@ $before=serialize(get_user_meta(37,$legacy_key,true));ob_start();$active=GE_Work
 check_master($active && strpos($legacy_html,'legacy_key=')!==false,'Historic quote missing common navigation');check_master($before===serialize(get_user_meta(37,$legacy_key,true)),'Historic quote mutated');
 $_GET=array();$context=GE_Work_Master::context('orders',$source->get_id());check_master(!empty($context['legacy']),'Historic order lost quote backlink');
 $results[]=array('historic_quote_wrapped'=>true,'historic_record_unchanged'=>true,'historic_backlink'=>true);
+$guest=wc_create_order();$guest->set_billing_first_name('QA');$guest->set_billing_last_name('Invitado');$guest->set_billing_email('guest-qa@example.invalid');$guest->set_total(100);$guest->update_meta_data('_ge_production_operational_status','closed');$guest->save();
+$_GET=array('section'=>'orders','order_id'=>$guest->get_id());ob_start();GE_Work_Master::begin('orders');GE_Work_Master::end();$guest_html=ob_get_clean();check_master(strpos($guest_html,'QA Invitado')!==false && strpos($guest_html,'guest-qa@example.invalid')!==false && strpos($guest_html,'Cerrado')!==false,'Guest identity or closed state missing');
+$results[]=array('guest_customer_preserved'=>true,'closed_state_visible'=>true);
 foreach(array('admin','produccion') as $role){
  $copy=$org;$copy[GE_Organization::PRIMARY]['members']['1']=$role;update_option(GE_Organization::ROOT,$copy);
  foreach(array('production','orders','quotes','delivery') as $kind){

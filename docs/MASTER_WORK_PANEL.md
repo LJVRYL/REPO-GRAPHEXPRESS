@@ -20,4 +20,4 @@ Respaldo privado: `/home/graphexpress/releases/master-work-panel-20261014/backup
 
 Rollback selectivo: verificar que los siete archivos aún coincidan con el manifiesto publicado; restaurar los cuatro originales; desactivar la entrada nueva MU trasladándola al directorio privado del release. CSS/JS nuevos pueden conservarse sin cargar. Refrescar el pool PHP 7.4 del dominio y verificar presupuesto, pedido, producción e importes. No cambiar datos, opciones, pagos, archivos ni excepciones para revertir esta presentación.
 
-Estado del candidato: probado en QA; requiere integración canónica y publicación autorizadas antes de marcar desplegado/verificado.
+La integración inicial fue autorizada y publicada desde master en PR22. La verificación de registros antiguos agregó el nombre/email de facturación para invitados sin cuenta y muestra el cierre operativo en el encabezado, conservando los datos y controles nativos. El estado activo, commit y manifiesto se registran en la biblioteca del proyecto y en el Result Pack del release.

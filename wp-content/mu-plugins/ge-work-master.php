@@ -98,8 +98,9 @@ final class GE_Work_Master {
         echo '<section class="ge-production-card ge-quote-view ge-work-summary"><header class="ge-quote-view-head"><div><span class="ge-quote-kicker">'.esc_html($quote ? 'Pedido y producción' : $reference).'</span><h2>';
         if ($quote) echo esc_html($reference);
         elseif ($customer) echo '<a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('customers',array('customer_id'=>$customer_id))).'">'.esc_html($customer->display_name).'</a>';
-        else echo 'Cliente';
-        echo '</h2><small>'.esc_html($customer ? $customer->user_email : '').'</small></div><div><strong>'.esc_html($order ? GE_WTP_Order_Lifecycle::label($order) : ($quote ? $quote['status'] : $request['status'])).'</strong></div></header>';
+        else echo esc_html($order ? ($order->get_formatted_billing_full_name() ?: $order->get_billing_company() ?: $order->get_meta('_ge_manual_contact_name',true) ?: 'Cliente') : 'Cliente');
+        $status=$order ? (GE_WTP_Production::is_closed($order) ? 'Cerrado' : GE_WTP_Order_Lifecycle::label($order)) : ($quote ? $quote['status'] : $request['status']);
+        echo '</h2><small>'.esc_html($customer ? $customer->user_email : ($order ? $order->get_billing_email() : '')).'</small></div><div><strong>'.esc_html($status).'</strong></div></header>';
         if ($order) {
             echo '<div class="ge-work-products"><h3>Productos del trabajo</h3><ul>';
             foreach ($order->get_items('line_item') as $item) echo '<li><div><strong>'.esc_html($item->get_name()).'</strong>'.($item->get_meta('Especificaciones',true) ? '<small>'.esc_html($item->get_meta('Especificaciones',true)).'</small>' : '').'</div><span>'.esc_html($item->get_quantity()).' unidades</span></li>';
