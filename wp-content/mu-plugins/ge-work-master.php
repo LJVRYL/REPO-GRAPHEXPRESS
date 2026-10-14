@@ -109,20 +109,26 @@ final class GE_Work_Master {
             if (GE_WTP_Work_Panel::allowed('production')) echo '<a class="ge-staff-button is-secondary" data-ge-work-nav href="'.esc_url(GE_WTP_Staff_Portal::portal_url('production',array('order_id'=>$order->get_id(),'step'=>'files'))).'">Archivos de producción y aprobación</a>';
         }
         echo '</section>';
-        if ($order && (!class_exists('GE_Organization_Runtime') || GE_Organization_Runtime::allowed('finance') || GE_Organization_Runtime::allowed('quotes',true))) {
-            $financial=$context['commercial_order'] ?: $order;
-            echo '<section class="ge-production-card ge-work-finance"><h2>Importes, pagos y facturación</h2><p class="ge-work-total">Total del pedido comercial <strong>'.esc_html(self::money((int)round((float)$financial->get_total()*100),$financial->get_currency())).'</strong></p>';
-            if ($financial->get_id()!==$order->get_id()) echo '<p>Esta orden de producción: '.esc_html(self::money((int)round((float)$order->get_total()*100),$order->get_currency())).' · Pedido de origen #'.absint($financial->get_id()).'</p>';
-            if ($quote) {
-                $balance=GE_WTP_Commercial_Checkout::payment_status($quote['id'],get_current_user_id());
-                $labels=array('pending'=>'Pendiente de acreditación','paid'=>'Acreditado','partial'=>'Pago parcial','failed'=>'Pago fallido','receipt_uploaded'=>'Comprobante pendiente de verificación');
-                if (!is_wp_error($balance)) echo '<div class="ge-quote-context"><div><span>Acreditado</span><strong>'.esc_html(self::money($balance['amount_paid_cents'],$financial->get_currency())).'</strong></div><div><span>Saldo pendiente</span><strong>'.esc_html(self::money(max(0,$balance['final_total_cents']-$balance['amount_paid_cents']),$financial->get_currency())).'</strong></div><div><span>Estado del pago</span><strong>'.esc_html($labels[$balance['payment_status']] ?? 'Revisar acreditación').'</strong></div></div>';
-            } else { $state=$financial->get_meta('_ge_payment_state',true);$labels=array('pending'=>'Pendiente de acreditación','paid'=>'Acreditado','partial'=>'Pago parcial','failed'=>'Pago fallido');echo '<p>Estado del pago: '.esc_html($labels[$state] ?? 'Revisar acreditación').'. Consultá el registro de cobros; un comprobante cargado requiere verificación.</p>'; }
-            echo '<details><summary>Gestionar cobros, comprobantes y condiciones de pago</summary>';
-            GE_WTP_Payment_Policy::render_order($financial);
-            GE_WTP_Payments::render_staff_order_payment($financial);
-            if ($quote) GE_WTP_Commercial_Checkout::render_staff_payment($quote);
-            echo '</details></section>';
+        if ($order) self::render_finance($context['commercial_order'] ?: $order,$quote,$order->get_id());
+    }
+    public static function render_finance($financial,$quote=null,$work_id=0) {
+        if (!GE_Organization_Runtime::allowed('finance') && !GE_Organization_Runtime::allowed('quotes',true)) return;
+        echo '<section id="ge-work-finance" class="ge-production-card ge-work-finance"><h2>Pagos del pedido</h2><p class="ge-work-total">Total del pedido comercial <strong>'.esc_html(self::money((int)round((float)$financial->get_total()*100),$financial->get_currency())).'</strong></p>';
+        if($work_id && $work_id!==$financial->get_id()){$piece=wc_get_order($work_id);$source=self::source($piece);if($source && $source->get_id()===$financial->get_id())echo '<p>Esta orden de producción: '.esc_html(self::money((int)round((float)$piece->get_total()*100),$piece->get_currency())).' · Pedido comercial #'.absint($financial->get_id()).'</p>';}
+        $balance=GE_Work_Finance::balance($financial);
+        if(!is_wp_error($balance)) {
+            $labels=array('unpaid'=>'Pendiente de acreditación','deposit_paid'=>'Pago parcial acreditado','paid'=>'Pagado completo');
+            echo '<div class="ge-quote-context"><div><span>Acreditado</span><strong>'.esc_html(self::money($balance['amount_paid_cents'],$financial->get_currency())).'</strong></div><div><span>Saldo pendiente</span><strong>'.esc_html(self::money($balance['amount_due_cents'],$financial->get_currency())).'</strong></div><div><span>Estado del pago</span><strong>'.esc_html($labels[$balance['payment_status']]).'</strong></div></div>';
+        }
+        GE_Work_Finance_UI::render($financial);
+        echo '<details><summary>Comprobantes del portal y condiciones de pago</summary>';
+        GE_WTP_Payment_Policy::render_order($financial);GE_WTP_Payments::render_staff_order_payment($financial);
+        if($quote)GE_WTP_Commercial_Checkout::render_staff_payment($quote);
+        echo '</details></section>';
+        if(GE_WTP_Customer_Invoices::staff(get_current_user_id())) {
+            echo '<section id="ge-work-invoices" class="ge-production-card ge-work-invoices"><h2>Facturación del pedido</h2><p>Cargá la factura ya emitida, revisá su emisor y enviá esta versión al cliente. Cargarla la deja disponible en el portal; el correo se envía con la acción correspondiente.</p>';
+            GE_WTP_Issued_Documents::render_staff($financial,false);GE_Work_Invoice_Mail::render($financial);
+            echo '<details><summary>Emitir una nueva factura mediante ARCA</summary>';GE_WTP_ARCA_Emission::render_staff($financial);echo '</details></section>';
         }
     }
     private static function money($cents,$currency) { return $currency==='ARS' ? GE_WTP_Commercial_Quote_UI::money($cents) : html_entity_decode(wp_strip_all_tags(wc_price($cents/100,array('currency'=>$currency))),ENT_QUOTES,'UTF-8'); }

@@ -14,8 +14,10 @@ final class GE_WTP_Issued_Documents {
 
     public static function handle_attach() {
         if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'ge_manage_operations' ) ) { wp_die( 'Acceso denegado.', 403 ); }
+        if(!GE_WTP_Customer_Invoices::staff(get_current_user_id(),true))wp_die('Sólo Administración/Finanzas puede cargar una factura.','',array('response'=>403));
         $order_id = absint( $_POST['order_id'] ?? 0 );
         check_admin_referer( 'ge_issued_document_' . $order_id );
+        if(class_exists('GE_Work_Finance') && is_wp_error(GE_Work_Finance::order($order_id)))wp_die('Revisá el pedido comercial de esta organización.','',array('response'=>409));
         $type = sanitize_key( wp_unslash( $_POST['document_type'] ?? '' ) );
         $number = sanitize_text_field( wp_unslash( $_POST['document_number'] ?? '' ) );
         $date = sanitize_text_field( wp_unslash( $_POST['issue_date'] ?? '' ) );
@@ -26,8 +28,9 @@ final class GE_WTP_Issued_Documents {
         exit;
     }
 
-    public static function render_staff( $order ) {
-        GE_WTP_ARCA_Emission::render_staff( $order );
+    public static function render_staff( $order, $include_emission = true ) {
+        if(!GE_WTP_Customer_Invoices::staff(get_current_user_id()))return;
+        if($include_emission)GE_WTP_ARCA_Emission::render_staff( $order );
         $documents = GE_WTP_Documents::issued_documents( $order->get_id(), true );
         $current = array_values( array_filter( $documents, function ( $document ) { return empty( $document['superseded_at'] ); } ) );
         echo '<section class="ge-admin-panel ge-issued-documents"><div class="ge-admin-panel-head"><div><span>Facturación</span><h2>Facturas y documentos emitidos</h2></div></div>';
@@ -37,6 +40,7 @@ final class GE_WTP_Issued_Documents {
             $label = GE_WTP_Documents::categories()[ $document['category'] ] ?? 'Documento emitido';
             echo '<p><a href="' . esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ) . '">' . esc_html( $label . ( ! empty( $document['document_number'] ) ? ' ' . $document['document_number'] : '' ) ) . '</a> · ' . esc_html( $document['issue_date'] ?: $document['uploaded_at'] ) . ( ! empty( $document['superseded_at'] ) ? ' · Versión reemplazada' : '' ) . '</p>';
         }
+        if(!GE_WTP_Customer_Invoices::staff(get_current_user_id(),true)){echo '</section>';return;}
         echo '<form class="ge-admin-form ge-admin-upload" method="post" enctype="multipart/form-data" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_issued_document_attach"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
         wp_nonce_field( 'ge_issued_document_' . $order->get_id() );
         $issuer = GE_WTP_Billing_Issuers::order_snapshot( $order );

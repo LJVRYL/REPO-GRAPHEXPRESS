@@ -209,7 +209,7 @@ final class GE_WTP_Notifications {
         exit;
     }
 
-    public static function send( $to, $subject, $html, $context = 'general', $object_id = 0, $extra_headers = array() ) {
+    public static function send( $to, $subject, $html, $context = 'general', $object_id = 0, $extra_headers = array(), $document_attachments = array() ) {
         $to = sanitize_email( $to );
         if ( ! $to || ! is_email( $to ) ) {
             return false;
@@ -230,7 +230,8 @@ final class GE_WTP_Notifications {
             $prepared = GE_WTP_Email_Branding::prepare($subject, $html, $context);
             $subject = $prepared['subject']; $html = $prepared['body'];
             $transport_started=true;
-            $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : array() );
+            foreach((array)$document_attachments as $path)if(!is_string($path) || !is_file($path))throw new RuntimeException('Adjunto privado no disponible.');
+            $ok = (bool) wp_mail( $to, wp_strip_all_tags( $subject ), $html, $headers, $attachment ? array( $attachment['name'] => $attachment['path'] ) : $document_attachments );
         } catch ( Throwable $error ) {
             self::log( $to, $subject, self::safe_log_body($html,$context), $context, $object_id, $transport_started?'unknown':'failed', $transport_started?'Resultado del transporte sin confirmar. Revisar antes de reenviar.':'No se pudo preparar el correo.' );
             throw $error;

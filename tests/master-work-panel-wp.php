@@ -14,7 +14,7 @@ $versions=(array)get_post_meta($qid,GE_WTP_Commercial_Quotes::VERSIONS_META,true
 $org=get_option(GE_Organization::ROOT);$results=array();
 function check_master($condition,$message){if(!$condition)throw new RuntimeException($message);}
 try {
-$source=wc_create_order(array('customer_id'=>37));$source->set_currency('ARS');$source->set_total(471900);$source->update_meta_data('_ge_commercial_quote_id',$qid);$source->update_meta_data('_ge_final_total_cents',47190000);$source->update_meta_data('_ge_amount_paid_cents',0);$source->update_meta_data('_ge_payment_state','pending');$source->save();
+$source=wc_create_order(array('customer_id'=>37));$source->set_currency('ARS');$source->set_total(471900);$source->update_meta_data('_ge_commercial_quote_id',$qid);$source->update_meta_data('_ge_final_total_cents',47190000);$source->update_meta_data('_ge_amount_paid_cents',0);$source->update_meta_data('_ge_amount_due_cents',47190000);$source->update_meta_data('_ge_payment_state','pending');$source->save();
 $item=new WC_Order_Item_Product();$item->set_name('QA · Producto de origen');$item->set_quantity(1);$item->set_total(471900);$source->add_item($item);$source->save();
 update_post_meta($qid,GE_WTP_Commercial_Quotes::ORDER_META,$source->get_id());update_post_meta($qid,GE_WTP_Commercial_Quotes::STATUS_META,'converted');
 $child=wc_create_order(array('customer_id'=>37));$child->set_currency('ARS');$child->set_total(330000);$child->update_meta_data('_ge_work_order','yes');$child->update_meta_data('_ge_source_quote_order_id',$source->get_id());$child->update_meta_data('_ge_source_quote_item_id',$item->get_id());$child->save();$item->update_meta_data('_ge_work_order_id',$child->get_id());$item->save();
