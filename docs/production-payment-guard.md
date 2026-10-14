@@ -1,4 +1,4 @@
-# Compromiso de producción y seña — candidato 14/10/2026
+# Compromiso de producción y seña — release 14/10/2026
 
 La preparación y las vistas previas permanecen disponibles antes del pago. Liberar producción interna, enviar una orden al proveedor y registrar su primera aceptación requieren la condición de pago congelada del pedido o una excepción explícita de Administración. Un comprobante o el estado `paid` sin evidencia no bastan; se reutiliza `GE_WTP_Job_Flow::payment_check` y su ledger.
 
@@ -8,9 +8,9 @@ Administración opera desde el pedido; owner/admin también desde Control final.
 
 ## Alcance y dependencias
 
-Candidato apilado sobre PR19/PR18; no fusionado ni desplegado. Reemplaza la regla general del PR19 de autorizar producción impaga. No incorpora conciliación bancaria automática ni certifica todos los canales, costos, stock o entrega. La política existente de saldo antes de entrega sigue en su propio control.
+PR18, PR19 y PR20 integrados en master con autorización expresa de Leo; release selectivo del hito P1. Reemplaza la regla general del PR19 de autorizar producción impaga. No incorpora conciliación bancaria automática ni certifica todos los canales, costos, stock o entrega. La política existente de saldo antes de entrega sigue en su propio control.
 
-Antes de activar en producción, preservar la excepción previa de 3528 (quote975 v2, ARS330000) con evidencia de autorización de Leo y alcance/vigencia auditados; no inferir que está pagado. Esta release candidata no modifica el pedido.
+Autorización previa de 3528 (quote975 v2, ARS330000) preservada como excepción auditada por el release autorizado: pago pending/0 y preparación sin cambios; vigencia hasta 21/10/2026 01:58 Buenos Aires. No se liberó producción.
 
 ## QA reproducible
 
@@ -18,7 +18,7 @@ Antes de activar en producción, preservar la excepción previa de 3528 (quote97
 
 `tests/production-cards-wp.php`: `GE_QA_SITE` admite la QA dedicada con DB `graph_integral_guard_20261014` o la QA histórica explícita. Nunca correr contra producción. Todos los fixtures registran excepción explícita cuando corresponde; se comprueba denegación sin seña, aprobación exacta, bytes/propiedad, manual/proveedor, revocación antes de envío y aceptación, rechazo/reapertura, avisos/replays y roles. Correo/HTTP interceptados; base nueva sin copiar clientes.
 
-Vistas nativas sintéticas renderizadas en navegador a 1366 y 390 píxeles: una tarjeta, sin desbordamiento; formulario de excepción sólo para administración. Es QA de render, no prueba de mutación desde navegador autenticado.
+Vistas nativas sintéticas renderizadas en navegador a 1366 y 390 píxeles: una tarjeta, sin desbordamiento; formulario de excepción sólo para administración. También se verificaron formularios autenticados con sesiones y pedido sintéticos: rechazo 403 del rol producción, autorización administrativa persistente y revocación que vuelve a bloquear.
 
 ## Release y rollback
 
@@ -28,4 +28,6 @@ Vistas nativas sintéticas renderizadas en navegador a 1366 y 390 píxeles: una 
 4. Publicar dependencia nueva antes de consumidores; verificar PHP7.4 real/vhost/pool y todos los hashes después. No emitir avisos ni cambiar pagos en smoke.
 5. Rollback selectivo: verificar que bytes actuales coincidan con payload desplegado y backup con `before_sha256`; restaurar sólo las rutas originales, mover el módulo nuevo a cuarentena privada. Abortarlo si hay drift. Preservar pagos, envíos, aprobaciones y hechos físicos; revisar compromisos posteriores antes de revertir a la regla anterior permisiva. Revalidar caché/runtime y smoke.
 
-Estado `canonical_synced=false` hasta integrar y verificar el release. El backup actual es preparatorio y debe recapturarse si otros workers cambian esas rutas.
+Estado, commit canónico y manifiesto exactos en el Result Pack del hito. El rollback final está en rollback-canonical.py con respaldo canonical-source-backup; debe abortar ante drift. El flujo integral posterior (conciliación/costos/entrega) sigue pendiente.
+
+Corrección de smoke: las fechas sin hora se muestran literalmente en la zona configurada; no se cambia la fecha comercial guardada (19/10 no debe mostrarse 18/10).
