@@ -19,6 +19,8 @@ function fixture($name,$approve=true,$client=false){
 }
 function save_step($o,$step,$input,$next=true){$o=fresh($o);$d=GE_WTP_Production_Cards::data($o);$r=GE_WTP_Production_Cards::save($o->get_id(),$d['revision'],$step,$input,$next);expect(!is_wp_error($r),'Save failed '.$step.': '.(is_wp_error($r)?$r->get_error_message():''));expect(empty($r['error']),'Step incomplete '.$step.': '.($r['error']??''));return fresh($o);}
 $cases=[];
+expect(GE_WTP_Production::date_label_public('2026-10-19')==='19/10/2026','Date-only deadline shifted by timezone');
+expect(GE_WTP_Production::date_label_public('2026-02-30')==='Sin fecha','Invalid date normalized into a different commitment');
 $unpaid=fixture('Sin seña');$unpaid->delete_meta_data(GE_Production_Payment_Guard::META);$unpaid->save();$unpaid=save_step($unpaid,'route',['source'=>'internal']);$blocked=GE_WTP_Production_Cards::finish($unpaid->get_id(),GE_WTP_Production_Cards::data($unpaid)['revision']);expect(is_wp_error($blocked)&&$blocked->get_error_code()==='production_payment','Unpaid finish allowed');expect(GE_WTP_Production_Cards::data(fresh($unpaid))['state']==='preparing','Denied finish changed state');
 $o=fixture('Interno con excepción');$before=[$o->get_total(),$o->get_status(),$o->get_meta('_ge_amount_paid_cents',true),$o->get_meta('_ge_payment_state',true)];
 expect(!is_wp_error(GE_WTP_Job_Flow::commercial_check($o)),'Payment still blocks production');

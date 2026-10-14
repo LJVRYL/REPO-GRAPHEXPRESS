@@ -834,7 +834,10 @@ final class GE_WTP_Production {
 
     private static function supplier_name( $key ) { $suppliers = self::suppliers(); return $suppliers[ $key ]['name'] ?? 'Proveedor a definir'; }
     private static function order_reference( $order ) { return class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : ( $order->get_meta( '_ge_markcom_reference' ) ?: '#' . $order->get_id() ); }
-    private static function date_label( $date ) { return $date ? wp_date( 'd/m/Y', strtotime( $date ) ) : 'Sin fecha'; }
+    private static function date_label( $date ) {
+        $value = $date ? DateTime::createFromFormat( '!Y-m-d', $date, wp_timezone() ) : false;
+        return $value && $value->format('Y-m-d') === $date ? $value->format('d/m/Y') : 'Sin fecha';
+    }
     public static function date_label_public( $date ) { return self::date_label( $date ); }
     private static function guard() { if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', 403 ); } }
     private static function requested_order() { $id = absint( $_REQUEST['order_id'] ?? 0 ); $order = $id ? wc_get_order( $id ) : false; if ( ! $order ) { wp_die( 'Pedido inválido.', 404 ); } return $order; }
