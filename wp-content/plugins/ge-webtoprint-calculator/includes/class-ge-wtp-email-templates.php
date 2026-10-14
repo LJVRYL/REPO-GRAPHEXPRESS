@@ -162,7 +162,8 @@ final class GE_WTP_Email_Templates {
     }
     public static function url($args=array()) { return GE_WTP_Staff_Portal::portal_url('communications',array_merge(array('subsection'=>'templates'),$args)); }
     public static function enqueue() {
-        if (!is_user_logged_in() || !in_array(sanitize_key($_GET['section']??''),array('quotes','communications'),true)) return;
+        if (!is_user_logged_in() || !in_array(sanitize_key($_GET['section']??''),array('quotes','communications','requests','orders','production'),true)) return;
+        if (in_array(sanitize_key($_GET['section']??''),array('requests','orders','production'),true) && (!class_exists('GE_Work_Master') || !GE_WTP_Work_Panel::allowed('quotes'))) return;
         wp_enqueue_style('ge-email-templates',GE_WTP_PLUGIN_URL.'assets/css/email-templates.css',array(),(string)filemtime(GE_WTP_PLUGIN_DIR.'assets/css/email-templates.css'));
         wp_enqueue_script('ge-email-templates',GE_WTP_PLUGIN_URL.'assets/js/email-templates.js',array(),(string)filemtime(GE_WTP_PLUGIN_DIR.'assets/js/email-templates.js'),true);
         wp_localize_script('ge-email-templates','geEmailTemplates',array('ajaxUrl'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('ge_email_preview'),'assetOrigin'=>home_url('/')));

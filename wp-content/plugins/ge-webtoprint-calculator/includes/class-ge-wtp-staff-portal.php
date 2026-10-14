@@ -108,12 +108,13 @@ final class GE_WTP_Staff_Portal {
             return;
         }
         $section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : 'dashboard';
+        $master = class_exists('GE_Work_Master') && GE_Work_Master::begin($section);
         if ( GE_WTP_Work_Panel::contains($section) ) {
             if ( ! GE_WTP_Work_Panel::accessible() || ('jobs' !== $section && ! GE_WTP_Work_Panel::allowed($section)) ) { echo '<p>Acceso no disponible para tu rol.</p>'; return; }
-            GE_WTP_Work_Panel::header($section);
+            if (!$master) GE_WTP_Work_Panel::header($section);
             if ( GE_WTP_Work_Panel::overview($section) ) { GE_WTP_Work_Panel::render($section); return; }
         }
-        GE_WTP_Job_Flow::staff( $section );
+        if (!$master) GE_WTP_Job_Flow::staff( $section );
         if($section==='dashboard' && class_exists('GE_Organization_Runtime') && (!in_array(GE_Organization_Runtime::role(get_current_user_id()),array('owner','admin'),true)||GE_Organization::PRIMARY!=='graph-express'||in_array(false,GE_Organization_Runtime::settings()['modules'],true))){GE_Organization_Runtime::dashboard();return;}
         if ( 'costs' === $section && GE_WTP_Cost_Engine::enabled() ) {
             GE_WTP_Cost_UI::render();
@@ -144,6 +145,7 @@ final class GE_WTP_Staff_Portal {
         } else {
             self::render_dashboard();
         }
+        if ($master) GE_Work_Master::end();
     }
 
     private static function render_settings( $legacy_category = '' ) {
@@ -272,9 +274,11 @@ final class GE_WTP_Staff_Portal {
     private static function render_orders() {
         $order_id = isset( $_GET['order_id'] ) ? absint( $_GET['order_id'] ) : 0;
         $order = $order_id ? wc_get_order( $order_id ) : false;
+        if (class_exists('GE_Work_Master') && GE_Work_Master::active()) echo '<details><summary>Más acciones del pedido</summary>';
         echo '<div class="ge-staff-heading"><div><span>Operación central</span><h1>Pedidos</h1><p>Tienda online, mostrador y cuentas corporativas en un solo lugar.</p></div><div class="ge-order-heading-actions"><a class="ge-staff-button" href="' . esc_url( self::portal_url( 'quotes', array( 'new' => 1 ) ) ) . '">＋ Nuevo presupuesto</a><a class="ge-staff-button" href="' . esc_url( self::portal_url( 'production', array( 'view' => 'new' ) ) ) . '">＋ Nuevo pedido manual</a>';
         if ( $order && ! GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { echo '<a class="ge-order-secondary-button" href="' . esc_url( self::portal_url( 'production', array( 'view' => 'new', 'same_customer_order' => $order->get_id() ) ) ) . '">Nuevo pedido al mismo cliente</a>'; }
         echo '</div></div>';
+        if (class_exists('GE_Work_Master') && GE_Work_Master::active()) echo '</details>';
         if ( isset( $_GET['order_trashed'] ) ) { echo '<div class="ge-order-notice" role="status">Pedido movido a la papelera de WooCommerce. Sus datos se conservaron y un administrador puede restaurarlo.</div>'; }
         if ( isset( $_GET['trash_blocked'] ) ) { echo '<div class="ge-order-notice is-error" role="alert">No se pudo mover el pedido a la papelera. Revisá si tiene pagos, envíos o producción registrada.</div>'; }
         if ( ! $order ) {
@@ -389,6 +393,10 @@ final class GE_WTP_Staff_Portal {
     }
 
     private static function order_detail( $order ) {
+        if (class_exists('GE_Work_Master') && GE_Work_Master::active() && ($_GET['work_stage'] ?? '') === 'delivery') {
+            self::render_master_delivery($order);
+            return;
+        }
         $documents = array_values( array_filter( GE_WTP_Documents::get_documents( $order->get_id() ), function( $document ) { return 'comprobante' !== ( $document['category'] ?? '' ); } ) );
         $is_markcom = 'yes' === $order->get_meta( '_ge_markcom_order' );
         $is_manual = 'yes' === $order->get_meta( '_ge_manual_order' );
@@ -423,15 +431,25 @@ final class GE_WTP_Staff_Portal {
         </aside><?php endif; ?></div>
         <?php GE_WTP_Delivery_Labels::label_form( $order ); ?>
         <?php GE_WTP_Customer_Branches::render_order_summary( $order, true ); ?>
-        <?php GE_WTP_Payment_Policy::render_order( $order ); ?>
-        <?php GE_WTP_Payments::render_staff_order_payment( $order ); ?>
+        <?php if (!class_exists('GE_Work_Master') || !GE_Work_Master::active()) GE_WTP_Payment_Policy::render_order( $order ); ?>
+        <?php if (!class_exists('GE_Work_Master') || !GE_Work_Master::active()) GE_WTP_Payments::render_staff_order_payment( $order ); ?>
         <?php GE_WTP_Issued_Documents::render_staff( $order ); ?>
         <?php GE_WTP_Review_Requests::render_for_order( $order ); ?>
         <?php if ( ! GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { self::render_order_shipping( $order ); } ?>
         <?php if ( ! GE_WTP_Customer_Quotes::is_quote_order( $order ) && self::can_edit_order_lines( $order ) ) { self::order_editor( $order ); } ?>
         <?php if ( is_email( $order->get_billing_email() ) ) : ?><section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Comunicación</span><h2>Avisar cambios al cliente</h2></div></div><p>Envía el detalle, el total actualizado y un acceso directo al pedido. El resultado queda registrado en Notificaciones.</p><form class="ge-admin-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_send_order_update"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_send_order_update_' . $order->get_id() ); ?><button class="ge-staff-button" type="submit">Enviar actualización a <?php echo esc_html( $order->get_billing_email() ); ?></button></form></section><?php endif; ?>
-        <section class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Archivos</span><h2>Documentos del pedido</h2></div><strong><?php echo esc_html( count( $documents ) ); ?></strong></div><div class="ge-admin-document-grid"><div><?php if ( ! $documents ) : ?><div class="ge-admin-empty">No hay documentos cargados.</div><?php else : foreach ( $documents as $document ) : ?><a class="ge-admin-document" href="<?php echo esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ); ?>"><b>↓</b><span><strong><?php echo esc_html( $document['name'] ); ?></strong><small><?php echo esc_html( size_format( $document['size'] ) ); ?></small></span></a><?php GE_WTP_File_Analysis::render( $document, true ); endforeach; endif; ?></div><form class="ge-admin-form ge-admin-upload" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_backoffice_order_document"><input type="hidden" name="return_to" value="staff"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_backoffice_order_document_' . $order->get_id() ); ?><label>Tipo<select name="category"><?php foreach ( GE_WTP_Documents::upload_categories() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><label>Archivo<input type="file" name="ge_documents[]" accept=".pdf,.jpg,.jpeg,.png,.zip" multiple required></label><button class="ge-staff-button" type="submit">Cargar</button></form></div></section>
+        <section id="ge-work-documents" class="ge-admin-panel"><div class="ge-admin-panel-head"><div><span>Archivos</span><h2>Documentos del pedido</h2></div><strong><?php echo esc_html( count( $documents ) ); ?></strong></div><div class="ge-admin-document-grid"><div><?php if ( ! $documents ) : ?><div class="ge-admin-empty">No hay documentos cargados.</div><?php else : foreach ( $documents as $document ) : ?><a class="ge-admin-document" href="<?php echo esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ); ?>"><b>↓</b><span><strong><?php echo esc_html( $document['name'] ); ?></strong><small><?php echo esc_html( size_format( $document['size'] ) ); ?></small></span></a><?php GE_WTP_File_Analysis::render( $document, true ); endforeach; endif; ?></div><form class="ge-admin-form ge-admin-upload" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_backoffice_order_document"><input type="hidden" name="return_to" value="staff"><input type="hidden" name="order_id" value="<?php echo esc_attr( $order->get_id() ); ?>"><?php wp_nonce_field( 'ge_backoffice_order_document_' . $order->get_id() ); ?><label>Tipo<select name="category"><?php foreach ( GE_WTP_Documents::upload_categories() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><label>Archivo<input type="file" name="ge_documents[]" accept=".pdf,.jpg,.jpeg,.png,.zip" multiple required></label><button class="ge-staff-button" type="submit">Cargar</button></form></div></section>
         <?php
+    }
+
+    private static function render_master_delivery($order) {
+        $ready=GE_WTP_Job_Flow::delivery_check($order);
+        echo '<section class="ge-production-card"><h2>Estado de la entrega</h2><p>'.esc_html(is_wp_error($ready) ? $ready->get_error_message() : ($order->get_meta('_ge_delivery_confirmed_at',true) ? 'Entrega confirmada.' : 'Trabajo listo para coordinar la recepción.')).'</p></section>';
+        GE_WTP_Customer_Branches::render_order_summary($order,true);
+        self::render_order_shipping($order);
+        GE_WTP_Delivery_Labels::label_form($order);
+        GE_WTP_Issued_Documents::render_staff($order);
+        GE_WTP_Review_Requests::render_for_order($order);
     }
 
     private static function render_order_shipping( $order ) {
