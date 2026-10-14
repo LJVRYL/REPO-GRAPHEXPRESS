@@ -25,6 +25,7 @@ final class GE_WTP_Work_Panel {
     }
     public static function header( $section ) {
         self::assets();
+        if($section==='production'&&class_exists('GE_WTP_Production_Cards')){$order=wc_get_order(absint($_GET['order_id']??0));if(GE_WTP_Production_Cards::enabled($order))return;}
         $active = 'jobs' === $section ? sanitize_key( $_GET['tipo'] ?? '' ) : $section;
         echo '<section class="ge-work-heading"><div><span class="ge-work-eyebrow">SOLICITUD → PRESUPUESTO → PEDIDO → ENTREGA</span><h1>Trabajos</h1><p>Todo el recorrido en un solo panel. Abrí un trabajo para continuar desde su etapa actual.</p></div><div class="ge-work-create">';
         if ( self::allowed( 'quotes' ) && ( ! class_exists('GE_Organization_Runtime') || GE_Organization_Runtime::allowed('quotes',true) ) ) { echo '<a class="ge-staff-button" href="'.esc_url(GE_WTP_Staff_Portal::portal_url('quotes',array('new'=>1))).'">Nuevo presupuesto</a>'; }
@@ -67,7 +68,7 @@ final class GE_WTP_Work_Panel {
         elseif(in_array($order->get_status(),array('cancelled','refunded','failed'),true)){$next='Revisar el historial del pedido';}
         else { $blocked=GE_WTP_Artwork_Library::blocked_item_names($order); if($blocked){$next='Revisar y aprobar el archivo exacto';$owner='Graph Express y cliente';}else{$next='Revisar condiciones y liberar producción';} }
         $date=$order->get_date_modified()?:$order->get_date_created();
-        return array('key'=>'order:'.$order->get_id(),'kind'=>$kind,'order_id'=>$order->get_id(),'customer_id'=>(int)$order->get_customer_id(),'reference'=>'#'.$order->get_order_number(),'customer'=>self::customer($order->get_customer_id(),$order->get_formatted_billing_full_name()),'title'=>self::item_title($order->get_items()),'status'=>$closed?GE_WTP_Order_Lifecycle::label($order):GE_WTP_Order_Lifecycle::stages()[$stage],'next'=>$next,'owner'=>$owner,'closed'=>$closed,'updated'=>$date?$date->getTimestamp():0,'version'=>(int)$order->get_meta('_ge_commercial_quote_version',true),'quote_id'=>(int)$order->get_meta('_ge_commercial_quote_id',true),'request_id'=>0,'url'=>GE_WTP_Staff_Portal::portal_url($target,array('order_id'=>$order->get_id())));
+        return array('key'=>'order:'.$order->get_id(),'kind'=>$kind,'order_id'=>$order->get_id(),'customer_id'=>(int)$order->get_customer_id(),'reference'=>'#'.$order->get_order_number(),'customer'=>self::customer($order->get_customer_id(),$order->get_formatted_billing_full_name()),'title'=>self::item_title($order->get_items()),'status'=>GE_WTP_Order_Lifecycle::label($order),'next'=>$next,'owner'=>$owner,'closed'=>$closed,'updated'=>$date?$date->getTimestamp():0,'version'=>(int)$order->get_meta('_ge_commercial_quote_version',true),'quote_id'=>(int)$order->get_meta('_ge_commercial_quote_id',true),'request_id'=>0,'url'=>GE_WTP_Staff_Portal::portal_url($target,array('order_id'=>$order->get_id())));
     }
     public static function rows() {
         if(!self::accessible())return array();

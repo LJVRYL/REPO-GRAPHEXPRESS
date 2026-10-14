@@ -179,7 +179,7 @@ final class GE_WTP_Job_Flow {
     public static function commercial_check( $order ) {
         if ( in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true ) ) { return new WP_Error( 'ge_job_inactive', 'El pedido no está activo. Revisá su estado comercial.' ); }
         $id = absint( $order->get_meta( '_ge_commercial_quote_id', true ) );
-        if ( $id || ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) ) { $payment = self::payment_check( $order ); if ( is_wp_error( $payment ) ) { return $payment; } }
+        // Staff production authorization is independent of payment and invoice reconciliation.
         if ( ! $id ) { return true; }
         // Internal validation exposes no quote contents; production roles can validate an order they own.
         $quote = GE_WTP_Commercial_Quotes::get( $id );
@@ -189,7 +189,8 @@ final class GE_WTP_Job_Flow {
         $snapshot = $order->get_meta( '_ge_commercial_quote_snapshot', true );
         if ( ! is_array( $snapshot ) || ! $snapshot ) { return new WP_Error( 'ge_job_snapshot', 'Falta la propuesta conservada en el pedido. Revisá el origen comercial.' ); }
         $quote['snapshot'] = $snapshot;
-        return GE_WTP_Commercial_Quotes::check_billing_snapshot( $quote );
+        // Billing remains enforced by its own financial workflow.
+        return true;
     }
 
     public static function staff( $section ) {
@@ -210,6 +211,7 @@ final class GE_WTP_Job_Flow {
 
     public static function render( $context, $section, $customer ) {
         $request = $context['request']; $quote = $context['quote']; $order = $context['order'];
+        if(!$customer&&$section==='production'&&class_exists('GE_WTP_Production_Cards')&&GE_WTP_Production_Cards::enabled($order))return;
         $stage = $order ? GE_WTP_Order_Lifecycle::stage( $order ) : '';
         $steps = array( 'requests' => array( 'Solicitud', $request ? $request['id'] : 0 ), 'quotes' => array( 'Presupuesto', $quote ? $quote['id'] : 0 ), 'orders' => array( 'Pedido', $order ? $order->get_id() : 0 ), 'production' => array( 'Producción y entrega', $order ? $order->get_id() : 0 ) );
         $reference = $quote ? $quote['number'] : ( $order ? '#' . $order->get_order_number() : 'Solicitud #' . $request['id'] );

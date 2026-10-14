@@ -339,6 +339,7 @@ final class GE_WTP_Artwork_Library {
         if ( ! class_exists( 'GE_WTP_Staff_Portal' ) || ! GE_WTP_Staff_Portal::can_access() ) { return; }
         $order = wc_get_order( absint( $_POST['order_id'] ?? 0 ) );
         if ( ! $order ) { return; }
+        if(class_exists('GE_WTP_Production_Cards')&&GE_WTP_Production_Cards::enabled($order)){foreach((array)($_POST['item_statuses']??array()) as $status)if(in_array($status,array('production','ready'),true)&&GE_WTP_Production_Cards::data($order)['state']!=='production')wp_die('Terminá el control de producción y verificá la confirmación del proveedor.','',array('response'=>409));}
         foreach ( (array) ( $_POST['item_statuses'] ?? array() ) as $item_id => $posted ) {
             $item = $order->get_item( absint( $item_id ) ); $next = sanitize_key( wp_unslash( $posted ) );
             if ( ! $item || ! in_array( $next, array( 'production', 'ready' ), true ) ) { continue; }
@@ -367,8 +368,39 @@ final class GE_WTP_Artwork_Library {
         $order = wc_get_order( absint( $_POST['order_id'] ?? 0 ) );
         if ( ! $order ) { wp_die( 'Pedido inválido.', 404 ); }
         check_admin_referer( 'ge_artwork_control_' . $order->get_id() );
-        $available = self::order_sources( $order ); $rows = (array) ( $_POST['artwork_items'] ?? array() );
+        $result = self::save_artwork_control( $order, (array) ( $_POST['artwork_items'] ?? array() ) );
+        if(is_wp_error($result))wp_die(esc_html($result->get_error_message()),'',array('response'=>400));
+        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'artwork_saved' => 1 ) ) ); exit;
+    }
+
+    public static function source_integrity($order,$tokens){
+        $available=self::order_sources($order);$docs=array();foreach(GE_WTP_Documents::get_documents($order->get_id()) as $doc)$docs[$doc['id']]=$doc;
+        foreach($tokens as $token){if(!isset($available[$token]))return new WP_Error('files','El archivo seleccionado ya no está disponible.');
+            if(strpos($token,'document:')===0){$record=$docs[substr($token,9)]??array();$dir=GE_WTP_Documents::private_directory();}
+            elseif(strpos($token,'artwork:')===0){$record=(array)get_post_meta(absint(substr($token,8)),'_ge_artwork_original',true);$dir=self::original_directory();}
+            else return new WP_Error('files','Revisá el origen del archivo.');
+            $provider=$record['provider']??'local';if($provider==='vps')$path=GE_WTP_VPS_Storage::download_path($record['relative_path']??'');elseif($provider==='local')$path=trailingslashit($dir).wp_basename($record['stored_name']??'');else return new WP_Error('files','Descargá y cargá el archivo final en almacenamiento privado para verificarlo.');
+            if(!$path||!is_file($path)||!is_readable($path))return new WP_Error('files','El archivo final no está disponible para producción.');
+            $hash=$record['analysis']['sha256']??'';if(!$hash||!hash_equals($hash,hash_file('sha256',$path)))return new WP_Error('files','El archivo necesita una nueva revisión: su contenido cambió o falta su verificación.');
+        }return true;
+    }
+    public static function customer_actor($order){return is_user_logged_in()&&$order instanceof WC_Order&&(int)$order->get_customer_id()>0&&(int)$order->get_customer_id()===get_current_user_id();}
+    public static function release_data($item){return self::item_release_data($item);}
+
+    public static function save_artwork_control($order,$rows){
+        if ( ! GE_WTP_Staff_Portal::can_access() || ! $order instanceof WC_Order ) { return new WP_Error( 'forbidden', 'Acceso denegado.' ); }
+        if ( class_exists( 'GE_WTP_Production_Cards' ) ) { $access=GE_WTP_Production_Cards::access($order,true);if(is_wp_error($access))return $access; }
+        if(class_exists('GE_WTP_Production_Cards')&&GE_WTP_Production_Cards::enabled($order)&&GE_WTP_Production_Cards::data($order)['state']!=='preparing')return new WP_Error('state','Volvé a preparación para modificar el archivo autorizado.');
+        $owned=array_keys($order->get_items('line_item'));
+        $available=self::order_sources($order);
+        foreach($rows as $id=>$row){
+            if(!in_array((int)$id,$owned,true)||!is_array($row))return new WP_Error('item','El producto no pertenece a este pedido.');
+            foreach((array)($row['sources']??[]) as $token)if(!is_string($token)||!isset($available[$token]))return new WP_Error('source','El archivo no pertenece a este pedido o ya no está disponible.');
+            foreach(['version','dimensions','pages','orientation','notes','customer_method','customer_evidence'] as $key)if(isset($row[$key])&&!is_scalar($row[$key]))return new WP_Error('shape','Revisá los datos del archivo.');
+        }
+        $available = self::order_sources( $order );
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
+            if ( ! array_key_exists( $item_id, $rows ) ) { continue; }
             if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && 'production' === GE_WTP_Production::item_status( $item, $order ) ) { continue; }
             $row = isset( $rows[ $item_id ] ) ? (array) $rows[ $item_id ] : array(); $tokens = array();
             foreach ( (array) ( $row['sources'] ?? array() ) as $token ) { $token = sanitize_text_field( wp_unslash( $token ) ); if ( isset( $available[ $token ] ) ) { $tokens[] = $token; } }
@@ -384,7 +416,7 @@ final class GE_WTP_Artwork_Library {
             $client_required = ! empty( $row['client_required'] );
             $new_hash = self::release_fingerprint( $item, $tokens, $version, $expected, $available );
             $old_hash = self::release_fingerprint( $item, $old['sources'], $old['version'], $old['expected'], $available );
-            $changed = ! hash_equals( $old_hash, $new_hash );
+            $changed = ! hash_equals( $old_hash, $new_hash ) || (!empty($old['release_hash'])&&!hash_equals($old['release_hash'],$new_hash)) || (!empty($old['staff']['checksum'])&&!hash_equals($old['staff']['checksum'],$new_hash)) || (!empty($old['customer']['checksum'])&&!hash_equals($old['customer']['checksum'],$new_hash));
             $customer = $changed ? array() : $old['customer']; $staff = $changed ? array() : $old['staff'];
             if ( $changed && class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { $customer = array(); }
             elseif ( ! empty( $row['customer_approved'] ) && $tokens ) {
@@ -392,7 +424,7 @@ final class GE_WTP_Artwork_Library {
                 $evidence = sanitize_text_field( wp_unslash( $row['customer_evidence'] ?? '' ) );
                 if ( ! $changed && 'customer-portal' === ( $old['customer']['method'] ?? '' ) ) { $customer = $old['customer']; }
                 else {
-                    if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( ! $evidence || 'customer-portal' === $method ) ) { wp_die( 'Indicá la evidencia de aprobación del cliente. La aprobación por portal sólo puede hacerla el cliente.', 400 ); }
+                    if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( ! $evidence || 'customer-portal' === $method ) ) { return new WP_Error('evidence','Indicá la evidencia de aprobación del cliente. La aprobación por portal sólo puede hacerla el cliente.'); }
                     $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => $method, 'evidence' => $evidence );
                 }
             }
@@ -414,21 +446,25 @@ final class GE_WTP_Artwork_Library {
             } else { $item->delete_meta_data( '_ge_item_artwork_release_hash' ); $item->delete_meta_data( '_ge_item_artwork_released_at' ); $item->delete_meta_data( '_ge_item_artwork_released_by' ); }
             $item->save();
         }
-        wp_safe_redirect( GE_WTP_Staff_Portal::portal_url( 'production', array( 'order_id' => $order->get_id(), 'artwork_saved' => 1 ) ) ); exit;
+        return true;
     }
 
-    public static function handle_customer_artwork_approval() {
-        if ( ! is_user_logged_in() ) { auth_redirect(); }
-        $order = wc_get_order( absint( $_POST['order_id'] ?? 0 ) );
-        if ( ! $order || ! GE_WTP_Documents::can_access_order( $order ) ) { wp_die( 'Acceso denegado.', 403 ); }
-        check_admin_referer( 'ge_customer_artwork_approval_' . $order->get_id() );
-        $selected = array_map( 'absint', (array) ( $_POST['approve_items'] ?? array() ) ); $available = self::order_sources( $order );
+    public static function customer_approve($order,$selected,$hashes){
+        if(!$order||!GE_WTP_Documents::can_access_order($order))return new WP_Error('forbidden','Acceso denegado.');
+        if(class_exists('GE_WTP_Production_Cards')&&GE_WTP_Production_Cards::enabled($order)){
+            if(!self::customer_actor($order))return new WP_Error('forbidden','La aprobación debe registrarla el cliente del pedido.');
+            if(GE_WTP_Production_Cards::data($order)['state']!=='preparing')return new WP_Error('state','El control ya terminó; consultá al equipo antes de modificarlo.');
+        }
+        $selected=array_map('absint',(array)$selected);$available=self::order_sources($order);
+        foreach($selected as $id){$item=$order->get_item($id);if(!$item instanceof WC_Order_Item_Product)return new WP_Error('forbidden','El producto no pertenece al pedido.');$data=self::item_release_data($item);$current=self::release_fingerprint($item,$data['sources'],$data['version'],$data['expected'],$available);if(!hash_equals($current,sanitize_text_field($hashes[$id]??'')))return new WP_Error('version','El archivo cambió; revisá la versión actual antes de aprobarlo.');}
+
         foreach ( $order->get_items( 'line_item' ) as $item_id => $item ) {
             if ( ! in_array( (int) $item_id, $selected, true ) ) { continue; }
             $data = self::item_release_data( $item ); if ( ! $data['sources'] ) { continue; }
+            if(class_exists('GE_WTP_Production_Cards')&&GE_WTP_Production_Cards::enabled($order)){if(!$data['client_required']||is_wp_error(self::source_integrity($order,$data['sources'])))continue;$current=self::release_fingerprint($item,$data['sources'],$data['version'],$data['expected'],$available);if(empty($data['staff']['checksum'])||!hash_equals($data['staff']['checksum'],$current))continue;}
             if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) && ( 'production' === GE_WTP_Production::item_status( $item, $order ) || 'ready' !== $item->get_meta( GE_WTP_Workflow::ITEM_STATE_META, true ) || empty( $data['staff']['approved'] ) ) ) { continue; }
             $hash = self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available );
-            $posted_hash = sanitize_text_field( wp_unslash( $_POST['approval_hash'][ $item_id ] ?? '' ) );
+            $posted_hash = sanitize_text_field( wp_unslash( $hashes[ $item_id ] ?? '' ) );
             if ( ! $posted_hash || ! hash_equals( $hash, $posted_hash ) ) { continue; }
             $customer = array( 'approved' => true, 'time' => time(), 'user_id' => get_current_user_id(), 'method' => 'customer-portal', 'approval_source' => 'client', 'version_id' => $data['version'], 'checksum' => $hash, 'approved_at' => gmdate( 'c' ) );
             $item->update_meta_data( '_ge_item_artwork_customer_approval', $customer );
@@ -436,7 +472,12 @@ final class GE_WTP_Artwork_Library {
             $history = (array) $item->get_meta( '_ge_item_artwork_approval_history', true ); $history[] = $customer; $item->update_meta_data( '_ge_item_artwork_approval_history', $history );
             $item->save();
         }
-        wp_safe_redirect( GE_WTP_Portal::portal_url( 'pedidos', array( 'pedido' => $order->get_id(), 'ge_notice' => 'artwork-approved' ) ) ); exit;
+        return true;
+    }
+    public static function handle_customer_artwork_approval(){
+        if(!is_user_logged_in())auth_redirect();$order=wc_get_order(absint($_POST['order_id']??0));if(!$order)wp_die('Pedido inválido.','',array('response'=>404));check_admin_referer('ge_customer_artwork_approval_'.$order->get_id());
+        $result=self::customer_approve($order,(array)($_POST['approve_items']??array()),(array)($_POST['approval_hash']??array()));if(is_wp_error($result))wp_die(esc_html($result->get_error_message()),'',array('response'=>403));
+        wp_safe_redirect(GE_WTP_Portal::portal_url('pedidos',array('pedido'=>$order->get_id(),'ge_notice'=>'artwork-approved')));exit;
     }
 
     private static function render_customer_approval_panel( $order ) {
@@ -460,6 +501,7 @@ final class GE_WTP_Artwork_Library {
                 $data = self::item_release_data( $item );
                 if ( 'ready' !== $item->get_meta( GE_WTP_Workflow::ITEM_STATE_META, true ) || 'production' === GE_WTP_Production::item_status( $item, $order ) || empty( $data['staff']['approved'] ) || empty( $data['sources'] ) || ! empty( $data['customer']['approved'] ) ) { continue; }
                 echo '<form class="ge-workflow-change-request" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_customer_changes"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '"><input type="hidden" name="item_id" value="' . esc_attr( $item_id ) . '">';
+                echo '<input type="hidden" name="approval_hash" value="'.esc_attr(self::release_fingerprint($item,$data['sources'],$data['version'],$data['expected'],$available)).'">';
                 wp_nonce_field( 'ge_workflow_customer_changes_' . $order->get_id() );
                 echo '<label>¿Necesitás cambios en ' . esc_html( $item->get_name() ) . '?<textarea name="message" required maxlength="2000" rows="3" placeholder="Describí la corrección necesaria"></textarea></label><button type="submit">Solicitar cambios</button></form>';
             }

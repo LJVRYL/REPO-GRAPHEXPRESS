@@ -89,6 +89,7 @@ final class GE_WTP_Supplier_Portal {
         try {
             $order = wc_get_order( $id );
             if ( ! GE_WTP_Workflow::enabled( $order ) ) { return new WP_Error( 'workflow', 'Usá el circuito de producción vigente.' ); }
+            if(class_exists('GE_WTP_Production_Cards')&&GE_WTP_Production_Cards::enabled($order)){return new WP_Error('cards','Elegí el destino desde Salida en el control de producción.');}
             GE_WTP_Production::ensure_order( $order );
             $key = 'internal' === $source ? 'internal' : $supplier;
             $changed = false;
@@ -114,18 +115,20 @@ final class GE_WTP_Supplier_Portal {
         if ( 'r2' === ( $doc['provider'] ?? '' ) ) { return false; }
         return trailingslashit( GE_WTP_Documents::private_directory() ) . wp_basename( $doc['stored_name'] ?? '' );
     }
-    public static function snapshot( $order, $supplier, $notes ) {
+    public static function snapshot( $order, $supplier, $notes, $preview = false ) {
         $docs = array(); foreach ( GE_WTP_Documents::get_documents( $order->get_id() ) as $doc ) { $docs[ (string) $doc['id'] ] = $doc; }
         $items = array(); $files = array();
         foreach ( $order->get_items() as $item ) {
-            if ( $supplier !== $item->get_meta( '_ge_production_supplier', true ) || 'production' !== GE_WTP_Production::item_status( $item, $order ) ) { continue; }
+            $eligible='production'===GE_WTP_Production::item_status($item,$order);
+            if(class_exists('GE_WTP_Production_Cards') && GE_WTP_Production_Cards::enabled($order))$eligible=$eligible||GE_WTP_Production_Cards::authorized_for_supplier($order,$item)||($preview&&GE_WTP_Production_Cards::may_preview($order,$item));
+            if ( $supplier !== $item->get_meta( '_ge_production_supplier', true ) || !$eligible ) { continue; }
             if ( ! GE_WTP_Artwork_Library::item_ready_for_production( $item, $order ) ) { return new WP_Error( 'artwork', 'Revisá la aprobación del archivo exacto.' ); }
             $sources = (array) $item->get_meta( '_ge_item_artwork_sources', true );
             if ( ! $sources ) { return new WP_Error( 'files', 'Faltan archivos finales privados.' ); }
             foreach ( $sources as $source ) {
                 $doc_id = 0 === strpos( $source, 'document:' ) ? substr( $source, 9 ) : '';
                 $doc = $docs[ $doc_id ] ?? array(); $path = $doc ? self::path( $doc ) : false;
-                if ( ! $path || ! is_file( $path ) || 'arte' !== ( $doc['category'] ?? '' ) || ! in_array( absint( $doc['order_item_id'] ?? 0 ), array( 0, $item->get_id() ), true ) ) { return new WP_Error( 'files', 'El archivo final debe estar disponible en almacenamiento privado local/VPS.' ); }
+                if ( ! $path || ! is_file( $path ) || 'arte' !== ( $doc['category'] ?? '' ) || (! in_array( absint( $doc['order_item_id'] ?? 0 ), array( 0, $item->get_id() ), true ) && !(class_exists('GE_WTP_Production_Cards') && GE_WTP_Production_Cards::enabled($order) && GE_WTP_Production_Cards::source_assigned($item,$doc_id))) ) { return new WP_Error( 'files', 'El archivo final debe estar disponible en almacenamiento privado local/VPS.' ); }
                 $hash = hash_file( 'sha256', $path );
                 if ( ! empty( $doc['analysis']['sha256'] ) && ! hash_equals( $doc['analysis']['sha256'], $hash ) ) { return new WP_Error( 'checksum', 'El archivo cambió después de su revisión.' ); }
                 $files[ $doc_id ] = array( 'version_id' => $doc_id, 'checksum' => $hash, 'record' => $doc );
@@ -143,7 +146,10 @@ final class GE_WTP_Supplier_Portal {
         if ( ! $items || ! $files ) { return new WP_Error( 'items', 'No hay trabajos liberados para este proveedor.' ); }
         return array( 'reference' => GE_WTP_Manual_Orders::reference( $order ), 'supplier' => $supplier, 'items' => $items, 'files' => $files, 'required_date' => $order->get_meta( '_ge_production_promised_date', true ), 'notes' => sanitize_textarea_field( $notes ), 'contact' => sanitize_email( GE_WTP_Notification_Center::settings()['sender_email'] ?? get_option( 'admin_email' ) ) );
     }
-    private static function fingerprint( $snapshot ) { return hash( 'sha256', wp_json_encode( $snapshot ) ); }
+    private static function fingerprint( $snapshot ) {
+        return hash( 'sha256', wp_json_encode( $snapshot ) );
+    }
+    public static function same_snapshot($row,$snapshot){return !is_wp_error($snapshot)&&hash_equals((string)$row['fingerprint'],self::fingerprint($snapshot));}
     private static function encrypt( $token ) {
         $iv = random_bytes( 12 ); $tag = '';
         $cipher = openssl_encrypt( $token, 'aes-256-gcm', hash( 'sha256', wp_salt( 'auth' ), true ), OPENSSL_RAW_DATA, $iv, $tag );
@@ -167,13 +173,14 @@ final class GE_WTP_Supplier_Portal {
         if ( ! self::lock( $id ) ) { return new WP_Error( 'busy', 'Otra operación está en curso.' ); }
         try {
             $order = wc_get_order( $id );
-            if ( ! GE_WTP_Workflow::enabled( $order ) || 'production' !== $order->get_meta( GE_WTP_Workflow::STAGE_META, true ) ) { return new WP_Error( 'release', 'Liberá primero el pedido.' ); }
-            $snapshot = self::snapshot( $order, $supplier, $notes ); if ( is_wp_error( $snapshot ) ) { return $snapshot; }
+            $preview=class_exists('GE_WTP_Production_Cards') && GE_WTP_Production_Cards::enabled($order) && GE_WTP_Production_Cards::data($order)['state']==='preparing';
+            if ( ! GE_WTP_Workflow::enabled( $order ) || (!$preview && 'production' !== $order->get_meta( GE_WTP_Workflow::STAGE_META, true )) ) { return new WP_Error( 'release', 'Revisá el control del pedido antes de preparar la orden.' ); }
+            $snapshot = self::snapshot( $order, $supplier, $notes, $preview ); if ( is_wp_error( $snapshot ) ) { return $snapshot; }
             $fingerprint = self::fingerprint( $snapshot ); $rows = self::rows( $order );
             $last = self::latest( $order, $supplier );
-            if ( $last && $last['fingerprint'] === $fingerprint && $last['expires'] > time() ) { return $last; }
+            if ( $last && $last['fingerprint'] === $fingerprint && $last['expires'] > time() && ($last['email']??'')===(self::profiles()[$supplier]['email']??'') ) { return $last; }
             $token = bin2hex( random_bytes( 32 ) );
-            $row = array( 'id' => wp_generate_uuid4(), 'supplier' => $supplier, 'hash' => hash( 'sha256', $token ), 'secret' => self::encrypt( $token ), 'fingerprint' => $fingerprint, 'snapshot' => $snapshot, 'state' => 'ready_to_send', 'email_status' => 'not_sent', 'email' => self::profiles()[ $supplier ]['email'], 'expires' => time() + 30 * DAY_IN_SECONDS, 'created_at' => time(), 'created_by' => get_current_user_id(), 'version' => count( $rows ) + 1, 'events' => array() );
+            $row = array( 'id' => wp_generate_uuid4(), 'supplier' => $supplier, 'hash' => hash( 'sha256', $token ), 'secret' => self::encrypt( $token ), 'fingerprint' => $fingerprint, 'snapshot' => $snapshot, 'state' => 'ready_to_send', 'email_status' => 'not_sent', 'email' => self::profiles()[ $supplier ]['email'], 'expires' => time() + 30 * DAY_IN_SECONDS, 'created_at' => time(), 'created_by' => get_current_user_id(), 'version' => count( $rows ) + 1, 'events' => array(), 'workflow_schema'=>$preview?2:1 );
             $rows[] = $row; $order->update_meta_data( self::META, $rows );
             $order->update_meta_data( '_ge_supplier_portal_' . $supplier, 'yes' );
             self::audit( $order, 'graph.supplier.preview_dispatch', $supplier, array( 'dispatch_id' => $row['id'], 'fingerprint' => $fingerprint ) ); $order->save();
@@ -184,7 +191,7 @@ final class GE_WTP_Supplier_Portal {
         $profile = null === $profile ? GE_WTP_Supplier_Dispatch::profile( $row['supplier'] ) : $profile;
         return GE_WTP_Email_Content::supplier_message( $row, $url, $profile );
     }
-    public static function notify( $id, $dispatch_id, $manual = false, $retry = false ) {
+    public static function notify( $id, $dispatch_id, $manual = false, $retry = false, $manual_evidence = '' ) {
         if ( ! GE_WTP_Staff_Portal::can_access() ) { return new WP_Error( 'forbidden', 'Acceso denegado.' ); }
         if ( ! self::lock( $id ) ) { return new WP_Error( 'busy', 'Otra operación está en curso.' ); }
         try {
@@ -194,12 +201,13 @@ final class GE_WTP_Supplier_Portal {
                 if ( $dispatch_id !== $row['id'] ) { continue; }
                 if ( ! empty( $row['revoked'] ) || $row['expires'] < time() || self::latest( $order, $row['supplier'] )['id'] !== $row['id'] ) { return new WP_Error( 'stale', 'Prepará la versión vigente.' ); }
                 if ( ! empty( $row['sent_at'] ) ) { return $row; }
+                if(($row['workflow_schema']??1)===2){if($manual&&strlen($manual_evidence)<10)return new WP_Error('evidence','Registrá cómo y cuándo se realizó el envío manual.');$access=GE_WTP_Production_Cards::access($order,true);if(is_wp_error($access))return $access;if(($row['attempts']??0)>=3)return new WP_Error('attempts','Se alcanzó el límite de intentos. Revisá el canal de envío.');}
                 if ( ! empty( $row['attempt_started'] ) && ! $retry ) { return new WP_Error( 'uncertain', 'Hubo un intento previo. Verificá Notificaciones antes de reintentar manualmente.' ); }
                 $current = self::snapshot( $order, $row['supplier'], $row['snapshot']['notes'] );
                 if ( is_wp_error( $current ) || self::fingerprint( $current ) !== $row['fingerprint'] ) { return new WP_Error( 'changed', 'Nueva versión disponible. Prepará y revisá una nueva orden.' ); }
                 $email = self::profiles()[ $row['supplier'] ]['email'] ?? '';
                 if ( ! $manual && ( ! is_email( $email ) || $email !== $row['email'] ) ) { return new WP_Error( 'email', 'Revisá el destinatario o usá envío manual.' ); }
-                $row['attempt_started'] = time();
+                $row['attempt_started'] = time();$row['attempts']=(int)($row['attempts']??0)+1;
                 $row['email_status'] = $manual ? 'not_sent' : 'pending';
                 $rows[ $index ] = $row;
                 $order->update_meta_data( self::META, $rows ); $order->save();
@@ -213,13 +221,16 @@ final class GE_WTP_Supplier_Portal {
                 $row['events'][] = array( 'time' => time(), 'action' => $manual ? 'manual_dispatch' : 'email_' . $row['email_status'], 'actor' => get_current_user_id() );
                 self::audit( $order, 'graph.supplier.notify', $row['supplier'], array( 'dispatch_id' => $row['id'], 'channel' => $row['channel'], 'status' => $row['email_status'], 'recipient' => $email ) );
                 $rows[ $index ] = $row;
-                $order->update_meta_data( self::META, $rows ); $order->save(); return $row;
+                $order->update_meta_data( self::META, $rows ); $order->save();
+                if(!empty($row['business_confirmed_at']))do_action('ge_supplier_business_confirmed',$id,$row);
+                return $row;
             }
             return new WP_Error( 'dispatch', 'Orden técnica inexistente.' );
         } finally { self::unlock( $id ); }
     }
     public static function authorize( $order, $token ) {
         if ( ! $order || ! preg_match( '/^[a-f0-9]{64}$/D', $token ) ) { return false; }
+        $org=(string)$order->get_meta('_ge_organization_id',true);if($org&&$org!==GE_Organization::PRIMARY)return false;
         $hash = hash( 'sha256', $token );
         foreach ( self::rows( $order ) as $row ) {
             if ( hash_equals( $row['hash'], $hash ) && empty( $row['revoked'] ) && $row['expires'] >= time() && ! empty( $row['sent_at'] ) && self::assigned( $order, $row['supplier'] ) ) { return $row; }
@@ -231,34 +242,56 @@ final class GE_WTP_Supplier_Portal {
         return false;
     }
     private static function csrf( $row, $token ) { return hash_hmac( 'sha256', $row['id'] . $token, wp_salt( 'nonce' ) ); }
-    public static function supplier_action( $id, $token, $action, $eta = '' ) {
+    public static function supplier_action( $id, $token, $action, $eta = '', $evidence = array() ) {
         if ( ! self::lock( $id ) ) { return new WP_Error( 'busy', 'Otra operación está en curso.' ); }
         try {
             $order = wc_get_order( $id ); $auth = self::authorize( $order, $token );
-            if ( ! $auth || ! in_array( $action, array( 'acknowledged', 'eta', 'in_production', 'ready' ), true ) ) { return new WP_Error( 'forbidden', 'Enlace no válido.' ); }
+            if ( ! $auth || ! in_array( $action, array( 'acknowledged', 'eta', 'in_production', 'ready', 'rejected', 'delay' ), true ) ) { return new WP_Error( 'forbidden', 'Enlace no válido.' ); }
             if ( self::latest( $order, $auth['supplier'] )['id'] !== $auth['id'] ) { return new WP_Error( 'version', 'Abrí la nueva versión antes de confirmar.' ); }
             if ( 'received' === $auth['state'] ) { return new WP_Error( 'closed', 'Graphex ya registró la recepción de este trabajo.' ); }
+            if(($auth['workflow_schema']??1)===2){
+                if(in_array($action,array('acknowledged','in_production','ready'),true)&&$auth['state']==='rejected')return new WP_Error('rejected','Graphex debe revisar la orden rechazada y preparar una nueva versión.');
+                $current=self::snapshot($order,$auth['supplier'],$auth['snapshot']['notes']);if(is_wp_error($current)||!self::same_snapshot($auth,$current))return new WP_Error('version','La orden o el archivo cambió; Graphex debe revisar una nueva versión.');
+                if(GE_WTP_Staff_Portal::can_access() && empty($evidence['staff_verified']))return new WP_Error('evidence','Registrá una confirmación real del proveedor con su evidencia.');
+                if(in_array($action,['in_production','ready'],true) && empty($auth['business_confirmed_at']))return new WP_Error('acceptance','Confirmá primero que aceptás este trabajo.');
+                if($action==='acknowledged' && empty($evidence['accept_job']))return new WP_Error('acceptance','Confirmá que aceptás producir estos archivos y especificaciones.');
+                $profile=self::profiles()[$auth['supplier']]??[];
+                if(!$profile||($profile['email']??'')!==($auth['email']??''))return new WP_Error('supplier','La identidad del proveedor cambió. Revisá la orden vigente.');
+            }
             $rows = self::rows( $order );
             foreach ( $rows as &$row ) {
                 if ( $row['id'] !== $auth['id'] ) { continue; }
+                if(in_array($action,array('rejected','delay'),true)){if(strlen(sanitize_textarea_field($evidence['reason']??''))<5)return new WP_Error('reason','Indicá el motivo para que Graphex pueda revisarlo.');$row['state']=$action;$row['issue_reason']=sanitize_textarea_field($evidence['reason']);$row['last_activity']=time();$row['events'][]=array('time'=>time(),'action'=>$action,'actor'=>'supplier','reason'=>$row['issue_reason']);self::audit($order,'production.supplier_issue',$row['supplier'],array('dispatch_id'=>$row['id'],'state'=>$action));$order->update_meta_data(self::META,$rows);$order->save();do_action('ge_supplier_business_issue',$id,$row);return $row;}
                 if ( 'eta' === $action ) {
                     $date = DateTime::createFromFormat( '!Y-m-d', $eta );
                     if ( ! $date || $date->format( 'Y-m-d' ) !== $eta || $eta < wp_date( 'Y-m-d' ) || $eta > wp_date( 'Y-m-d', time() + 730 * DAY_IN_SECONDS ) ) { return new WP_Error( 'eta', 'Ingresá una fecha estimada válida.' ); }
                     $row['eta'] = $eta;
                 } else {
                     $rank = array( 'sent' => 0, 'acknowledged' => 1, 'in_production' => 2, 'ready' => 3 );
-                    if ( ( $rank[ $action ] ?? -1 ) <= ( $rank[ $row['state'] ] ?? -1 ) ) { return $row; }
-                    $row['state'] = $action; if ( empty( $row['acknowledged_at'] ) ) { $row['acknowledged_at'] = time(); }
+                    if ( ( $rank[ $action ] ?? -1 ) <= ( $rank[ $row['state'] ] ?? -1 ) ) { if(!empty($row['business_confirmed_at']))do_action('ge_supplier_business_confirmed',$id,$row);return $row; }
+                    $row['state'] = $action; if(($row['workflow_schema']??1)===2 && $action==='acknowledged'){$row['business_confirmed_at']=time();$row['confirmation_evidence']=$evidence;} if ( empty( $row['acknowledged_at'] ) ) { $row['acknowledged_at'] = time(); }
                 }
                 $row['last_activity'] = time(); $row['events'][] = array( 'time' => time(), 'action' => $action, 'eta' => 'eta' === $action ? $eta : '', 'actor' => 'supplier' );
                 self::audit( $order, 'graph.supplier.' . ( 'eta' === $action ? 'set_eta' : ( 'acknowledged' === $action ? 'acknowledge_order' : 'set_status' ) ), $row['supplier'], array( 'dispatch_id' => $row['id'], 'state' => $row['state'], 'eta' => $row['eta'] ?? '' ) );
-                $order->update_meta_data( self::META, $rows ); $order->save(); return $row;
+                $order->update_meta_data( self::META, $rows ); $order->save(); if(!empty($row['business_confirmed_at']))do_action('ge_supplier_business_confirmed',$id,$row); return $row;
             }
         } finally { self::unlock( $id ); }
     }
+    public static function record_manual_dispatch($id,$dispatch_id,$proof){
+        if(!GE_WTP_Staff_Portal::can_access()||strlen($proof)<10)return new WP_Error('evidence','Indicá cómo y cuándo se envió realmente.');
+        $order=wc_get_order($id);if(!class_exists('GE_WTP_Production_Cards')||is_wp_error(GE_WTP_Production_Cards::access($order,true)))return new WP_Error('forbidden','Acceso denegado.');
+        $result=self::notify($id,$dispatch_id,true,false,$proof);if(is_wp_error($result))return $result;
+        self::audit($order,'production.manual_dispatch',$result['supplier'],['dispatch_id'=>$dispatch_id,'evidence'=>$proof]);$order->save();return $result;
+    }
+    public static function confirm_manually($id,$dispatch_id,$method,$proof){
+        $order=wc_get_order($id);if(!class_exists('GE_WTP_Production_Cards')||is_wp_error(GE_WTP_Production_Cards::access($order,true)))return new WP_Error('forbidden','Acceso denegado.');
+        if(!in_array($method,['email','whatsapp','phone'],true)||strlen($proof)<10)return new WP_Error('evidence','Indicá la referencia de una aceptación real de esta orden.');
+        foreach(self::rows($order) as $row)if($row['id']===$dispatch_id){if(empty($row['sent_at']))return new WP_Error('dispatch','La orden todavía no tiene un envío registrado.');return self::supplier_action($id,self::token($row),'acknowledged','',['accept_job'=>true,'staff_verified'=>get_current_user_id(),'method'=>$method,'reference'=>$proof]);}
+        return new WP_Error('dispatch','Orden al proveedor no encontrada.');
+    }
     public static function state_label( $row ) {
-        $labels = array( 'ready_to_send' => 'Listo para enviar', 'sent' => 'Enviado · sin confirmación', 'acknowledged' => 'Recepción confirmada', 'in_production' => 'En producción', 'ready' => 'Listo para retirar', 'received' => 'Recibido por Graphex', 'cancelled' => 'Cancelado' );
-        return $labels[ $row['state'] ] ?? $row['state'];
+        $labels = array( 'rejected'=>'Rechazado · revisar orden','delay'=>'Demora informada · revisar entrega','ready_to_send' => 'Listo para enviar', 'sent' => 'Enviado · sin confirmación', 'acknowledged' => 'Recepción confirmada', 'in_production' => 'En producción', 'ready' => 'Listo para retirar', 'received' => 'Recibido por Graphex', 'cancelled' => 'Cancelado' );
+        if(($row['workflow_schema']??1)===2&&$row['state']==='acknowledged')return 'Trabajo aceptado por el proveedor';return $labels[ $row['state'] ] ?? $row['state'];
     }
     private static function guard( $action ) {
         if ( ! GE_WTP_Staff_Portal::can_access() ) { wp_die( 'Acceso denegado.', 403 ); }
@@ -343,11 +376,11 @@ final class GE_WTP_Supplier_Portal {
         $notice = ! empty( $_GET['document_received'] ) ? 'Documento recibido y registrado en tu ficha de proveedor.' : '';
         if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
             if ( ! hash_equals( self::csrf( $row, $token ), (string) ( $_POST['csrf'] ?? '' ) ) ) { wp_die( 'Solicitud no válida.', 403 ); }
-            $result = 'document' === ( $_POST['supplier_action'] ?? '' ) ? GE_WTP_Supplier_Workspace::portal_document( $id, $token, sanitize_key( $_POST['document_type'] ?? '' ) ) : self::supplier_action( $id, $token, sanitize_key( $_POST['supplier_action'] ?? '' ), sanitize_text_field( $_POST['eta'] ?? '' ) );
+            $result = 'document' === ( $_POST['supplier_action'] ?? '' ) ? GE_WTP_Supplier_Workspace::portal_document( $id, $token, sanitize_key( $_POST['document_type'] ?? '' ) ) : self::supplier_action( $id, $token, sanitize_key( $_POST['supplier_action'] ?? '' ), sanitize_text_field( $_POST['eta'] ?? '' ), array('accept_job'=>!empty($_POST['accept_job']),'reason'=>sanitize_textarea_field($_POST['reason']??'')) );
             if ( is_wp_error( $result ) ) { $notice = $result->get_error_message(); } else { $back = self::url( $id, $result ); if ( 'document' === ( $_POST['supplier_action'] ?? '' ) ) { $back = add_query_arg( 'document_received', 1, $back ); } wp_safe_redirect( $back ); exit; }
         }
         $s = $row['snapshot']; $profile = GE_WTP_Supplier_Dispatch::profile( $row['supplier'] ); $latest = self::latest( $order, $row['supplier'] );
-        ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Orden <?php echo esc_html( $s['reference'] ); ?> · Graphex</title><link rel="stylesheet" href="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/css/supplier-portal.css' ); ?>"></head><body class="ge-sp-body"><header class="ge-sp-header"><a href="<?php echo esc_url( self::url( $id, $row ) ); ?>" aria-label="Graphex · portal proveedor"><img src="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/images/graphex-simbolo.svg' ); ?>" alt="" width="36" height="36"><strong>Graphex</strong></a><span>Portal de producción</span></header><main class="ge-sp-main"><div class="ge-sp-intro"><span class="ge-sp-eyebrow"><?php echo esc_html( $profile['name'] ); ?> · Orden técnica</span><h1><?php echo esc_html( $s['reference'] ); ?></h1><p>Todo lo que necesitás para producir este trabajo.</p></div><?php if ( $notice ) { echo '<p role="alert" class="ge-sp-alert">' . esc_html( $notice ) . '</p>'; } ?><?php if ( $latest['id'] !== $row['id'] ) { echo '<p class="ge-sp-alert">Nueva versión disponible. Esta es la versión ' . esc_html( $row['version'] ) . '. <a href="' . esc_url( self::url( $id, $latest ) ) . '">Abrir versión actual</a></p>'; } ?><div class="ge-sp-layout"><div><section class="ge-sp-panel"><div class="ge-sp-panel-head"><h2>Ficha de producción</h2><span class="ge-sp-tag">Versión <?php echo esc_html( $row['version'] ); ?></span></div><?php foreach ( $s['items'] as $item ) : ?><article class="ge-sp-item"><h3><?php echo esc_html( $item['name'] ); ?></h3><dl><dt>Cantidad</dt><dd><?php echo esc_html( $item['quantity'] ); ?> unidades</dd><?php foreach ( $item['specs'] as $key => $value ) : ?><dt><?php echo esc_html( $key ); ?></dt><dd><?php echo esc_html( $value ); ?></dd><?php endforeach; ?><dt>Terminación</dt><dd><?php echo esc_html( implode( ', ', $item['finishes'] ) ?: 'Sin terminación adicional' ); ?></dd></dl></article><?php endforeach; ?><h3>Notas de producción</h3><p class="ge-sp-notes"><?php echo nl2br( esc_html( $s['notes'] ?: 'Sin observaciones adicionales.' ) ); ?></p></section><section class="ge-sp-panel"><h2>Archivos para producir</h2><p>Estos archivos corresponden a la versión exacta de esta orden.</p><?php foreach ( $s['files'] as $file_id => $file ) : ?><article class="ge-sp-file"><div><strong><?php echo esc_html( $file['record']['name'] ); ?></strong><small><?php echo esc_html( size_format( $file['record']['size'] ?? 0 ) ); ?> · Versión <?php echo esc_html( $row['version'] ); ?></small></div><a class="ge-sp-button" href="<?php echo esc_url( add_query_arg( array( 'action' => 'ge_supplier_portal_file', 'order_id' => $id, 'token' => $token, 'file_id' => $file_id ), admin_url( 'admin-post.php' ) ) ); ?>">Descargar</a></article><?php endforeach; ?></section></div><aside><section class="ge-sp-panel"><span class="ge-sp-eyebrow">Seguimiento</span><h2><?php echo esc_html( self::state_label( $row ) ); ?></h2><dl><dt>Fecha requerida</dt><dd><?php echo esc_html( $s['required_date'] ?: 'A coordinar' ); ?></dd><dt>Entrega estimada</dt><dd><?php echo esc_html( $row['eta'] ?? 'Por confirmar' ); ?></dd></dl><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_supplier_portal"><input type="hidden" name="order_id" value="<?php echo esc_attr( $id ); ?>"><input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>"><input type="hidden" name="csrf" value="<?php echo esc_attr( self::csrf( $row, $token ) ); ?>"><button class="ge-sp-button" name="supplier_action" value="acknowledged">Confirmar recepción</button><label>Fecha estimada de entrega<input type="date" name="eta" min="<?php echo esc_attr( wp_date( 'Y-m-d' ) ); ?>" value="<?php echo esc_attr( $row['eta'] ?? '' ); ?>"></label><button name="supplier_action" value="eta">Guardar fecha estimada</button><button name="supplier_action" value="in_production">Marcar en producción</button><button name="supplier_action" value="ready">Marcar listo para retirar</button></form><p class="ge-sp-help">Marcar listo avisa a Graphex. La recepción y los pagos se registran por separado.</p></section><section class="ge-sp-panel"><h2>Contacto Graphex</h2><p>Para consultas o cambios en el trabajo:</p><a href="<?php echo esc_url( 'mailto:' . $s['contact'] ); ?>"><?php echo esc_html( $s['contact'] ); ?></a></section><section class="ge-sp-panel"><h2>Factura o remito</h2><p>Subí el documento de este trabajo. Queda registrado en tu ficha de proveedor.</p><form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_supplier_portal"><input type="hidden" name="order_id" value="<?php echo esc_attr( $id ); ?>"><input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>"><input type="hidden" name="csrf" value="<?php echo esc_attr( self::csrf( $row, $token ) ); ?>"><input type="hidden" name="supplier_action" value="document"><label>Tipo de documento<select name="document_type"><option value="invoice">Factura</option><option value="delivery_note">Remito</option><option value="other">Otro documento</option></select></label><label>Archivo · hasta 20 MB<input type="file" name="supplier_file" accept=".pdf,.jpg,.jpeg,.png" required></label><button type="submit">Subir documento</button></form></section></aside></div><section class="ge-sp-panel"><h2>Tus trabajos</h2><p>Órdenes enviadas a <?php echo esc_html( $profile['name'] ); ?>.</p><?php self::dashboard( $row['supplier'] ); ?></section><section class="ge-sp-panel"><h2>Revisión de archivos</h2><?php foreach ( GE_WTP_File_Analysis::supplier_records( $id, $token ) as $record ) { echo '<p>' . esc_html( $record['file_name'] ?? $record['name'] ?? 'Archivo' ) . '</p>'; GE_WTP_File_Analysis::render( $record, false, array( 'order_id' => $id, 'token' => $token ) ); } ?></section></main><link rel="stylesheet" href="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/css/file-analysis.css' ); ?>"><script src="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/js/file-analysis.js' ); ?>" defer></script><footer class="ge-sp-footer">Graphex · Producción conectada</footer></body></html><?php exit;
+        ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Orden <?php echo esc_html( $s['reference'] ); ?> · Graphex</title><link rel="stylesheet" href="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/css/supplier-portal.css' ); ?>"></head><body class="ge-sp-body"><header class="ge-sp-header"><a href="<?php echo esc_url( self::url( $id, $row ) ); ?>" aria-label="Graphex · portal proveedor"><img src="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/images/graphex-simbolo.svg' ); ?>" alt="" width="36" height="36"><strong>Graphex</strong></a><span>Portal de producción</span></header><main class="ge-sp-main"><div class="ge-sp-intro"><span class="ge-sp-eyebrow"><?php echo esc_html( $profile['name'] ); ?> · Orden técnica</span><h1><?php echo esc_html( $s['reference'] ); ?></h1><p>Todo lo que necesitás para producir este trabajo.</p></div><?php if ( $notice ) { echo '<p role="alert" class="ge-sp-alert">' . esc_html( $notice ) . '</p>'; } ?><?php if ( $latest['id'] !== $row['id'] ) { echo '<p class="ge-sp-alert">Nueva versión disponible. Esta es la versión ' . esc_html( $row['version'] ) . '. <a href="' . esc_url( self::url( $id, $latest ) ) . '">Abrir versión actual</a></p>'; } ?><div class="ge-sp-layout"><div><section class="ge-sp-panel"><div class="ge-sp-panel-head"><h2>Ficha de producción</h2><span class="ge-sp-tag">Versión <?php echo esc_html( $row['version'] ); ?></span></div><?php foreach ( $s['items'] as $item ) : ?><article class="ge-sp-item"><h3><?php echo esc_html( $item['name'] ); ?></h3><dl><dt>Cantidad</dt><dd><?php echo esc_html( $item['quantity'] ); ?> unidades</dd><?php foreach ( $item['specs'] as $key => $value ) : ?><dt><?php echo esc_html( $key ); ?></dt><dd><?php echo esc_html( $value ); ?></dd><?php endforeach; ?><dt>Terminación</dt><dd><?php echo esc_html( implode( ', ', $item['finishes'] ) ?: 'Sin terminación adicional' ); ?></dd></dl></article><?php endforeach; ?><h3>Notas de producción</h3><p class="ge-sp-notes"><?php echo nl2br( esc_html( $s['notes'] ?: 'Sin observaciones adicionales.' ) ); ?></p></section><section class="ge-sp-panel"><h2>Archivos para producir</h2><p>Estos archivos corresponden a la versión exacta de esta orden.</p><?php foreach ( $s['files'] as $file_id => $file ) : ?><article class="ge-sp-file"><div><strong><?php echo esc_html( $file['record']['name'] ); ?></strong><small><?php echo esc_html( size_format( $file['record']['size'] ?? 0 ) ); ?> · Versión <?php echo esc_html( $row['version'] ); ?></small></div><a class="ge-sp-button" href="<?php echo esc_url( add_query_arg( array( 'action' => 'ge_supplier_portal_file', 'order_id' => $id, 'token' => $token, 'file_id' => $file_id ), admin_url( 'admin-post.php' ) ) ); ?>">Descargar</a></article><?php endforeach; ?></section></div><aside><section class="ge-sp-panel"><span class="ge-sp-eyebrow">Seguimiento</span><h2><?php echo esc_html( self::state_label( $row ) ); ?></h2><dl><dt>Fecha requerida</dt><dd><?php echo esc_html( $s['required_date'] ?: 'A coordinar' ); ?></dd><dt>Entrega estimada</dt><dd><?php echo esc_html( $row['eta'] ?? 'Por confirmar' ); ?></dd></dl><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_supplier_portal"><input type="hidden" name="order_id" value="<?php echo esc_attr( $id ); ?>"><input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>"><input type="hidden" name="csrf" value="<?php echo esc_attr( self::csrf( $row, $token ) ); ?>"><?php if(($row['workflow_schema']??1)===2):?><label><input type="checkbox" name="accept_job" value="1"> Acepto producir estos archivos y especificaciones.</label><?php endif; ?><button class="ge-sp-button" name="supplier_action" value="acknowledged"><?php echo ($row['workflow_schema']??1)===2?'Confirmar este trabajo':'Confirmar recepción'; ?></button><label>Fecha estimada de entrega<input type="date" name="eta" min="<?php echo esc_attr( wp_date( 'Y-m-d' ) ); ?>" value="<?php echo esc_attr( $row['eta'] ?? '' ); ?>"></label><button name="supplier_action" value="eta">Guardar fecha estimada</button><button name="supplier_action" value="in_production">Marcar en producción</button><button name="supplier_action" value="ready">Marcar listo para retirar</button><?php if(($row['workflow_schema']??1)===2):?><label>Motivo del rechazo o demora<textarea name="reason" rows="3" maxlength="2000"></textarea></label><button name="supplier_action" value="rejected">No puedo aceptar este trabajo</button><button name="supplier_action" value="delay">Informar demora</button><?php endif; ?></form><p class="ge-sp-help">Marcar listo avisa a Graphex. La recepción y los pagos se registran por separado.</p></section><section class="ge-sp-panel"><h2>Contacto Graphex</h2><p>Para consultas o cambios en el trabajo:</p><a href="<?php echo esc_url( 'mailto:' . $s['contact'] ); ?>"><?php echo esc_html( $s['contact'] ); ?></a></section><section class="ge-sp-panel"><h2>Factura o remito</h2><p>Subí el documento de este trabajo. Queda registrado en tu ficha de proveedor.</p><form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="ge_supplier_portal"><input type="hidden" name="order_id" value="<?php echo esc_attr( $id ); ?>"><input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>"><input type="hidden" name="csrf" value="<?php echo esc_attr( self::csrf( $row, $token ) ); ?>"><input type="hidden" name="supplier_action" value="document"><label>Tipo de documento<select name="document_type"><option value="invoice">Factura</option><option value="delivery_note">Remito</option><option value="other">Otro documento</option></select></label><label>Archivo · hasta 20 MB<input type="file" name="supplier_file" accept=".pdf,.jpg,.jpeg,.png" required></label><button type="submit">Subir documento</button></form></section></aside></div><section class="ge-sp-panel"><h2>Tus trabajos</h2><p>Órdenes enviadas a <?php echo esc_html( $profile['name'] ); ?>.</p><?php self::dashboard( $row['supplier'] ); ?></section><section class="ge-sp-panel"><h2>Revisión de archivos</h2><?php foreach ( GE_WTP_File_Analysis::supplier_records( $id, $token ) as $record ) { echo '<p>' . esc_html( $record['file_name'] ?? $record['name'] ?? 'Archivo' ) . '</p>'; GE_WTP_File_Analysis::render( $record, false, array( 'order_id' => $id, 'token' => $token ) ); } ?></section></main><link rel="stylesheet" href="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/css/file-analysis.css' ); ?>"><script src="<?php echo esc_url( GE_WTP_PLUGIN_URL . 'assets/js/file-analysis.js' ); ?>" defer></script><footer class="ge-sp-footer">Graphex · Producción conectada</footer></body></html><?php exit;
     }
     private static function dashboard( $supplier ) {
         // Bounded scan; only dispatched snapshots for this supplier are exposed.

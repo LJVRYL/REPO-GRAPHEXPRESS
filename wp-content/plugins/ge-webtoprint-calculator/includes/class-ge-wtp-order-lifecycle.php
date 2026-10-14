@@ -42,6 +42,7 @@ final class GE_WTP_Order_Lifecycle {
     }
 
     public static function label( $order ) {
+        if(class_exists('GE_WTP_Production_Cards')){$label=GE_WTP_Production_Cards::customer_label($order);if($label)return $label;}
         if ( $order instanceof WC_Order ) {
             $exceptions = array( 'cancelled' => 'Cancelado', 'refunded' => 'Reembolsado', 'failed' => 'Pago no completado' );
             if ( isset( $exceptions[ $order->get_status() ] ) ) { return $exceptions[ $order->get_status() ]; }
