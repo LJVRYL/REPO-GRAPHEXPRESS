@@ -32,7 +32,7 @@ final class GE_WTP_Production_Cards_UI {
   elseif($step==='instructions')self::instructions($order);
   elseif($step==='route')self::route($order);
   else self::control($order);
-  echo '</section>';if(!class_exists('GE_Organization_Runtime')||GE_Organization_Runtime::allowed('finance')||GE_Organization_Runtime::allowed('quotes',true)){echo '<details class="ge-prod-payment"><summary>Pago y facturación · independientes de producción</summary><p>El estado del pago no bloquea la autorización de producción. Un comprobante cargado sigue pendiente hasta que se registre su acreditación.</p>';
+  echo '</section>';if(!class_exists('GE_Organization_Runtime')||GE_Organization_Runtime::allowed('finance')||GE_Organization_Runtime::allowed('quotes',true)){echo '<details class="ge-prod-payment"><summary>Pago y facturación</summary><p>La seña acreditada o una excepción vigente permite comprometer producción. Un comprobante cargado sigue pendiente hasta que se verifique su acreditación.</p>';
   GE_WTP_Payments::render_staff_order_payment($order);
   $quote_id=absint($order->get_meta('_ge_commercial_quote_id',true));if($quote_id){$quote=GE_WTP_Commercial_Quotes::get($quote_id);if(!is_wp_error($quote))GE_WTP_Commercial_Checkout::render_staff_payment($quote);}
   echo '</details>';}echo '</div>';
@@ -91,11 +91,12 @@ final class GE_WTP_Production_Cards_UI {
   echo '<dl class="ge-prod-summary"><div><dt>Entrega prometida</dt><dd>'.esc_html(GE_WTP_Production::date_label_public($order->get_meta('_ge_production_promised_date',true))).'</dd></div><div><dt>Aprobación</dt><dd>';foreach(GE_WTP_Production_Cards::items($order) as $item){$r=GE_WTP_Artwork_Library::release_data($item);echo esc_html($item->get_name()).' · '.($r['client_required']?'Cliente':'Interna').'<br>';}echo '</dd></div><div><dt>Indicaciones</dt><dd>'.esc_html($order->get_meta('_ge_production_technical_notes',true)?:'Sin indicaciones adicionales').'</dd></div></dl>';
  }
  private static function control($order){
+  GE_Production_Payment_Guard::render($order);
   echo '<p>Revisá el resumen y terminá el control.</p>';self::summary($order);$d=GE_WTP_Production_Cards::data($order);
   foreach(array_unique($d['routes']) as $supplier){if($supplier==='internal'){echo '<p><strong>Destino:</strong> producción interna.</p>';continue;}$profile=GE_WTP_Production_Cards::profiles()[$supplier]??array();$row=GE_WTP_Supplier_Portal::latest($order,$supplier);if(!$row)continue;
    echo '<section class="ge-prod-preview"><h3>Orden a '.esc_html($profile['name']??$supplier).'</h3><p>Correo: '.esc_html($row['email']?:'Envío manual').'</p><p>Se comparten estos archivos y sus especificaciones. No se incluye el precio del cliente ni sus datos de facturación.</p><ul>';foreach($row['snapshot']['files'] as $file)echo '<li>'.esc_html($file['record']['name']).'</li>';echo '</ul><details><summary>Ver mensaje exacto</summary><pre>'.esc_html(GE_WTP_Supplier_Portal::message($row,GE_WTP_Supplier_Portal::url($order->get_id(),$row))).'</pre></details><p>El cliente continuará con archivos en preparación hasta que el proveedor confirme este trabajo.</p></section>';
   }
-  self::form($order,'finish');echo '<div class="ge-prod-actions"><a class="ge-staff-button is-secondary" href="'.esc_url(GE_WTP_Production_Cards::url($order,'route')).'">Atrás</a><button class="ge-staff-button">Guardar control y terminar</button></div></form>';
+  self::form($order,'finish');echo '<div class="ge-prod-actions"><a class="ge-staff-button is-secondary" href="'.esc_url(GE_WTP_Production_Cards::url($order,'route')).'">Atrás</a><button class="ge-staff-button" '.disabled(is_wp_error(GE_Production_Payment_Guard::check($order)),true,false).'>Guardar control y terminar</button></div></form>';
  }
  private static function result($order,$d){
   $labels=array('production'=>'Trabajo en producción','awaiting_supplier'=>'Esperando confirmación del proveedor','awaiting_manual_dispatch'=>'Pendiente de envío manual');echo '<p class="ge-prod-state">'.esc_html($labels[$d['state']]??'Revisar trabajo').'</p>';self::summary($order);

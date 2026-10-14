@@ -156,6 +156,7 @@ final class GE_WTP_Workflow {
         echo '<form class="ge-workflow-release" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="ge_workflow_release"><input type="hidden" name="order_id" value="' . esc_attr( $order->get_id() ) . '">';
         wp_nonce_field( 'ge_workflow_release_' . $order->get_id() );
         $commercial = GE_WTP_Job_Flow::commercial_check( $order );
+        if ( ! is_wp_error( $commercial ) ) { $commercial = GE_Production_Payment_Guard::check( $order ); }
         $eligible = 0;
         foreach ( $order->get_items( 'line_item' ) as $item ) { if ( self::ready( $item, $order ) ) { $eligible++; } }
         $has_date = (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $order->get_meta( '_ge_production_promised_date', true ) );
@@ -399,6 +400,7 @@ final class GE_WTP_Workflow {
         foreach ( $order->get_items( 'line_item' ) as $item ) { if ( 'production' !== GE_WTP_Production::item_status( $item, $order ) && self::ready( $item, $order ) ) { $approved[] = $item; } }
         $date = (string) $order->get_meta( '_ge_production_promised_date', true );
         $commercial = GE_WTP_Job_Flow::commercial_check( $order );
+        if ( ! is_wp_error( $commercial ) ) { $commercial = GE_Production_Payment_Guard::check( $order ); }
         if ( is_wp_error( $commercial ) ) { self::redirect( $order, 'review', 'commercial-blocked' ); }
         if ( ! $approved || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) { self::redirect( $order, 'review', 'blocked' ); }
         foreach ( $approved as $item ) { $item->update_meta_data( '_ge_item_status', 'production' ); $item->update_meta_data( '_ge_item_workflow_released_at', time() ); $item->update_meta_data( '_ge_item_workflow_released_by', get_current_user_id() ); $item->save(); }

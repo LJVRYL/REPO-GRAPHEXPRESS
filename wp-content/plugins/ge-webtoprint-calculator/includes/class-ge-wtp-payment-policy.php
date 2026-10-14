@@ -137,6 +137,7 @@ final class GE_WTP_Payment_Policy {
 
     public static function render_order( $order ) {
         if ( GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { return; }
+        if ( class_exists('GE_Production_Payment_Guard') && GE_Production_Payment_Guard::supervisor(get_current_user_id()) ) { GE_Production_Payment_Guard::render($order); }
         $policy = self::order( $order );
         echo '<section class="ge-admin-panel"><h2>Condiciones de pago</h2><p>' . esc_html( self::label( $policy ) ) . '</p><p>La cuenta corriente mantiene el saldo pendiente hasta que se registre su cobro.</p>';
         if ( ! $order->get_meta( '_ge_delivery_confirmed_at', true ) ) {

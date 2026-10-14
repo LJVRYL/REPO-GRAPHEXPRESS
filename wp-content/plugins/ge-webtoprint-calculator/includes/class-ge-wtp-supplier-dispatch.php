@@ -73,6 +73,7 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     private static function attempt_auto_dispatch( $order, $profile ) {
+        if ( is_wp_error( GE_Production_Payment_Guard::check( $order ) ) ) { return; }
         $sent = self::send_email( $order, $profile ); self::log( $order, 'auto-email', $sent );
         $attempts = absint( $order->get_meta( '_ge_supplier_auto_dispatch_attempts' ) ) + 1;
         $order->update_meta_data( '_ge_supplier_auto_dispatch_attempts', $attempts );
@@ -113,6 +114,7 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     private static function send_email( $order, $profile ) {
+        if ( is_wp_error( GE_Production_Payment_Guard::check( $order ) ) ) { return false; }
         $reference = class_exists( 'GE_WTP_Manual_Orders' ) ? GE_WTP_Manual_Orders::reference( $order ) : ( $order->get_meta( '_ge_markcom_reference' ) ?: '#' . $order->get_id() ); $rows = '';
         $production_items = class_exists( 'GE_WTP_Production' ) ? GE_WTP_Production::actionable_items( $order, false ) : $order->get_items( 'line_item' );
         if ( ! $production_items ) { return false; }

@@ -201,6 +201,7 @@ final class GE_WTP_Supplier_Portal {
                 if ( $dispatch_id !== $row['id'] ) { continue; }
                 if ( ! empty( $row['revoked'] ) || $row['expires'] < time() || self::latest( $order, $row['supplier'] )['id'] !== $row['id'] ) { return new WP_Error( 'stale', 'Prepará la versión vigente.' ); }
                 if ( ! empty( $row['sent_at'] ) ) { return $row; }
+                $payment = GE_Production_Payment_Guard::check( $order ); if ( is_wp_error( $payment ) ) { return $payment; }
                 if(($row['workflow_schema']??1)===2){if($manual&&strlen($manual_evidence)<10)return new WP_Error('evidence','Registrá cómo y cuándo se realizó el envío manual.');$access=GE_WTP_Production_Cards::access($order,true);if(is_wp_error($access))return $access;if(($row['attempts']??0)>=3)return new WP_Error('attempts','Se alcanzó el límite de intentos. Revisá el canal de envío.');}
                 if ( ! empty( $row['attempt_started'] ) && ! $retry ) { return new WP_Error( 'uncertain', 'Hubo un intento previo. Verificá Notificaciones antes de reintentar manualmente.' ); }
                 $current = self::snapshot( $order, $row['supplier'], $row['snapshot']['notes'] );
@@ -249,6 +250,10 @@ final class GE_WTP_Supplier_Portal {
             if ( ! $auth || ! in_array( $action, array( 'acknowledged', 'eta', 'in_production', 'ready', 'rejected', 'delay' ), true ) ) { return new WP_Error( 'forbidden', 'Enlace no válido.' ); }
             if ( self::latest( $order, $auth['supplier'] )['id'] !== $auth['id'] ) { return new WP_Error( 'version', 'Abrí la nueva versión antes de confirmar.' ); }
             if ( 'received' === $auth['state'] ) { return new WP_Error( 'closed', 'Graphex ya registró la recepción de este trabajo.' ); }
+            if ( 'acknowledged' === $action && empty($auth['business_confirmed_at']) ) {
+                $payment = GE_Production_Payment_Guard::check($order);
+                if (is_wp_error($payment)) return new WP_Error('payment_hold', 'Graphex debe revisar la autorización de esta orden antes de confirmar.');
+            }
             if(($auth['workflow_schema']??1)===2){
                 if(in_array($action,array('acknowledged','in_production','ready'),true)&&$auth['state']==='rejected')return new WP_Error('rejected','Graphex debe revisar la orden rechazada y preparar una nueva versión.');
                 $current=self::snapshot($order,$auth['supplier'],$auth['snapshot']['notes']);if(is_wp_error($current)||!self::same_snapshot($auth,$current))return new WP_Error('version','La orden o el archivo cambió; Graphex debe revisar una nueva versión.');
