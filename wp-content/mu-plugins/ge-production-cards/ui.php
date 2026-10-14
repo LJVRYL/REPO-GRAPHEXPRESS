@@ -107,6 +107,7 @@ final class GE_WTP_Production_Cards_UI {
    echo '</article>';
   }
   if(in_array($d['state'],array('awaiting_supplier','awaiting_manual_dispatch'),true)){echo '<details><summary>Corregir el control o cambiar de proveedor</summary><p>Se revocan los enlaces anteriores. Revisá los archivos y prepará una orden nueva antes de enviarla.</p>';self::form($order,'reopen');echo '<button class="ge-staff-button is-secondary">Volver a preparación</button></form></details>';}
+  if($d['state']==='production')echo '<p><a class="ge-staff-button" href="'.esc_url(GE_WTP_Staff_Portal::portal_url('orders',array('order_id'=>$order->get_id()))).'">Continuar seguimiento y entrega</a></p>';
   $notices=(array)$order->get_meta(GE_WTP_Production_Cards::NOTICES,true);$notice=$notices[$d['generation']??'']??array();if($d['state']==='production'){echo '<p>Aviso al cliente: '.esc_html(($notice['state']??'')==='sent'?'enviado y registrado':'pendiente de verificación').'.</p>';if(($notice['state']??'')==='failed'){self::form($order,'notice_retry');echo '<label><input type="checkbox" name="verified_not_sent" value="1" required> Revisé Notificaciones: el aviso no fue enviado</label><button class="ge-staff-button">Reintentar aviso</button></form>';}}
  }
 }
