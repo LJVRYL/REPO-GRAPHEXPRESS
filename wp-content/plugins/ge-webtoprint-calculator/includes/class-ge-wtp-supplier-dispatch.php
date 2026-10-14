@@ -109,6 +109,8 @@ final class GE_WTP_Supplier_Dispatch {
     }
 
     public static function handle_whatsapp() {
+        self::guard(); $payment = GE_Production_Payment_Guard::check(self::order());
+        if (is_wp_error($payment)) { wp_die(esc_html($payment->get_error_message()), '', array('response'=>409)); }
         self::guard(); $order = self::order(); if ( class_exists( 'GE_WTP_Workflow' ) && GE_WTP_Workflow::enabled( $order ) ) { wp_die( 'Usá la salida a proveedor del nuevo circuito.', 403 ); } check_admin_referer( 'ge_supplier_whatsapp_' . $order->get_id() ); $profile = self::profile( $order->get_meta( '_ge_production_supplier' ) ); $phone = $profile ? self::normalize_phone( $profile['whatsapp'] ) : ''; if ( ! $phone ) { self::redirect_order( $order, 'supplier-failed' ); }
         self::log( $order, 'whatsapp', true ); wp_redirect( 'https://wa.me/' . rawurlencode( $phone ) . '?text=' . rawurlencode( self::whatsapp_message( $order ) ) ); exit;
     }

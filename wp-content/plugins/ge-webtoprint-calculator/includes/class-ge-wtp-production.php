@@ -712,6 +712,8 @@ final class GE_WTP_Production {
 
     private static function save_item_statuses( $order, $posted_statuses ) {
         if ( class_exists( 'GE_WTP_Customer_Quotes' ) && GE_WTP_Customer_Quotes::is_quote_order( $order ) ) { return; }
+        $payment = GE_Production_Payment_Guard::transition_check($order, $posted_statuses);
+        if (is_wp_error($payment)) { wp_die(esc_html($payment->get_error_message()), '', array('response'=>409)); }
         foreach ( $posted_statuses as $item_id => $posted_status ) {
             $item = $order->get_item( absint( $item_id ) );
             $item_status = sanitize_key( wp_unslash( $posted_status ) );

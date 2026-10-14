@@ -45,8 +45,27 @@ final class GE_Production_Payment_Guard {
         if ($org && $org !== GE_Organization::PRIMARY) return new WP_Error('organization', 'Pedido de otra organización.');
         if ((float)$order->get_total() <= 0) return new WP_Error('payment_total', 'Revisá el importe del pedido antes de producir.');
         $paid = GE_WTP_Job_Flow::payment_check($order);
+        if (is_wp_error($paid) && 'yes' === $order->get_meta('_ge_work_order', true)) {
+            $source = wc_get_order(absint($order->get_meta('_ge_source_quote_order_id', true)));
+            $source_item = $source ? $source->get_item(absint($order->get_meta('_ge_source_quote_item_id', true))) : false;
+            $source_org = $source ? $source->get_meta('_ge_organization_id', true) : '';
+            if (!$source || !$source_item || ($source_org && $source_org !== GE_Organization::PRIMARY)
+                || $source->get_customer_id() !== $order->get_customer_id() || $source->get_currency() !== $order->get_currency()
+                || (int)$source_item->get_meta('_ge_work_order_id', true) !== $order->get_id()) {
+                return new WP_Error('payment_source', 'Revisá la vinculación de la orden con su pedido de origen.');
+            }
+            $paid = GE_WTP_Job_Flow::payment_check($source);
+        }
         if (!is_wp_error($paid) || self::valid_exception($order)) return true;
         return new WP_Error('production_payment', 'Para producir o enviar la orden al proveedor, acreditá la seña acordada o registrá una excepción de Administración. Podés seguir preparando los archivos.');
+    }
+    public static function transition_check($order, $posted) {
+        foreach ((array)$posted as $id => $status) {
+            $item = $order->get_item(absint($id));
+            if ($item && in_array($status, array('production','ready'), true)
+                && !in_array(GE_WTP_Production::item_status($item, $order), array('production','ready'), true)) return self::check($order);
+        }
+        return true;
     }
     public static function save($order, $actor, $reason, $expires, $expected_scope, $revoke = false) {
         if (!$order instanceof WC_Order || !self::supervisor($actor)) return new WP_Error('forbidden', 'La excepción requiere Administración.');

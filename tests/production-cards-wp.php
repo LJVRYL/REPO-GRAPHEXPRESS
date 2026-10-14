@@ -63,4 +63,13 @@ $organizations=get_option(GE_Organization::ROOT);try{
  ob_start();GE_WTP_Payment_Policy::render_order($financeCase);$html=ob_get_clean();expect(strpos($html,'ge_finance_production_payment_exception')!==false,'Administration exception form missing');
 }finally{update_option(GE_Organization::ROOT,$organizations);wp_set_current_user(1);}
 $quantityCase=fixture('Cambio de cantidad');$item=current($quantityCase->get_items());$item->set_quantity(2);$item->save();$quantityCase=fresh($quantityCase);expect(!GE_Production_Payment_Guard::valid_exception($quantityCase),'Quantity change retained exception');
+$legacy=fixture('Estado heredado sin seña');$legacy->delete_meta_data(GE_Production_Payment_Guard::META);$legacy->delete_meta_data('_ge_workflow_version');$legacy->save();$li=current($legacy->get_items());
+expect(is_wp_error(GE_Production_Payment_Guard::transition_check($legacy,[$li->get_id()=>'production'])),'Legacy new production allowed without deposit');
+expect(is_wp_error(GE_Production_Payment_Guard::transition_check($legacy,[$li->get_id()=>'ready'])),'Legacy new ready allowed without deposit');
+expect(GE_Production_Payment_Guard::transition_check($legacy,[$li->get_id()=>'approved'])===true,'Draft preparation blocked by payment');
+$li->update_meta_data('_ge_item_status','production');$li->save();expect(GE_Production_Payment_Guard::transition_check(fresh($legacy),[$li->get_id()=>'ready'])===true,'Historic physical production retroactively blocked');
+$source=fixture('Pedido pagado origen');$child=fixture('Orden derivada');$si=current($source->get_items());$si->update_meta_data('_ge_work_order_id',$child->get_id());$si->save();
+$source->update_meta_data('_ge_payment_state','paid');$source->update_meta_data('_ge_payment_confirmed_by',1);$source->update_meta_data('_ge_payment_confirmed_at',gmdate('c'));$source->update_meta_data('_ge_payment_confirmed_total',(string)$source->get_total());$source->save();
+$child->delete_meta_data(GE_Production_Payment_Guard::META);$child->update_meta_data('_ge_work_order','yes');$child->update_meta_data('_ge_source_quote_order_id',$source->get_id());$child->update_meta_data('_ge_source_quote_item_id',$si->get_id());$child->save();expect(GE_Production_Payment_Guard::check(fresh($child))===true,'Credited source payment not recognized');
+$child->update_meta_data('_ge_source_quote_item_id',999999);$child->save();expect(is_wp_error(GE_Production_Payment_Guard::check(fresh($child))),'Unlinked source payment accepted');
 echo wp_json_encode(['passed'=>true,'fixture_orders'=>$cases,'intercepted_mail_calls'=>count($sent),'actual_external_emails'=>0,'production_orders_changed'=>0]);
