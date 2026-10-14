@@ -6,6 +6,14 @@ final class GE_Work_Finance {
     public static function money($cents,$currency='ARS') {return $currency==='ARS'?GE_WTP_Commercial_Quote_UI::money($cents):$currency.' '.number_format($cents/100,$cents%100?2:0,',','.');}
     public static function can_write($actor) { return GE_WTP_Staff_Portal::can_access() && $actor===get_current_user_id() && GE_WTP_Customer_Invoices::staff($actor,true); }
     public static function strict_order($id) { require_once __DIR__.'/ge-work-finance/order.php';return new GE_Work_Finance_Order($id); }
+    public static function clear_order_cache($id) {
+        clean_post_cache($id);
+        if(class_exists('Automattic\WooCommerce\Caches\OrderCache')) {
+            $cache=wc_get_container()->get('Automattic\WooCommerce\Caches\OrderCache');
+            if(is_callable(array($cache,'remove')))$cache->remove($id);
+        }
+        if(class_exists('WC_Cache_Helper'))WC_Cache_Helper::invalidate_cache_group('orders');
+    }
     public static function order($id) {
         $order=wc_get_order(absint($id));
         if (!$order || 'yes'===$order->get_meta('_ge_commercial_payment_order',true)) return new WP_Error('order','Seleccioná el pedido comercial, no un intento de cobro.');
@@ -58,7 +66,7 @@ final class GE_Work_Finance {
         if(!self::lock($lock))return new WP_Error('busy','El cobro se está procesando. No repitas el pago.');
         global $wpdb;$transaction=false;
         try {
-            clean_post_cache($id);
+            self::clear_order_cache($id);
             $order=self::order($id);if(is_wp_error($order))return $order;
             $order=self::strict_order($id);
             if(in_array($order->get_status(),array('cancelled','failed','refunded'),true))return new WP_Error('inactive','El pedido no está activo.');
@@ -89,7 +97,7 @@ final class GE_Work_Finance {
             if($wpdb->last_error)throw new RuntimeException('No se confirmó el registro. Recargá la ficha y revisá el historial antes de repetir.');
             if(false===$wpdb->query('COMMIT'))throw new RuntimeException('El resultado del registro es incierto. Revisá el historial antes de repetir.');$transaction=false;
             return array('saved'=>true,'duplicate'=>false,'entry'=>$entry,'balance'=>$state);
-        } catch(Throwable $error) { if($transaction){$wpdb->query('ROLLBACK');clean_post_cache($id);}return new WP_Error('payment',($error instanceof InvalidArgumentException || $error instanceof DomainException)?$error->getMessage():'No se confirmó el registro. Recargá la ficha y revisá el historial antes de repetir.'); }
+        } catch(Throwable $error) { if($transaction){$wpdb->query('ROLLBACK');self::clear_order_cache($id);}return new WP_Error('payment',($error instanceof InvalidArgumentException || $error instanceof DomainException)?$error->getMessage():'No se confirmó el registro. Recargá la ficha y revisá el historial antes de repetir.'); }
         finally {self::unlock($lock);}
     }
     public static function handle() {
