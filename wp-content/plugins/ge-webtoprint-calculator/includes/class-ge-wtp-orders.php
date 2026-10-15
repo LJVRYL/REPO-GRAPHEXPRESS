@@ -221,9 +221,10 @@ final class GE_WTP_Orders {
 
         $user_id = $user_id ? absint( $user_id ) : get_current_user_id();
         $user = $user_id ? get_userdata( $user_id ) : false;
-        if ( ! $user ) {
-            return array();
-        }
+        if(!$user || !GE_WTP_Portal::is_customer_user($user))return array();
+        $staff=current_user_can('manage_woocommerce')||current_user_can('ge_manage_operations');
+        if(!$staff && $user_id!==(int)GE_WTP_Portal::portal_customer_id())return array();
+        if($staff && class_exists('GE_Organization_Runtime') && !GE_Organization_Runtime::allowed('customers',false,get_current_user_id()))return array();
 
         $query = array(
             'limit'   => absint( $limit ),
@@ -233,21 +234,12 @@ final class GE_WTP_Orders {
         );
         $orders = wc_get_orders( array_merge( $query, array( 'customer_id' => $user_id ) ) );
 
-        // También incorpora presupuestos/pedidos históricos creados como invitado
-        // con el mismo email, sin exponer órdenes pertenecientes a otra cuenta.
-        $guest_orders = wc_get_orders(
-            array_merge(
-                $query,
-                array(
-                    'customer_id'   => 0,
-                    'billing_email' => $user->user_email,
-                )
-            )
-        );
+        // Guest records are visible only after an explicit verified association.
+        $guest_orders=wc_get_orders(array_merge($query,array('customer_id'=>0,'meta_key'=>'_ge_verified_guest_customer_id','meta_value'=>$user_id)));
 
         $unique = array();
         foreach ( array_merge( $orders, $guest_orders ) as $order ) {
-            if ( 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) ) { continue; }
+            if('yes'===$order->get_meta('_ge_commercial_payment_order',true) || !GE_WTP_Portal::customer_owns_order($order,$user_id))continue;
             $unique[ $order->get_id() ] = $order;
         }
         usort(
