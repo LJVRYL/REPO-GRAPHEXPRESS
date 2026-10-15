@@ -21,6 +21,7 @@ class WC_Order {
  public function get_currency(){return 'ARS';}
  public function get_total_tax(){return 2100;}
  public function get_formatted_order_total(){return '$ 12,100.00';}
+ public function get_billing_company(){return 'Receptor de prueba';}
 }
 class Historical_Test_Item {
  public function get_name(){return 'Factura B <script>alert(1)</script>';}
@@ -34,7 +35,7 @@ class GE_WTP_Documents {
  public static function customer_visible($d){return empty($d['private']);}
  public static function download_url($oid,$id){return 'https://example.test/download?order='.$oid.'&doc='.rawurlencode($id);}
 }
-class GE_WTP_Customer_Branches {public static function render_order_summary($o){echo '<p>Receptor histórico</p>';}}
+class GE_WTP_Customer_Branches {public static function render_order_summary($o){throw new RuntimeException('Historical view must not invoke active logistics forms');}}
 require $argv[1] ?? dirname(__DIR__).'/wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-portal.php';
 $checks=0;function check($ok,$message){global $checks;if(!$ok)throw new RuntimeException($message);$checks++;}
 $live=new WC_Order();$old=new WC_Order();$old->meta=['_ge_historical_import_case'=>'synthetic-import','_ge_markcom_reference'=>'Histórico <img src=x onerror=alert(1)>','_ge_historical_evidence'=>['entrega'=>'Entrega <script>bad</script>','pagos'=>'PRIVATE BANK DETAIL']];
