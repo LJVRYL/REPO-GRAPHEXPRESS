@@ -646,7 +646,10 @@ final class GE_WTP_Portal {
         echo '<h3>Pagos por conciliar</h3><p>El importe del trabajo no confirma una deuda pendiente ni un pago recibido. Antes de volver a pagar, coordiná la revisión de las acreditaciones con el equipo.</p><div class="ge-order-meta"><div><small>Neto del trabajo</small><strong>' . wp_kses_post( wc_price( $order->get_subtotal(), array( 'currency' => $order->get_currency() ) ) ) . '</strong></div><div><small>IVA del trabajo</small><strong>' . wp_kses_post( wc_price( $order->get_total_tax(), array( 'currency' => $order->get_currency() ) ) ) . '</strong></div><div><small>Total histórico · no es saldo</small><strong>' . wp_kses_post( $order->get_formatted_order_total() ) . '</strong></div></div>';
         if ( ! empty( $evidence['entrega'] ) ) { echo '<h3>Entrega según el historial</h3><p>' . esc_html( $evidence['entrega'] ) . '</p>'; }
         echo '</section>';
-        GE_WTP_Customer_Branches::render_order_summary( $order );
+        $receiver = (array) $order->get_meta( '_ge_billing_profile_snapshot', true );
+        echo '<section class="ge-panel"><h2>Receptor del trabajo</h2><p>' . esc_html( $receiver['legal_name'] ?? $order->get_billing_company() ) . '</p>';
+        if ( ! empty( $receiver['cuit'] ) ) { echo '<p>CUIT: ' . esc_html( $receiver['cuit'] ) . '</p>'; }
+        echo '</section>';
         echo '<section class="ge-panel"><h2>Talonarios y archivos</h2><p>Los modelos conservados son referencias históricas. No acreditan aprobación de un arte final ni están habilitados para reimprimir.</p>';
         foreach ( $order->get_items() as $item ) {
             echo '<details class="ge-workspace-item"><summary><strong>' . esc_html( $item->get_name() ) . '</strong> · ' . esc_html( $item->get_quantity() . ' talonario(s)' ) . '</summary><p>Neto del renglón: ' . wp_kses_post( wc_price( $item->get_total(), array( 'currency' => $order->get_currency() ) ) ) . '</p>';
