@@ -294,7 +294,7 @@ final class GE_WTP_Commercial_Quote_UI {
         echo '<li>Entrega: ' . esc_html( $delivery['street'] ?? 'A coordinar' ) . '</li>';
         foreach ( GE_WTP_Commercial_Quote_Files::all( $quote['id'] ) as $file ) { echo '<li>Archivo: ' . esc_html( $file['name'] ?? 'Sin nombre' ) . '</li>'; }
         echo '</ul></div>';
-        echo '<p>Se conservarán los ítems, facturación, dirección y ' . esc_html( count( GE_WTP_Commercial_Quote_Files::all( $quote['id'] ) ) ) . ' archivo(s). Podés continuar sin pago o archivo; el arte final seguirá requiriendo aprobación.</p>';
+        echo '<p>Se conservarán los ítems, facturación, dirección y ' . esc_html( count( GE_WTP_Commercial_Quote_Files::all( $quote['id'] ) ) ) . ' archivo(s). Podés continuar sin pago, archivo o datos fiscales completos. El emisor y receptor pueden asignarse después; deberán revisarse antes de facturar. El arte final seguirá requiriendo aprobación.</p>';
         echo '<label>Confirmación comercial<select name="confirmation_method"><option value="staff">Aprobación interna / staff</option>';
         if ( 'portal' === get_post_meta( $quote['id'], '_ge_commercial_accept_source', true ) ) { echo '<option value="portal">Portal · aceptación registrada</option>'; }
         echo '<option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="phone">Teléfono</option><option value="in_person">Presencial</option><option value="other">Otro</option></select></label>';
