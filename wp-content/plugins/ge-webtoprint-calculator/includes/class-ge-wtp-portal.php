@@ -9,6 +9,7 @@ require_once __DIR__ . '/class-ge-wtp-quick-quote.php';
 final class GE_WTP_Portal {
     public static function init() {
         add_shortcode( 'ge_markcom_portal', array( __CLASS__, 'render' ) );
+        add_filter( 'woocommerce_order_needs_payment', array( __CLASS__, 'historical_needs_payment' ), 10, 3 );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
         add_filter( 'template_include', array( __CLASS__, 'template_include' ), 99 );
         add_filter( 'login_redirect', array( __CLASS__, 'login_redirect' ), 20, 3 );
@@ -55,7 +56,7 @@ final class GE_WTP_Portal {
 
     public static function is_markcom_user( $user = null ) {
         $user = $user instanceof WP_User ? $user : wp_get_current_user();
-        return $user && $user->exists() && ! self::is_staff_user( $user ) && user_can( $user, 'ge_access_markcom_portal' );
+        return $user && $user->exists() && ! self::is_staff_user( $user ) && self::customer_in_organization($user) && user_can($user,'ge_access_markcom_portal') && (in_array('ge_markcom_client',(array)$user->roles,true) || !empty($user->caps['ge_access_markcom_portal']));
     }
 
     public static function is_customer_user( $user = null ) {
@@ -63,7 +64,24 @@ final class GE_WTP_Portal {
         if ( ! $user || ! $user->exists() || self::is_staff_user( $user ) ) {
             return false;
         }
-        return self::is_markcom_user( $user ) || (bool) array_intersect( array( 'customer', 'subscriber' ), (array) $user->roles );
+        return self::customer_in_organization($user) && (self::is_markcom_user($user) || in_array('customer',(array)$user->roles,true) || (in_array('subscriber',(array)$user->roles,true) && in_array(get_user_meta($user->ID,'_ge_registration_source',true),array('portal','landing-v1'),true)));
+    }
+
+    private static function customer_in_organization($user) {
+        $org=get_user_meta($user->ID,'_ge_organization_id',true);$primary=class_exists('GE_Organization')?GE_Organization::PRIMARY:'graph-express';
+        return $org===$primary || (!$org && $primary==='graph-express');
+    }
+
+    /** Customer identity is canonical; an email alone is never an ownership grant. */
+    public static function customer_owns_order($order,$customer_id) {
+        $customer_id=absint($customer_id);$user=$customer_id?get_userdata($customer_id):false;
+        if(!$order || !$user || !self::is_customer_user($user))return false;
+        $primary=class_exists('GE_Organization')?GE_Organization::PRIMARY:'graph-express';$org=$order->get_meta('_ge_organization_id',true);
+        if($org!==$primary && ($org || $primary!=='graph-express'))return false;
+        $owner=(int)$order->get_customer_id();
+        if($owner>0)return $owner===$customer_id;
+        // Reserved for an explicit, audited staff association; never populated from login/email.
+        return (int)$order->get_meta('_ge_verified_guest_customer_id',true)===$customer_id;
     }
 
     public static function can_access() {
@@ -83,7 +101,7 @@ final class GE_WTP_Portal {
 
     public static function portal_customer_id() {
         $preview_id = self::preview_customer_id();
-        return $preview_id ?: get_current_user_id();
+        return $preview_id ?: (self::is_customer_user()?get_current_user_id():0);
     }
 
     public static function portal_user() {
@@ -105,8 +123,7 @@ final class GE_WTP_Portal {
     private static function portal_order_belongs_to_customer( $order ) {
         if ( ! $order || 'yes' === $order->get_meta( '_ge_commercial_payment_order', true ) ) { return false; }
         $user = self::portal_user();
-        return (int) $order->get_customer_id() === (int) $user->ID
-            || ( 0 === (int) $order->get_customer_id() && $order->get_billing_email() && 0 === strcasecmp( $order->get_billing_email(), $user->user_email ) );
+        return self::customer_owns_order($order,(int)$user->ID);
     }
 
     public static function preview_url( $customer_id, $section = 'inicio', $extra = array() ) {
@@ -122,7 +139,8 @@ final class GE_WTP_Portal {
 
     public static function destination_for_user( $user ) {
         if ($user instanceof WP_User) { $quick = GE_WTP_Quick_Quote::destination($user); if ($quick) return $quick; }
-        return $user instanceof WP_User && self::is_staff_user( $user ) ? self::staff_url() : self::portal_url();
+        if($user instanceof WP_User && self::is_staff_user($user))return self::staff_url();
+        return $user instanceof WP_User && self::is_customer_user($user)?self::portal_url():home_url('/');
     }
 
     public static function login_redirect( $redirect_to, $requested_redirect_to, $user ) {
@@ -403,7 +421,7 @@ final class GE_WTP_Portal {
         $active_orders = array_filter(
             $orders,
             function ( $order ) {
-                return 'entregado' !== GE_WTP_Order_Lifecycle::stage( $order ) && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true );
+                return ! self::is_historical( $order ) && 'entregado' !== GE_WTP_Order_Lifecycle::stage( $order ) && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true );
             }
         );
         $documents = 0;
@@ -595,7 +613,57 @@ final class GE_WTP_Portal {
         echo '</div>';
     }
 
+    /** Imported records are evidence to consult, never a new request to pay or print. */
+    public static function is_historical( $order ) {
+        return $order instanceof WC_Order && '' !== (string) $order->get_meta( '_ge_historical_import_case', true );
+    }
+
+    public static function historical_needs_payment( $needs_payment, $order, $valid_statuses = array() ) {
+        return self::is_historical( $order ) ? false : $needs_payment;
+    }
+
+    public static function historical_invoice_label( $order ) {
+        $labels = array(
+            'facturado_original' => 'Factura original disponible',
+            'factura1211_mencionada_sin_original' => 'Factura 1211 mencionada; falta el original. Revisar antes de volver a facturar.',
+            'original_no_localizado_posible_factura_agrupada' => 'Factura no localizada. Revisar si está incluida en una factura agrupada.',
+            'solicitada_agrupada_sin_original' => 'Se solicitó facturación agrupada; no se encontró el original.',
+        );
+        return $labels[ $order->get_meta( '_ge_historical_invoice_state', true ) ] ?? 'Factura no localizada; revisar emisión.';
+    }
+
+    private static function historical_document_link( $order, $document ) {
+        $kind = 'arte' === ( $document['category'] ?? '' ) ? 'Modelo de referencia' : ( 'factura' === ( $document['category'] ?? '' ) ? 'Factura emitida' : 'Constancia / documento' );
+        echo '<p><a class="ge-button ge-button-secondary" href="' . esc_url( GE_WTP_Documents::download_url( $order->get_id(), $document['id'] ) ) . '">' . esc_html( $kind . ' · ' . $document['name'] ) . '</a></p>';
+    }
+
+    private static function render_historical_order( $order ) {
+        $documents = array_values( array_filter( GE_WTP_Documents::get_documents( $order->get_id() ), array( 'GE_WTP_Documents', 'customer_visible' ) ) );
+        $evidence = (array) $order->get_meta( '_ge_historical_evidence', true );
+        $reference = $order->get_meta( '_ge_markcom_reference', true ) ?: '#' . $order->get_order_number();
+        echo '<div class="ge-order-detail"><section class="ge-panel"><a class="ge-back-link" href="' . esc_url( self::portal_url( 'pedidos' ) ) . '">← Volver a pedidos</a><span class="ge-eyebrow">Registro histórico · solo consulta</span><h2>' . esc_html( $reference ) . '</h2><p>Este registro reúne un trabajo anterior y sus documentos. No inicia una nueva producción.</p><h3>Facturación</h3><p><strong>' . esc_html( self::historical_invoice_label( $order ) ) . '</strong></p>';
+        foreach ( $documents as $document ) { if ( 'factura' === ( $document['category'] ?? '' ) && empty( $document['superseded_at'] ) ) { self::historical_document_link( $order, $document ); } }
+        echo '<h3>Pagos por conciliar</h3><p>El importe del trabajo no confirma una deuda pendiente ni un pago recibido. Antes de volver a pagar, coordiná la revisión de las acreditaciones con el equipo.</p><div class="ge-order-meta"><div><small>Neto del trabajo</small><strong>' . wp_kses_post( wc_price( $order->get_subtotal(), array( 'currency' => $order->get_currency() ) ) ) . '</strong></div><div><small>IVA del trabajo</small><strong>' . wp_kses_post( wc_price( $order->get_total_tax(), array( 'currency' => $order->get_currency() ) ) ) . '</strong></div><div><small>Total histórico · no es saldo</small><strong>' . wp_kses_post( $order->get_formatted_order_total() ) . '</strong></div></div>';
+        if ( ! empty( $evidence['entrega'] ) ) { echo '<h3>Entrega según el historial</h3><p>' . esc_html( $evidence['entrega'] ) . '</p>'; }
+        echo '</section>';
+        GE_WTP_Customer_Branches::render_order_summary( $order );
+        echo '<section class="ge-panel"><h2>Talonarios y archivos</h2><p>Los modelos conservados son referencias históricas. No acreditan aprobación de un arte final ni están habilitados para reimprimir.</p>';
+        foreach ( $order->get_items() as $item ) {
+            echo '<details class="ge-workspace-item"><summary><strong>' . esc_html( $item->get_name() ) . '</strong> · ' . esc_html( $item->get_quantity() . ' talonario(s)' ) . '</summary><p>Neto del renglón: ' . wp_kses_post( wc_price( $item->get_total(), array( 'currency' => $order->get_currency() ) ) ) . '</p>';
+            $found = false;
+            foreach ( $documents as $document ) {
+                if ( (int) ( $document['order_item_id'] ?? 0 ) !== (int) $item->get_id() || ! empty( $document['superseded_at'] ) ) { continue; }
+                self::historical_document_link( $order, $document ); $found = true;
+            }
+            if ( ! $found ) { echo '<p>No se encontró un archivo original para este renglón.</p>'; }
+            echo '</details>';
+        }
+        echo '</section></div>';
+    }
+
+
     private static function render_order_detail( $order ) {
+        if ( self::is_historical( $order ) ) { self::render_historical_order( $order ); return; }
         $documents = array_values( array_filter( GE_WTP_Documents::get_documents( $order->get_id() ), array( 'GE_WTP_Documents', 'customer_visible' ) ) );
         $is_customer_quote = GE_WTP_Customer_Quotes::is_quote_order( $order );
         if ( class_exists( 'GE_WTP_VPS_Storage' ) && GE_WTP_VPS_Storage::ready() ) {
