@@ -67,7 +67,7 @@ $page_description = $is_store_home
                 <div class="gx-category-grid">
                     <?php foreach ($families as $slug => $family) :
                         $term = get_term_by('slug', $slug, 'product_cat');
-                        $term_url = $term && ! is_wp_error($term) ? get_term_link($term) : add_query_arg('product_cat', $slug, $shop_url);
+                        $term_url = !empty($family['url']) ? $family['url'] : ($term && ! is_wp_error($term) ? get_term_link($term) : add_query_arg('product_cat', $slug, $shop_url));
                         $media = isset($family['media']) && is_array($family['media']) ? $family['media'] : array();
                     ?>
                         <?php if ($media && in_array(($media['type'] ?? ''), array('video', 'image'), true)) : ?>

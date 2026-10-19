@@ -294,6 +294,20 @@ function graphexpress_store_families() {
             'class'       => 'paper',
             'symbol'      => '▥',
         ),
+        'deco-prints' => array(
+            'number'      => '09',
+            'name'        => 'Deco Prints',
+            'description' => 'Arte para tu espacio. Elegí una obra, su tamaño y el marco que más te guste.',
+            'examples'    => array('Cuadros', 'Arte y fotografía', 'Marcos', 'Tu propia imagen'),
+            'class'       => 'paper',
+            'symbol'      => '▣',
+            'url'         => home_url('/deco-prints/'),
+            'media'       => array(
+                'type'  => 'image',
+                'src'   => home_url('/wp-content/plugins/ge-webtoprint-calculator/assets/deco/assets/obra-1.jpg'),
+                'label' => 'Cuadros a tu manera',
+            ),
+        ),
     );
 }
 
