@@ -181,7 +181,10 @@ final class GE_WTP_Payments {
         $base_total = self::base_total( $order );
         $mp_surcharge = round( $base_total * self::MP_SURCHARGE / 100, wc_get_price_decimals() );
         $mp_total = $base_total + $mp_surcharge;
+        $deco_totals=class_exists('GE_WTP_Deco_Payments')?GE_WTP_Deco_Payments::order_totals($order):null;
+        if($deco_totals){$base_total=$deco_totals['bank_total'];$mp_surcharge=$deco_totals['mp_surcharge'];$mp_total=$deco_totals['mp_total'];}
         $mp_ready = self::mercadopago_ready();
+        if($deco_totals&&!GE_WTP_Deco_Payments::retail_mp_enabled())$mp_ready=false;
         $notice = isset( $_GET['ge_payment_notice'] ) ? sanitize_key( wp_unslash( $_GET['ge_payment_notice'] ) ) : '';
         $bank = self::bank_details();
         ?>
@@ -204,8 +207,8 @@ final class GE_WTP_Payments {
                         </form>
                     </article>
                     <article class="ge-payment-option is-mp">
-                        <div class="ge-payment-option-title"><b>MP</b><span><strong>Mercado Pago</strong><small>Checkout protegido · recargo del <?php echo esc_html( self::MP_SURCHARGE ); ?>%</small></span></div>
-                        <div class="ge-payment-breakdown"><p><span>Pedido</span><strong><?php echo wp_kses_post( wc_price( $base_total, array( 'currency' => $order->get_currency() ) ) ); ?></strong></p><p><span>Recargo Mercado Pago (<?php echo esc_html( self::MP_SURCHARGE ); ?>%)</span><strong><?php echo wp_kses_post( wc_price( $mp_surcharge, array( 'currency' => $order->get_currency() ) ) ); ?></strong></p></div>
+                        <div class="ge-payment-option-title"><b>MP</b><span><strong>Mercado Pago</strong><small>Checkout protegido<?php echo $mp_surcharge>0 ? esc_html(" · recargo del ".self::MP_SURCHARGE."%") : " · sin recargo adicional"; ?></small></span></div>
+                        <?php if($mp_surcharge>0): ?><div class="ge-payment-breakdown"><p><span>Pedido</span><strong><?php echo wp_kses_post( wc_price( $base_total, array( 'currency' => $order->get_currency() ) ) ); ?></strong></p><p><span>Recargo Mercado Pago (<?php echo esc_html( self::MP_SURCHARGE ); ?>%)</span><strong><?php echo wp_kses_post( wc_price( $mp_surcharge, array( 'currency' => $order->get_currency() ) ) ); ?></strong></p></div><?php endif; ?>
                         <div class="ge-payment-amount"><span>Total por Mercado Pago</span><strong><?php echo wp_kses_post( wc_price( $mp_total, array( 'currency' => $order->get_currency() ) ) ); ?></strong></div>
                         <?php if ( $mp_ready ) : ?><a class="ge-button ge-button-primary ge-button-block" href="<?php echo esc_url( self::mercadopago_payment_url( $order ) ); ?>">Pagar con Mercado Pago</a><?php else : ?><button class="ge-button ge-button-primary ge-button-block" type="button" disabled>Mercado Pago pendiente de configurar</button><small class="ge-payment-help">La transferencia ya está disponible. El pago online se habilitará cuando se conecten las credenciales propias de Graph Express.</small><?php endif; ?>
                     </article>
@@ -272,6 +275,10 @@ final class GE_WTP_Payments {
     public static function apply_mercadopago_surcharge( $order ) {
         $gateway_id = sanitize_key( wp_unslash( $_POST['payment_method'] ?? '' ) );
         if ( ! $order instanceof WC_Order || 'mercadopago' !== sanitize_key( wp_unslash( $_GET['ge_payment'] ?? '' ) ) || 0 !== strpos( $gateway_id, 'woo-mercado-pago-' ) ) { return; }
+        if(class_exists('GE_WTP_Deco_Payments')&&GE_WTP_Deco_Payments::order_totals($order)){
+            if(!GE_WTP_Deco_Payments::retail_mp_enabled())return;
+            $order->set_payment_method($gateway_id);self::finalize_checkout_payment_adjustment($order);return;
+        }
         self::remove_mercadopago_surcharge( $order );
         $base_total = (float) $order->get_total();
         $surcharge = round( $base_total * self::MP_SURCHARGE / 100, wc_get_price_decimals() );
@@ -317,6 +324,7 @@ final class GE_WTP_Payments {
         if ( $manual ) {
             self::remove_mercadopago_surcharge( $order );
             $order->set_payment_method( 'bacs' );
+            if(class_exists('GE_WTP_Deco_Payments')&&GE_WTP_Deco_Payments::order_totals($order))self::finalize_checkout_payment_adjustment($order);
             $order->set_payment_method_title( 'Transferencia bancaria' );
         }
         $order->update_meta_data( '_ge_payment_state', 'receipt_uploaded' );
@@ -364,6 +372,7 @@ final class GE_WTP_Payments {
         if($order->get_meta('_ge_work_manual_payments',true) || $order->get_meta('_ge_commercial_quote_id',true))wp_die('Este pedido usa un historial de cobros. Registrá el saldo desde Pagos del pedido.','',array('response'=>409));
         self::remove_mercadopago_surcharge( $order );
         $order->set_payment_method( 'bacs' );
+            if(class_exists('GE_WTP_Deco_Payments')&&GE_WTP_Deco_Payments::order_totals($order))self::finalize_checkout_payment_adjustment($order);
         $order->set_payment_method_title( 'Transferencia bancaria' );
         $order->set_date_paid( current_time( 'timestamp', true ) );
         $order->update_meta_data( '_ge_payment_state', 'paid' );
@@ -390,7 +399,9 @@ final class GE_WTP_Payments {
         }
         $base = self::base_total( $order );
         $mp_total = $base + round( $base * self::MP_SURCHARGE / 100, wc_get_price_decimals() );
-        $body = GE_WTP_Email_Content::render( 'payment_instructions', array( 'mp_total' => wp_kses_post( wc_price( $mp_total, array( 'currency' => $order->get_currency() ) ) ), 'base' => wp_kses_post( wc_price( $base, array( 'currency' => $order->get_currency() ) ) ), 'name' => esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ), 'alias' => esc_html( $bank['alias'] ), 'cbu' => esc_html( $bank['cbu'] ), 'portal' => esc_url( $portal_url ), 'surcharge' => self::MP_SURCHARGE ) );
+        $deco_totals=class_exists('GE_WTP_Deco_Payments')?GE_WTP_Deco_Payments::order_totals($order):null;
+        if($deco_totals){$base=$deco_totals['bank_total'];$mp_total=$deco_totals['mp_total'];}
+        $body = GE_WTP_Email_Content::render( 'payment_instructions', array( 'mp_total' => wp_kses_post( wc_price( $mp_total, array( 'currency' => $order->get_currency() ) ) ), 'base' => wp_kses_post( wc_price( $base, array( 'currency' => $order->get_currency() ) ) ), 'name' => esc_html( $order->get_billing_first_name() ?: '¿cómo estás?' ), 'alias' => esc_html( $bank['alias'] ), 'cbu' => esc_html( $bank['cbu'] ), 'portal' => esc_url( $portal_url ), 'surcharge' => $deco_totals&&$deco_totals['mp_surcharge']==0 ? 0 : self::MP_SURCHARGE ) );
         $sent = GE_WTP_Notifications::send( $order->get_billing_email(), 'Opciones de pago · ' . GE_WTP_Manual_Orders::reference( $order ), $body, 'payment_instructions', $order->get_id() );
         self::staff_redirect( $order, $sent ? 'instructions-sent' : 'failed' );
     }

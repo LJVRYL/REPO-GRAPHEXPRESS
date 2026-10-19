@@ -72,6 +72,7 @@ final class GE_WTP_Deco_Prints {
         $snapshot['currency'] = 'ARS';
         $snapshot['analyzer_ref'] = $manifest['analyzer_ref'];
         $snapshot['price_base'] = $config['options'][$key]['price'];
+        if(!empty($entry['retail_pricing']))$snapshot['retail_pricing']=$entry['retail_pricing'];
         $snapshot['tax_context'] = $config['tax_context'];
         $snapshot['freight_policy'] = $freight;
         $snapshot['route'] = min($entry['print_mm']) <= 300 && max($entry['print_mm']) <= 450 ? 'digital' : 'gran-formato';

@@ -106,7 +106,7 @@ final class GE_WTP_Deco_Gallery {
         try {
             $route = $request->get_route();
             if(substr($route,-8)==='/options'){
-                try{$policy=GE_WTP_Deco_Release::policy();$ids=array();$prices=array();foreach($policy['options'] as $id=>$option){if(($option['available']??false)===true&&GE_WTP_Deco_Observations::allowed($id,$policy)){$ids[]=$id;$prices[$id]=(int)round($option['unit_base_cents']*$policy['tax_context']['multiplier']);}}return array('option_ids'=>$ids,'commerce_available'=>count($ids)>0,'unit_prices_cents'=>$prices,'currency'=>'ARS','handling_cents'=>array('frames'=>$policy['freight_policy']['frames_cents'],'large_format'=>$policy['freight_policy']['large_format_cents']));}
+                try{$policy=GE_WTP_Deco_Release::policy();$ids=array();$prices=array();foreach($policy['options'] as $id=>$option){if(($option['available']??false)===true&&GE_WTP_Deco_Observations::allowed($id,$policy)){$ids[]=$id;$prices[$id]=(int)round(GE_WTP_Deco_Payments::regular_cents($option['unit_base_cents'],$policy)*$policy['tax_context']['multiplier']);}}return array('option_ids'=>$ids,'commerce_available'=>count($ids)>0,'unit_prices_cents'=>$prices,'currency'=>'ARS','handling_cents'=>array('frames'=>$policy['freight_policy']['frames_cents'],'large_format'=>$policy['freight_policy']['large_format_cents']));}
                 catch(InvalidArgumentException $error){return array('option_ids'=>array(),'commerce_available'=>false);}
             }
             if (substr($route, -8) === '/session') { return array('authenticated'=>is_user_logged_in(),'csrf'=>wp_create_nonce('ge_deco_public'),'commerce_enabled'=>defined('GE_DECO_PRINTS_ENABLED') && GE_DECO_PRINTS_ENABLED === true,'upload'=>is_user_logged_in()?array('ajaxUrl'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce(GE_WTP_VPS_Storage::AJAX_ACTION)):null); }
@@ -221,7 +221,7 @@ final class GE_WTP_Deco_Gallery {
         if(!is_page()||get_post_meta(get_queried_object_id(),'_ge_deco_gallery',true)!=='yes')return;
         $file=self::assets().'index.html';if(!is_file($file)){status_header(503);exit;}
         $asset_base=GE_WTP_PLUGIN_URL.'assets/deco/';
-        $runtime=array('apiBase'=>rest_url(self::NS),'assetBase'=>$asset_base,'wpNonce'=>wp_create_nonce('wp_rest'),'commerce'=>defined('GE_DECO_PRINTS_ENABLED')&&GE_DECO_PRINTS_ENABLED===true,'accountUrl'=>wc_get_page_permalink('myaccount'),'creatorPortalUrl'=>GE_WTP_Deco_Creators::enabled()?GE_WTP_Portal::portal_url('mi-galeria'):'');
+        $runtime=array('apiBase'=>rest_url(self::NS),'assetBase'=>$asset_base,'wpNonce'=>wp_create_nonce('wp_rest'),'commerce'=>defined('GE_DECO_PRINTS_ENABLED')&&GE_DECO_PRINTS_ENABLED===true,'retailTransferDiscount'=>((get_option('ge_deco_commercial_release',array())['checkout_pricing']['rule']??'')===GE_WTP_Deco_Payments::RETAIL_RULE),'accountUrl'=>wc_get_page_permalink('myaccount'),'creatorPortalUrl'=>GE_WTP_Deco_Creators::enabled()?GE_WTP_Portal::portal_url('mi-galeria'):'');
         $nonce=base64_encode(random_bytes(18));
         nocache_headers();header("Content-Security-Policy: default-src 'self'; img-src 'self' https://api.nga.gov https://images.metmuseum.org blob: data:; script-src 'self' 'nonce-".$nonce."'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
         $head='<script nonce="'.esc_attr($nonce).'">window.GRAPHEX_RUNTIME='.wp_json_encode($runtime,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT).';</script>';
