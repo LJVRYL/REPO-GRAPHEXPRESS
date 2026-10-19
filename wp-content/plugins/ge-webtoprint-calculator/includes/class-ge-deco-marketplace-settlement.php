@@ -8,6 +8,17 @@ final class GE_Deco_Marketplace_Settlement {
         return $value;
     }
 
+    /** Free artwork uses the native first-party checkout, which owns its processing tariff. */
+    public static function unit_quote($physical, $artist, array $fee, $now) {
+        $quote=self::quote($physical,$artist,0,$fee,$now);
+        $quote['checkout_route']=$artist>0?'marketplace':'graphex';
+        if($artist===0){
+            $quote['total_cents']=$physical;$quote['graphex_cents']=$physical;
+            $quote['processing_cents']=0;$quote['processing_payer']='native_checkout';
+        }
+        return $quote;
+    }
+
     /** A fee policy must come from a verified seller/method-specific server quote. */
     public static function quote($physical, $artist, $freight, array $fee, $now, $charged_total = null) {
         foreach (array($physical, $artist, $freight) as $amount) { self::amount($amount); }

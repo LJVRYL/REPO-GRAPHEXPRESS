@@ -19,6 +19,10 @@ $actual['status']='approved';$actual['accredited_at']=null;check_settlement(GE_D
 rejected_settlement(static function()use($fee){GE_Deco_Marketplace_Settlement::quote(2000000,500000,350000,$fee,100101);});
 foreach(array('rate_bps'=>5000,'verified_at'=>100001,'fixed_cents'=>-1,'payment_method_id'=>'visa','evidence_ref'=>'') as $key=>$value){$bad=$fee;$bad[$key]=$value;rejected_settlement(static function()use($bad){GE_Deco_Marketplace_Settlement::quote(1000,100,0,$bad,100000);});}
 $free=GE_Deco_Marketplace_Settlement::quote(1000,0,0,$fee,100000);check_settlement(!$free['split_required']&&$free['graphex_cents']>=1000);
+$native=GE_Deco_Marketplace_Settlement::unit_quote(1000,0,$fee,100000);
+check_settlement($native['total_cents']===1000&&$native['artist_cents']===0);
+check_settlement($native['processing_cents']===0&&$native['checkout_route']==='graphex');
+check_settlement(GE_Deco_Marketplace_Settlement::unit_quote(1000,100,$fee,100000)['checkout_route']==='marketplace');
 $zero=$fee;$zero['rate_bps']=0;check_settlement(GE_Deco_Marketplace_Settlement::quote(1000,100,0,$zero,100000)['total_cents']===1100);
 for($i=1;$i<=100;$i++){$q=GE_Deco_Marketplace_Settlement::quote($i*137,299,350000,$fee,100000);check_settlement($q['graphex_cents']>=$i*137+350000);}
 echo json_encode(array('passed'=>$checks,'live_payments'=>0,'fee_policy'=>'synthetic QA only')).PHP_EOL;

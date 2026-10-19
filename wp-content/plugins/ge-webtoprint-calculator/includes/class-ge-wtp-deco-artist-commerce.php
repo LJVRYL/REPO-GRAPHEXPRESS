@@ -73,7 +73,10 @@ final class GE_WTP_Deco_Artist_Commerce {
         $fee=$manifest['artist_context']['fee'];$freight=$manifest['freight_policy'];
         $frames=GE_Deco_Marketplace_Settlement::quote($freight['frames_cents'],0,0,$fee,time())['total_cents'];
         $large=GE_Deco_Marketplace_Settlement::quote($freight['frames_cents']+$freight['large_format_cents'],0,0,$fee,time())['total_cents']-$frames;
-        return array('artist_sales_enabled'=>true,'unit_prices_cents'=>$prices,'handling_cents'=>array('frames'=>$frames,'large_format'=>$large));
+        $per_option=array();
+        foreach($manifest['options']as $entry)$per_option[$entry['catalog_option_id']]=($entry['artist_quote']['artist_cents']??0)>0
+            ?array('frames'=>$frames,'large_format'=>$large):array('frames'=>$freight['frames_cents'],'large_format'=>$freight['large_format_cents']);
+        return array('artist_sales_enabled'=>true,'unit_prices_cents'=>$prices,'handling_cents'=>array('frames'=>$frames,'large_format'=>$large),'handling_by_option_cents'=>$per_option);
     }
     public static function selection($id,$data) {
         $source=self::source($id);self::context($source['row']);$option=null;
