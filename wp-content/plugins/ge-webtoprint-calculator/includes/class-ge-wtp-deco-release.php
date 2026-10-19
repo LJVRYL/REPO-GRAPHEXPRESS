@@ -48,11 +48,12 @@ final class GE_WTP_Deco_Release {
                 foreach(array('cover','contain') as $fit){
                     $quality=GE_Deco_Print_Quality::metrics($pixels,$mm,$fit);if($quality['effective_ppi']<200)continue;
                     foreach($papers as $paper){
-                        $key=substr(hash('sha256',implode(':',array($option['id'],$orientation,$fit,$paper))),0,32);$price=$approved['unit_base_cents']/100;$artist_quote=null;
+                        $key=substr(hash('sha256',implode(':',array($option['id'],$orientation,$fit,$paper))),0,32);$price=($artist_context?$approved['unit_base_cents']:GE_WTP_Deco_Payments::regular_cents($approved['unit_base_cents'],$policy))/100;$artist_quote=null;
                         if($artist_context){$royalty=GE_Deco_Artist_Pricing::quote($approved['unit_base_cents'],$option['model'],$artist_context['pricing'],$artist_context['work_rule']);
                             $artist_quote=GE_Deco_Marketplace_Settlement::unit_quote($approved['unit_base_cents'],$royalty['artist_cents'],$artist_context['fee'],time());$price=$artist_quote['total_cents']/100;}
                         $entry=array('enabled'=>true,'geometry_verified'=>true,'cost_version_ref'=>$policy['revision'],'price_approval_ref'=>$policy['pricing_approval_ref'],'supplier_variant_ref'=>$approved['variant_ref']??'','catalog_option_id'=>$option['id'],'orientation'=>$orientation,'print_mm'=>$mm,'outer_mm'=>$outer,'fit'=>$fit,'paper_finish'=>$paper,'crop_anchor'=>array(.5,.5),'frame_observed_at'=>$policy['frame_observed_at'],'print_observed_at'=>$policy['print_observed_at'],'available'=>true,'valid_until'=>min($policy['frame_observed_at'],$policy['print_observed_at'])+GE_WTP_Deco_Prints::PRICE_MAX_AGE,'approved_base_price'=>$price);
                         if($artist_quote)$entry['artist_quote']=$artist_quote;
+                        if(!$artist_context&&!empty($policy['checkout_pricing']))$entry['retail_pricing']=GE_WTP_Deco_Payments::RETAIL_RULE;
                         $label=implode(' × ',$size).' cm · '.($models[$option['model']]??$option['model']).' · '.$option['finish'].' · '.($orientation==='portrait'?'vertical':'horizontal').' · '.($fit==='cover'?'llenar':'con márgenes').' · '.$paper;
                         $manifest['options'][$key]=$entry;$config['options'][$key]=array('label'=>$label,'price'=>$price);
                     }
