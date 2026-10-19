@@ -105,6 +105,9 @@ final class GE_WTP_Storefront {
             <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION); ?>">
             <input type="hidden" name="product_id" value="<?php echo esc_attr($product->get_id()); ?>">
             <?php wp_nonce_field(self::ACTION . '_' . $product->get_id(), 'ge_store_nonce'); ?>
+            <?php if (class_exists('GE_WTP_Deco_Prints') && ($deco_manifest = GE_WTP_Deco_Prints::manifest($product->get_id()))) : ?>
+                <input type="hidden" name="ge_deco_revision" value="<?php echo esc_attr($deco_manifest['revision'] ?? ''); ?>">
+            <?php endif; ?>
             <div class="ge-storefront-heading"><span>Compra online</span><h2>Configurá tu pedido</h2><p>Elegí las opciones. El precio se actualiza automáticamente y queda guardado en tu orden.</p></div>
             <?php if (!empty($config['selectors'])) : ?>
                 <div class="ge-storefront-selectors">
@@ -248,6 +251,9 @@ final class GE_WTP_Storefront {
             'ge_base_price'        => $unit_price,
             'ge_unique'            => wp_generate_uuid4(),
         );
+        if (class_exists('GE_WTP_Deco_Prints') && GE_WTP_Deco_Prints::manifest($product_id)) {
+            $cart_data['ge_deco_revision'] = isset($_POST['ge_deco_revision']) ? sanitize_text_field(wp_unslash($_POST['ge_deco_revision'])) : '';
+        }
         if (!empty($config['windbanners'])) {
             $cart_data['ge_wind_source_id']=$option['source_id'];
             $cart_data['ge_wind_variant_id']=$option['variant_id'];

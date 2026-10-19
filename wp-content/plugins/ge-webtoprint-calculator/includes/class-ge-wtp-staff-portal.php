@@ -132,6 +132,7 @@ final class GE_WTP_Staff_Portal {
             GE_WTP_Customers::render_staff();
         } elseif ( 'library' === $section ) {
             GE_WTP_Artwork_Library::render_staff();
+            if(class_exists('GE_WTP_Deco_Creators')&&GE_WTP_Deco_Creators::enabled())GE_WTP_Deco_Creators::render_review();
         } elseif ( 'supplier-invoices' === $section ) {
             GE_WTP_Supplier_Invoices::render();
         } elseif ( 'invoice-reviews' === $section ) {

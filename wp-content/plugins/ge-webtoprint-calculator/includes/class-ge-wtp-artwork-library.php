@@ -308,7 +308,8 @@ final class GE_WTP_Artwork_Library {
         if ( ! $data['sources'] ) { return false; }
         $approved = ! empty( $data['customer']['approved'] ) || ( ! $data['client_required'] && ! empty( $data['staff']['approved'] ) );
         if ( ! $approved ) { return false; }
-        return $data['release_hash'] && hash_equals( $data['release_hash'], self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) );
+        $ready = $data['release_hash'] && hash_equals( $data['release_hash'], self::release_fingerprint( $item, $data['sources'], $data['version'], $data['expected'], $available ) );
+        return (bool) apply_filters( 'ge_wtp_item_artwork_ready', $ready, $item, $order );
     }
 
     public static function blocked_item_names( $order ) {
