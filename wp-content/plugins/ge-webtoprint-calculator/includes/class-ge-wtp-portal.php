@@ -233,6 +233,7 @@ final class GE_WTP_Portal {
 
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
         $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil', 'personalizado', 'solicitudes', 'facturas' );
+        if(class_exists('GE_WTP_Deco_Creators')&&GE_WTP_Deco_Creators::enabled())$allowed[]='mi-galeria';
         if ( self::portal_is_markcom() ) {
             $allowed[] = 'catalogo';
         }
@@ -266,6 +267,8 @@ final class GE_WTP_Portal {
                     elseif ( self::portal_is_markcom() ) { GE_WTP_Reorders::render_markcom_saved(); } else { GE_WTP_Reorders::render_customer_saved(); }
                 } elseif ( 'documentos' === $section ) {
                     self::render_documents_library();
+                } elseif ( 'mi-galeria' === $section && class_exists('GE_WTP_Deco_Creators') ) {
+                    GE_WTP_Deco_Creators::render();
                 } elseif ( 'facturas' === $section ) {
                     GE_WTP_Customer_Invoices::render_portal();
                 } elseif ( 'personalizado' === $section ) {
@@ -368,6 +371,7 @@ final class GE_WTP_Portal {
             'facturas' => 'Mis facturas',
             'perfil'     => 'Mi perfil',
         );
+        if(class_exists('GE_WTP_Deco_Creators')&&GE_WTP_Deco_Creators::enabled())$items=array_slice($items,0,4,true)+array('mi-galeria'=>'Mi galería')+array_slice($items,4,null,true);
         if ( self::portal_is_markcom() ) {
             $items = array_merge( array( 'inicio' => 'Resumen', 'catalogo' => 'Productos' ), array_slice( $items, 1, null, true ) );
         }

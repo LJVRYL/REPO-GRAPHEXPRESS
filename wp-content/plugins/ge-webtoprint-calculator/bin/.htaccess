@@ -1,0 +1,4 @@
+# Deco workers are CLI-only. Do not expose implementation/source adapters over HTTP.
+<FilesMatch "^deco-">
+    Require all denied
+</FilesMatch>

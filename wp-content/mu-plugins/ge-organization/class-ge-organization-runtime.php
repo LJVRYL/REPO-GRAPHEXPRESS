@@ -133,6 +133,8 @@ final class GE_Organization_Runtime {
         if(in_array($action,array('ge_work_manual_payment','ge_work_invoice_send','ge_issued_document_attach'),true))$module='finance';
         if($action==='ge_save_billing_entity')$module='company';
         if($action==='ge_google_auth')$module='customers';
+        if(in_array($action,array('ge_deco_drive_connect','ge_deco_drive_callback'),true))$module='orders';
+        if(in_array($action,array('ge_deco_mp_connect','ge_deco_mp_callback'),true))$module='orders';
         if(self::role(get_current_user_id())==='administracion' && ($action==='ge_order_payment_policy' || ($action==='ge_customer_workspace_save' && ($_POST['section']??'')==='payment_policy')))$module='finance';
         if(preg_match('/^ge_(customer_tax|tax_profile|customer_profile|customer_register|markcom_login|portal_login)/',$action))$module='customers';
         if(preg_match('/candidate|career|job|knowledge|incident|favorite/',$action))$module='communications';
@@ -160,7 +162,7 @@ final class GE_Organization_Runtime {
     public static function guard_page() {
         if((function_exists('is_shop') && (is_shop()||is_product()||is_cart()||is_checkout())) && !self::enabled('ecommerce'))self::deny();
         if(!is_page('gestion') && isset($_GET['seccion'])) {
-            $portal=array('presupuestos'=>'quotes','pedidos'=>'orders','archivos'=>'orders','documentos'=>'orders','perfil'=>'customers','catalogo'=>'ecommerce');
+            $portal=array('presupuestos'=>'quotes','pedidos'=>'orders','archivos'=>'orders','documentos'=>'orders','mi-galeria'=>'orders','perfil'=>'customers','catalogo'=>'ecommerce');
             $pm=$portal[sanitize_key($_GET['seccion'])]??'';if($pm && !self::enabled($pm))self::deny();
         }
         if(!is_page('gestion'))return;

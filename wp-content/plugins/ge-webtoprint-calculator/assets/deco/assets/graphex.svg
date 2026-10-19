@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="gx-title">
+  <title id="gx-title">Graph Express</title>
+  <defs>
+    <linearGradient id="gx-spectrum" x1="66" y1="46" x2="176" y2="214" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00C8F5"/>
+      <stop offset=".34" stop-color="#5B51F5"/>
+      <stop offset=".68" stop-color="#F32692"/>
+      <stop offset="1" stop-color="#FFD447"/>
+    </linearGradient>
+  </defs>
+  <path d="M233 2C233 25 230 52 230 76V96H177C166 78 148 69 128 69C94 69 67 97 67 131C67 166 94 193 128 193C152 193 172 181 182 160H128V121H230V139C226 194 184 235 128 235C69 235 23 190 23 132C23 74 68 29 127 29H190C211 29 225 18 233 2Z" fill="url(#gx-spectrum)"/>
+</svg>

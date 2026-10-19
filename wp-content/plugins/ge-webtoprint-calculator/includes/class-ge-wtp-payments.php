@@ -59,6 +59,7 @@ final class GE_WTP_Payments {
         if ( ( is_admin() && ! wp_doing_ajax() ) || ! $cart || $cart->is_empty() ) { return; }
         $method = function_exists( 'WC' ) && WC()->session ? WC()->session->get( 'chosen_payment_method' ) : '';
         $base = max( 0, (float) $cart->get_cart_contents_total() + (float) $cart->get_shipping_total() );
+        $base = max( 0, (float) apply_filters( 'ge_wtp_checkout_payment_base', $base, $cart, $method ) );
         if ( 'bacs' === $method && $base > 0 ) {
             $cart->add_fee( 'Descuento por transferencia (10%)', -round( $base * self::BANK_DISCOUNT / 100, wc_get_price_decimals() ), false );
         } elseif ( self::is_mercadopago_gateway( $method ) && $base > 0 ) {
@@ -116,6 +117,7 @@ final class GE_WTP_Payments {
         }
         $order->calculate_totals( false );
         $base = max( 0, (float) $order->get_total() );
+        $base = max( 0, (float) apply_filters( 'ge_wtp_order_payment_base', $base, $order, $method ) );
         if ( $base <= 0 ) { $order->save(); return; }
         $fee = new WC_Order_Item_Fee();
         $is_bank = 'bacs' === $method;
