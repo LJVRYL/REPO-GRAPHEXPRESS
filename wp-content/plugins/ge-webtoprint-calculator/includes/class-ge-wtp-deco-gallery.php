@@ -214,6 +214,10 @@ final class GE_WTP_Deco_Gallery {
         return array('cart_url'=>wc_get_cart_url(),'added'=>count($added));
     }
     public static function render() {
+        if(function_exists('is_product_category')&&is_product_category('deco-prints')){
+            $page=get_page_by_path('deco-prints');
+            if($page&&$page->post_status==='publish'){wp_safe_redirect(get_permalink($page),302);exit;}
+        }
         if(function_exists('is_product')&&is_product()){
             $owner=(int)get_post_meta(get_queried_object_id(),'_ge_deco_owner_id',true);
             if($owner&&$owner!==get_current_user_id()&&!current_user_can('manage_woocommerce')){status_header(404);exit;}
