@@ -32,4 +32,9 @@ $artist=$s;$artist['artist_id']=3;ok(GE_WTP_Deco_Payments::cart_base(100,new Car
 function WC(){global $wc;return $wc;}$wc=(object)['cart'=>$pure];
 $gateways=['bacs'=>true,'woo-mercado-pago-basic'=>true];ok(GE_WTP_Deco_Payments::gateways($gateways)===['bacs'=>true],'Retail MP stays gated until real acceptance');
 $wc->cart=new Cart([['line_total'=>100]]);ok(GE_WTP_Deco_Payments::gateways($gateways)===$gateways,'Other catalog gateways unchanged');
+function is_cart(){global $screen;return $screen==='cart';}function is_checkout(){global $screen;return $screen==='checkout';}function is_order_received_page(){return false;}function is_checkout_pay_page(){return false;}function do_shortcode($x){return 'native:'.$x;}
+$screen='cart';ok(GE_WTP_Deco_Payments::server_checkout_content('blocks')==='blocks','Unrelated cart remains unchanged');
+$wc->cart=$pure;ok(GE_WTP_Deco_Payments::server_checkout_content('blocks')==='native:[woocommerce_cart]','Deco cart uses native server rendering');
+$screen='checkout';ok(GE_WTP_Deco_Payments::server_checkout_content('blocks')==='native:[woocommerce_checkout]','Deco checkout uses native server rendering');
+$screen='shop';ok(GE_WTP_Deco_Payments::server_checkout_content('product')==='product','Other pages unchanged');
 echo json_encode(['passed'=>true,'checks'=>$checks,'network'=>false,'real_orders'=>0]).PHP_EOL;
