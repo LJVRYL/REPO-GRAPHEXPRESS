@@ -28,4 +28,13 @@ for key,value in [('currency','USD'),('observed_at',now-86401),('a3-plus_cents',
 check(m.printing([45,30],prices)==267500)
 check(m.printing([40,60],prices)==458600)
 check(m.printing([21,29.7],prices)==147400)
+rule={'unit_cost_cents':1000000,'minimum_area_m2':'1','approval_ref':'synthetic-cost-review'}
+check(m.printing([40,60],prices,rule)==1000000)
+check(m.printing([100,100],prices,rule)==1000000)
+check(m.printing([100,120],prices,rule)==1200000)
+large_policy=copy.deepcopy(policy);large_policy['large_format_cost_rule']=rule;large_policy['large_format_reference_cents']=1911000;large_policy['options']['one']['printing_cents']=1000000
+large_catalog={'options':[{'id':'one','size':[40,60]}]}
+check(m.observe(large_policy,large_catalog,prices,lambda _:page)['options']['one']['unchanged'])
+changed_reference={**prices,'gf_m2_cents':2000000};observation=m.observe(large_policy,large_catalog,changed_reference,lambda _:page)
+check(not observation['options']['one']['unchanged']and observation['changes'][0]['reference_catalog_current']is False)
 print(json.dumps({'passed':True,'checks':checks,'network_requests':0,'approved_policy_unchanged':True}))
