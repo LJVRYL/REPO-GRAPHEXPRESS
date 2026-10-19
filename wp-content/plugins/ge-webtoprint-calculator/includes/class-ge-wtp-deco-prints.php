@@ -180,8 +180,14 @@ final class GE_WTP_Deco_Prints {
         }
         if (null === $policy) { return; }
         $amount = $policy['frames_cents'] + ($large ? $policy['large_format_cents'] : 0);
-        foreach($cart->get_cart()as $line){$s=$line['ge_deco_snapshot']??array();if(!empty($s['artist_id'])){$shipping=GE_WTP_Deco_Marketplace_Checkout::cents($cart->get_shipping_total());
-            $handling=GE_Deco_Marketplace_Settlement::quote($amount+$shipping,0,0,$s['artist_fee'],time());$amount=$handling['total_cents']-$shipping;break;}}
+        $physical=0;$royalty=0;$line_cents=0;$artist_fee=null;
+        foreach($cart->get_cart()as $line){$s=$line['ge_deco_snapshot']??array();if(empty($s['artist_id']))continue;
+            $physical+=$s['artist_quote']['physical_floor_cents']*(int)$line['quantity'];$royalty+=$s['artist_quote']['artist_cents']*(int)$line['quantity'];
+            $line_cents+=GE_WTP_Deco_Marketplace_Checkout::cents($line['line_total']);$artist_fee=$s['artist_fee'];}
+        if($royalty>0){$shipping=GE_WTP_Deco_Marketplace_Checkout::cents($cart->get_shipping_total());
+            // Mixed free/paid works use one seller checkout; cover processing once for the complete order.
+            $total=GE_Deco_Marketplace_Settlement::quote($physical,$royalty,$amount+$shipping,$artist_fee,time());
+            $amount=max($amount,$total['total_cents']-$line_cents-$shipping);}
         if ($amount) { $cart->add_fee('Preparación y traslado de cuadros', $amount / 100, $policy['taxable'], $policy['tax_class']); }
     }
 }
