@@ -18,6 +18,8 @@ final class GE_WTP_Deco_Payments {
         add_filter('woocommerce_gateway_title',array(__CLASS__,'title'),40,2);
         add_filter('woocommerce_gateway_description',array(__CLASS__,'description'),40,2);
         add_filter('woocommerce_available_payment_gateways',array(__CLASS__,'gateways'),80);
+        add_filter('the_content',array(__CLASS__,'server_checkout_content'),8);
+        add_action('wp_enqueue_scripts',array(__CLASS__,'server_checkout_scripts'),100);
     }
     public static function coupon($valid,$product,$coupon,$values) { return !empty($values['ge_deco_snapshot'])||GE_WTP_Deco_Prints::manifest($product->get_id())?false:$valid; }
     public static function coupon_items($items,$coupon,$discounts) {
@@ -57,6 +59,17 @@ final class GE_WTP_Deco_Payments {
     }
     private static function has_regular_cart() {if(function_exists('WC')&&WC()->cart)foreach(WC()->cart->get_cart()as $line)if(self::regular($line['ge_deco_snapshot']??array()))return true;return false;}
     public static function retail_mp_enabled() {return defined('GE_DECO_RETAIL_MP_ENABLED')&&GE_DECO_RETAIL_MP_ENABLED===true;}
+    public static function server_checkout_content($content) {
+        if(!self::has_deco())return $content;
+        if(is_cart())return do_shortcode('[woocommerce_cart]');
+        if(is_checkout()&&!is_order_received_page()&&!is_checkout_pay_page())return do_shortcode('[woocommerce_checkout]');
+        return $content;
+    }
+    public static function server_checkout_scripts() {
+        if(!self::has_deco())return;
+        if(is_cart())wp_enqueue_script('wc-cart');
+        if(is_checkout()&&!is_order_received_page()&&!is_checkout_pay_page())wp_enqueue_script('wc-checkout');
+    }
     public static function gateways($gateways) {
         $retail=self::has_regular_cart();
         if(!$retail&&function_exists('get_query_var')&&($id=(int)get_query_var('order-pay'))){$order=wc_get_order($id);$retail=$order&&self::order_totals($order)!==null;}
