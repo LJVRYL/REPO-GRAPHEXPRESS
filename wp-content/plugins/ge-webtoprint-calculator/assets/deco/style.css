@@ -22,3 +22,5 @@ h1[tabindex="-1"]:focus{outline:none}
 @media(prefers-reduced-motion:reduce){.collection-image img{transition:none}}
 
 @media(max-width:600px){.has-creator-portal>header{flex-wrap:wrap}.has-creator-portal>header>nav{flex-basis:100%;justify-content:space-between}.has-creator-portal nav>#creatorPortal:not([hidden]){display:inline-flex;align-items:center;min-height:44px}}
+
+.artist-invite{padding:70px 6vw;background:var(--yellow);margin-top:55px}.artist-invite h2{font-size:clamp(32px,4vw,55px);letter-spacing:-.04em;margin:12px 0}.artist-invite p:not(.eyebrow){color:var(--ink);margin-bottom:22px}.artist-invite .button{background:var(--ink);color:var(--paper)}@media(max-width:700px){header{flex-wrap:wrap;gap:15px}header nav{width:100%;justify-content:space-between;gap:10px;font-size:12px}.artist-invite{padding:45px 22px}}

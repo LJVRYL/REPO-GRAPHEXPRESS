@@ -222,13 +222,16 @@ final class GE_WTP_Deco_Gallery {
             $owner=(int)get_post_meta(get_queried_object_id(),'_ge_deco_owner_id',true);
             if($owner&&$owner!==get_current_user_id()&&!current_user_can('manage_woocommerce')){status_header(404);exit;}
         }
-        if(!is_page()||get_post_meta(get_queried_object_id(),'_ge_deco_gallery',true)!=='yes')return;
-        $file=self::assets().'index.html';if(!is_file($file)){status_header(503);exit;}
+        if(!is_page())return;
+        $artists=get_post_meta(get_queried_object_id(),'_ge_prints_artists',true)==='yes';
+        if(!$artists&&get_post_meta(get_queried_object_id(),'_ge_deco_gallery',true)!=='yes')return;
+        $file=self::assets().($artists?'artists.html':'index.html');if(!is_file($file)){status_header(503);exit;}
         $asset_base=GE_WTP_PLUGIN_URL.'assets/deco/';
         $runtime=array('apiBase'=>rest_url(self::NS),'assetBase'=>$asset_base,'wpNonce'=>wp_create_nonce('wp_rest'),'commerce'=>defined('GE_DECO_PRINTS_ENABLED')&&GE_DECO_PRINTS_ENABLED===true,'retailTransferDiscount'=>((get_option('ge_deco_commercial_release',array())['checkout_pricing']['rule']??'')===GE_WTP_Deco_Payments::RETAIL_RULE),'accountUrl'=>wc_get_page_permalink('myaccount'),'creatorPortalUrl'=>GE_WTP_Deco_Creators::enabled()?GE_WTP_Portal::portal_url('mi-galeria'):'');
         $nonce=base64_encode(random_bytes(18));
         nocache_headers();header("Content-Security-Policy: default-src 'self'; img-src 'self' https://api.nga.gov https://images.metmuseum.org blob: data:; script-src 'self' 'nonce-".$nonce."'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
         $head='<script nonce="'.esc_attr($nonce).'">window.GRAPHEX_RUNTIME='.wp_json_encode($runtime,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT).';</script>';
+        if($artists){$head.='<link rel="canonical" href="'.esc_url(get_permalink()).'"><meta property="og:type" content="website"><meta property="og:title" content="Tu arte, en más paredes · Graphex Prints"><meta property="og:description" content="Creá tu galería, compartí tus obras y definí su valor. Graphex se ocupa de imprimir y enmarcar."><meta property="og:url" content="'.esc_url(get_permalink()).'"><meta property="og:image" content="'.esc_url($asset_base.'assets/obra-1.jpg').'">';}
         $html=preg_replace_callback('/(src|href)="((?:assets\/)?[^"#:]+\.(?:js|css|svg|webp|jpg|png))"/',static function($match)use($asset_base){return $match[1].'="'.esc_url($asset_base.$match[2]).'"';},file_get_contents($file));
         echo str_replace('<head>','<head>'.$head,$html);exit;
     }
