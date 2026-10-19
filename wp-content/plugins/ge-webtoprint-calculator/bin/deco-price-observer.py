@@ -7,9 +7,15 @@ import argparse,json,hashlib,time,os,uuid,subprocess,importlib.util
 HERE=Path(__file__).resolve().parent
 spec=importlib.util.spec_from_file_location('deco_frame_source',HERE/'deco-frame-source.py');source=importlib.util.module_from_spec(spec);spec.loader.exec_module(source)
 def digest(value):return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':')).encode()).hexdigest()
-def printing(size,prices):
+def printing(size,prices,cost_rule=None):
  width,height=sorted(size)
  if width<=30 and height<=45:return prices['a4-plus_cents' if width<=22 and height<=31 else 'a3-plus_cents']
+ if cost_rule:
+  if type(cost_rule.get('unit_cost_cents'))is not int or cost_rule['unit_cost_cents']<=0 or not cost_rule.get('approval_ref'):raise ValueError('large_format_cost_review_required')
+  minimum=Decimal(str(cost_rule['minimum_area_m2']))
+  if not minimum.is_finite()or minimum<=0:raise ValueError('large_format_cost_review_required')
+  area=max(minimum,Decimal(str(width))*Decimal(str(height))/10000)
+  return int((Decimal(cost_rule['unit_cost_cents'])*area).quantize(Decimal('1'),rounding=ROUND_HALF_UP))
  return int((Decimal(prices['gf_m2_cents'])*Decimal(str(width))*Decimal(str(height))/1000000).quantize(Decimal('1'),rounding=ROUND_HALF_UP))*100
 def observe(policy,catalog,prices,fetch=source.fetch):
  for key in ('a4-plus_cents','a3-plus_cents','gf_m2_cents'):
@@ -24,11 +30,13 @@ def observe(policy,catalog,prices,fetch=source.fetch):
  if errors:return result
  options={row['id']:row for row in catalog['options']};raw=[]
  for row in mapping:
-  id=row['public_id'];variant=by_source[row['source']]['variants'][row['supplier_variant_id']];approved=policy['options'][id];cost=printing(options[id]['size'],prices)
-  unchanged=variant['price_cents']==approved.get('frame_cost_cents') and variant['available'] is True and approved.get('available') is True and variant['options']==row['nominal_variant'] and cost==approved.get('printing_cents')
+  id=row['public_id'];variant=by_source[row['source']]['variants'][row['supplier_variant_id']];approved=policy['options'][id];size=options[id]['size'];cost=printing(size,prices,policy.get('large_format_cost_rule'))
+  large=min(size)>30 or max(size)>45
+  reference_current=not(large and policy.get('large_format_cost_rule'))or policy.get('large_format_reference_cents')==prices['gf_m2_cents']
+  unchanged=reference_current and variant['price_cents']==approved.get('frame_cost_cents') and variant['available'] is True and approved.get('available') is True and variant['options']==row['nominal_variant'] and cost==approved.get('printing_cents')
   result['options'][id]={'unchanged':unchanged,'available':variant['available'],'frame_cost_cents':variant['price_cents'],'printing_cents':cost}
   raw.append({'id':str(row['supplier_variant_id']),**result['options'][id]})
-  if not unchanged:result['changes'].append({'option_id':id,'variant_id':row['supplier_variant_id'],'approved_frame_cents':approved.get('frame_cost_cents'),'observed_frame_cents':variant['price_cents'],'approved_printing_cents':approved.get('printing_cents'),'observed_printing_cents':cost,'available':variant['available'],'options':variant['options']})
+  if not unchanged:result['changes'].append({'option_id':id,'variant_id':row['supplier_variant_id'],'approved_frame_cents':approved.get('frame_cost_cents'),'observed_frame_cents':variant['price_cents'],'approved_printing_cents':approved.get('printing_cents'),'observed_printing_cents':cost,'reference_catalog_current':reference_current,'available':variant['available'],'options':variant['options']})
  result['source_digest']=digest({'frames':raw,'printing':prices});result['page_evidence']=[{'source':row['source'],'sha256':row['sha256']} for row in pages]
  return result
 def save(result,private):

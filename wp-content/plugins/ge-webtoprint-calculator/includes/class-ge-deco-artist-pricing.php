@@ -20,7 +20,7 @@ final class GE_Deco_Artist_Pricing {
         $rule=self::rule($rule,false,true);if($rule['mode']==='unset')throw new InvalidArgumentException('artist_price_required');
         $royalty=$rule['mode']==='fixed'?$rule['value']:intdiv($base_cents*$rule['value']+5000,10000);
         return array('base_cents'=>$base_cents,'artist_cents'=>$royalty,'subtotal_cents'=>$base_cents+$royalty,
-            'rule'=>$rule,'percentage_basis'=>'graphex_frame_and_print_base_excluding_order_freight',
+            'rule'=>$rule,'percentage_basis'=>'graphex_selling_base_including_profit_excluding_art_payment_delivery',
             'payment_processing_included'=>false,'sales_enabled'=>false);
     }
 }
