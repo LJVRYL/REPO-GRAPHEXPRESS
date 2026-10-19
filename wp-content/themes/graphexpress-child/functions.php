@@ -296,7 +296,7 @@ function graphexpress_store_families() {
         ),
         'deco-prints' => array(
             'number'      => '09',
-            'name'        => 'Deco Prints',
+            'name'        => 'Graphex Prints',
             'description' => 'Arte para tu espacio. Elegí una obra, su tamaño y el marco que más te guste.',
             'examples'    => array('Cuadros', 'Arte y fotografía', 'Marcos', 'Tu propia imagen'),
             'class'       => 'paper',
