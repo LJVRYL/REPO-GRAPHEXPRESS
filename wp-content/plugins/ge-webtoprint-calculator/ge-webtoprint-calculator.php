@@ -121,3 +121,9 @@ GE_WTP_Deco_Marketplace_Webhooks::init();
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-deco-artist-commerce.php';
 GE_WTP_Deco_Artist_Commerce::init();
 GE_WTP_Payments::init();
+
+// Scoped additive card configuration and native CCAC draft access.
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-unlaminated-cards.php';
+GE_WTP_Unlaminated_Cards::init();
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-ccac-native-api.php';
+GE_WTP_CCAC_Native_API::init();
