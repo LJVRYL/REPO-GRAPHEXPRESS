@@ -259,9 +259,9 @@ final class GE_WTP_ARCA_Emission {
         } catch ( Throwable $e ) { return new WP_Error( 'ge_arca_uncertain', 'No se pudo confirmar el resultado. Consultá el registro fiscal antes de continuar.' ); }
         finally { $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) ); }
     }
-    private static function publish( $row ) {
+    private static function publish( $row, $refresh_presentation = false ) {
         require_once __DIR__ . '/class-ge-wtp-arca-invoice-pdf.php';
-        return GE_WTP_ARCA_Invoice_PDF::publish( $row );
+        return GE_WTP_ARCA_Invoice_PDF::publish( $row, $refresh_presentation );
     }
     public static function render_staff( $order ) {
         if ( ! self::can_emit( $order, get_current_user_id() ) ) { return; }
@@ -291,7 +291,7 @@ final class GE_WTP_ARCA_Emission {
         if ( ! in_array( $environment, array( 'production', 'homologation' ), true ) || ! get_option( 'ge_arca_schema_version' ) ) { return new WP_Error( 'ge_arca_missing', 'Registro fiscal no disponible.' ); }
         $row = self::journal( $order->get_id(), $environment );
         if ( ! $row ) { return new WP_Error( 'ge_arca_missing', 'No existe una solicitud para consultar.' ); }
-        if ( 'authorized' === $row['state'] ) { return GE_WTP_ARCA_Invoice_PDF::publish( $row, true ); }
+        if ( 'authorized' === $row['state'] ) { return self::publish( $row, true ); }
         // Recover the immutable request even after its date/profile has changed.
         $config = GE_WTP_ARCA_Client::configuration( $row['payload']['issuer'] );
         if ( is_wp_error( $config ) ) { return $config; }
