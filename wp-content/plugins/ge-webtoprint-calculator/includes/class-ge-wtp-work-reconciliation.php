@@ -216,7 +216,7 @@ final class GE_WTP_Work_Reconciliation {
             if(!$fresh) {
                 $row['next']='El origen cambió después de la conciliación; revisar';continue;
             }
-            $enums=self::enums();$row['status']='Conciliado: '.$enums['production'][$r['production']].' · '.$enums['delivery'][$r['delivery']];
+            $enums=self::enums();$row['status']='Conciliado: '.($r['commercial']==='partial'?'Alcance parcial · ':'').$enums['production'][$r['production']].' · '.$enums['delivery'][$r['delivery']];
             $row['owner']='Confirmado por '.$r['declarant'].' · '.$enums['payment'][$r['payment']];
             $row['next']='Ver conciliación y documentos originales';
             $row['url']=self::url().'#'.$r['key'];
