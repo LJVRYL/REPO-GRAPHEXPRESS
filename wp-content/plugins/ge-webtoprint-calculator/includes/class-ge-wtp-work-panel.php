@@ -98,7 +98,8 @@ final class GE_WTP_Work_Panel {
                 $labels=array('draft'=>'En borrador','sent'=>'Esperando respuesta','viewed'=>'Esperando respuesta','accepted'=>'Aceptado','converted'=>'Pedido creado','rejected'=>'Rechazado','expired'=>'Vencido','cancelled'=>'Cancelado');
                 $historical_commercial=get_post_meta($id,'_ge_commercial_followup_state',true);if($historical_commercial==='fulfilled_partial'){$labels[$quote['status']]='Realizado parcialmente · conciliación por facturas';}
                 $next='Revisar propuesta';$owner='Graph Express';
-                if('draft'===$quote['status'])$next='Completar y enviar presupuesto';
+                if($historical_commercial==='fulfilled_partial')$next='Consultar facturas conciliadas';
+                elseif('draft'===$quote['status'])$next='Completar y enviar presupuesto';
                 elseif(in_array($quote['status'],array('sent','viewed'),true)){$next='Esperar respuesta del cliente';$owner='Cliente';}
                 elseif('accepted'===$quote['status'])$next='Crear pedido con la versión aceptada';
                 elseif(in_array($quote['status'],array('rejected','expired','cancelled'),true))$next='Consultar historial de la propuesta';
