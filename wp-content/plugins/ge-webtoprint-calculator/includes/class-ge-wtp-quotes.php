@@ -242,6 +242,23 @@ final class GE_WTP_Simple_PDF {
     }
     private $commands = array();
     private $images = array();
+    private $body_font = null;
+    /** Opt-in embedded brand font; existing quote renderers retain their current fonts. */
+    public function use_brand_body_font() {
+        $metrics = json_decode( (string) @file_get_contents( __DIR__ . '/jost-invoice-pdf-metrics.json' ), true );
+        // Reuse the official font already shipped by the Graphex theme.
+        $bytes = @file_get_contents( dirname( __DIR__, 3 ) . '/themes/graphexpress-child/assets/fonts/Jost.ttf' );
+        if ( ! $bytes || ! is_array( $metrics ) || count( $metrics['widths'] ?? array() ) !== 256 || ! hash_equals( $metrics['sha256'] ?? '', hash( 'sha256', $bytes ) ) ) { return false; }
+        $this->body_font = array( 'bytes' => $bytes, 'metrics' => $metrics );
+        return true;
+    }
+    public function measure( $text, $size, $bold = false ) {
+        if ( $bold || ! $this->body_font ) { return self::width( $text, $size, $bold ); }
+        $plain = html_entity_decode( wp_strip_all_tags( (string) $text ), ENT_QUOTES, 'UTF-8' );
+        $encoded = iconv( 'UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $plain ); $width = 0;
+        foreach ( unpack( 'C*', $encoded ?: '' ) as $char ) { $width += $this->body_font['metrics']['widths'][$char]; }
+        return $width * $size / 1000;
+    }
     public function image_jpeg($x,$top,$w,$h,$data) {
         $size=$data?getimagesizefromstring($data):false;if(!$size||$size[2]!==IMAGETYPE_JPEG)return;
         $name='Im'.count($this->images);$this->images[$name]=array($data,$size[0],$size[1],($size['channels']??3)===1?'DeviceGray':'DeviceRGB');
@@ -259,13 +276,25 @@ final class GE_WTP_Simple_PDF {
         foreach ( unpack( 'C*', $encoded ?: '' ) as $char ) { $width += $metrics[ $bold ? 1 : 0 ][ $char ]; }
         return $width * $size / 1000;
     }
-    public function text_right( $right, $top, $size, $text, $bold = false, $r = 0, $g = 0, $b = 0 ) { $this->text( $right - self::width( $text, $size, $bold ), $top, $size, $text, $bold, $r, $g, $b ); }
+    public function text_right( $right, $top, $size, $text, $bold = false, $r = 0, $g = 0, $b = 0 ) { $this->text( $right - $this->measure( $text, $size, $bold ), $top, $size, $text, $bold, $r, $g, $b ); }
     public function fill_rect( $x, $top, $width, $height, $r, $g, $b ) { $this->commands[] = sprintf( '%.3F %.3F %.3F rg %.2F %.2F %.2F %.2F re f', $r / 255, $g / 255, $b / 255, $x, 842 - $top - $height, $width, $height ); }
     public function stroke_rect( $x, $top, $width, $height, $r, $g, $b ) { $this->commands[] = sprintf( '%.3F %.3F %.3F RG 0.6 w %.2F %.2F %.2F %.2F re S', $r / 255, $g / 255, $b / 255, $x, 842 - $top - $height, $width, $height ); }
+    public function rounded_rect( $x, $top, $width, $height, $radius, $color, $fill = false ) {
+        $r = min( $radius, $width / 2, $height / 2 ); $k = .55228475 * $r;
+        $l = $x; $b = 842 - $top - $height; $right = $x + $width; $t = 842 - $top;
+        $this->commands[] = sprintf( '%.3F %.3F %.3F %s 0.6 w', $color[0] / 255, $color[1] / 255, $color[2] / 255, $fill ? 'rg' : 'RG' );
+        $this->commands[] = sprintf( '%.2F %.2F m %.2F %.2F l %.2F %.2F %.2F %.2F %.2F %.2F c %.2F %.2F l %.2F %.2F %.2F %.2F %.2F %.2F c %.2F %.2F l %.2F %.2F %.2F %.2F %.2F %.2F c %.2F %.2F l %.2F %.2F %.2F %.2F %.2F %.2F c h %s', $l+$r,$b,$right-$r,$b,$right-$r+$k,$b,$right,$b+$r-$k,$right,$b+$r,$right,$t-$r,$right,$t-$r+$k,$right-$r+$k,$t,$right-$r,$t,$l+$r,$t,$l+$r-$k,$t,$l,$t-$r+$k,$l,$t-$r,$l,$b+$r,$l,$b+$r-$k,$l+$r-$k,$b,$l+$r,$b,$fill?'f':'S' );
+    }
     public function line( $x1, $top1, $x2, $top2, $r, $g, $b, $width = 1 ) { $this->commands[] = sprintf( '%.3F %.3F %.3F RG %.2F w %.2F %.2F m %.2F %.2F l S', $r / 255, $g / 255, $b / 255, $width, $x1, 842 - $top1, $x2, 842 - $top2 ); }
     public function wrap( $text, $limit ) { $paragraphs = preg_split( '/\R/u', (string) $text ); $lines = array(); foreach ( $paragraphs as $paragraph ) { $words = preg_split( '/\s+/u', trim( $paragraph ) ); $line = ''; foreach ( $words as $word ) { if ( '' === $word ) { continue; } $candidate = '' === $line ? $word : $line . ' ' . $word; if ( mb_strlen( $candidate ) > $limit && '' !== $line ) { $lines[] = $line; $line = $word; } else { $line = $candidate; } } if ( '' !== $line ) { $lines[] = $line; } } return $lines ?: array( '' ); }
     public function output( $pages ) {
         $objects = array( 1 => '<< /Type /Catalog /Pages 2 0 R >>', 3 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>', 4 => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>' ); $kids = array(); $number = 5; $image_resources='';
+        if ( $this->body_font ) {
+            $m = $this->body_font['metrics']; $font_file = $number++; $descriptor = $number++; $bytes = $this->body_font['bytes'];
+            $objects[$font_file] = '<< /Length ' . strlen( $bytes ) . ' /Length1 ' . strlen( $bytes ) . ">>\nstream\n" . $bytes . "\nendstream";
+            $objects[$descriptor] = '<< /Type /FontDescriptor /FontName /Jost-Regular /Flags 32 /FontBBox [' . implode( ' ', $m['bbox'] ) . '] /ItalicAngle 0 /Ascent ' . (int) $m['ascent'] . ' /Descent ' . (int) $m['descent'] . ' /CapHeight ' . (int) $m['cap_height'] . ' /StemV 80 /FontFile2 ' . $font_file . ' 0 R >>';
+            $objects[3] = '<< /Type /Font /Subtype /TrueType /BaseFont /Jost-Regular /Encoding /WinAnsiEncoding /FirstChar 0 /LastChar 255 /Widths [' . implode( ' ', $m['widths'] ) . '] /FontDescriptor ' . $descriptor . ' 0 R >>';
+        }
         foreach($this->images as $name=>$image){$id=$number++;$objects[$id]='<< /Type /XObject /Subtype /Image /Width '.$image[1].' /Height '.$image[2].' /ColorSpace /'.$image[3].' /BitsPerComponent 8 /Filter /DCTDecode /Length '.strlen($image[0]).">>\nstream\n".$image[0]."\nendstream";$image_resources.='/'.$name.' '.$id.' 0 R ';}
         $resources_extra=$image_resources?' /XObject << '.$image_resources.'>>':'';
         foreach ( $pages as $commands ) { $content = $number++; $page = $number++; $objects[ $content ] = '<< /Length ' . strlen( $commands ) . ">>\nstream\n" . $commands . "\nendstream"; $objects[ $page ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>'.$resources_extra.' >> /Contents ' . $content . ' 0 R >>'; $kids[] = $page . ' 0 R'; }

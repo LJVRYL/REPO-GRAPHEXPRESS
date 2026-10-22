@@ -149,7 +149,13 @@ final class GE_WTP_ARCA_Emission {
             'header' => array( 'CantReg' => 1, 'PtoVta' => (int) $pos, 'CbteTipo' => $types[$class] ), 'detail' => $detail, 'items' => $lines,
             'activity_start' => $config['activity_start'], 'sale_terms' => $terms, 'shipping_net' => $order->get_shipping_total(), 'fees' => array_map( function( $item ) { return array( 'name' => $item->get_name(), 'net' => $item->get_total() ); }, array_values( $order->get_fees() ) ) );
     }
-    public static function fingerprint( $payload ) { return hash( 'sha256', wp_json_encode( $payload ) ); }
+    public static function fingerprint( $payload ) {
+        // Capture time and its derived hash change on refresh; fiscal data stays signed.
+        if ( ! empty( $payload['fiscal_refresh_reviewed'] ) && isset( $payload['issuer'] ) && is_array( $payload['issuer'] ) ) {
+            unset( $payload['issuer']['captured_at'], $payload['issuer']['snapshot_hash'] );
+        }
+        return hash( 'sha256', wp_json_encode( $payload ) );
+    }
     public static function entries( $node, $key ) { $v = $node[$key] ?? array(); return isset( $v['Code'] ) || isset( $v['Id'] ) || isset( $v['Nro'] ) ? array( $v ) : (array) $v; }
     public static function remote_error( $result ) {
         if ( is_wp_error( $result ) ) { return $result; }
@@ -285,7 +291,7 @@ final class GE_WTP_ARCA_Emission {
         if ( ! in_array( $environment, array( 'production', 'homologation' ), true ) || ! get_option( 'ge_arca_schema_version' ) ) { return new WP_Error( 'ge_arca_missing', 'Registro fiscal no disponible.' ); }
         $row = self::journal( $order->get_id(), $environment );
         if ( ! $row ) { return new WP_Error( 'ge_arca_missing', 'No existe una solicitud para consultar.' ); }
-        if ( 'authorized' === $row['state'] ) { return self::publish( $row ); }
+        if ( 'authorized' === $row['state'] ) { return GE_WTP_ARCA_Invoice_PDF::publish( $row, true ); }
         // Recover the immutable request even after its date/profile has changed.
         $config = GE_WTP_ARCA_Client::configuration( $row['payload']['issuer'] );
         if ( is_wp_error( $config ) ) { return $config; }

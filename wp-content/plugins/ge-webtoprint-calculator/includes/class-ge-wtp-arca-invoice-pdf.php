@@ -1,6 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/vendor/qrcode-generator/qrcode.php';
+require_once __DIR__ . '/class-ge-wtp-arca-invoice-compact-pdf.php';
 
 /** PDF from the authorized immutable fiscal journal, never from current order prices. */
 final class GE_WTP_ARCA_Invoice_PDF {
@@ -22,6 +23,7 @@ final class GE_WTP_ARCA_Invoice_PDF {
         $pdf->text( $x, $y, $size, $line ); $y += 14;
     }
     public static function build( $row ) {
+        if ( 'C' === ( $row['payload']['class'] ?? '' ) ) { return GE_WTP_ARCA_Invoice_Compact_PDF::build( $row ); }
         if ( 'authorized' !== $row['state'] || ! preg_match( '/^[0-9]{14}$/D', (string) ( $row['authorization']['cae'] ?? '' ) ) ) { return new WP_Error( 'ge_arca_pdf', 'Falta autorización fiscal válida.' ); }
         $p = $row['payload']; $d = $p['detail']; $i = $p['issuer']; $r = $p['receiver'];
         $pdf = new GE_WTP_Simple_PDF(); $pages = array();
@@ -84,11 +86,28 @@ final class GE_WTP_ARCA_Invoice_PDF {
         }
         $footer( $page ); $pages[] = $pdf->end_page(); return $pdf->output( $pages );
     }
-    public static function publish( $row ) {
+    public static function publish( $row, $refresh_presentation = false ) {
+        if ( 'authorized' !== ( $row['state'] ?? '' ) ) { return new WP_Error( 'ge_arca_pdf', 'El registro no tiene autorización fiscal.' ); }
+        global $wpdb;
+        $lock = 'ge_arca_pdf_' . (int) $row['payload']['order_id'];
+        if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s,0)', $lock ) ) ) { return new WP_Error( 'ge_arca_pdf_busy', 'El PDF se está actualizando. Consultá nuevamente.' ); }
+        try { return self::publish_locked( $row, $refresh_presentation ); }
+        finally { $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) ); }
+    }
+    private static function publish_locked( $row, $refresh_presentation ) {
         $p = $row['payload']; $order = wc_get_order( $p['order_id'] );
         if ( ! $order ) { return new WP_Error( 'ge_arca_pdf_order', 'Factura autorizada. Falta recuperar el pedido para publicar el PDF.' ); }
         $documents = GE_WTP_Documents::get_documents( $order->get_id() );
-        foreach ( $documents as $document ) { if ( (int) ( $document['arca_invoice_id'] ?? 0 ) === (int) $row['id'] ) { return $document; } }
+        $previous = null; $previous_index = null;
+        foreach ( $documents as $index => $document ) {
+            if ( (int) ( $document['arca_invoice_id'] ?? 0 ) !== (int) $row['id'] ) { continue; }
+            if ( ! $refresh_presentation || 'C' !== $p['class'] || ( $document['pdf_render_revision'] ?? '' ) === GE_WTP_ARCA_Invoice_Compact_PDF::REVISION ) { return $document; }
+            $number = sprintf( '%05d-%08d', $p['header']['PtoVta'], $row['number'] );
+            if ( ( $document['document_number'] ?? '' ) !== $number || (string) ( $document['cae'] ?? '' ) !== (string) $row['authorization']['cae'] || (string) ( $document['issuer_snapshot']['cuit'] ?? '' ) !== (string) $p['issuer']['cuit'] || (string) ( $document['billing_profile_snapshot']['cuit'] ?? '' ) !== (string) $p['receiver']['cuit'] ) { return new WP_Error( 'ge_arca_pdf_conflict', 'La presentación existente no coincide con el registro fiscal. No se reemplazó.' ); }
+            $old_path = GE_WTP_Customer_Invoices::file_path( array( 'file' => $document ) );
+            if ( $old_path && ( empty( $document['sha256'] ) || ! hash_equals( $document['sha256'], hash_file( 'sha256', $old_path ) ) ) ) { return new WP_Error( 'ge_arca_pdf_integrity', 'El PDF anterior requiere revisión. No se reemplazó.' ); }
+            $previous = $document; $previous['presentation_file_available'] = (bool) $old_path; $previous_index = $index; break;
+        }
         if ( 'production' !== $p['environment'] ) { return array( 'arca_invoice_id' => $row['id'], 'cae' => $row['authorization']['cae'], 'environment' => 'homologation', 'pdf_bytes' => self::build( $row ) ); }
         if ( ! GE_WTP_Documents::ensure_private_directory() ) { return new WP_Error( 'ge_arca_pdf_storage', 'Factura autorizada. Falta almacenamiento para publicar el PDF; no vuelvas a emitir.' ); }
         $bytes = self::build( $row ); if ( is_wp_error( $bytes ) ) { return $bytes; }
@@ -99,8 +118,30 @@ final class GE_WTP_ARCA_Invoice_PDF {
         $record = array( 'id' => 'arca-' . $row['id'], 'version_id' => 'arca-' . $row['id'], 'stored_name' => $stored, 'name' => 'factura-' . $p['class'] . '-' . $number . '.pdf', 'mime' => 'application/pdf', 'size' => strlen( $bytes ),
             'category' => 'factura', 'issued_by_graphex' => true, 'document_number' => $number, 'issue_date' => substr( $p['detail']['CbteFch'], 0, 4 ) . '-' . substr( $p['detail']['CbteFch'], 4, 2 ) . '-' . substr( $p['detail']['CbteFch'], 6, 2 ), 'uploaded_at' => gmdate( 'Y-m-d H:i:s' ), 'uploaded_by' => $p['approved_by'],
             'issuer_snapshot' => $p['issuer'], 'billing_profile_snapshot' => $p['receiver'], 'arca_invoice_id' => (int) $row['id'], 'cae' => $row['authorization']['cae'], 'cae_expires' => $row['authorization']['expires'], 'qr_url' => self::qr_url( $row ), 'sha256' => hash( 'sha256', $bytes ) );
-        $documents[] = $record; $order->update_meta_data( GE_WTP_Documents::META_KEY, $documents ); $order->save();
-        $order->add_order_note( 'Factura ARCA ' . $p['class'] . ' ' . $number . ' · CAE ' . $record['cae'] . ' · Registro #' . $row['id'] );
+        if ( 'C' === $p['class'] ) { $record['pdf_render_revision'] = GE_WTP_ARCA_Invoice_Compact_PDF::REVISION; }
+        if ( $previous !== null ) {
+            // Reload native metadata before replacing only this presentation; retain unrelated uploads.
+            $order->read_meta_data( true ); $latest = $order->get_meta( GE_WTP_Documents::META_KEY, true ); $latest = is_array( $latest ) ? $latest : array(); $found = false;
+            foreach ( $latest as $index => $document ) {
+                if ( ( $document['id'] ?? '' ) !== $previous['id'] ) { continue; }
+                if ( ( $document['sha256'] ?? '' ) !== $previous['sha256'] || ( $document['cae'] ?? '' ) !== $previous['cae'] ) { return new WP_Error( 'ge_arca_pdf_changed', 'El documento cambió durante la actualización. Revisá la versión vigente.' ); }
+                $available = $previous['presentation_file_available']; $previous = $document; $previous['presentation_file_available'] = $available; $previous_index = $index; $found = true; break;
+            }
+            if ( ! $found ) { return new WP_Error( 'ge_arca_pdf_changed', 'El documento cambió durante la actualización. No se reemplazó.' ); }
+            $documents = $latest;
+            $history = $previous['presentation_history'] ?? array(); unset( $previous['presentation_history'] ); $history[] = $previous;
+            $record['presentation_history'] = $history; $record['presentation_updated_at'] = gmdate( 'c' );
+            // Existing invoice/download references stay stable. Only the active PDF projection changes.
+            $record['id'] = $previous['id']; $record['version_id'] = $previous['version_id'];
+            $record['uploaded_at'] = $previous['uploaded_at']; $record['uploaded_by'] = $previous['uploaded_by'];
+            $documents[$previous_index] = $record;
+        } else {
+            $order->read_meta_data( true ); $latest = $order->get_meta( GE_WTP_Documents::META_KEY, true ); $documents = is_array( $latest ) ? $latest : array();
+            foreach ( $documents as $document ) { if ( (int) ( $document['arca_invoice_id'] ?? 0 ) === (int) $row['id'] ) { return new WP_Error( 'ge_arca_pdf_changed', 'La factura ya tiene una presentación. Consultá su versión vigente.' ); } }
+            $documents[] = $record;
+        }
+        $order->update_meta_data( GE_WTP_Documents::META_KEY, $documents ); $order->save();
+        $order->add_order_note( ( $previous !== null ? 'Formato PDF actualizado, sin nueva emisión: ' : 'Factura ARCA ' ) . $p['class'] . ' ' . $number . ' · CAE ' . $record['cae'] . ' · Registro #' . $row['id'] );
         return $record;
     }
 }

@@ -103,7 +103,38 @@ final class GE_WTP_Customer_Invoices {
         if ( $preview_customer && ( ! $staff || (int) $preview_customer !== (int) $row['customer_id'] ) ) { return new WP_Error( 'forbidden', 'Documento no disponible.' ); }
         // The profile belongs to this account; snapshots remain valid when profiles are archived.
         if ( ! empty( $row['profile_id'] ) && ! GE_WTP_Customer_Branches::find( $row['customer_id'], $row['profile_id'], true ) ) { return new WP_Error( 'forbidden', 'Documento no disponible.' ); }
+        return self::with_fiscal_metadata( $row );
+    }
+
+    /** Read display fields from the existing immutable journal, never current order totals. */
+    private static function with_fiscal_metadata( $row ) {
+        $file = $row['file'] ?? array();
+        if ( 'factura' !== $row['type'] || empty( $file['arca_invoice_id'] ) || empty( $row['order_id'] ) || ! class_exists( 'GE_WTP_ARCA_Emission' ) ) { return $row; }
+        $journal = GE_WTP_ARCA_Emission::journal( $row['order_id'], 'production' );
+        if ( ! $journal || (int) $journal['id'] !== (int) $file['arca_invoice_id'] ) { return $row; }
+        $payload = $journal['payload']; $authorization = $journal['authorization'];
+        if ( ! is_array( $payload ) || ! is_array( $authorization ) || ! isset( $payload['header']['PtoVta'], $journal['number'], $payload['detail']['ImpTotal'] ) || ! is_numeric( $payload['detail']['ImpTotal'] ) ) { return $row; }
+        $number = sprintf( '%05d-%08d', $payload['header']['PtoVta'], $journal['number'] );
+        if ( $number !== $row['number'] || (string) ( $payload['receiver']['cuit'] ?? '' ) !== (string) ( $row['receiver']['cuit'] ?? '' ) ) { return $row; }
+        $row['issuer_name'] = $payload['issuer']['legal_name'] ?? '';
+        $row['amount'] = $payload['detail']['ImpTotal'] ?? '';
+        $row['currency'] = 'PES' === ( $payload['detail']['MonId'] ?? '' ) ? 'ARS' : '';
+        $row['fiscal_state'] = $journal['state'];
+        $row['cae'] = $authorization['cae'] ?? '';
+        $row['cae_expires'] = $authorization['expires'] ?? '';
+        $row['document_version'] = $file['version_id'] ?? $file['id'];
         return $row;
+    }
+
+    private static function download_available( $row ) {
+        return (bool) self::file_path( $row ) || ( 'r2' === ( $row['file']['provider'] ?? '' ) && ! empty( $row['file']['object_key'] ) );
+    }
+
+    private static function download_action( $row ) {
+        if ( self::download_available( $row ) ) {
+            return '<a class="ge-button ge-button-primary" href="' . esc_url( self::download_url( $row['ref'] ) ) . '">Descargar original</a>';
+        }
+        return '<span role="status">PDF no disponible. Requiere revisión.</span>';
     }
 
     public static function rows( $customer, $actor ) {
@@ -370,7 +401,12 @@ final class GE_WTP_Customer_Invoices {
         foreach ( $rows as $row ) {
             $case = self::case_for( $row['ref'] ); $state = $case['status'] ?? 'none';
             if ( ! $staff && ( ( ! empty( $_GET['invoice_type'] ) && $_GET['invoice_type'] !== $row['type'] ) || ( ! empty( $_GET['invoice_review'] ) && $_GET['invoice_review'] !== $state ) || ( ! empty( $_GET['invoice_from'] ) && ( ! $row['date'] || $row['date'] < $_GET['invoice_from'] ) ) || ( ! empty( $_GET['invoice_to'] ) && ( ! $row['date'] || $row['date'] > $_GET['invoice_to'] ) ) ) ) { continue; }
-            $shown++; echo '<article class="ge-panel ge-invoice-row"><div><h3><a href="' . esc_url( self::url( $row['ref'], $staff, $customer ) ) . '">' . esc_html( self::title( $row ) ) . '</a></h3><p>' . esc_html( $row['receiver']['legal_name'] ?? '' ) . '</p><small>' . esc_html( $row['date'] ?: 'Fecha no informada' ) . '</small>' . ( $case ? '<p class="ge-invoice-status">Revisión: ' . esc_html( self::statuses()[ $state ] ) . '</p>' : '' ) . '</div><div><strong>' . esc_html( $row['amount'] ? $row['currency'] . ' ' . number_format_i18n( (float) $row['amount'], 2 ) : 'Importe en el documento' ) . '</strong><a class="ge-button" href="' . esc_url( self::url( $row['ref'], $staff, $customer ) ) . '">Ver comprobante</a></div></article>';
+            $shown++; echo '<article class="ge-panel ge-invoice-row"><div><h3><a href="' . esc_url( self::url( $row['ref'], $staff, $customer ) ) . '">' . esc_html( self::title( $row ) ) . '</a></h3><p>' . esc_html( $row['receiver']['legal_name'] ?? '' ) . '</p><small>' . esc_html( $row['date'] ?: 'Fecha no informada' ) . '</small>';
+            if ( $staff && ! empty( $row['issuer_name'] ) ) { echo '<p>Emisor: ' . esc_html( $row['issuer_name'] ) . '</p>'; }
+            if ( ! empty( $row['fiscal_state'] ) ) { echo '<p>Estado fiscal: ' . esc_html( 'authorized' === $row['fiscal_state'] ? 'Autorizada por ARCA' : 'Requiere revisión' ) . '</p>'; }
+            if ( ! empty( $row['superseded'] ) ) { echo '<p>Archivo histórico · Versión reemplazada</p>'; }
+            if ( $case ) { echo '<p class="ge-invoice-status">Revisión: ' . esc_html( self::statuses()[ $state ] ) . '</p>'; }
+            echo '</div><div><strong>' . esc_html( $row['amount'] ? $row['currency'] . ' ' . number_format_i18n( (float) $row['amount'], 2 ) : 'Importe en el documento' ) . '</strong>' . self::download_action( $row ) . '<a class="ge-button" href="' . esc_url( self::url( $row['ref'], $staff, $customer ) ) . '">Ver comprobante</a></div></article>';
         }
         if ( ! $shown ) { echo '<section class="ge-panel"><h3>' . ( $rows ? 'No hay coincidencias' : 'Todavía no hay comprobantes' ) . '</h3><p>' . ( $rows ? 'Probá con otro tipo, fecha o estado de revisión.' : 'Cuando carguemos una factura o comprobante, lo vas a encontrar acá.' ) . '</p></section>'; }
         echo '</div>';
@@ -383,7 +419,8 @@ final class GE_WTP_Customer_Invoices {
         if ( ! $staff ) { unset( $fields['Emisor del documento'] ); }
         foreach ( $fields as $label => $value ) { if ( $value !== '' ) { echo '<div><dt>' . esc_html( $label ) . '</dt><dd>' . esc_html( $value ) . '</dd></div>'; } } echo '</dl><p>El importe del comprobante no indica un saldo pendiente. Una consulta no anula este documento ni cambia un pago.</p>';
         if ( $row['public_note'] ) { echo '<aside class="ge-invoice-note"><h3>Aclaración sobre este comprobante</h3><p>' . nl2br( esc_html( $row['public_note'] ) ) . '</p></aside>'; }
-        echo '<p><a class="ge-button ge-button-primary" href="' . esc_url( self::download_url( $row['ref'] ) ) . '">Descargar original</a></p>';
+        foreach ( array( 'CAE' => $row['cae'] ?? '', 'Vencimiento del CAE' => $row['cae_expires'] ?? '', 'Versión del documento' => $row['document_version'] ?? '' ) as $label => $value ) { if ( $value !== '' ) { echo '<p>' . esc_html( $label ) . ': ' . esc_html( $value ) . '</p>'; } }
+        echo '<p>' . self::download_action( $row ) . '</p>';
         if ( $row['replaces'] ) { echo '<p>Este archivo es una nueva versión del documento cargado. <a href="' . esc_url( self::url( $row['replaces'], $staff, $row['customer_id'] ) ) . '">Ver archivo anterior</a></p>'; }
         if ( ! empty( $row['superseded'] ) ) { echo '<p>Archivo histórico: existe una versión posterior.</p>'; }
         if ( $staff ) {
