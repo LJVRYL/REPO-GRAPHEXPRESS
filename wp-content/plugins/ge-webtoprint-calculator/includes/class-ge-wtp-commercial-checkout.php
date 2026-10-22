@@ -137,7 +137,7 @@ final class GE_WTP_Commercial_Checkout {
     }
 
     public static function render_staff_payment( $quote ) {
-        if(class_exists('GE_Work_Historical_Reconciliation'))GE_Work_Historical_Reconciliation::render_quote($quote);
+
         $ids = array( absint( get_post_meta( $quote['id'], '_ge_commercial_initial_payment_order', true ) ) );
         if ( $quote['converted_order_id'] ) { $main = wc_get_order( $quote['converted_order_id'] ); if ( $main ) { $ids[] = absint( $main->get_meta( '_ge_commercial_balance_payment_order', true ) ); } }
         foreach ( array_filter( $ids ) as $id ) {
@@ -590,7 +590,7 @@ final class GE_WTP_Commercial_Checkout {
 
     private static function create_operational_order( $quote, $payment, $historical = false, $historical_components = array() ) {
         $snapshot = $quote['snapshot'];
-        $rate_id = absint( get_option( 'ge_commercial_tax_rate_id', 0 ) );
+        $rate_id = absint( get_option( $historical ? 'ge_historical_tax_rate_id' : 'ge_commercial_tax_rate_id', 0 ) );
         $tax_total = (int) ( $snapshot['tax_cents'] ?? 0 );
         if ( $tax_total > 0 && ! $rate_id ) { return new WP_Error( 'ge_quote_tax_rate', 'Falta configurar la tasa de IVA para la orden.' ); }
         $existing = wc_get_orders( array( 'limit' => 50, 'meta_key' => self::QUOTE_META, 'meta_value' => $quote['id'] ) );
