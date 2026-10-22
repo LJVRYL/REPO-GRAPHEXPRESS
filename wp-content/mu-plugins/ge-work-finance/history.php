@@ -210,7 +210,7 @@ final class GE_Work_Historical_Reconciliation {
         finally{if($transaction)GE_Work_History_Storage::abort();GE_Work_Finance::unlock($lock);}
     }
     public static function render($order) {
-        if(!self::allowed())return;GE_Work_History_Commercial::render('order',$order->get_id());$source=self::source($order);
+        if(!self::allowed())return;GE_Work_History_Consolidation::render($order);GE_Work_History_Commercial::render('order',$order->get_id());$source=self::source($order);
         if($source && $source['row']['commercial']==='partial' && !GE_Work_History_Scope::valid($order,$source) && !self::quote_scope_valid($order,$source)){self::render_scope($order,$source);return;}
         $last=$order->get_meta(self::AUDIT,true);
         if(is_array($last) && $last) {

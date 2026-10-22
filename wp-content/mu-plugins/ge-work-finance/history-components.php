@@ -25,3 +25,5 @@ final class GE_Work_History_Components {
         $parent->update_meta_data(self::META,array('components'=>$components,'actor'=>get_current_user_id(),'recorded_at'=>gmdate('c')));GE_Work_History_Storage::save_order_meta($parent);GE_Work_History_Storage::check();
     }
 }
+
+require_once __DIR__.'/history-consolidation.php';
