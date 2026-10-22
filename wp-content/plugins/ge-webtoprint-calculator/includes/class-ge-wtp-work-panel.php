@@ -112,7 +112,7 @@ final class GE_WTP_Work_Panel {
             }
         }
         uasort($rows,static function($a,$b){return $b['updated']<=>$a['updated'] ?: strcmp($a['key'],$b['key']);});
-        return array_values($rows);
+        return apply_filters('ge_work_panel_rows',array_values($rows));
     }
     public static function filter( $rows, $type, $scope, $query ) {
         return array_values(array_filter($rows,static function($r)use($type,$scope,$query){

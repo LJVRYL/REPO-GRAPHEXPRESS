@@ -123,6 +123,8 @@ GE_WTP_Deco_Artist_Commerce::init();
 GE_WTP_Payments::init();
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-business-export.php';
 GE_WTP_Business_Export::init();
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-work-reconciliation.php';
+GE_WTP_Work_Reconciliation::init();
 
 // Scoped additive card configuration and native CCAC draft access.
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-unlaminated-cards.php';
