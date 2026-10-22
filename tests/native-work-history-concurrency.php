@@ -1,0 +1,20 @@
+<?php
+$root=getenv('GE_QA_WP_ROOT');if(!$root || !is_file($root.'/wp-load.php'))throw new RuntimeException('Synthetic QA root required.');require $root.'/wp-load.php';
+if(!defined('GE_NATIVE_QA_SYNTHETIC') || GE_NATIVE_QA_SYNTHETIC!==true || !str_starts_with(DB_NAME,'ge_native_qa_') || !str_ends_with((string)wp_parse_url(home_url(),PHP_URL_HOST),'.invalid'))throw new RuntimeException('Refusing non-QA environment.');
+$actor=username_exists('native_qa_owner');if(!$actor)throw new RuntimeException('Run integration fixture first.');wp_set_current_user($actor);
+$base=getenv('GE_QA_ARTIFACT_DIR');$base=$base?realpath($base):false;if(!$base || !is_dir($base))throw new RuntimeException('Private QA artifact directory required.');
+if(($argv[1]??'')==='writer'){
+    $id=absint($argv[2]??0);$dir=realpath($argv[3]??'');if(!$dir || dirname($dir)!==$base || !$id)throw new RuntimeException('Invalid synthetic writer arguments.');
+    $o=wc_get_order($id);if(!$o || $o->get_meta('_ge_qa_concurrency',true)!=='yes')throw new RuntimeException('Not a concurrency fixture.');file_put_contents($dir.'/attempted','1',LOCK_EX);
+    $o->update_meta_data('_ge_production_status','concurrent-native-change');$o->save_meta_data();if($GLOBALS['wpdb']->last_error)throw new RuntimeException('Writer SQL failed.');file_put_contents($dir.'/done','1',LOCK_EX);exit(0);
+}
+$o=wc_create_order(array('customer_id'=>$actor));if(is_wp_error($o))throw new RuntimeException('Cannot create fixture.');$o->update_meta_data('_ge_qa_concurrency','yes');$o->update_meta_data('_ge_production_status','pending');$o->save_meta_data();$id=$o->get_id();$dir=$base.'/race-'.bin2hex(random_bytes(8));if(!mkdir($dir,0700))throw new RuntimeException('Cannot create QA rendezvous.');
+GE_Work_History_Storage::begin($id,array(),array());$proc=null;$pipes=array();
+try {
+    $proc=proc_open(array(PHP_BINARY,__FILE__,'writer',(string)$id,$dir),array(0=>array('pipe','r'),1=>array('file',$dir.'/writer.log','a'),2=>array('file',$dir.'/writer.log','a')),$pipes);if(!is_resource($proc))throw new RuntimeException('Cannot start independent writer.');fclose($pipes[0]);
+    $deadline=microtime(true)+8;while(!is_file($dir.'/attempted') && microtime(true)<$deadline)usleep(20000);if(!is_file($dir.'/attempted'))throw new RuntimeException('Writer did not attempt update.');usleep(400000);clearstatcache();if(is_file($dir.'/done'))throw new RuntimeException('Concurrent update bypassed the locked metadata range.');
+    GE_Work_History_Storage::commit();$deadline=microtime(true)+8;while(!is_file($dir.'/done') && microtime(true)<$deadline){clearstatcache();usleep(20000);}if(!is_file($dir.'/done'))throw new RuntimeException('Writer did not resume after commit.');$exit=proc_close($proc);$proc=null;if($exit!==0)throw new RuntimeException('Independent writer failed.');GE_Work_Finance::clear_order_cache($id);$o=wc_get_order($id);$o->read_meta_data(true);if($o->get_meta('_ge_production_status',true)!=='concurrent-native-change')throw new RuntimeException('Concurrent update was lost.');
+    // A pre-existing transaction must remain owned by its caller on rejection.
+    global $wpdb;$wpdb->query('START TRANSACTION');$wpdb->query('SAVEPOINT qa_caller_owned');$rejected=false;try{GE_Work_History_Storage::begin($id,array(),array());}catch(Throwable $e){$rejected=true;}$still_owned=$wpdb->query('RELEASE SAVEPOINT qa_caller_owned')!==false;$wpdb->query('ROLLBACK');if(!$rejected || !$still_owned)throw new RuntimeException('Caller transaction was accepted or altered.');
+    echo wp_json_encode(array('status'=>'PASS','synthetic'=>true,'independent_connections'=>2,'checks'=>4,'assertions'=>array('writer blocked during range lock','writer resumed after commit','concurrent value preserved','caller transaction untouched'),'storage'=>\Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()?'HPOS':'CPT'))."\n";
+}catch(Throwable $e){GE_Work_History_Storage::abort();if(is_resource($proc)){proc_terminate($proc);proc_close($proc);}throw $e;}

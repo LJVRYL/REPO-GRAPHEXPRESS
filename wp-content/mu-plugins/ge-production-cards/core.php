@@ -51,6 +51,9 @@ final class GE_WTP_Production_Cards {
  public static function source_assigned($item,$doc_id){return in_array('document:'.$doc_id,(array)$item->get_meta('_ge_item_artwork_sources',true),true);}
  public static function authorized_for_supplier($order,$item){
   $d=self::data($order);$proof=$d['authorized'][$item->get_id()]??array();
+  if(in_array(GE_WTP_Order_Lifecycle::stage($order),array('listo','entregado'),true))return false;
+  $historical=$order->get_meta('_ge_historical_execution_confirmed',true);
+  if(is_array($historical) && !empty($historical['actor']) && !empty($historical['full_scope']) && ($historical['production_generation']??null)===($d['generation']??null))return false;
   return in_array($d['state'],array('awaiting_supplier','awaiting_manual_dispatch','production'),true) && !empty($proof['signature']) && hash_equals((string)$proof['signature'],(string)$item->get_meta('_ge_item_artwork_release_hash',true)) && GE_WTP_Artwork_Library::item_ready_for_production($item,$order);
  }
  public static function may_preview($order,$item){return self::enabled($order) && !is_wp_error(self::access($order,true)) && self::data($order)['state']==='preparing' && GE_WTP_Artwork_Library::item_ready_for_production($item,$order);}

@@ -140,7 +140,7 @@ final class GE_WTP_Job_Flow {
         if ( $total <= 0 ) { return new WP_Error( 'ge_job_payment', 'Revisá el importe del pedido antes de continuar.' ); }
         $quote_id = absint( $order->get_meta( '_ge_commercial_quote_id', true ) );
         $paid = 0;
-        if ( $quote_id || $order->get_meta('_ge_work_manual_payments',true) ) {
+        if ( $quote_id || $order->get_meta('_ge_work_manual_payments',true) || $order->get_meta('_ge_work_historical_payments',true) ) {
             if ( (int) $order->get_meta( '_ge_final_total_cents', true ) !== $total ) { return new WP_Error( 'ge_job_payment', 'El total cambió; conciliá el pedido antes de continuar.' ); }
             $attempts = $order->get_meta( '_ge_commercial_credited_attempts', true );
             try { $state = GE_WTP_Quote_Balance::reconcile( $total, is_array( $attempts ) ? $attempts : array() ); }
@@ -162,6 +162,8 @@ final class GE_WTP_Job_Flow {
 
     public static function delivery_check( $order ) {
         if ( ! $order instanceof WC_Order ) { return new WP_Error( 'ge_delivery_order', 'Pedido inválido.' ); }
+        $historical=$order->get_meta('_ge_historical_delivery_confirmation',true);
+        if(is_array($historical) && !empty($historical['actor']) && !empty($historical['confirmed_at']) && 'entregado'===GE_WTP_Order_Lifecycle::stage($order))return true;
         if ( $order->get_meta( '_ge_delivery_confirmed_at', true ) && 'entregado' === GE_WTP_Order_Lifecycle::stage( $order ) ) { return true; }
         $paid = self::payment_check( $order, true );
         if ( is_wp_error( $paid ) ) { return $paid; }

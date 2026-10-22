@@ -3,11 +3,24 @@
 defined('ABSPATH') || exit;
 final class GE_Work_Finance {
     const META='_ge_work_manual_payments';
+    const HISTORICAL_META='_ge_work_historical_payments';
+    public static function dependent($order){return (int)$order->get_meta('_ge_financial_parent_order_id',true)>0 || ($order->get_meta('_ge_work_order',true)==='yes' && (int)$order->get_meta('_ge_source_quote_order_id',true)>0);}
+    public static function financial_parent($child){
+        if(!self::dependent($child))return null;$id=absint($child->get_meta('_ge_financial_parent_order_id',true)?:$child->get_meta('_ge_source_quote_order_id',true));$parent=wc_get_order($id);$item=$parent?$parent->get_item(absint($child->get_meta('_ge_source_quote_item_id',true))):false;
+        if(!$parent || !$item || self::dependent($parent) || $child->get_meta('_ge_work_order',true)!=='yes' || (int)$child->get_meta('_ge_source_quote_order_id',true)!==$id || (int)$item->get_meta('_ge_work_order_id',true)!==$child->get_id() || $parent->get_customer_id()!==$child->get_customer_id() || $parent->get_currency()!==$child->get_currency())return new WP_Error('source','Revisá el vínculo con el pedido comercial antes de registrar dinero.');return $parent;
+    }
+    public static function historical($order){return $order->get_meta(self::HISTORICAL_META,true) || $order->get_meta('_ge_historical_execution_confirmed',true) || in_array($order->get_created_via(),array('ge_historical_invoice','ge_historical_performed_scope'),true) || $order->get_meta('_ge_commercial_conversion_source',true)==='historical';}
     public static function money($cents,$currency='ARS') {return $currency==='ARS'?GE_WTP_Commercial_Quote_UI::money($cents):$currency.' '.number_format($cents/100,$cents%100?2:0,',','.');}
     public static function can_write($actor) { return GE_WTP_Staff_Portal::can_access() && $actor===get_current_user_id() && GE_WTP_Customer_Invoices::staff($actor,true); }
     public static function strict_order($id) { require_once __DIR__.'/ge-work-finance/order.php';return new GE_Work_Finance_Order($id); }
+    public static function clear_item_cache($ids){
+        foreach(array_unique(array_map('absint',$ids)) as $id){
+            wp_cache_delete('item-'.$id,'order-items');wp_cache_delete($id,'order_item_meta');
+            if(class_exists('WC_Data'))wp_cache_delete(WC_Data::generate_meta_cache_key($id,'order-items'),'order-items');
+        }
+    }
     public static function clear_order_cache($id) {
-        clean_post_cache($id);
+        clean_post_cache($id);wp_cache_delete('order-items-'.$id,'orders');
         if(class_exists('Automattic\WooCommerce\Caches\OrderCache')) {
             $cache=wc_get_container()->get('Automattic\WooCommerce\Caches\OrderCache');
             if(is_callable(array($cache,'remove')))$cache->remove($id);
@@ -21,7 +34,7 @@ final class GE_Work_Finance {
         if ($org && $org!==GE_Organization::PRIMARY) return new WP_Error('scope','Pedido de otra organización.');
         $customer_org=get_user_meta($order->get_customer_id(),'_ge_organization_id',true);
         if($customer_org && $customer_org!==GE_Organization::PRIMARY)return new WP_Error('scope','Cliente de otra organización.');
-        if ('yes'===$order->get_meta('_ge_work_order',true) && $order->get_meta('_ge_source_quote_order_id',true)) return new WP_Error('source','Registrá el pago en el pedido comercial de origen.');
+        if(self::dependent($order)){$parent=self::financial_parent($order);if(is_wp_error($parent))return $parent;return new WP_Error('source','Registrá el pago en el pedido comercial de origen #'.$parent->get_id().'.');}
         return $order;
     }
     public static function balance($order) {
@@ -30,7 +43,8 @@ final class GE_Work_Finance {
             if ($total<=0) throw new DomainException('Revisá el total del pedido antes de registrar cobros.');
             $attempts=$order->get_meta('_ge_commercial_credited_attempts',true);$attempts=is_array($attempts)?$attempts:array();
             $ledger=$order->get_meta(self::META,true);$ledger=is_array($ledger)?$ledger:array();
-            $tracked=(bool)$order->get_meta('_ge_commercial_quote_id',true) || !empty($ledger);
+            $historical=$order->get_meta(self::HISTORICAL_META,true);$historical=is_array($historical)?$historical:array();
+            $tracked=(bool)$order->get_meta('_ge_commercial_quote_id',true) || !empty($ledger) || !empty($historical);
             if ($tracked) {
                 if ((int)$order->get_meta('_ge_final_total_cents',true)!==$total) throw new DomainException('El total cambió. Revisá la conciliación antes de registrar un pago.');
                 $state=GE_WTP_Quote_Balance::reconcile($total,$attempts);
@@ -38,6 +52,12 @@ final class GE_Work_Finance {
                 foreach ($ledger as $entry) {
                     $found=false;foreach($attempts as $attempt) if (($attempt['key']??'')==='manual:'.$entry['id'] && ($attempt['amount_cents']??null)===$entry['amount_cents']) $found=true;
                     if (!$found) throw new DomainException('Un cobro manual no coincide con el registro acreditado.');
+                }
+                foreach($historical as $entry) {
+                    if(empty($entry['actor']) || empty($entry['confirmed_at']) || empty($entry['declarant']) || empty($entry['source_revision']) || empty($entry['source_key']) || !array_key_exists('received_date',$entry) || $entry['received_date']!==null || !array_key_exists('method',$entry) || $entry['method']!==null || !isset($entry['amount_cents'],$entry['balance_confirmed_cents']) || !is_int($entry['amount_cents']) || !is_int($entry['balance_confirmed_cents']) || $entry['amount_cents']<0 || $entry['balance_confirmed_cents']<$entry['amount_cents'] || $entry['balance_confirmed_cents']>$total)throw new DomainException('Una confirmación histórica requiere revisión.');
+                    if(!$entry['amount_cents'])continue;
+                    $found=false;foreach($attempts as $attempt)if(($attempt['key']??'')==='historical:'.$entry['id'] && ($attempt['amount_cents']??null)===$entry['amount_cents'])$found=true;
+                    if(!$found)throw new DomainException('La confirmación histórica no coincide con el saldo acreditado.');
                 }
             } else {
                 $confirmed=false;
@@ -47,10 +67,11 @@ final class GE_Work_Finance {
                 $attempts=$confirmed?array(array('key'=>'legacy:paid:order:'.$order->get_id(),'amount_cents'=>$total)):array();
                 $state=GE_WTP_Quote_Balance::reconcile($total,$attempts);
             }
-            return array_merge($state,array('total_cents'=>$total,'attempts'=>$attempts,'ledger'=>$ledger));
+            return array_merge($state,array('total_cents'=>$total,'attempts'=>$attempts,'ledger'=>$ledger,'historical'=>$historical));
         } catch (Throwable $error) { return new WP_Error('balance',$error->getMessage()); }
     }
     public static function scope($order,$balance) { return hash('sha256',wp_json_encode(array($order->get_id(),$order->get_customer_id(),$order->get_currency(),$order->get_status(),$order->get_meta('_ge_commercial_quote_id',true),$order->get_meta('_ge_commercial_quote_version',true),$balance['total_cents'],$balance['attempts'],$balance['ledger']))); }
+    public static function collection_lock($order){$q=absint($order->get_meta('_ge_commercial_quote_id',true));return 'ge_commercial_reconcile_'.($q?:'order_'.$order->get_id());}
     public static function lock($name) { global $wpdb;$key='ge:'.substr(hash('sha256',$wpdb->prefix.$name),0,55);return '1'===(string)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)',$key)); }
     public static function unlock($name) { global $wpdb;$key='ge:'.substr(hash('sha256',$wpdb->prefix.$name),0,55);$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$key)); }
     public static function pending_attempt($order) {
@@ -62,7 +83,7 @@ final class GE_Work_Finance {
     public static function register($id,$input,$actor) {
         if (!self::can_write($actor)) return new WP_Error('forbidden','Sólo Administración/Finanzas puede registrar un cobro acreditado.');
         $order=self::order($id);if(is_wp_error($order))return $order;
-        $quote=absint($order->get_meta('_ge_commercial_quote_id',true));$lock='ge_commercial_reconcile_'.($quote?:'order_'.$order->get_id());
+        $quote=absint($order->get_meta('_ge_commercial_quote_id',true));$lock=self::collection_lock($order);
         if(!self::lock($lock))return new WP_Error('busy','El cobro se está procesando. No repitas el pago.');
         global $wpdb;$transaction=false;
         try {
@@ -107,6 +128,7 @@ final class GE_Work_Finance {
     }
 }
 add_action('admin_post_ge_work_manual_payment',array('GE_Work_Finance','handle'));
-add_filter('woocommerce_order_needs_payment',function($needs,$order){return $order->get_meta(GE_Work_Finance::META,true)?false:$needs;},99,2);
+add_filter('woocommerce_order_needs_payment',function($needs,$order){if($order->get_meta(GE_Work_Finance::META,true))return false;if(GE_Work_Finance::historical($order)||GE_Work_Finance::dependent($order))return false;return $needs;},99,2);
 require_once __DIR__.'/ge-work-finance/ui.php';
 require_once __DIR__.'/ge-work-finance/invoices.php';
+require_once __DIR__.'/ge-work-finance/history.php';

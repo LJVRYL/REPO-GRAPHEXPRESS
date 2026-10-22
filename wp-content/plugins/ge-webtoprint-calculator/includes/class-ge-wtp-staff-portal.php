@@ -445,7 +445,9 @@ final class GE_WTP_Staff_Portal {
 
     private static function render_master_delivery($order) {
         $ready=GE_WTP_Job_Flow::delivery_check($order);
-        echo '<section class="ge-production-card"><h2>Estado de la entrega</h2><p>'.esc_html(is_wp_error($ready) ? $ready->get_error_message() : ($order->get_meta('_ge_delivery_confirmed_at',true) ? 'Entrega confirmada.' : 'Trabajo listo para coordinar la recepción.')).'</p></section>';
+        $historical=$order->get_meta('_ge_historical_delivery_confirmation',true);
+        $historical_delivered=is_array($historical) && !empty($historical['actor']) && !empty($historical['confirmed_at']) && 'entregado'===GE_WTP_Order_Lifecycle::stage($order);
+        echo '<section class="ge-production-card"><h2>Estado de la entrega</h2><p>'.esc_html($historical_delivered?($order->get_meta('_ge_delivery_confirmed_at',true) || $order->get_meta(GE_WTP_Order_Lifecycle::DELIVERED_META,true) ? 'Entrega confirmada.' : 'Entrega anterior confirmada; fecha exacta no informada.'):(is_wp_error($ready) ? $ready->get_error_message() : ($order->get_meta('_ge_delivery_confirmed_at',true) ? 'Entrega confirmada.' : 'Trabajo listo para coordinar la recepción.'))).'</p></section>';
         GE_WTP_Customer_Branches::render_order_summary($order,true);
         self::render_order_shipping($order);
         GE_WTP_Delivery_Labels::label_form($order);

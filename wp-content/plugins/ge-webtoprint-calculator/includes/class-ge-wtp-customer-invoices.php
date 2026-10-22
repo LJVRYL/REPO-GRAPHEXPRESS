@@ -377,6 +377,7 @@ final class GE_WTP_Customer_Invoices {
     }
 
     private static function detail( $row, $staff = false ) {
+        if($staff && class_exists('GE_Work_History_Invoices'))GE_Work_History_Invoices::render($row);
         echo '<section class="ge-panel ge-invoice-detail"><a href="' . esc_url( self::url( '', $staff, $row['customer_id'] ) ) . '">← Volver a comprobantes</a><h2>' . esc_html( self::title( $row ) ) . '</h2><dl>';
         $fields = array( 'Receptor' => $row['receiver']['legal_name'] ?? '', 'CUIT del receptor' => $row['receiver']['cuit'] ?? '', 'Fecha del comprobante' => $row['date'], 'Importe del comprobante' => $row['amount'] ? $row['currency'] . ' ' . number_format_i18n( (float) $row['amount'], 2 ) : '', 'Emisor del documento' => $row['issuer_name'], 'Pedido vinculado' => $row['order_id'] ? '#' . $row['order_id'] : '', 'Presupuesto vinculado' => $row['quote_id'] ? '#' . $row['quote_id'] : '' );
         if ( ! $staff ) { unset( $fields['Emisor del documento'] ); }

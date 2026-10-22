@@ -68,7 +68,7 @@ final class GE_WTP_Work_Panel {
         elseif(in_array($order->get_status(),array('cancelled','refunded','failed'),true)){$next='Revisar el historial del pedido';}
         else { $blocked=GE_WTP_Artwork_Library::blocked_item_names($order); if($blocked){$next='Revisar y aprobar el archivo exacto';$owner='Graph Express y cliente';}else{$next='Revisar condiciones y liberar producción';} }
         $date=$order->get_date_modified()?:$order->get_date_created();
-        return array('key'=>'order:'.$order->get_id(),'kind'=>$kind,'order_id'=>$order->get_id(),'customer_id'=>(int)$order->get_customer_id(),'reference'=>'#'.$order->get_order_number(),'customer'=>self::customer($order->get_customer_id(),$order->get_formatted_billing_full_name()),'title'=>self::item_title($order->get_items()),'status'=>GE_WTP_Order_Lifecycle::label($order),'next'=>$next,'owner'=>$owner,'closed'=>$closed,'updated'=>$date?$date->getTimestamp():0,'version'=>(int)$order->get_meta('_ge_commercial_quote_version',true),'quote_id'=>(int)$order->get_meta('_ge_commercial_quote_id',true),'request_id'=>0,'url'=>GE_WTP_Staff_Portal::portal_url($target,array('order_id'=>$order->get_id())));
+        return array('key'=>'order:'.$order->get_id(),'kind'=>$kind,'order_id'=>$order->get_id(),'customer_id'=>(int)$order->get_customer_id(),'reference'=>'#'.$order->get_order_number(),'customer'=>self::customer($order->get_customer_id(),$order->get_formatted_billing_full_name()),'title'=>($order->get_meta('_ge_work_label',true)?$order->get_meta('_ge_work_label',true).' · ':'').self::item_title($order->get_items()),'status'=>GE_WTP_Order_Lifecycle::label($order),'next'=>$next,'owner'=>$owner,'closed'=>$closed,'updated'=>$date?$date->getTimestamp():0,'version'=>(int)$order->get_meta('_ge_commercial_quote_version',true),'quote_id'=>(int)$order->get_meta('_ge_commercial_quote_id',true),'request_id'=>0,'url'=>GE_WTP_Staff_Portal::portal_url($target,array('order_id'=>$order->get_id())));
     }
     public static function rows() {
         if(!self::accessible())return array();
@@ -77,10 +77,12 @@ final class GE_WTP_Work_Panel {
             $ids=wc_get_orders(array('limit'=>-1,'return'=>'ids','orderby'=>'modified','order'=>'DESC'));
             foreach($ids as $id){
                 $order=wc_get_order($id);if(!$order||'yes'===$order->get_meta('_ge_commercial_payment_order',true))continue;
-                $legacy_quote=class_exists('GE_WTP_Customer_Quotes')&&GE_WTP_Customer_Quotes::is_quote_order($order);
+                $legacy_quote=class_exists('GE_WTP_Customer_Quotes')&&(GE_WTP_Customer_Quotes::is_quote_order($order)||$order->get_meta('_ge_quote_only',true)==='yes');
                 if($legacy_quote&&!self::allowed('quotes'))continue;
                 $row=self::order_row($order);
-                if($legacy_quote){$row['kind']='quotes';$row['status']=GE_WTP_Customer_Quotes::stage_label($order);$row['next']='Revisar el presupuesto y sus archivos';$row['url']=GE_WTP_Staff_Portal::portal_url('orders',array('order_id'=>$id));}
+                $executed=$order->get_meta('_ge_historical_execution_confirmed',true);
+                if($legacy_quote && !(is_array($executed) && !empty($executed['full_scope']))){$row['kind']='quotes';$row['status']=GE_WTP_Customer_Quotes::stage_label($order);$row['next']='Revisar el presupuesto y sus archivos';$row['url']=GE_WTP_Staff_Portal::portal_url('orders',array('order_id'=>$id));}
+                if($order->get_meta('_ge_commercial_followup_state',true)==='discarded'){$row['closed']=true;$row['next']='Sin avance; conservar como antecedente';}
                 $rows[$row['key']]=$row;
             }
         }
@@ -94,12 +96,13 @@ final class GE_WTP_Work_Panel {
                     $rows[$order_key]['reference']=$quote['number'];$rows[$order_key]['request_id']=$source;$represented_quotes[$id]=true;if($source)$represented_requests[$source]=true;continue;
                 }
                 $labels=array('draft'=>'En borrador','sent'=>'Esperando respuesta','viewed'=>'Esperando respuesta','accepted'=>'Aceptado','converted'=>'Pedido creado','rejected'=>'Rechazado','expired'=>'Vencido','cancelled'=>'Cancelado');
+                $historical_commercial=get_post_meta($id,'_ge_commercial_followup_state',true);if($historical_commercial==='fulfilled_partial'){$labels[$quote['status']]='Realizado parcialmente · conciliación por facturas';}
                 $next='Revisar propuesta';$owner='Graph Express';
                 if('draft'===$quote['status'])$next='Completar y enviar presupuesto';
                 elseif(in_array($quote['status'],array('sent','viewed'),true)){$next='Esperar respuesta del cliente';$owner='Cliente';}
                 elseif('accepted'===$quote['status'])$next='Crear pedido con la versión aceptada';
                 elseif(in_array($quote['status'],array('rejected','expired','cancelled'),true))$next='Consultar historial de la propuesta';
-                $rows['quote:'.$id]=array('key'=>'quote:'.$id,'kind'=>'quotes','order_id'=>0,'quote_id'=>(int)$id,'request_id'=>$source,'customer_id'=>(int)$quote['customer_id'],'reference'=>$quote['number'],'customer'=>self::customer($quote['customer_id']),'title'=>self::item_title($quote['snapshot']['items']??array()),'status'=>$labels[$quote['status']]??'En revisión','next'=>$next,'owner'=>$owner,'closed'=>in_array($quote['status'],array('rejected','expired','cancelled'),true),'updated'=>get_post_modified_time('U',true,$id),'version'=>(int)$quote['version'],'url'=>GE_WTP_Staff_Portal::portal_url('quotes',array('quote_id'=>$id)));
+                $rows['quote:'.$id]=array('key'=>'quote:'.$id,'kind'=>'quotes','order_id'=>0,'quote_id'=>(int)$id,'request_id'=>$source,'customer_id'=>(int)$quote['customer_id'],'reference'=>$quote['number'],'customer'=>self::customer($quote['customer_id']),'title'=>self::item_title($quote['snapshot']['items']??array()),'status'=>$labels[$quote['status']]??'En revisión','next'=>$next,'owner'=>$owner,'closed'=>$historical_commercial==='fulfilled_partial'||in_array($quote['status'],array('rejected','expired','cancelled'),true),'updated'=>get_post_modified_time('U',true,$id),'version'=>(int)$quote['version'],'url'=>GE_WTP_Staff_Portal::portal_url('quotes',array('quote_id'=>$id)));
                 $represented_quotes[$id]=true;if($source)$represented_requests[$source]=true;
             }
             foreach(get_posts(array('post_type'=>GE_WTP_Quote_Requests::TYPE,'post_status'=>'private','posts_per_page'=>-1,'fields'=>'ids','orderby'=>'modified','order'=>'DESC')) as $id){

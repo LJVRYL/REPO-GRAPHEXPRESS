@@ -17,6 +17,12 @@ final class GE_WTP_Production_Cards_UI {
  }
  public static function render($order){
   $access=GE_WTP_Production_Cards::access($order);if(is_wp_error($access)){echo '<p>'.esc_html($access->get_error_message()).'</p>';return;}
+  $history=$order->get_meta('_ge_historical_execution_confirmed',true);$data=GE_WTP_Production_Cards::data($order);$stage=GE_WTP_Order_Lifecycle::stage($order);
+  if(is_array($history) && !empty($history['actor']) && !empty($history['full_scope']) && ($history['production_generation']??null)===($data['generation']??null) && in_array($stage,array('produccion','listo','entregado'),true)) {
+   echo '<section class="ge-production-card"><h2>'.esc_html(GE_WTP_Order_Lifecycle::stages()[$stage]).'</h2><p>Situación del trabajo confirmada por '.esc_html($history['declarant']).'.</p><ul>';
+   foreach($order->get_items('line_item') as $item)if($item->get_meta('_ge_item_status',true)!=='cancelled')echo '<li>'.esc_html($item->get_name()).' · '.esc_html(GE_WTP_Production::item_status_label($item,$order)).'</li>';
+   echo '</ul><a class="ge-staff-button is-secondary" href="'.esc_url(GE_WTP_Staff_Portal::portal_url('orders',array('order_id'=>$order->get_id(),'work_stage'=>'delivery'))).'">Ver entrega y cobros</a></section>';return;
+  }
   wp_enqueue_style('ge-production-cards',plugins_url('assets/cards.css',__FILE__),array(),filemtime(__DIR__.'/assets/cards.css'));
   wp_enqueue_script('ge-production-cards',plugins_url('assets/cards.js',__FILE__),array(),filemtime(__DIR__.'/assets/cards.js'),true);
   $d=GE_WTP_Production_Cards::data($order);$step=self::step($order);if($d['state']!=='preparing')$step='control';$labels=self::labels();$index=array_search($step,array_keys($labels),true)+1;

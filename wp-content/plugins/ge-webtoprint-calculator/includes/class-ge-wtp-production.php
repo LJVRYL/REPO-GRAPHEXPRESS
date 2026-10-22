@@ -75,9 +75,11 @@ final class GE_WTP_Production {
     }
 
     public static function is_production_order( $order ) {
+        $executed=$order instanceof WC_Order?$order->get_meta('_ge_historical_execution_confirmed',true):null;
+        $realized=is_array($executed) && !empty($executed['actor']) && !empty($executed['full_scope']);
         return $order instanceof WC_Order
             && 'yes' !== $order->get_meta( '_ge_commercial_payment_order', true )
-            && ( ! class_exists( 'GE_WTP_Customer_Quotes' ) || ! GE_WTP_Customer_Quotes::is_quote_order( $order ) )
+            && ( $realized || ! class_exists( 'GE_WTP_Customer_Quotes' ) || ! GE_WTP_Customer_Quotes::is_quote_order( $order ) )
             && ! in_array( $order->get_status(), array( 'cancelled', 'refunded', 'failed' ), true );
     }
 

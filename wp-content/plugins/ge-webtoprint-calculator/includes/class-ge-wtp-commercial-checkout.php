@@ -137,6 +137,7 @@ final class GE_WTP_Commercial_Checkout {
     }
 
     public static function render_staff_payment( $quote ) {
+        if(class_exists('GE_Work_Historical_Reconciliation'))GE_Work_Historical_Reconciliation::render_quote($quote);
         $ids = array( absint( get_post_meta( $quote['id'], '_ge_commercial_initial_payment_order', true ) ) );
         if ( $quote['converted_order_id'] ) { $main = wc_get_order( $quote['converted_order_id'] ); if ( $main ) { $ids[] = absint( $main->get_meta( '_ge_commercial_balance_payment_order', true ) ); } }
         foreach ( array_filter( $ids ) as $id ) {
@@ -262,6 +263,8 @@ final class GE_WTP_Commercial_Checkout {
         if ( (int) $actor_id !== $quote['customer_id'] || ! in_array( $quote['status'], array( 'sent', 'viewed', 'accepted', 'converted' ), true ) || empty( $quote['snapshot']['total_cents'] ) ) {
             return new WP_Error( 'ge_quote_payment_state', 'El presupuesto no está listo para pagar.' );
         }
+        if(get_post_meta($quote_id,'_ge_historical_actual_order_id',true) || get_post_meta($quote_id,'_ge_commercial_followup_state',true)==='fulfilled_partial')return new WP_Error('ge_quote_partial_history','Este presupuesto tiene un alcance parcial vinculado. Consultá el pedido real.');
+        if($quote['converted_order_id'] && class_exists('GE_Work_Finance')){$historical_order=wc_get_order($quote['converted_order_id']);if($historical_order && GE_Work_Finance::historical($historical_order))return new WP_Error('ge_quote_historical_balance','Este trabajo ya tiene su saldo conciliado en el pedido. Administración registra únicamente el importe pendiente.');}
         $snapshot = $quote['snapshot'];
         if ( 'converted' !== $quote['status'] && ! empty( $snapshot['valid_until'] ) && $snapshot['valid_until'] < wp_date( 'Y-m-d' ) ) {
             return new WP_Error( 'ge_quote_expired', 'El presupuesto venció.' );
@@ -473,6 +476,7 @@ final class GE_WTP_Commercial_Checkout {
         $lock = 'ge_commercial_reconcile_' . $quote_id;
         if ( ! self::acquire_lock( $lock ) ) { return new WP_Error( 'ge_quote_busy', 'El presupuesto se está procesando.' ); }
         try {
+            if(get_post_meta($quote_id,'_ge_historical_actual_order_id',true) || get_post_meta($quote_id,'_ge_commercial_followup_state',true)==='fulfilled_partial')return new WP_Error('ge_quote_partial_history','Este presupuesto ya tiene un alcance parcial realizado. Abrí ese pedido o prepará un nuevo presupuesto para el trabajo restante.');
             $quote = GE_WTP_Commercial_Quotes::prepare_for_conversion( $quote_id, $actor_id );
             if ( is_wp_error( $quote ) ) { return $quote; }
             if ( $quote['converted_order_id'] ) { return wc_get_order( $quote['converted_order_id'] ); }
@@ -530,6 +534,48 @@ final class GE_WTP_Commercial_Checkout {
         } finally { self::release_lock( $lock ); }
     }
 
+    /** Historical conversion reuses the frozen native quote factory without inventing receipt details. */
+    public static function convert_historical($quote_id,$source_quote_id=0,$component_ids=array()) {
+        if(!class_exists('GE_Work_Historical_Reconciliation') || !GE_Work_Historical_Reconciliation::allowed())return new WP_Error('forbidden','Acceso denegado.');
+        $actor=get_current_user_id();$source_quote_id=absint($source_quote_id?:$quote_id);$lock='ge_commercial_reconcile_'.absint($quote_id);
+        if(!self::acquire_lock($lock))return new WP_Error('busy','El presupuesto está siendo procesado.');
+        $started=false;$order=null;$component_locks=array();$component_keys=array();
+        try {
+            $component_ids=array_values(array_unique(array_map('absint',$component_ids)));sort($component_ids,SORT_NUMERIC);foreach($component_ids as $component_id){$c=wc_get_order($component_id);if(!$c)throw new DomainException('Trabajo no disponible.');$component_keys[$component_id]=GE_Work_Finance::collection_lock($c);} $keys=array_values(array_unique($component_keys));sort($keys,SORT_STRING);foreach($keys as $key){if($key===$lock)continue;if(!GE_Work_Finance::lock($key))throw new DomainException('Hay un cobro o comprobante en proceso.');$component_locks[]=$key;}
+            GE_Work_History_Storage::begin(0,array_map('absint',$component_ids),array_values(array_unique(array(absint($quote_id),$source_quote_id))));$started=true;
+            foreach($component_keys as $component_id=>$key){$c=wc_get_order($component_id);$c->read_meta_data(true);if(GE_Work_Finance::collection_lock($c)!==$key)throw new DomainException('El origen del cobro cambió; revisá la ficha.');}
+            $source=GE_Work_Historical_Reconciliation::quote_source($source_quote_id,$quote_id);if(!$source)throw new DomainException('No hay confirmación histórica de ejecución completa para este presupuesto.');
+            $quote=GE_WTP_Commercial_Quotes::get($quote_id,$actor);GE_Work_History_Storage::check();if(is_wp_error($quote))throw new DomainException($quote->get_error_message());
+            if($quote['converted_order_id'])throw new DomainException('El presupuesto ya tiene pedido; conciliá esa ficha.');
+            if(in_array($quote['status'],array('rejected','cancelled'),true))throw new DomainException('Revisá el estado comercial del presupuesto.');
+            if(get_post_meta($quote_id,'_ge_commercial_initial_payment_order',true))throw new DomainException('Revisá los intentos de cobro existentes antes de crear la ficha histórica.');
+            if($source_quote_id!==(int)$quote_id){$origin=GE_WTP_Commercial_Quotes::get($source_quote_id,$actor);GE_Work_History_Storage::check();if(is_wp_error($origin) || $origin['customer_id']!==$quote['customer_id'] || get_post_meta($source_quote_id,'_ge_historical_actual_order_id',true))throw new DomainException('Revisá el presupuesto de origen y su alcance vinculado.');}
+            $r=$source['row'];$snapshot=$quote['snapshot'];$total=(int)($snapshot['total_cents']??0);
+            if($total<=0 || ($snapshot['currency']??'ARS')!==$r['currency'] || ($r['reference_cents']!==null && $total!==$r['reference_cents']) || ($r['performed_cents']!==null && $total!==$r['performed_cents']))throw new DomainException('El alcance o el precio requiere revisión antes de crear el pedido.');
+            update_post_meta($quote_id,'_ge_commercial_final_total_cents',$total);GE_Work_History_Storage::check();update_post_meta($quote_id,'_ge_commercial_adjustment_cents',0);GE_Work_History_Storage::check();
+            $components=GE_Work_History_Components::prepare($quote,$component_ids);$order=self::create_operational_order($quote,false,true,$components);GE_Work_History_Storage::check();if(is_wp_error($order))throw new DomainException($order->get_error_message());
+            // The native CRM callback opens its own transaction. Defer only this callback until commit.
+            $crm_hooks=array();if(class_exists('GE_CRM'))foreach(array('added_post_meta','updated_post_meta') as $hook){$priority=has_action($hook,array('GE_CRM','quote_meta'));if($priority!==false){$crm_hooks[$hook]=$priority;remove_action($hook,array('GE_CRM','quote_meta'),$priority);}}
+            try{update_post_meta($quote_id,GE_WTP_Commercial_Quotes::ORDER_META,$order->get_id());GE_Work_History_Storage::check();update_post_meta($quote_id,GE_WTP_Commercial_Quotes::STATUS_META,'converted');GE_Work_History_Storage::check();}
+            finally{foreach($crm_hooks as $hook=>$priority)add_action($hook,array('GE_CRM','quote_meta'),$priority,4);}
+            $proof=array('source_revision'=>$source['revision'],'source_key'=>$r['key'],'quote_id'=>(int)$quote_id,'source_quote_id'=>$source_quote_id,'before_fingerprint'=>$source['expected_fingerprints']['quote_id:'.$source_quote_id],'after_fingerprint'=>GE_Work_Historical_Reconciliation::source_fingerprint('quote_id',(int)$quote_id),'actor'=>$actor,'recorded_at'=>gmdate('c'),'actual_acceptance_date'=>null);
+            if($source_quote_id!==(int)$quote_id){update_post_meta($source_quote_id,'_ge_historical_actual_order_id',$order->get_id());GE_Work_History_Storage::check();}
+            GE_Work_History_Components::attach($order,$components);
+            $order->update_meta_data('_ge_historical_quote_conversion',$proof);GE_Work_History_Storage::save_order_meta($order);GE_Work_History_Storage::check();GE_Work_History_Storage::commit();$started=false;
+            // Native CRM uses its own transaction; refresh only after the commercial transaction commits.
+            if(class_exists('GE_CRM'))GE_CRM::quote_meta(0,$quote_id,GE_WTP_Commercial_Quotes::ORDER_META,$order->get_id());
+            GE_Work_Finance::clear_order_cache($order->get_id());$saved=wc_get_order($order->get_id());$saved->read_meta_data(true);GE_Work_History_Storage::check();return $saved;
+        }catch(Throwable $e){if($started)GE_Work_History_Storage::abort();foreach($components??array() as $component_id=>$component){GE_Work_Finance::clear_item_cache(array_keys($component['before']['items']));GE_Work_Finance::clear_order_cache((int)$component_id);}if($order instanceof WC_Order)GE_Work_Finance::clear_order_cache($order->get_id());clean_post_cache($quote_id);return new WP_Error('history_conversion','No se confirmó la conversión histórica. Revisá la ficha antes de repetir.');}
+        finally{foreach(array_reverse($component_locks) as $key)GE_Work_Finance::unlock($key);self::release_lock($lock);}
+    }
+
+    public static function historical_order_from_quote($quote_id){
+        if(!GE_Work_Historical_Reconciliation::allowed() || !GE_Work_History_Storage::owned())return new WP_Error('forbidden','La conversión requiere una conciliación transaccional autorizada.');
+        $q=GE_WTP_Commercial_Quotes::get($quote_id,get_current_user_id());GE_Work_History_Storage::check();if(is_wp_error($q))return $q;if($q['converted_order_id'] || get_post_meta($quote_id,'_ge_commercial_initial_payment_order',true))return new WP_Error('existing','Revisá el pedido o cobro ya vinculado al presupuesto.');if(in_array($q['status'],array('cancelled','rejected'),true))return new WP_Error('state','Revisá el estado del presupuesto.');
+        update_post_meta($quote_id,'_ge_commercial_final_total_cents',(int)$q['snapshot']['total_cents']);GE_Work_History_Storage::check();update_post_meta($quote_id,'_ge_commercial_adjustment_cents',0);GE_Work_History_Storage::check();$o=self::create_operational_order($q,false,true);if(is_wp_error($o))return $o;
+        $hooks=array();if(class_exists('GE_CRM'))foreach(array('added_post_meta','updated_post_meta') as $hook){$priority=has_action($hook,array('GE_CRM','quote_meta'));if($priority!==false){$hooks[$hook]=$priority;remove_action($hook,array('GE_CRM','quote_meta'),$priority);}}try{update_post_meta($quote_id,GE_WTP_Commercial_Quotes::ORDER_META,$o->get_id());GE_Work_History_Storage::check();update_post_meta($quote_id,GE_WTP_Commercial_Quotes::STATUS_META,'converted');GE_Work_History_Storage::check();}finally{foreach($hooks as $hook=>$priority)add_action($hook,array('GE_CRM','quote_meta'),$priority,4);}return $o;
+    }
+
     private static function find_operational_order( $quote ) {
         $orders = wc_get_orders( array( 'limit' => 50, 'meta_key' => self::QUOTE_META, 'meta_value' => $quote['id'] ) );
         $orders = array_values( array_filter( $orders, static function ( $order ) { return 'yes' !== $order->get_meta( self::PAYMENT_META, true ); } ) );
@@ -542,7 +588,7 @@ final class GE_WTP_Commercial_Checkout {
         return $candidate;
     }
 
-    private static function create_operational_order( $quote, $payment ) {
+    private static function create_operational_order( $quote, $payment, $historical = false, $historical_components = array() ) {
         $snapshot = $quote['snapshot'];
         $rate_id = absint( get_option( 'ge_commercial_tax_rate_id', 0 ) );
         $tax_total = (int) ( $snapshot['tax_cents'] ?? 0 );
@@ -582,11 +628,14 @@ final class GE_WTP_Commercial_Checkout {
             $order->set_shipping_postcode( $delivery['postal_code'] ?? '' );
         }
         $method = (string) get_post_meta( $quote['id'], '_ge_commercial_method', true );
-        $order->set_payment_method( 'bacs' === $method ? 'bacs' : 'ge_commercial_mercadopago' );
-        $order->set_payment_method_title( 'bacs' === $method ? 'Transferencia bancaria' : 'Mercado Pago' );
-        $line_count = count( $snapshot['items'] );
+        if(!$historical){
+            $order->set_payment_method( 'bacs' === $method ? 'bacs' : 'ge_commercial_mercadopago' );
+            $order->set_payment_method_title( 'bacs' === $method ? 'Transferencia bancaria' : 'Mercado Pago' );
+        }
+        $factory_lines=$historical?GE_Work_History_Components::lines($snapshot,$historical_components):$snapshot['items'];
+        $line_count = count( $factory_lines );
         $allocated_tax = 0;
-        foreach ( $snapshot['items'] as $index => $line ) {
+        foreach ( $factory_lines as $index => $line ) {
             $item = new WC_Order_Item_Product();
             if ( $line['product_id'] && wc_get_product( $line['product_id'] ) ) { $item->set_product_id( $line['product_id'] ); }
             $item->set_name( $line['name'] );
@@ -607,6 +656,7 @@ final class GE_WTP_Commercial_Checkout {
             $item->update_meta_data( '_ge_quote_unit_net_cents', (int) $line['unit_net_cents'] );
             if ( ! empty( $line['configuration']['roll_width_cm'] ) ) { $item->update_meta_data( '_ge_internal_roll_width_cm', $line['configuration']['roll_width_cm'] ); }
             if ( ! empty( $line['finishes'] ) ) { $item->update_meta_data( GE_WTP_Workflow::FINISHES_META, $line['finishes'] ); }
+            if(!empty($line['_historical_component_order_id']))$item->update_meta_data('_ge_historical_component_order_id',absint($line['_historical_component_order_id']));
             $item->update_meta_data( '_ge_item_status', 'pending' );
             $order->add_item( $item );
         }
@@ -636,7 +686,7 @@ final class GE_WTP_Commercial_Checkout {
         $order->update_meta_data( '_ge_commercial_billing_snapshot', $snapshot['billing'] ?? null );
         $order->update_meta_data( '_ge_commercial_fiscal_status', $snapshot['fiscal_status'] ?? 'pending' );
         $order->update_meta_data( '_ge_commercial_fiscal_blockers', $snapshot['fiscal_blockers'] ?? array() );
-        $order->update_meta_data( '_ge_commercial_conversion_source', $payment ? 'payment' : 'staff' );
+        $order->update_meta_data( '_ge_commercial_conversion_source', $historical ? 'historical' : ($payment ? 'payment' : 'staff') );
         $order->update_meta_data( '_ge_billing_profile_snapshot', $billing_profile );
         $order->update_meta_data( '_ge_billing_profile_id', $snapshot['billing_profile_id'] ?? 'default' );
         $order->update_meta_data( '_ge_delivery_snapshot', $delivery );
@@ -663,6 +713,7 @@ final class GE_WTP_Commercial_Checkout {
         if ( $calculated !== $final ) { $order->add_order_note( 'Total inconsistente con presupuesto aceptado; no liberar producción.' ); $order->save(); return new WP_Error( 'ge_quote_total_mismatch', 'El total de la orden no coincide con el presupuesto.' ); }
         $order->save();
         GE_WTP_Workflow::enable( $order );
+        if($historical)return $order; // Past execution does not approve artwork or initiate supplier/customer workflows.
         GE_WTP_Commercial_Quote_Files::inherit( $quote['id'], $order );
         $order->set_status( 'ge-confirmado', $payment ? 'Pedido creado tras acreditarse el primer cobro del presupuesto.' : 'Pedido creado manualmente desde presupuesto; pago y arte pendientes de verificación.' );
         $order->save();

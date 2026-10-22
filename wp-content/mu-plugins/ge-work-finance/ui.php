@@ -2,6 +2,8 @@
 defined('ABSPATH') || exit;
 final class GE_Work_Finance_UI {
     public static function render($order) {
+        if(class_exists('GE_Work_Historical_Reconciliation'))GE_Work_Historical_Reconciliation::render($order);
+        if(class_exists('GE_Work_Historical_Reconciliation'))GE_Work_Historical_Reconciliation::render_promise($order->get_meta('_ge_work_payment_promise',true),$order->get_currency());
         $balance=GE_Work_Finance::balance($order);$error=get_transient('ge_work_finance_error_'.get_current_user_id().'_'.$order->get_id());
         if($error){echo '<p class="ge-production-notice is-error" role="alert">'.esc_html($error).'</p>';delete_transient('ge_work_finance_error_'.get_current_user_id().'_'.$order->get_id());}
         if(($_GET['work_payment']??'')==='saved')echo '<p class="ge-production-notice" role="status">Pago registrado. Acreditado y saldo ya están actualizados.</p>';
@@ -15,5 +17,10 @@ final class GE_Work_Finance_UI {
             }
         } elseif(!$balance['amount_due_cents'])echo '<p><strong>Pedido pagado completo.</strong></p>';
         if($balance['ledger']){echo '<section><h3>Historial de cobros registrados</h3><ul>';foreach(array_reverse($balance['ledger']) as $entry){$actor=get_userdata($entry['actor']);echo '<li><strong>'.esc_html(GE_Work_Finance::money($entry['amount_cents'],$entry['currency'])).'</strong> · '.esc_html($entry['received_date']).' · '.esc_html(array('cash'=>'Efectivo','transfer'=>'Transferencia','other'=>'Otro medio')[$entry['method']]).' · '.esc_html($entry['reference']).'<small> Registrado por '.esc_html($actor?$actor->display_name:'#'.$entry['actor']).'</small></li>';}echo '</ul></section>';}
+        if(!empty($balance['historical'])) {
+            echo '<section><h3>Conciliación de pagos anteriores</h3><ul>';
+            foreach($balance['historical'] as $entry)echo '<li><strong>Cobrado confirmado: '.esc_html(GE_Work_Finance::money($entry['balance_confirmed_cents'],$order->get_currency())).'</strong> · Confirmado por '.esc_html($entry['declarant']).'. '.($entry['amount_cents']?'Acreditación adicional: '.esc_html(GE_Work_Finance::money($entry['amount_cents'],$order->get_currency())).'.':'Sin sumar nuevamente acreditaciones existentes.').' En esta confirmación no se informó fecha ni medio de recepción. <small>Registrada '.esc_html($entry['confirmed_at']).'.</small></li>';
+            echo '</ul><p>Estas confirmaciones forman parte del saldo del pedido. No se imputaron como ingresos recibidos hoy.</p></section>';
+        }
     }
 }

@@ -114,7 +114,7 @@ final class GE_Work_Master {
     public static function render_finance($financial,$quote=null,$work_id=0) {
         if (!GE_Organization_Runtime::allowed('finance') && !GE_Organization_Runtime::allowed('quotes',true)) return;
         echo '<section id="ge-work-finance" class="ge-production-card ge-work-finance"><h2>Pagos del pedido</h2><p class="ge-work-total">Total del pedido comercial <strong>'.esc_html(self::money((int)round((float)$financial->get_total()*100),$financial->get_currency())).'</strong></p>';
-        if($work_id && $work_id!==$financial->get_id()){$piece=wc_get_order($work_id);$source=self::source($piece);if($source && $source->get_id()===$financial->get_id())echo '<p>Esta orden de producción: '.esc_html(self::money((int)round((float)$piece->get_total()*100),$piece->get_currency())).' · Pedido comercial #'.absint($financial->get_id()).'</p>';}
+        if($work_id && $work_id!==$financial->get_id()){$piece=wc_get_order($work_id);$source=self::source($piece);if($source && $source->get_id()===$financial->get_id())echo '<p>'.(is_array($financial->get_meta('_ge_historical_component_sources',true))?'Referencia anterior del trabajo (incluido en el saldo único): ':'Esta orden de producción: ').esc_html(self::money((int)round((float)$piece->get_total()*100),$piece->get_currency())).' · Pedido comercial #'.absint($financial->get_id()).'</p>';}
         $balance=GE_Work_Finance::balance($financial);
         if(!is_wp_error($balance)) {
             $labels=array('unpaid'=>'Pendiente de acreditación','deposit_paid'=>'Pago parcial acreditado','paid'=>'Pagado completo');

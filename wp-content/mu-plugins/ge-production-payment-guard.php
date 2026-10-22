@@ -7,7 +7,7 @@ final class GE_Production_Payment_Guard {
     public static function init() {
         add_action('admin_post_ge_finance_production_payment_exception', array(__CLASS__, 'handle'));
     }
-    public static function scope($order) {
+    public static function scope($order, $canonical_identifiers = false) {
         $items = array();
         foreach ($order->get_items('line_item') as $id => $item) {
             $finishes = $item->get_meta('_ge_item_finishes', true);
@@ -20,8 +20,8 @@ final class GE_Production_Payment_Guard {
         return hash('sha256', wp_json_encode(array(
             'order_id' => $order->get_id(), 'customer_id' => $order->get_customer_id(),
             'currency' => $order->get_currency(), 'total' => wc_format_decimal($order->get_total(), 2),
-            'quote_id' => $order->get_meta('_ge_commercial_quote_id', true),
-            'quote_version' => $order->get_meta('_ge_commercial_quote_version', true),
+            'quote_id' => $canonical_identifiers ? (string)$order->get_meta('_ge_commercial_quote_id', true) : $order->get_meta('_ge_commercial_quote_id', true),
+            'quote_version' => $canonical_identifiers ? (string)$order->get_meta('_ge_commercial_quote_version', true) : $order->get_meta('_ge_commercial_quote_version', true),
             'snapshot' => $order->get_meta('_ge_commercial_quote_snapshot', true),
             'terms' => $order->get_meta(GE_WTP_Payment_Policy::META, true), 'items'=>$items
         )));

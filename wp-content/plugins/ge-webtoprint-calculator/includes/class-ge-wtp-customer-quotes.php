@@ -45,6 +45,10 @@ final class GE_WTP_Customer_Quotes {
     }
 
     public static function stage_label( $order ) {
+        $executed=$order->get_meta('_ge_historical_execution_confirmed',true);
+        if(is_array($executed) && !empty($executed['full_scope']))return GE_WTP_Order_Lifecycle::label($order);
+        $commercial=$order->get_meta('_ge_commercial_followup_state',true);$commercial_labels=array('presented'=>'Presupuesto presentado','consultation'=>'En consulta','discarded'=>'Descartado por ahora','confirmed'=>'Aprobado');if(isset($commercial_labels[$commercial]))return $commercial_labels[$commercial];
+        if($order->get_meta('_ge_historical_scope_order_id',true))return 'Realizado parcialmente';
         $labels = array( 'files_pending' => 'Esperando archivos', 'submitted' => 'En revisión', 'approved_for_production' => 'Aprobado para producción' );
         return $labels[ $order->get_meta( self::STAGE_META, true ) ] ?? 'Presupuesto';
     }
