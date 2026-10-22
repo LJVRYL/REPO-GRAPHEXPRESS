@@ -50,12 +50,14 @@ final class GE_WTP_Work_Reconciliation {
     public static function validate($input) {
         if(!is_array($input) || ($input['schema_version']??null)!==1 || ($input['organization_id']??'')!==GE_Organization::PRIMARY || !preg_match('/^[a-f0-9]{64}$/D',$input['source_sha256']??'') || !isset($input['rows']) || !is_array($input['rows']) || count($input['rows'])<1 || count($input['rows'])>self::LIMIT)throw new InvalidArgumentException('Archivo de conciliación inválido.');
         $rows=array();$seen=array();$refs=array();$fingerprints=array();$enums=self::enums();
-        $allowed=array('key','customer','reference','order_id','quote_id','commercial','production','delivery','payment','reference_cents','performed_cents','collected_cents','note','declarant');
+        $allowed=array('key','customer','reference','order_id','quote_id','commercial','production','delivery','payment','currency','reference_cents','performed_cents','collected_cents','note','declarant');
         foreach($input['rows'] as $r) {
             if(!is_array($r) || array_diff(array_keys($r),$allowed))throw new InvalidArgumentException('Campos de conciliación no admitidos.');
             $key=self::text($r['key']??'',100);
             if(!preg_match('/^[a-z0-9-]+$/D',$key) || isset($seen[$key]))throw new InvalidArgumentException('Identificador vacío o duplicado.');
             $seen[$key]=true;$row=array('key'=>$key);
+            $row['currency']=$r['currency']??'ARS';
+            if(!in_array($row['currency'],array('ARS','USD'),true))throw new InvalidArgumentException('Moneda de conciliación inválida.');
             foreach(array('customer'=>180,'reference'=>240,'note'=>1200,'declarant'=>100) as $field=>$limit)$row[$field]=self::text($r[$field]??'',$limit);
             if(!$row['customer'] || !$row['declarant'])throw new InvalidArgumentException('Falta cliente o persona que confirmó el estado.');
             foreach($enums as $field=>$values) {if(!isset($values[$r[$field]??'']))throw new InvalidArgumentException('Estado de conciliación inválido.');$row[$field]=$r[$field];}
@@ -189,7 +191,7 @@ final class GE_WTP_Work_Reconciliation {
         }
         echo '</details></main>';
     }
-    private static function amount($cents) {return $cents===null?'Sin importe confirmado':GE_WTP_Commercial_Quote_UI::money($cents);}
+    private static function amount($cents,$currency='ARS') {return $cents===null?'Sin importe confirmado':($currency==='ARS'?GE_WTP_Commercial_Quote_UI::money($cents):$currency.' '.number_format($cents/100,2,',','.'));}
     private static function table($rows) {
         $enums=self::enums();echo '<div style="overflow:auto"><table class="widefat striped"><thead><tr><th>Trabajo</th><th>Situación</th><th>Producción</th><th>Entrega</th><th>Cobro declarado</th><th>Alcance e importes</th></tr></thead><tbody>';
         foreach($rows as $r) {
@@ -197,7 +199,8 @@ final class GE_WTP_Work_Reconciliation {
             if($r['order_id'])echo '<br><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('orders',array('order_id'=>$r['order_id']))).'">Pedido original</a>';
             if($r['quote_id'])echo '<br><a href="'.esc_url(GE_WTP_Staff_Portal::portal_url('quotes',array('quote_id'=>$r['quote_id']))).'">Presupuesto original</a>';
             echo '</td>';foreach(array('commercial','production','delivery','payment') as $field)echo '<td>'.esc_html($enums[$field][$r[$field]]).'</td>';
-            echo '<td>'.esc_html($r['note']).'<br>Referencia: '.esc_html(self::amount($r['reference_cents'])).'<br>Realizado: '.esc_html(self::amount($r['performed_cents'])).'<br>Cobrado: '.esc_html(self::amount($r['collected_cents'])).'<br><small>Confirmado por '.esc_html($r['declarant']).'</small></td></tr>';
+            $currency=$r['currency']??'ARS';
+            echo '<td>'.esc_html($r['note']).'<br>Referencia: '.esc_html(self::amount($r['reference_cents'],$currency)).'<br>Realizado: '.esc_html(self::amount($r['performed_cents'],$currency)).'<br>Cobrado: '.esc_html(self::amount($r['collected_cents'],$currency)).'<br><small>Confirmado por '.esc_html($r['declarant']).'</small></td></tr>';
         }
         echo '</tbody></table></div><p>Los importes no se suman: puede haber presupuestos parciales o varios trabajos incluidos en una misma factura.</p>';
     }

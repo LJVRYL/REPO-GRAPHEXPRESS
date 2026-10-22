@@ -49,6 +49,10 @@ $doc=array('schema_version'=>1,'organization_id'=>'graph-express','source_sha256
 $validated=GE_WTP_Work_Reconciliation::validate($doc);
 check(count($validated['rows'])===1,'one validated declaration');
 check(count($validated['source_fingerprints'])===1,'source fingerprint');
+check($validated['rows'][0]['currency']==='ARS','legacy declarations default ARS');
+$usd=$doc;$usd['rows'][0]['currency']='USD';check(GE_WTP_Work_Reconciliation::validate($usd)['rows'][0]['currency']==='USD','USD declaration preserved');
+$amount_method=new ReflectionMethod('GE_WTP_Work_Reconciliation','amount');$amount_method->setAccessible(true);check($amount_method->invoke(null,659218,'USD')==='USD 6.592,18','USD displayed without ARS conversion');
+$bad=$doc;$bad['rows'][0]['currency']='EUR';rejects(function()use($bad){GE_WTP_Work_Reconciliation::validate($bad);},'unsupported currency');
 check(GE_WTP_Work_Reconciliation::current()['rows']===array(),'initial empty');
 foreach(array('order_id','quote_id') as $field)foreach(array(99,98,404) as $id){$bad=$doc;$bad['rows'][0][$field]=$id;rejects(function()use($bad){GE_WTP_Work_Reconciliation::validate($bad);},'foreign or missing '.$field);}
 $bad=$doc;$bad['rows'][0]['order_id']=97;rejects(function()use($bad){GE_WTP_Work_Reconciliation::validate($bad);},'payment attempt');
