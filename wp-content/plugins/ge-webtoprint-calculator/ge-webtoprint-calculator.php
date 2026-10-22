@@ -123,11 +123,26 @@ GE_WTP_Deco_Artist_Commerce::init();
 GE_WTP_Payments::init();
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-business-export.php';
 GE_WTP_Business_Export::init();
-require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-work-reconciliation.php';
-GE_WTP_Work_Reconciliation::init();
 
 // Scoped additive card configuration and native CCAC draft access.
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-unlaminated-cards.php';
 GE_WTP_Unlaminated_Cards::init();
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-ccac-native-api.php';
 GE_WTP_CCAC_Native_API::init();
+
+// Historical standalone UI withdrawn; retain stored declaration history without loading it.
+add_action('template_redirect', static function () {
+    if (is_page('gestion') && isset($_GET['ge_work_reconciliation'])) {
+        nocache_headers();
+        wp_die('Acceso no disponible.', '', array('response' => 403));
+    }
+}, 0);
+foreach (array('ge_organization_reconciliation_save', 'ge_organization_reconciliation_download') as $ge_retired_action) {
+    foreach (array('admin_post_', 'admin_post_nopriv_') as $ge_retired_prefix) {
+        add_action($ge_retired_prefix . $ge_retired_action, static function () {
+            nocache_headers();
+            wp_die('Acceso no disponible.', '', array('response' => 403));
+        });
+    }
+}
+unset($ge_retired_action, $ge_retired_prefix);
