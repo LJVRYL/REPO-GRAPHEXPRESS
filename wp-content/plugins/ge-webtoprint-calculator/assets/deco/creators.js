@@ -67,6 +67,10 @@
  $('gc-drive-pick').onclick=()=>{try{importData();picker().catch(error=>{$('gc-import-error').textContent=error.message||'No pudimos abrir Drive. Probá nuevamente.'})}catch(error){$('gc-import-error').textContent=error.message}};
  async function response(response){const data=await response.json();if(!response.ok)throw Error(errors[data.code]||data.data?.message||'No pudimos subir la imagen.');return data}
  // Selecting a file never starts a transfer before the artist confirms the details.
+ // Old HTML can still be in flight while the new script is published.
+ const fileInput=$('gc-file');
+ if(!$('gc-file-status')){const hint=node('p','Elegí un archivo y completá los datos antes de subirlo.');hint.id='gc-file-status';hint.setAttribute('role','status');fileInput.insertAdjacentElement('afterend',hint);}
+ if(!$('gc-upload-submit')){const submit=node('button','Subir a mi galería','gc-primary');submit.id='gc-upload-submit';submit.type='button';submit.disabled=!fileInput.files.length;$('gc-file-status').insertAdjacentElement('afterend',submit);}
  let pendingUpload=null;
  $('gc-file').onchange=()=>{
   const file=$('gc-file').files[0];pendingUpload=null;$('gc-import-error').textContent='';$('gc-upload-progress').textContent='';
