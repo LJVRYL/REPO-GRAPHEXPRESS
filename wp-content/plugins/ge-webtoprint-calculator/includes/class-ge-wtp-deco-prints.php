@@ -32,6 +32,7 @@ final class GE_WTP_Deco_Prints {
         if (!defined('GE_DECO_PRINTS_ENABLED') || true !== GE_DECO_PRINTS_ENABLED) { throw new InvalidArgumentException('catalog_not_released'); }
         if(get_woocommerce_currency()!=='ARS')throw new InvalidArgumentException('currency_mismatch');
         $manifest = self::manifest($product_id);
+        if(0===strpos($manifest['private_asset_ref']??'','bauhaus-'))GE_WTP_Deco_Gallery::assert_available($manifest['private_asset_ref']);
         if(!empty($manifest['owner_id']) && (int)$manifest['owner_id']!==get_current_user_id())throw new InvalidArgumentException('artwork_owner_mismatch');
         $config = GE_WTP_Storefront::config($product_id);
         $artist_context=null;
@@ -93,7 +94,7 @@ final class GE_WTP_Deco_Prints {
         $root = realpath(GE_DECO_PRIVATE_ROOT); $public = realpath(ABSPATH);
         if (!$root || !$public || $root === $public || 0 === strpos($root . DIRECTORY_SEPARATOR, $public . DIRECTORY_SEPARATOR)) { throw new InvalidArgumentException('private_storage_required'); }
         $ref = $manifest['private_asset_ref'];
-        if (!is_string($ref) || !preg_match('/^(nga-[0-9]+|obra-[1-8])$/D', $ref)) { throw new InvalidArgumentException('invalid_private_asset'); }
+        if (!is_string($ref) || !preg_match('/^(nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})$/D', $ref)) { throw new InvalidArgumentException('invalid_private_asset'); }
         $folder = realpath($root . DIRECTORY_SEPARATOR . $ref);
         if (!$folder || 0 !== strpos($folder . DIRECTORY_SEPARATOR, $root . DIRECTORY_SEPARATOR)) { throw new InvalidArgumentException('invalid_private_asset'); }
         $read = static function($name) use ($folder) {
@@ -113,7 +114,8 @@ final class GE_WTP_Deco_Prints {
         if (($record['work']['pixels'] ?? null) !== $manifest['production_pixels'] || ($analysis['pixel_dimensions'] ?? null) !== $manifest['production_pixels'] || !in_array($analysis['status'] ?? '', array('analyzed', 'warning'), true) || !empty($analysis['blockers']) || ($analysis['page_count'] ?? 0) !== 1) { throw new InvalidArgumentException('invalid_private_analysis'); }
         $nga=($record['source']['id']??'')==='nga'&&($rights['openAccess']??false)===true&&($rights['imageUuid']??'')===($record['image_id']??null);
         $met=($record['source']['id']??'')==='met'&&($record['rights_evidence']['isPublicDomain']??false)===true;
-        if(!$nga&&!$met)throw new InvalidArgumentException('unapproved_artwork');
+        $licensed=0===strpos($ref,'bauhaus-')&&GE_WTP_Deco_Gallery::licensed_sales($record);
+        if(!$nga&&!$met&&!$licensed)throw new InvalidArgumentException('unapproved_artwork');
     }
     private static function requested($data) {
         return array($data['ge_configuration_key'] ?? '', $data['ge_deco_revision'] ?? '');

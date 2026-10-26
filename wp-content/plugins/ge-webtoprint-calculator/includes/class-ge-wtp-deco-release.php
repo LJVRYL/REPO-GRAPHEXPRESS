@@ -25,6 +25,7 @@ final class GE_WTP_Deco_Release {
     }
     public static function ensure_product($work_id) {
         if(!defined('GE_DECO_PRINTS_ENABLED')||GE_DECO_PRINTS_ENABLED!==true)throw new InvalidArgumentException('catalog_not_released');
+        GE_WTP_Deco_Gallery::assert_available($work_id);
         $policy=self::policy();$owner=0;$artist_context=null;
         if(0===strpos($work_id,'autor-')){
             $source=GE_WTP_Deco_Artist_Commerce::source($work_id);$artist_context=GE_WTP_Deco_Artist_Commerce::context($source['row']);
@@ -33,7 +34,7 @@ final class GE_WTP_Deco_Release {
         }elseif(0===strpos($work_id,'tu-imagen-')){
             $source=GE_WTP_Deco_Uploads::source($work_id);$owner=get_current_user_id();$pixels=$source['pixels'];$sha=$source['sha256'];$title='Tu cuadro personalizado';$rights='customer-library:'.$source['artwork_id'];$analyzer=$source['analysis']['analysis_id'];
         }else{
-            $record=GE_WTP_Deco_Gallery::record($work_id,true);if(!$record)throw new InvalidArgumentException('analysis_required');$pixels=$record['work']['pixels'];$sha=$record['source_sha256'];$title=$record['work']['title'];$rights='museum-record:'.$work_id;$analyzer='private-analysis:'.$sha;
+            $record=GE_WTP_Deco_Gallery::record($work_id,true);if(!$record)throw new InvalidArgumentException('analysis_required');if(0===strpos($work_id,'bauhaus-')&&!GE_WTP_Deco_Gallery::licensed_sales($record))throw new InvalidArgumentException('artwork_sales_unavailable');$pixels=$record['work']['pixels'];$sha=$record['source_sha256'];$title=$record['work']['title'];$rights=(0===strpos($work_id,'bauhaus-')?'licensed-record:':'museum-record:').$work_id;$analyzer='private-analysis:'.$sha;
         }
         $manifest=array('revision'=>hash('sha256',wp_json_encode($policy).':'.$sha),'rights_status'=>'approved','rights_evidence_ref'=>$rights,'artwork_id'=>$work_id,'production_sha256'=>$sha,'production_pixels'=>$pixels,'private_asset_ref'=>$work_id,'analyzer_ref'=>$analyzer,'frame_asset_use_ref'=>$policy['frame_asset_use_ref']??$policy['frame_image_permission_ref'],'freight_policy'=>$policy['freight_policy']??array(),'options'=>array(),'owner_id'=>$owner);
         if($artist_context){$manifest['artist_context']=$artist_context;$manifest['artist_id']=$artist_context['artist_id'];$manifest['revision']=hash('sha256',$manifest['revision'].wp_json_encode($artist_context));}
