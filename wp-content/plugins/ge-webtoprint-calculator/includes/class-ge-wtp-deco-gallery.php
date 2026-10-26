@@ -41,9 +41,11 @@ final class GE_WTP_Deco_Gallery {
         $cached=is_array($data)?$data:array();return $cached;
     }
     public static function works() {
+        // Registry is already immutable for this request; index it only once.
+        static $cached=null;if(null!==$cached)return $cached;
         $works = array();
         foreach (self::registry()['works'] ?? array() as $work) { $works[$work['id']] = $work; }
-        return $works;
+        $cached=$works;return $cached;
     }
     public static function options() {
         return self::catalog()['options']??array();
