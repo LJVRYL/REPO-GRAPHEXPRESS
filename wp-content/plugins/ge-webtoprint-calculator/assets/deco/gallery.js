@@ -9,10 +9,10 @@
  async function json(url,options={}){if(runtime){url=url.startsWith('/api/')?runtime.apiBase+url.slice(4):asset(url);options.headers={...options.headers,'X-WP-Nonce':runtime.wpNonce}}const response=await fetch(url,{credentials:'same-origin',...options,signal:AbortSignal.timeout(20000)});const result=await response.json();if(!response.ok)throw Error(response.status===429?'Estamos preparando otra imagen. Probá nuevamente en un momento.':result.code==='catalog_not_released'?'Esta obra todavía no está disponible para comprar.':'No pudimos completar esta acción. Probá nuevamente.');return result}
  const ready=(async()=>{
   try{
-   data=await json('galleries.json');
+   data=await json('galleries.json'+(runtime?.catalogRevision?'?v='+runtime.catalogRevision:''));
    try{const creators=await json('/api/creators');data.works.push(...creators.works||[]);data.collections.push(...creators.collections||[])}catch{}
    if(runtime?.commerce){try{const released=await json('/api/options');activeOptions=new Set(released.option_ids||[]);commerceAvailable=released.commerce_available===true;publicPrices=released.unit_prices_cents||{};handling=released.handling_cents||{}}catch{activeOptions=new Set();commerceAvailable=false}}
-   for(const incoming of data.works){incoming.image=asset(incoming.image);const existing=C.works.find(w=>w.id===incoming.id);const w=existing?Object.assign(existing,incoming):incoming;w.remote=/^(artic|met|nga)-\d+$/.test(w.id)||w.creator_showcase===true;if(!existing)C.works.push(w)}
+   for(const incoming of data.works){incoming.image=asset(incoming.image);const existing=C.works.find(w=>w.id===incoming.id);const w=existing?Object.assign(existing,incoming):incoming;w.remote=/^(artic|met|nga|bauhaus)-\d+$/.test(w.id)||w.creator_showcase===true;if(!existing)C.works.push(w)}
    try{const cached=await json('/api/artworks/prepared');for(const work of cached.works||[]){const existing=C.works.find(w=>w.id===work.id);if(existing&&existing.imageId===work.imageId)Object.assign(existing,work,{remote:true})}}catch{}
   }catch{data={collections:[{id:'destacadas',name:'Elegidas por Graphex',cover:C.works[0].id,count:C.works.length}],sources:[]};for(const w of C.works)w.collections=['destacadas'];}
  })();

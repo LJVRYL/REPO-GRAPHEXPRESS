@@ -72,7 +72,7 @@ final class GE_WTP_Deco_Proofs {
         foreach($order->get_items() as $item){
             $snapshot=$item->get_meta('_ge_deco_snapshot',true);if(!$snapshot)continue;
             $ref=$snapshot['private_asset_ref']??'';
-            if(!is_string($ref)||!preg_match('/^(nga-[0-9]+|obra-[1-8]|tu-imagen-[a-f0-9]{32}|autor-[1-9][0-9]*-v[1-9][0-9]*)$/D',$ref))throw new InvalidArgumentException('unregistered_private_asset');
+            if(!is_string($ref)||!preg_match('/^(nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3}|tu-imagen-[a-f0-9]{32}|autor-[1-9][0-9]*-v[1-9][0-9]*)$/D',$ref))throw new InvalidArgumentException('unregistered_private_asset');
             GE_WTP_Deco_Prints::verify_asset($snapshot);
             $path=0===strpos($ref,'autor-')?GE_WTP_Deco_Artist_Commerce::source($ref,true)['path']:(0===strpos($ref,'tu-imagen-')?GE_WTP_Deco_Uploads::source($ref)['path']:GE_WTP_Deco_Gallery::root().'/'.$ref.'/print-master.jpg');
             $rows[]=array('item_id'=>$item->get_id(),'work_id'=>$snapshot['artwork_id'],'source_path'=>$path,'source_sha256'=>$snapshot['production_sha256'],'snapshot_sha256'=>self::fingerprint($snapshot),'print_mm'=>$snapshot['composition']['print_mm'],'fit'=>$snapshot['composition']['fit']);

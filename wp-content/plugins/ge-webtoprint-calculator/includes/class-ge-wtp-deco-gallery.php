@@ -63,7 +63,7 @@ final class GE_WTP_Deco_Gallery {
         return $root;
     }
     public static function folder($id) {
-        if (!is_string($id) || !preg_match('/^(nga-[0-9]+|obra-[1-8])$/D', $id) || !isset(self::works()[$id])) { throw new InvalidArgumentException('unknown_artwork'); }
+        if (!is_string($id) || !preg_match('/^(nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})$/D', $id) || !isset(self::works()[$id])) { throw new InvalidArgumentException('unknown_artwork'); }
         return self::root() . DIRECTORY_SEPARATOR . $id;
     }
     public static function record($id, $verify = false) {
@@ -82,8 +82,19 @@ final class GE_WTP_Deco_Gallery {
     public static function public_work($record) {
         $work = self::works()[$record['work']['id']];
         $work['pixels'] = $record['work']['pixels']; $work['verified'] = true; $work['status'] = 'ready';
+        if (0 === strpos($work['id'], 'bauhaus-')) { $work['sales_enabled'] = self::licensed_sales($record); }
         $work['image'] = rest_url(self::NS . '/artworks/' . $work['id'] . '/preview');
         return $work;
+    }
+    /** Licensed packs never inherit museum Open Access approval. */
+    public static function licensed_sales($record) {
+        $id=$record['work']['id']??'';
+        if(!is_string($id)||!preg_match('/^bauhaus-[0-9]{3}$/D',$id)||!isset(self::works()[$id]))return false;
+        $rights=$record['rights_evidence']??array();$expected=$rights['evidence_sha256']??'';
+        if(($record['source']['id']??'')!=='graphex-pack'||($rights['physical_print_sales']??false)!==true||!is_string($expected)||!preg_match('/^[a-f0-9]{64}$/D',$expected)||empty($rights['reviewed_at']))return false;
+        if(($rights['image_sha256']??'')!==($record['image_id']??null)||($record['image_id']??null)!==(self::works()[$id]['imageId']??null))return false;
+        $evidence=self::folder($id).'/license-evidence.txt';
+        return is_file($evidence)&&!is_link($evidence)&&hash_file('sha256',$evidence)===$expected;
     }
     public static function routes() {
         $read = array('methods'=>'GET','callback'=>array(__CLASS__,'dispatch'),'permission_callback'=>'__return_true');
@@ -91,9 +102,9 @@ final class GE_WTP_Deco_Gallery {
         register_rest_route(self::NS, '/session', $read);
         register_rest_route(self::NS, '/options', $read);
         register_rest_route(self::NS, '/artworks/prepared', $read);
-        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8])', $read);
-        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8])/preview', $read);
-        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8])/(?P<operation>prepare|selection)', $write);
+        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})', $read);
+        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})/preview', $read);
+        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})/(?P<operation>prepare|selection)', $write);
         register_rest_route(self::NS, '/cart', $write);
     }
     public static function write_permission($request) {
@@ -227,12 +238,12 @@ final class GE_WTP_Deco_Gallery {
         if(!$artists&&get_post_meta(get_queried_object_id(),'_ge_deco_gallery',true)!=='yes')return;
         $file=self::assets().($artists?'artists.html':'index.html');if(!is_file($file)){status_header(503);exit;}
         $asset_base=GE_WTP_PLUGIN_URL.'assets/deco/';
-        $runtime=array('apiBase'=>rest_url(self::NS),'assetBase'=>$asset_base,'wpNonce'=>wp_create_nonce('wp_rest'),'commerce'=>defined('GE_DECO_PRINTS_ENABLED')&&GE_DECO_PRINTS_ENABLED===true,'retailTransferDiscount'=>((get_option('ge_deco_commercial_release',array())['checkout_pricing']['rule']??'')===GE_WTP_Deco_Payments::RETAIL_RULE),'accountUrl'=>wc_get_page_permalink('myaccount'),'creatorPortalUrl'=>GE_WTP_Deco_Creators::enabled()?GE_WTP_Portal::portal_url('mi-galeria'):'');
+        $runtime=array('catalogRevision'=>hash_file('sha256',self::assets().'galleries.json'),'apiBase'=>rest_url(self::NS),'assetBase'=>$asset_base,'wpNonce'=>wp_create_nonce('wp_rest'),'commerce'=>defined('GE_DECO_PRINTS_ENABLED')&&GE_DECO_PRINTS_ENABLED===true,'retailTransferDiscount'=>((get_option('ge_deco_commercial_release',array())['checkout_pricing']['rule']??'')===GE_WTP_Deco_Payments::RETAIL_RULE),'accountUrl'=>wc_get_page_permalink('myaccount'),'creatorPortalUrl'=>GE_WTP_Deco_Creators::enabled()?GE_WTP_Portal::portal_url('mi-galeria'):'');
         $nonce=base64_encode(random_bytes(18));
         nocache_headers();header("Content-Security-Policy: default-src 'self'; img-src 'self' https://api.nga.gov https://images.metmuseum.org blob: data:; script-src 'self' 'nonce-".$nonce."'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
         $head='<script nonce="'.esc_attr($nonce).'">window.GRAPHEX_RUNTIME='.wp_json_encode($runtime,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT).';</script>';
         if($artists){$head.='<link rel="canonical" href="'.esc_url(get_permalink()).'"><meta property="og:type" content="website"><meta property="og:title" content="Tu arte, en más paredes · Graphex Prints"><meta property="og:description" content="Creá tu galería, compartí tus obras y definí su valor. Graphex se ocupa de imprimir y enmarcar."><meta property="og:url" content="'.esc_url(get_permalink()).'"><meta property="og:image" content="'.esc_url($asset_base.'assets/obra-1.jpg').'">';}
-        $html=preg_replace_callback('/(src|href)="((?:assets\/)?[^"#:]+\.(?:js|css|svg|webp|jpg|png))"/',static function($match)use($asset_base){return $match[1].'="'.esc_url($asset_base.$match[2]).'"';},file_get_contents($file));
+        $html=preg_replace_callback('/(src|href)="((?:assets\/)?[^"#:]+\.(?:js|css|svg|webp|jpg|png))"/',static function($match)use($asset_base){$path=self::assets().$match[2];$version=is_file($path)&&preg_match('/\.(?:js|css)$/',$path)?'?v='.filemtime($path):'';return $match[1].'="'.esc_url($asset_base.$match[2].$version).'"';},file_get_contents($file));
         echo str_replace('<head>','<head>'.$head,$html);exit;
     }
 }

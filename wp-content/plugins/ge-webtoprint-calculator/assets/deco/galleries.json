@@ -49,6 +49,12 @@
       "name": "Fotografía",
       "count": 24,
       "cover": "nga-139524"
+    },
+    {
+      "id": "bauhaus",
+      "name": "Bauhaus",
+      "count": 51,
+      "cover": "bauhaus-001"
     }
   ],
   "works": [
@@ -6619,6 +6625,873 @@
           "1894"
         ]
       }
+    },
+    {
+      "id": "bauhaus-001",
+      "imageId": "2399c3d23cc685577801a8d2d5629d6c89bf7d681ce11fa1c37d771622401212",
+      "title": "Bauhaus 01",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-001.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-002",
+      "imageId": "af5a1ff975116e18185fc8627ecba103ee60dce66a73544a7da82fb44b7e3061",
+      "title": "Bauhaus 02",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-002.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-003",
+      "imageId": "e41daed771bade809961164509a97238826b2adaa74b4b2dc68bd8caa73e2772",
+      "title": "Bauhaus 03",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-003.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-004",
+      "imageId": "dfc49599edfa99192af452432f11ac704d0472ef65b6f365f203516117e23a9f",
+      "title": "Bauhaus 04",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-004.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-005",
+      "imageId": "cb917812af693e5529d5c3650a64d1a71fa0e348c3658da1fd153e902ccfec6a",
+      "title": "Bauhaus 05",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-005.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-006",
+      "imageId": "a990d8c707236707e0a1184c226d9a614c010dfc2d01ea703ef14e56386943cb",
+      "title": "Bauhaus 06",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-006.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-007",
+      "imageId": "c9f02cf67c2b703f4a1f8cc2c99c4fda0f56e2096d72baf2ee79784fa33ee61e",
+      "title": "Bauhaus 07",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-007.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-008",
+      "imageId": "8fa996c88e77ccf9e26a917dcfdb7a5e87a364cf71625ab63931737e6d673323",
+      "title": "Bauhaus 08",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-008.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-009",
+      "imageId": "823ac6fe4649d63a60491a3b9c7c567d37da28790e04088aca64ee24ddacebde",
+      "title": "Bauhaus 09",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8269
+      ],
+      "image": "assets/bauhaus/bauhaus-009.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-010",
+      "imageId": "0607028905aa70e5ddf9a2e3b35607d486558868641a375d68922f26930c8b74",
+      "title": "Bauhaus 10",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-010.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-011",
+      "imageId": "d7d15cc0c6bb5af102f9000669d144199bda37c601d4cd2d53f0a2d2a6ced549",
+      "title": "Bauhaus 11",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-011.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-012",
+      "imageId": "e2857d670bd4fd4e79dbdab7bd0b0052130d3bc563b53a86326c33f70378f022",
+      "title": "Bauhaus 12",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5916,
+        8282
+      ],
+      "image": "assets/bauhaus/bauhaus-012.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-013",
+      "imageId": "b5fc93a7114d7c684ab43521f190d5a8b6e815a3a7f8f1ea461843a226cfa4f5",
+      "title": "Bauhaus 13",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-013.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-014",
+      "imageId": "39d0f6d22af3c23f2948d8447ee030668c4f644870cb9567f9acca9f757a027f",
+      "title": "Bauhaus 14",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-014.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-015",
+      "imageId": "c76bfa6325b8296805df99863785c026017f713db01b5e52dfbced964ff7b709",
+      "title": "Bauhaus 15",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8269
+      ],
+      "image": "assets/bauhaus/bauhaus-015.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-016",
+      "imageId": "0f6fd2754e90594346c992878dbe177df49376170b7e365343cecaba80edf953",
+      "title": "Bauhaus 16",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-016.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-017",
+      "imageId": "0825be46331ced40982a36827e2101485c2762de07d9b710259ef18dc39dd669",
+      "title": "Bauhaus 17",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-017.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-018",
+      "imageId": "c574b62c87d7c850b0c55324f7fb9344deb0343d492c17a2cdebf4ede72f3bc0",
+      "title": "Bauhaus 18",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-018.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-019",
+      "imageId": "0e8d16eb95016f89fe8995f33dd1041c5c53a0522c20f94b828dc7691ca9616b",
+      "title": "Bauhaus 19",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5916,
+        8282
+      ],
+      "image": "assets/bauhaus/bauhaus-019.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-020",
+      "imageId": "5acf0df56b5e63eb559af3bf6eeb987d28ff5d2b69813afe98512f122bdce8c3",
+      "title": "Bauhaus 20",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-020.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-021",
+      "imageId": "bb6014e8e343ac08077416d2dabd9e138e0b9ca8b22fbad8e5e4b7ecc2dc6e89",
+      "title": "Bauhaus 21",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        8268,
+        5906
+      ],
+      "image": "assets/bauhaus/bauhaus-021.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-022",
+      "imageId": "e34fbe2b77a30177330e2a1f17067873845d4aac00d3b69c399f2a650bf8dba6",
+      "title": "Bauhaus 22",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-022.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-023",
+      "imageId": "e91b91c13c341b6e32e85425cf9ed8d37585aecfa4a1179e4778f8e0cef6afa0",
+      "title": "Bauhaus 23",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-023.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-024",
+      "imageId": "226fd5a8499c78b9edc4319d230d1b2a15f98522a0ab1d6207a2eacc90044683",
+      "title": "Bauhaus 24",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-024.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-025",
+      "imageId": "4c8d7f912cd70711c147eeba9146874de31ab6834fb965e027f9141020993461",
+      "title": "Bauhaus 25",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-025.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-026",
+      "imageId": "5dcec3856b94ac98b8aa5cf6055804c9601c12372ae53ce17ddf706e20e5efbc",
+      "title": "Bauhaus 26",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-026.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-027",
+      "imageId": "4aa651183498cef3e2f31a05a24d0e1583dcfcf2b7fdca164e298066ff93f48a",
+      "title": "Bauhaus 27",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-027.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-028",
+      "imageId": "23924ad809ddfbedda38dad1f78a43963e08c758e739fe9778353eecdc008fad",
+      "title": "Bauhaus 28",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-028.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-029",
+      "imageId": "00788697d33f02e68c432d929b8a58a8156d242dc5e8097d602728b92f36b83d",
+      "title": "Bauhaus 29",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-029.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-030",
+      "imageId": "c7de7dc76641390de7893e2e527fec8c3152e735bd29cb5b76a5c2dfd86f3d11",
+      "title": "Bauhaus 30",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-030.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-031",
+      "imageId": "1fee242b52ad5f0fa30ee8d9298d03810251cba6833f2438649507452cad0f5e",
+      "title": "Bauhaus 31",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-031.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-032",
+      "imageId": "16acfee788424e126c333e4501098de9e07a811ccb58d5c1a125c315abb820df",
+      "title": "Bauhaus 32",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-032.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-033",
+      "imageId": "0bf0889ef82c10a73257ac84e8d9dc1adb0a042202418250437fe5300d89f651",
+      "title": "Bauhaus 33",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-033.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-034",
+      "imageId": "a0fb84378ecafb534df54b2d1f511f5c733a59bc2b030be02f74385c026d49ff",
+      "title": "Bauhaus 34",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-034.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-035",
+      "imageId": "d8c603cb58559c443cc24274e9073088797e80eec6d92477fef4592b7d00c4aa",
+      "title": "Bauhaus 35",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-035.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-036",
+      "imageId": "971963826e88b4f2dd4bfc6d0bc9ce0b9d08d161f5e821ba2dc8b23196ecfe54",
+      "title": "Bauhaus 36",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-036.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-037",
+      "imageId": "21c1621f5868486764fb1229256a64e855c52f3c9ec471155f6fd9d116ac5d4c",
+      "title": "Bauhaus 37",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-037.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-038",
+      "imageId": "7d4ccdee2b79359b559c4e6dbd083060123628337098fbafa61e450ac72f29fb",
+      "title": "Bauhaus 38",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-038.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-039",
+      "imageId": "36d262424620fb0f522a181f53493e0d55fee5c5781876a850e53ecb589717e2",
+      "title": "Bauhaus 39",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-039.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-040",
+      "imageId": "ecf2417544a99f1f368ecd0c3da1ab75679ba6dcdcb4ad4bbdc6667ff11d7f9a",
+      "title": "Bauhaus 40",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-040.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-041",
+      "imageId": "38a70c491e747928a72b75be4b4c031506f6301b81fae44525c70702d035ce87",
+      "title": "Bauhaus 41",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-041.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-042",
+      "imageId": "5021478b371ee566e5834ca0b864bf8119a1e00884bc4e33d9d02ddcd76a705c",
+      "title": "Bauhaus 42",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-042.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-043",
+      "imageId": "0de520c70796a9deb332db4cc7374063b0775ffad112b1fee6947c5501219484",
+      "title": "Bauhaus 43",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-043.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-044",
+      "imageId": "5d38d70a73a4273122e960cd190a82c72c0db30ee20cda7ea22dc71a5071daed",
+      "title": "Bauhaus 44",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-044.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-045",
+      "imageId": "12cf0b663441dce41931d4b2b7507405b0a10b702052c280c5c362c396193a51",
+      "title": "Bauhaus 45",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-045.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-046",
+      "imageId": "d4c4b5da1114cb8dd611a08f859b0252575e1fec3f05edc3374c1aecc18c08a3",
+      "title": "Bauhaus 46",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-046.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-047",
+      "imageId": "4d53bf1fca133dbf02ed60990e65408f9851076ebb7dc5de6b5aa043b53a31b8",
+      "title": "Bauhaus 47",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-047.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-048",
+      "imageId": "576e58066ee8d433b6772db2d4547972b086e1df5966889201c500a588d8094f",
+      "title": "Bauhaus 48",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-048.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-049",
+      "imageId": "6dd3c8e6be1859d1d127ba225ed3ca3bb8c019198a6a757ea40588da2cb30e4b",
+      "title": "Bauhaus 49",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-049.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-050",
+      "imageId": "338da56fc3bac9627378779ab77fedc4583d3938f399bc77afcaa602d335e8ed",
+      "title": "Bauhaus 50",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5906,
+        8268
+      ],
+      "image": "assets/bauhaus/bauhaus-050.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
+    },
+    {
+      "id": "bauhaus-051",
+      "imageId": "896e4d2591cc2cabde90e5507648c4d4ee4bb337455be2f3c1dbde0129e83e80",
+      "title": "Bauhaus 51",
+      "artist": "Colección Bauhaus",
+      "category": "Bauhaus",
+      "pixels": [
+        5885,
+        8325
+      ],
+      "image": "assets/bauhaus/bauhaus-051.webp",
+      "collections": [
+        "bauhaus"
+      ],
+      "status": "pending",
+      "sales_enabled": true
     }
   ],
   "sources": [
