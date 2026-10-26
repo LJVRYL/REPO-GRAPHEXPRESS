@@ -41,9 +41,11 @@ final class GE_WTP_Deco_Gallery {
         $cached=is_array($data)?$data:array();return $cached;
     }
     public static function works() {
+        // Registry is already immutable for this request; index it only once.
+        static $cached=null;if(null!==$cached)return $cached;
         $works = array();
         foreach (self::registry()['works'] ?? array() as $work) { $works[$work['id']] = $work; }
-        return $works;
+        $cached=$works;return $cached;
     }
     public static function options() {
         return self::catalog()['options']??array();
@@ -62,8 +64,11 @@ final class GE_WTP_Deco_Gallery {
         if (!$root || !$public || $root === $public || 0 === strpos($root . DIRECTORY_SEPARATOR, $public . DIRECTORY_SEPARATOR)) { throw new InvalidArgumentException('private_storage_required'); }
         return $root;
     }
+    public static function is_licensed_pack_id($id) {
+        return is_string($id) && preg_match('/^(bauhaus-[0-9]{3}|trendy-[0-9]{4})$/D', $id) === 1;
+    }
     public static function folder($id) {
-        if (!is_string($id) || !preg_match('/^(nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})$/D', $id) || !isset(self::works()[$id])) { throw new InvalidArgumentException('unknown_artwork'); }
+        if (!is_string($id) || !preg_match('/^(nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3}|trendy-[0-9]{4})$/D', $id) || !isset(self::works()[$id])) { throw new InvalidArgumentException('unknown_artwork'); }
         return self::root() . DIRECTORY_SEPARATOR . $id;
     }
     public static function record($id, $verify = false) {
@@ -82,20 +87,20 @@ final class GE_WTP_Deco_Gallery {
     public static function public_work($record) {
         $work = self::works()[$record['work']['id']];
         $work['pixels'] = $record['work']['pixels']; $work['verified'] = true; $work['status'] = 'ready';
-        if (0 === strpos($work['id'], 'bauhaus-')) { $work['sales_enabled'] = empty($work['catalog_hidden']) && ($work['sales_enabled']??false)===true && self::licensed_sales($record); }
+        if (self::is_licensed_pack_id($work['id'])) { $work['sales_enabled'] = empty($work['catalog_hidden']) && ($work['sales_enabled']??false)===true && self::licensed_sales($record); }
         $work['image'] = rest_url(self::NS . '/artworks/' . $work['id'] . '/preview');
         return $work;
     }
     /** Withdrawal blocks new transactions while immutable order sources stay resolvable. */
     public static function assert_available($id) {
-        if(!is_string($id)||0!==strpos($id,'bauhaus-'))return;
+        if(!self::is_licensed_pack_id($id))return;
         $work=self::works()[$id]??null;
         if(!$work||!empty($work['catalog_hidden'])||($work['sales_enabled']??false)!==true)throw new InvalidArgumentException('artwork_sales_unavailable');
     }
     /** Licensed packs never inherit museum Open Access approval. */
     public static function licensed_sales($record) {
         $id=$record['work']['id']??'';
-        if(!is_string($id)||!preg_match('/^bauhaus-[0-9]{3}$/D',$id)||!isset(self::works()[$id]))return false;
+        if(!self::is_licensed_pack_id($id)||!isset(self::works()[$id]))return false;
         $rights=$record['rights_evidence']??array();$expected=$rights['evidence_sha256']??'';
         if(($record['source']['id']??'')!=='graphex-pack'||($rights['physical_print_sales']??false)!==true||!is_string($expected)||!preg_match('/^[a-f0-9]{64}$/D',$expected)||empty($rights['reviewed_at']))return false;
         if(($rights['image_sha256']??'')!==($record['image_id']??null)||($record['image_id']??null)!==(self::works()[$id]['imageId']??null))return false;
@@ -108,9 +113,9 @@ final class GE_WTP_Deco_Gallery {
         register_rest_route(self::NS, '/session', $read);
         register_rest_route(self::NS, '/options', $read);
         register_rest_route(self::NS, '/artworks/prepared', $read);
-        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})', $read);
-        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})/preview', $read);
-        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3})/(?P<operation>prepare|selection)', $write);
+        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3}|trendy-[0-9]{4})', $read);
+        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3}|trendy-[0-9]{4})/preview', $read);
+        register_rest_route(self::NS, '/artworks/(?P<id>nga-[0-9]+|obra-[1-8]|bauhaus-[0-9]{3}|trendy-[0-9]{4})/(?P<operation>prepare|selection)', $write);
         register_rest_route(self::NS, '/cart', $write);
     }
     public static function write_permission($request) {
