@@ -32,6 +32,7 @@ final class GE_WTP_Deco_Prints {
         if (!defined('GE_DECO_PRINTS_ENABLED') || true !== GE_DECO_PRINTS_ENABLED) { throw new InvalidArgumentException('catalog_not_released'); }
         if(get_woocommerce_currency()!=='ARS')throw new InvalidArgumentException('currency_mismatch');
         $manifest = self::manifest($product_id);
+        if(0===strpos($manifest['private_asset_ref']??'','bauhaus-'))GE_WTP_Deco_Gallery::assert_available($manifest['private_asset_ref']);
         if(!empty($manifest['owner_id']) && (int)$manifest['owner_id']!==get_current_user_id())throw new InvalidArgumentException('artwork_owner_mismatch');
         $config = GE_WTP_Storefront::config($product_id);
         $artist_context=null;

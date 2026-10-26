@@ -25,6 +25,7 @@ final class GE_WTP_Deco_Release {
     }
     public static function ensure_product($work_id) {
         if(!defined('GE_DECO_PRINTS_ENABLED')||GE_DECO_PRINTS_ENABLED!==true)throw new InvalidArgumentException('catalog_not_released');
+        GE_WTP_Deco_Gallery::assert_available($work_id);
         $policy=self::policy();$owner=0;$artist_context=null;
         if(0===strpos($work_id,'autor-')){
             $source=GE_WTP_Deco_Artist_Commerce::source($work_id);$artist_context=GE_WTP_Deco_Artist_Commerce::context($source['row']);

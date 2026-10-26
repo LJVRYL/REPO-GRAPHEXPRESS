@@ -54,7 +54,8 @@
       "id": "bauhaus",
       "name": "Bauhaus",
       "count": 51,
-      "cover": "bauhaus-001"
+      "cover": "bauhaus-001",
+      "catalog_hidden": true
     }
   ],
   "works": [
@@ -6641,7 +6642,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-002",
@@ -6658,7 +6660,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-003",
@@ -6675,7 +6678,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-004",
@@ -6692,7 +6696,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-005",
@@ -6709,7 +6714,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-006",
@@ -6726,7 +6732,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-007",
@@ -6743,7 +6750,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-008",
@@ -6760,7 +6768,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-009",
@@ -6777,7 +6786,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-010",
@@ -6794,7 +6804,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-011",
@@ -6811,7 +6822,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-012",
@@ -6828,7 +6840,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-013",
@@ -6845,7 +6858,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-014",
@@ -6862,7 +6876,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-015",
@@ -6879,7 +6894,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-016",
@@ -6896,7 +6912,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-017",
@@ -6913,7 +6930,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-018",
@@ -6930,7 +6948,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-019",
@@ -6947,7 +6966,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-020",
@@ -6964,7 +6984,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-021",
@@ -6981,7 +7002,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-022",
@@ -6998,7 +7020,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-023",
@@ -7015,7 +7038,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-024",
@@ -7032,7 +7056,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-025",
@@ -7049,7 +7074,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-026",
@@ -7066,7 +7092,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-027",
@@ -7083,7 +7110,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-028",
@@ -7100,7 +7128,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-029",
@@ -7117,7 +7146,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-030",
@@ -7134,7 +7164,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-031",
@@ -7151,7 +7182,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-032",
@@ -7168,7 +7200,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-033",
@@ -7185,7 +7218,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-034",
@@ -7202,7 +7236,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-035",
@@ -7219,7 +7254,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-036",
@@ -7236,7 +7272,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-037",
@@ -7253,7 +7290,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-038",
@@ -7270,7 +7308,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-039",
@@ -7287,7 +7326,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-040",
@@ -7304,7 +7344,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-041",
@@ -7321,7 +7362,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-042",
@@ -7338,7 +7380,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-043",
@@ -7355,7 +7398,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-044",
@@ -7372,7 +7416,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-045",
@@ -7389,7 +7434,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-046",
@@ -7406,7 +7452,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-047",
@@ -7423,7 +7470,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-048",
@@ -7440,7 +7488,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-049",
@@ -7457,7 +7506,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-050",
@@ -7474,7 +7524,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     },
     {
       "id": "bauhaus-051",
@@ -7491,7 +7542,8 @@
         "bauhaus"
       ],
       "status": "pending",
-      "sales_enabled": true
+      "sales_enabled": false,
+      "catalog_hidden": true
     }
   ],
   "sources": [

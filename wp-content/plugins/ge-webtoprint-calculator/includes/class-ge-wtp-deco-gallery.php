@@ -82,9 +82,15 @@ final class GE_WTP_Deco_Gallery {
     public static function public_work($record) {
         $work = self::works()[$record['work']['id']];
         $work['pixels'] = $record['work']['pixels']; $work['verified'] = true; $work['status'] = 'ready';
-        if (0 === strpos($work['id'], 'bauhaus-')) { $work['sales_enabled'] = self::licensed_sales($record); }
+        if (0 === strpos($work['id'], 'bauhaus-')) { $work['sales_enabled'] = empty($work['catalog_hidden']) && ($work['sales_enabled']??false)===true && self::licensed_sales($record); }
         $work['image'] = rest_url(self::NS . '/artworks/' . $work['id'] . '/preview');
         return $work;
+    }
+    /** Withdrawal blocks new transactions while immutable order sources stay resolvable. */
+    public static function assert_available($id) {
+        if(!is_string($id)||0!==strpos($id,'bauhaus-'))return;
+        $work=self::works()[$id]??null;
+        if(!$work||!empty($work['catalog_hidden'])||($work['sales_enabled']??false)!==true)throw new InvalidArgumentException('artwork_sales_unavailable');
     }
     /** Licensed packs never inherit museum Open Access approval. */
     public static function licensed_sales($record) {
@@ -144,6 +150,7 @@ final class GE_WTP_Deco_Gallery {
         }
     }
     public static function prepare($id) {
+        self::assert_available($id);
         if ($record = self::record($id, true)) { return array('status'=>'ready','work'=>self::public_work($record)); }
         if (0 !== strpos($id, 'nga-')) { throw new InvalidArgumentException('analysis_required'); }
         $work = self::works()[$id];
@@ -168,6 +175,7 @@ final class GE_WTP_Deco_Gallery {
         return array('status'=>'queued','stage'=>'Preparando tu obra');
     }
     public static function selection($id, $data) {
+        self::assert_available($id);
         $record = self::record($id,true); if (!$record) { throw new InvalidArgumentException('analysis_required'); }
         $option = null;
         foreach (self::options() as $candidate) {
@@ -187,6 +195,7 @@ final class GE_WTP_Deco_Gallery {
         foreach($lines as $line){
             $id=$line['workId']??'';$selection_id=$line['serverSelectionId']??'';
             if(!is_string($id))throw new InvalidArgumentException('invalid_selection_reference');
+            self::assert_available($id);
             if(strpos($id,'autor-')===0&&!GE_WTP_Deco_Marketplace_Checkout::enabled())throw new InvalidArgumentException('creator_sales_pending');
             if(!is_string($selection_id)||!preg_match('/^[a-f0-9]{32}$/D',$selection_id))throw new InvalidArgumentException('invalid_selection_reference');
             if(0===strpos($id,'autor-')){$source=GE_WTP_Deco_Artist_Commerce::source($id);$path=GE_WTP_Deco_Creators::folder($id).'/selection-'.$selection_id.'.json';
