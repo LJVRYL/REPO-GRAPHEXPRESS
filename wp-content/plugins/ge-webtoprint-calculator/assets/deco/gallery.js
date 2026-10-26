@@ -13,7 +13,7 @@
    try{const creators=await json('/api/creators');data.works.push(...creators.works||[]);data.collections.push(...creators.collections||[])}catch{}
    if(runtime?.commerce){try{const released=await json('/api/options');activeOptions=new Set(released.option_ids||[]);commerceAvailable=released.commerce_available===true;publicPrices=released.unit_prices_cents||{};handling=released.handling_cents||{}}catch{activeOptions=new Set();commerceAvailable=false}}
    data.collections=data.collections.filter(collection=>collection.catalog_hidden!==true);
-   for(const incoming of data.works){incoming.image=asset(incoming.image);const existing=C.works.find(w=>w.id===incoming.id);const w=existing?Object.assign(existing,incoming):incoming;w.remote=/^(artic|met|nga|bauhaus)-\d+$/.test(w.id)||w.creator_showcase===true;if(!existing)C.works.push(w)}
+   for(const incoming of data.works){incoming.image=asset(incoming.image);const existing=C.works.find(w=>w.id===incoming.id);const w=existing?Object.assign(existing,incoming):incoming;w.remote=/^(artic|met|nga|bauhaus|trendy)-\d+$/.test(w.id)||w.creator_showcase===true;if(!existing)C.works.push(w)}
    try{const cached=await json('/api/artworks/prepared');for(const work of cached.works||[]){const existing=C.works.find(w=>w.id===work.id);if(existing&&existing.imageId===work.imageId)Object.assign(existing,work,{remote:true})}}catch{}
   }catch{data={collections:[{id:'destacadas',name:'Elegidas por Graphex',cover:C.works[0].id,count:C.works.length}],sources:[]};for(const w of C.works)w.collections=['destacadas'];}
  })();
