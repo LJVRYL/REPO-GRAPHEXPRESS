@@ -66,6 +66,7 @@
  }
  function filterWorks(){return C.works.filter(w=>{const ratio=w.pixels[0]/w.pixels[1],shape=ratio<.92?'portrait':ratio>1.08?'landscape':'square';return !w.uploaded&&w.catalog_hidden!==true&&(selected==='favoritos'?favorites.has(w.id):(selected==='todas'||w.collections?.includes(selected)))&&(!query||fold(w.title+' '+w.artist+' '+(w.category||'')).includes(fold(query)))&&(orientation==='all'||shape===orientation)})}
  function results(){
+  const discovery=document.querySelector('.gallery-discovery');if(discovery)discovery.hidden=location.hash.startsWith('#galeria/')||location.hash==='#coleccion'||!!query||orientation!=='all';
   const works=filterWorks(),shown=works.slice(0,visible);$('grid').replaceChildren(...shown.map(card));$('galleryCount').textContent=works.length?(shown.length===works.length?works.length+(works.length===1?' obra':' obras'):shown.length+' de '+works.length+' obras'):'No encontramos obras con esa búsqueda.';$('loadMore').hidden=visible>=works.length;$('emptyGallery').hidden=works.length>0;const emptyFavorites=selected==='favoritos'&&favoriteCount()===0;if(emptyFavorites)$('galleryCount').textContent='Todavía no guardaste favoritos.';$('emptyGallery').querySelector('p').textContent=emptyFavorites?'Marcá el corazón de las obras que te gusten para encontrarlas acá.':defaultEmptyText;$('clearGallery').textContent=emptyFavorites?'Explorar todas las obras':defaultClearText;
  }
  function render(makeCard){

@@ -258,6 +258,19 @@ final class GE_WTP_Deco_Gallery {
         $head='<script nonce="'.esc_attr($nonce).'">window.GRAPHEX_RUNTIME='.wp_json_encode($runtime,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT).';</script>';
         if($artists){$head.='<link rel="canonical" href="'.esc_url(get_permalink()).'"><meta property="og:type" content="website"><meta property="og:title" content="Tu arte, en más paredes · Graphex Prints"><meta property="og:description" content="Creá tu galería, compartí tus obras y definí su valor. Graphex se ocupa de imprimir y enmarcar."><meta property="og:url" content="'.esc_url(get_permalink()).'"><meta property="og:image" content="'.esc_url($asset_base.'assets/obra-1.jpg').'">';}
         $html=preg_replace_callback('/(src|href)="((?:assets\/)?[^"#:]+\.(?:js|css|svg|webp|jpg|png))"/',static function($match)use($asset_base){$path=self::assets().$match[2];$version=is_file($path)&&preg_match('/\.(?:js|css)$/',$path)?'?v='.filemtime($path):'';return $match[1].'="'.esc_url($asset_base.$match[2].$version).'"';},file_get_contents($file));
+        if(!$artists&&function_exists('graphexpress_render_site_header')){
+            ob_start();graphexpress_render_site_header(array('active'=>'prints'));$site_header=ob_get_clean();
+            $html=preg_replace_callback('~<header class="prints-header">(.*?)</header>~s',static function($match)use($site_header){
+                $actions=preg_replace('~<a class="brand".*?</a>~s','',$match[1],1);
+                return $site_header.'<div class="prints-header prints-subnav">'.$actions.'</div>';
+            },$html,1);
+            $html=str_replace('<body>','<body class="gx-brand-active gx-prints-page">',$html);
+            $theme_uri=get_stylesheet_directory_uri();$theme_dir=get_stylesheet_directory();
+            foreach(array('/style.css','/assets/css/graphex-brand.css')as $relative){
+                $head.='<link rel="stylesheet" href="'.esc_url($theme_uri.$relative.'?v='.filemtime($theme_dir.$relative)).'">';
+            }
+            $head.='<script defer src="'.esc_url($theme_uri.'/assets/js/home.js?v='.filemtime($theme_dir.'/assets/js/home.js')).'"></script>';
+        }
         echo str_replace('<head>','<head>'.$head,$html);exit;
     }
 }
