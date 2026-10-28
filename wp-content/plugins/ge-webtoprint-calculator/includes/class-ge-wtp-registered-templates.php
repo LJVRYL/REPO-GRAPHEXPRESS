@@ -3,7 +3,8 @@ defined('ABSPATH') || exit;
 
 /** Graphex reference templates. Authentication is enforced at the byte-serving boundary. */
 final class GE_WTP_Registered_Templates {
-    const ACTION = 'ge_graphex_template_download';
+    // Design preparation belongs to the existing read-only order-file module policy.
+    const ACTION = 'ge_order_design_template_download';
     const VERSION = '20261028.1';
 
     public static function init() {
