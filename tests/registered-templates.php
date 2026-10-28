@@ -27,4 +27,11 @@ $logged_in=false;check(GE_WTP_Registered_Templates::download_url('gx-ref-006')==
 $logged_in=true;$member=GE_WTP_Registered_Templates::index();check(substr_count($member,'class="gx-template-card"')===83,'Member cards');check(strpos($member,'gx-ref-016')===false,'Held template absent');check(stripos($member,'grupowind')===false,'No supplier identity');
 class QA_Product { private $slug; function __construct($slug){$this->slug=$slug;}function get_slug(){return $this->slug;}function get_id(){return 123;} }
 foreach($catalog['products'] as $slug=>$opts){$product=new QA_Product($slug);check(GE_WTP_Registered_Templates::product_rows($product)===$opts,'Exact product mapping');ob_start();GE_WTP_Registered_Templates::product_panel();$panel=ob_get_clean();check(strpos($panel,'data-template-map')!==false,'Member option map');$logged_in=false;ob_start();GE_WTP_Registered_Templates::product_panel();$panel=ob_get_clean();check(strpos($panel,'ge_graphex_template_download')===false,'Guest product no PDF URL');$logged_in=true;}
+// Verify integration with the real organization policy, not a permissive imitation of it.
+class GE_Organization { const PRIMARY='graph-express'; static function get($id){return array('members'=>array('1'=>'owner'));} static function modules(){return array('orders','customers','production','communications','stock','finance','suppliers','cost_engine','file_analyzer','ecommerce');} }
+function get_current_user_id(){return 1;}
+function wp_doing_ajax(){return false;}
+require dirname(__DIR__).'/wp-content/mu-plugins/ge-organization/class-ge-organization-runtime.php';
+check(GE_Organization_Runtime::action_policy(GE_WTP_Registered_Templates::ACTION)===array('orders',false),'Central policy recognizes the download as order-file read access');
+foreach(GE_Organization_Runtime::permissions() as $role=>$permission){check(in_array('orders',$permission['read'],true),'Existing staff read policy '.$role);}
 echo json_encode(array('status'=>'PASS','checks'=>$checks,'templates'=>83,'product_pages'=>25,'mode'=>'synthetic-users-no-real-records')).PHP_EOL;
