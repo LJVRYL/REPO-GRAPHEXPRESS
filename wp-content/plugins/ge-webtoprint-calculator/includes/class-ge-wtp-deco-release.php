@@ -42,6 +42,7 @@ final class GE_WTP_Deco_Release {
         $models=array();foreach(GE_WTP_Deco_Gallery::catalog()['models']??array() as $model){$models[$model['id']]=$model['name'];}
         foreach(GE_WTP_Deco_Gallery::options() as $option){
             $approved=$policy['options'][$option['id']]??null;if(!is_array($approved)||($approved['available']??false)!==true)continue;
+            if(!GE_WTP_Deco_Observations::allowed($option['id'],$policy))continue;
             if(!is_int($approved['unit_base_cents']??null)||$approved['unit_base_cents']<=0||($approved['print_dimensions_verified']??false)!==true)throw new InvalidArgumentException('invalid_approved_option');
             $large=min($option['size'])>30||max($option['size'])>45;$papers=$large?array('catalogo-fotografico'):array('mate','brillo');
             foreach(array('portrait','landscape') as $orientation){
