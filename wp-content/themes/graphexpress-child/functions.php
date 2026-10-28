@@ -126,7 +126,7 @@ function graphexpress_render_site_header($args = array()) {
             <button class="gx-menu-toggle" type="button" aria-expanded="false" aria-controls="gx-navigation"><span></span><span></span><span></span><span class="screen-reader-text">Abrir menú</span></button>
             <nav class="gx-nav" id="gx-navigation" aria-label="Navegación principal">
                 <a<?php echo 'shop' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($shop_url); ?>" data-funnel-event="landing_shop_click"><?php echo esc_html($store_label); ?></a>
-                <a<?php echo 'prints' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url(home_url('/deco-prints/')); ?>">Graphex Prints</a>
+                <a<?php echo 'prints' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url(home_url('/deco-prints/')); ?>">Prints</a>
                 <a href="<?php echo esc_url($quote_url); ?>" data-funnel-event="landing_quote_click">Presupuesto</a>
                 <a<?php echo 'guides' === $args['active'] ? ' class="is-active" aria-current="page"' : ''; ?> href="<?php echo esc_url($guides_url); ?>">Guías</a>
 
