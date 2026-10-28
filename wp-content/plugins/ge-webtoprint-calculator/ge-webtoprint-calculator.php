@@ -146,3 +146,7 @@ foreach (array('ge_organization_reconciliation_save', 'ge_organization_reconcili
     }
 }
 unset($ge_retired_action, $ge_retired_prefix);
+
+// Registered-user design references; isolated from commercial calculation and order flows.
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-registered-templates.php';
+GE_WTP_Registered_Templates::init();
