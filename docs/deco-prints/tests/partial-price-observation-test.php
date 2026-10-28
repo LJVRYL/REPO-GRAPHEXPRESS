@@ -23,7 +23,7 @@ function fixture($modify=null){
  }
  $rows['opcion-2']=['status'=>'unknown','unchanged'=>false,'variant_id'=>'2','source'=>'https://fixture.invalid/2','nominal_variant'=>['20x30','Negro'],'reason'=>'source_unavailable'];
  $rows['opcion-3']['status']='changed';$rows['opcion-3']['unchanged']=false;$rows['opcion-3']['frame_cost_cents']++;
- $data=['schema_version'=>1,'kind'=>'graphex-price-evidence-per-option','complete'=>false,'source_complete'=>false,'approved_revision'=>$policy['revision'],'observed_at'=>$now,'source_digest'=>str_repeat('b',64),'printing_source_digest'=>str_repeat('c',64),'options'=>$rows];
+ $data=['schema_version'=>1,'kind'=>'graphex-price-evidence-per-option','complete'=>false,'source_complete'=>false,'approved_revision'=>$policy['revision'],'observed_at'=>$now,'print_observed_at'=>$now,'source_digest'=>str_repeat('b',64),'printing_source_digest'=>str_repeat('c',64),'options'=>$rows];
  if($modify)$modify($data,$policy);
  file_put_contents(GE_DECO_PRIVATE_ROOT.'/latest-pricing-partial-observation.json',json_encode($data));return $data;
 }
@@ -57,6 +57,15 @@ rejected(fn()=>GE_WTP_Deco_Prints::resolve(1,'key2','manifest-qa'));
 ok(!GE_WTP_Deco_Prints::validate(true,1,1,0,[],['ge_configuration_key'=>'key2','ge_deco_revision'=>'manifest-qa']),'Direct Woo add rejects unknown');
 rejected(fn()=>GE_WTP_Deco_Prints::cart_data(['ge_configuration_key'=>'key2','ge_deco_revision'=>'manifest-qa'],1));
 rejected(fn()=>GE_WTP_Deco_Prints::assert_cart_line(['product_id'=>1,'ge_deco_snapshot'=>['option_key'=>'key2','manifest_revision'=>'manifest-qa']]));
+foreach(['newer_full','older_full','replayed_old_source']as $recovery){
+ $partial=fixture(function(&$data){$data['observed_at']=time()-10;});
+ $full=['complete'=>true,'approved_revision'=>$policy['revision'],'observed_at'=>time(),'frame_observed_at'=>time(),'print_observed_at'=>time(),'source_digest'=>str_repeat('d',64),'options'=>['opcion-1'=>['unchanged'=>true],'opcion-2'=>['unchanged'=>true],'opcion-3'=>['unchanged'=>false]]];
+ if($recovery==='older_full')$full['observed_at']=$partial['observed_at']-1;
+ if($recovery==='replayed_old_source')$full['frame_observed_at']=$partial['observed_at']-100;
+ file_put_contents(GE_DECO_PRIVATE_ROOT.'/latest-pricing-observation.json',json_encode($full));
+ ok(GE_WTP_Deco_Observations::allowed('opcion-2',$policy)===($recovery==='newer_full'),'Recovery requires newer receipt AND actual source evidence');
+ ok(!GE_WTP_Deco_Observations::allowed('opcion-3',$policy),'Changed option stays held across recovery');
+}
 fixture();unlink(GE_DECO_PRIVATE_ROOT.'/latest-pricing-partial-observation.json');
 file_put_contents(GE_DECO_PRIVATE_ROOT.'/latest-pricing-observation.json',json_encode(['complete'=>true,'approved_revision'=>$policy['revision'],'observed_at'=>time(),'frame_observed_at'=>time(),'print_observed_at'=>time(),'source_digest'=>str_repeat('d',64),'options'=>['opcion-1'=>['unchanged'=>true]]]));
 ok(GE_WTP_Deco_Observations::allowed('opcion-1',$policy),'Legacy full snapshot remains compatible');

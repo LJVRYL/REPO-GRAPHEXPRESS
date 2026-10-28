@@ -20,6 +20,7 @@ check(rows['opcion-1']['status']=='verified'and rows['opcion-1']['unchanged'])
 check(rows['opcion-2']['status']=='unknown'and not rows['opcion-2']['unchanged'])
 check('frame_observed_at'not in rows['opcion-2']and 'print_observed_at'not in rows['opcion-2'])
 check(rows['opcion-3']['status']=='changed'and not rows['opcion-3']['unchanged'])
+check(len(r['changes'])==1 and r['changes'][0]['option_id']=='opcion-3')
 check(rows['opcion-1']['source_sha256']=='a'*64);check(rows['opcion-1']['print_observed_at']==now)
 check(len(p['source_digest'])==64 and len(p['printing_source_digest'])==64);check(policy==before)
 with tempfile.TemporaryDirectory()as folder:

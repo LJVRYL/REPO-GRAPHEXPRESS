@@ -38,7 +38,7 @@ def per_option(policy,catalog,prices,pages,now):
    else:row['reason']='invalid_variant_evidence'
   elif 'error' not in page:row['reason']='mapped_variant_unverified'
   rows[id]=row
- result={'schema_version':1,'kind':'graphex-price-evidence-per-option','complete':False,'source_complete':not any(r['status']=='unknown' for r in rows.values()),'approved_revision':policy['revision'],'observed_at':now,'printing_source_digest':digest(prices),'options':rows}
+ result={'schema_version':1,'kind':'graphex-price-evidence-per-option','complete':False,'source_complete':not any(r['status']=='unknown' for r in rows.values()),'approved_revision':policy['revision'],'observed_at':now,'print_observed_at':prices['observed_at'],'printing_source_digest':digest(prices),'options':rows}
  result['source_digest']=digest(result)
  return result
 
@@ -57,6 +57,9 @@ def observe(policy,catalog,prices,fetch=source.fetch,allow_partial=False):
   if not result['partial_evidence']['source_complete']:
    result['complete']=False
    if not errors:errors.extend({'source':row['source'],'error':row.get('reason','unverified_variant'),'variant_id':row['variant_id']}for row in result['partial_evidence']['options'].values()if row['status']=='unknown')
+  if errors:
+   for id,row in result['partial_evidence']['options'].items():
+    if row['status']=='changed':result['changes'].append({'option_id':id,'variant_id':row['variant_id'],'approved_frame_cents':policy['options'][id].get('frame_cost_cents'),'observed_frame_cents':row['frame_cost_cents'],'approved_printing_cents':policy['options'][id].get('printing_cents'),'observed_printing_cents':row['printing_cents'],'available':row['available'],'options':row['nominal_variant']})
  if errors:return result
  options={row['id']:row for row in catalog['options']};raw=[]
  for row in mapping:
@@ -92,6 +95,6 @@ def main():
   result=observe(policy,catalog,prices,allow_partial=args.allow_partial)
  except Exception as error:result={'observed_at':int(time.time()),'complete':False,'approved_revision':policy.get('revision'),'errors':[{'error':type(error).__name__,'reason':str(error)[:100]}],'changes':[],'products_updated':False,'orders_updated':False,'approved_files_updated':False}
  usable=sum(r.get('unchanged') is True for r in result.get('partial_evidence',{}).get('options',{}).values())
- save(result,private);print(json.dumps({'complete':result['complete'],'partial_allowed_options':usable,'changes':len(result['changes']),'errors':result['errors'],'products_updated':False,'orders_updated':False}))
+ save(result,private);print(json.dumps({'complete':result['complete'],'partial_allowed_options':usable,'partial_unknown_options':sum(r.get('status')=='unknown'for r in result.get('partial_evidence',{}).get('options',{}).values()),'partial_changed_options':sum(r.get('status')=='changed'for r in result.get('partial_evidence',{}).get('options',{}).values()),'changes':len(result['changes']),'errors':result['errors'],'products_updated':False,'orders_updated':False}))
  if not result['complete'] and not(args.allow_partial and usable):raise SystemExit(1)
 if __name__=='__main__':main()
