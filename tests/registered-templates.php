@@ -3,7 +3,7 @@ define('ABSPATH', __DIR__ . '/synthetic/');
 define('GE_WTP_PLUGIN_URL', 'https://example.invalid/plugin/');
 $logged_in = true;
 function is_user_logged_in() { global $logged_in; return $logged_in; }
-function add_action() {}
+function add_action($hook,$callback=null){$GLOBALS['fixture_hooks'][$hook][]=$callback;}
 function WP_Error_stub() {}
 class WP_Error { private $message; function __construct($code,$message){$this->message=$message;} function get_error_message(){return $this->message;} }
 function is_wp_error($v){return $v instanceof WP_Error;}
@@ -68,4 +68,7 @@ foreach(array('https://outside.invalid',array($cookie),$cookie.'bad',$valid_id.'
 $_COOKIE['gx_template_return']=$cookie;check(strpos(GE_WTP_Registered_Templates::registration_return('/normal',303),'gx_template_item='.$valid_id)!==false,'Completed registration returns to same product download gate');
 check(!isset($_COOKIE['gx_template_return']),'Return context consumed once');
 
+GE_WTP_Registered_Templates::wire();
+check(in_array(array('GE_WTP_Registered_Templates','item_button'),$GLOBALS['fixture_hooks']['graphex_after_product_card_actions'],true),'Custom Graphex card hook is connected');
+check(strpos(file_get_contents(dirname(__DIR__).'/wp-content/themes/graphexpress-child/woocommerce/content-product.php'),"do_action('graphex_after_product_card_actions'")!==false,'Real custom card template invokes the extension hook');
 echo json_encode(array('status'=>'PASS','checks'=>$checks,'templates'=>83,'product_pages'=>25,'mode'=>'synthetic-users-no-real-records')).PHP_EOL;

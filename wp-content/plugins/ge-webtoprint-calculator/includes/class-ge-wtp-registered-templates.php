@@ -35,6 +35,7 @@ final class GE_WTP_Registered_Templates {
         }
         add_action('woocommerce_single_product_summary', array(__CLASS__, 'product_panel'), 28);
         add_action('woocommerce_after_shop_loop_item', array(__CLASS__, 'item_button'), 20);
+        add_action('graphex_after_product_card_actions', array(__CLASS__, 'item_button'), 20);
     }
 
     public static function product_rows($product) {

@@ -86,4 +86,5 @@ $action_label = $show_reference_price ? 'Configurar y comprar' : 'Ver formatos';
         </div>
     </a>
     <a class="gx-product-card-action" href="<?php the_permalink(); ?>"><?php echo esc_html($action_label); ?> <span>→</span></a>
+    <?php do_action('graphex_after_product_card_actions', $product); ?>
 </li>
