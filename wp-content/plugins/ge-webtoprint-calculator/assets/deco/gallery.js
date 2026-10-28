@@ -2,6 +2,8 @@
 (()=>{
  const C=GRAPHEX_CATALOG,$=id=>document.getElementById(id),fold=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  let data={collections:[],sources:[]},selected='destacadas',query='',orientation='all',visible=24,card,csrf=null;
+ const featuredIds=['bauhaus-001','trendy-0018','bauhaus-002','trendy-0095','bauhaus-003','trendy-0014','bauhaus-010','trendy-0136','bauhaus-014','trendy-0141','obra-1','obra-4'];
+ const collectionPriority=['bauhaus','trendy','destacadas'];
 
  const favoriteKey='graphex-prints-favorites-v1',favoriteLimit=1000;
  function parseFavorites(raw){try{const value=JSON.parse(raw||'[]');return new Set(Array.isArray(value)?value.filter(id=>typeof id==='string'&&/^[a-z0-9-]{1,100}$/.test(id)).slice(0,favoriteLimit):[])}catch{return new Set()}}
@@ -58,13 +60,14 @@
  }
  function collections(){
   $('collections').replaceChildren();
-  for(const collection of data.collections){
-   const work=C.works.find(w=>w.id===collection.cover),a=document.createElement('a'),box=document.createElement('div'),im=document.createElement('img'),name=document.createElement('b'),count=document.createElement('span');
+  const ordered=[...data.collections].sort((a,b)=>{const rank=id=>{const index=collectionPriority.indexOf(id);return index<0?collectionPriority.length:index};return rank(a.id)-rank(b.id)});
+  for(const collection of ordered){
+   const work=C.works.find(w=>w.id===(collection.id==='destacadas'?featuredIds[0]:collection.cover)),a=document.createElement('a'),box=document.createElement('div'),im=document.createElement('img'),name=document.createElement('b'),count=document.createElement('span');
    if(!work)continue;a.href='#galeria/'+collection.id;a.className='collection-card';box.className='collection-image';im.src=work.image;im.alt='';im.loading='lazy';im.decoding='async';im.referrerPolicy='no-referrer';im.width=600;im.height=430;box.append(im);name.textContent=collection.name;count.textContent=collection.count+' obras';a.append(box,name,count);$('collections').append(a);
   }
   $('sourceLinks').replaceChildren(...data.sources.map(source=>link(source.name+' ↗',source.url)));
  }
- function filterWorks(){return C.works.filter(w=>{const ratio=w.pixels[0]/w.pixels[1],shape=ratio<.92?'portrait':ratio>1.08?'landscape':'square';return !w.uploaded&&w.catalog_hidden!==true&&(selected==='favoritos'?favorites.has(w.id):(selected==='todas'||w.collections?.includes(selected)))&&(!query||fold(w.title+' '+w.artist+' '+(w.category||'')).includes(fold(query)))&&(orientation==='all'||shape===orientation)})}
+ function filterWorks(){const source=selected==='destacadas'?featuredIds.map(id=>C.works.find(w=>w.id===id)).filter(Boolean):C.works;return source.filter(w=>{const ratio=w.pixels[0]/w.pixels[1],shape=ratio<.92?'portrait':ratio>1.08?'landscape':'square';return !w.uploaded&&w.catalog_hidden!==true&&(selected==='favoritos'?favorites.has(w.id):(selected==='destacadas'||selected==='todas'||w.collections?.includes(selected)))&&(!query||fold(w.title+' '+w.artist+' '+(w.category||'')).includes(fold(query)))&&(orientation==='all'||shape===orientation)})}
  function results(){
   const discovery=document.querySelector('.gallery-discovery');if(discovery)discovery.hidden=location.hash.startsWith('#galeria/')||location.hash==='#coleccion'||!!query||orientation!=='all';
   const works=filterWorks(),shown=works.slice(0,visible);$('grid').replaceChildren(...shown.map(card));$('galleryCount').textContent=works.length?(shown.length===works.length?works.length+(works.length===1?' obra':' obras'):shown.length+' de '+works.length+' obras'):'No encontramos obras con esa búsqueda.';$('loadMore').hidden=visible>=works.length;$('emptyGallery').hidden=works.length>0;const emptyFavorites=selected==='favoritos'&&favoriteCount()===0;if(emptyFavorites)$('galleryCount').textContent='Todavía no guardaste favoritos.';$('emptyGallery').querySelector('p').textContent=emptyFavorites?'Marcá el corazón de las obras que te gusten para encontrarlas acá.':defaultEmptyText;$('clearGallery').textContent=emptyFavorites?'Explorar todas las obras':defaultClearText;
