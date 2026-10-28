@@ -1,5 +1,14 @@
 'use strict';
 (()=>{
+ // Bound both headers and body parsing: a stalled response must release the upload UI.
+ async function uploadFetch(url,options={},timeoutMs=20000){
+  const controller=new AbortController();let timer;
+  try{return await Promise.race([
+   fetch(url,{...options,signal:controller.signal}).then(async response=>{let data;try{data=await response.json()}catch{throw Error('No pudimos leer la respuesta del servidor. Volvé a intentar.')}return {ok:response.ok,status:response.status,json:async()=>data}}),
+   new Promise((resolve,reject)=>{timer=setTimeout(()=>{reject(Error('El servidor está demorando más de lo habitual. Podés volver a intentar sin perder esta carga.'));controller.abort()},timeoutMs)})
+  ])}finally{clearTimeout(timer)}
+ }
+
  const root=document.getElementById('ge-creator-app'),cfg=window.GE_CREATOR_PORTAL;if(!cfg||cfg.preview)return;
  document.querySelectorAll('[data-gc-fee-artist]').forEach(form=>form.onsubmit=async event=>{
   event.preventDefault();const status=document.getElementById('gc-fee-review-status'),button=form.querySelector('button');
@@ -10,7 +19,7 @@
  const $=id=>document.getElementById(id),labels={draft:'Privada',review:'En revisión',published:'Publicada',needs_changes:'Revisar detalles',needs_preview:'Falta vista previa'};
  const errors={storage_capacity:'El espacio disponible para tu galería llegó a su límite. Contactanos para ampliarlo.',busy:'Hay otra operación en curso. Probá nuevamente.',authentication_required:'Ingresá nuevamente para continuar.',rights_required:'Confirmá que podés compartir esta imagen.',invalid_title:'Escribí el título de tu obra.',invalid_gallery_title:'Escribí el nombre de tu galería.',invalid_work_details:'Revisá el título y la colección.',work_revision_changed:'La obra cambió en otra ventana. Actualizamos la lista; volvé a intentarlo.',analysis_required:'Primero completá el análisis de la imagen en tu biblioteca.',preview_required:'Todavía falta una vista previa para publicar esta obra.',drive_reconnect_required:'Volvé a conectar tu Drive para acceder a las imágenes.',drive_file_unavailable:'No podemos acceder a ese archivo. Revisá su acceso en Drive.',invalid_drive_image:'Elegí un JPG o PNG de hasta 64 MB.',preview_unavailable:'No pudimos preparar la miniatura. Probá con otra imagen.',rate_limit:'Esperá un momento antes de volver a intentarlo.',work_limit:'Llegaste al límite de 200 obras de esta galería.',collection_limit:'Podés organizar hasta 12 colecciones.',drive_busy:'Drive está terminando otra operación. Probá nuevamente.'};
  let current=null,busy=false,pickerLoading=null;
- async function api(path='',body){const response=await fetch(cfg.api+'/creator'+path,{credentials:'same-origin',cache:'no-store',method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':cfg.nonce,'X-CSRF-Token':cfg.csrf},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await response.json();if(!response.ok)throw Error(errors[data.code]||'No pudimos completar la acción. Probá nuevamente.');return data}
+ async function api(path='',body,bounded=false){const response=await (bounded?uploadFetch:fetch)(cfg.api+'/creator'+path,{credentials:'same-origin',cache:'no-store',method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':cfg.nonce,'X-CSRF-Token':cfg.csrf},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await response.json();if(!response.ok)throw Error(errors[data.code]||'No pudimos completar la acción. Probá nuevamente.');return data}
  function node(tag,text,className){const n=document.createElement(tag);if(text)n.textContent=text;if(className)n.className=className;return n}
  function button(text,handler){const b=node('button',text);b.type='button';b.onclick=handler;return b}
  async function act(action,target='gc-error'){if(busy)return;busy=true;$(target).textContent='';try{await action();await load();$('gc-status').textContent='Listo, guardamos tus cambios.'}catch(error){$(target).textContent=error.message}finally{busy=false}}
@@ -86,24 +95,24 @@
    const state=pendingUpload;$('gc-upload-progress').textContent=state.job?'Retomando el análisis de tu imagen…':'Subiendo tu imagen…';
    const headers={'Content-Type':'application/json','X-WP-Nonce':cfg.nonce,'X-CSRF-Token':cfg.csrf};
    if(!state.item){
-    const session=await fetch(cfg.api+'/session',{credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}}).then(response);
+    const session=await uploadFetch(cfg.api+'/session',{credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}}).then(response);
     if(!session.upload)throw Error(errors.authentication_required);
-    const prep=await fetch(session.upload.ajaxUrl,{method:'POST',credentials:'same-origin',body:new URLSearchParams({action:'ge_vps_prepare_upload',nonce:session.upload.nonce,files:JSON.stringify([{name:file.name,size:file.size,type:file.type}])})}).then(response);
+    const prep=await uploadFetch(session.upload.ajaxUrl,{method:'POST',credentials:'same-origin',body:new URLSearchParams({action:'ge_vps_prepare_upload',nonce:session.upload.nonce,files:JSON.stringify([{name:file.name,size:file.size,type:file.type}])})}).then(response);
     if(!prep.success)throw Error(prep.data?.message||'No pudimos preparar la carga.');state.item=prep.data.uploads[0];
    }
    if(!state.uploaded){
-    try{const uploaded=await fetch(state.item.url,{method:'PUT',credentials:'same-origin',headers:{'Content-Type':file.type},body:file}).then(response);if(!uploaded.success)throw Error('No pudimos guardar la imagen.');state.uploaded=true;}
+    try{const uploaded=await uploadFetch(state.item.url,{method:'PUT',credentials:'same-origin',headers:{'Content-Type':file.type},body:file},90000).then(response);if(!uploaded.success)throw Error('No pudimos guardar la imagen.');state.uploaded=true;}
     catch(error){state.item=null;throw error;}
    }
-   if(!state.job)state.job=await fetch(cfg.api+'/uploads',{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({token:state.item.token})}).then(response);
-   $('gc-upload-progress').textContent='Analizando tu imagen…';submit.textContent='Analizando imagen…';let result;
-   for(let i=0;i<100;i++){
-    result=await fetch(cfg.api+'/uploads/'+state.job.id,{credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}}).then(response);
+   if(!state.job)state.job=await uploadFetch(cfg.api+'/uploads',{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({token:state.item.token})}).then(response);
+   $('gc-upload-progress').textContent='Analizando tu imagen…';submit.textContent='Analizando imagen…';let result;const deadline=Date.now()+150000;
+   for(let i=0;i<100&&Date.now()<deadline;i++){
+    result=await uploadFetch(cfg.api+'/uploads/'+state.job.id,{credentials:'same-origin',headers:{'X-WP-Nonce':cfg.nonce}},Math.max(1,Math.min(20000,deadline-Date.now()))).then(response);
     if(result.status==='failed')throw Error('No pudimos analizar la imagen. Elegí otro archivo.');if(result.status==='ready')break;
     await new Promise(resolve=>setTimeout(resolve,1500));
    }
    if(result?.status!=='ready')throw Error('El análisis sigue en curso. Pulsá Subir a mi galería para consultar el mismo archivo, o volvé más tarde a tu biblioteca.');
-   await api('/from-library',{...details,artwork_id:result.artwork_library_id});
+   $('gc-upload-progress').textContent='Guardando la obra en tu galería…';await api('/from-library',{...details,artwork_id:result.artwork_library_id},true);
    pendingUpload=null;input.value='';$('gc-file-status').textContent='Elegí un archivo para agregar otra obra.';$('gc-import').close();$('gc-upload-progress').textContent='';
    $('gc-import-title-input').value='';$('gc-rights').checked=false;$('gc-print-rights').checked=false;
   },'gc-import-error');}
