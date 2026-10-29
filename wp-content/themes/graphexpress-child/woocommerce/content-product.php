@@ -47,8 +47,7 @@ $price_suffix = '+ IVA';
 if ($is_wind && class_exists('GE_WTP_Windbanners_Catalog')) {
     $tax_context = GE_WTP_Windbanners_Catalog::tax_context();
     if ($tax_context) {
-        $reference_price = (float) $reference_price * $tax_context['multiplier'];
-        $price_suffix = $tax_context['label'];
+        $price_suffix = '+ IVA';
     } else {
         $show_reference_price = false;
     }

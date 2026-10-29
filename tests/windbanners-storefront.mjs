@@ -19,8 +19,8 @@ function fixture(row,legacy=false){
 const money=new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:2,maximumFractionDigits:2});
 for(const row of rows){
   const f=fixture(row);assert.equal(Number(f.qty.value),row.min_qty);assert.equal(Number(f.qty.step),row.step);
-  assert.equal(f.price.textContent,money.format(row.price*row.min_qty));assert.equal(f.base.textContent,'Base sin IVA: '+money.format(row.price*row.min_qty));
-  f.qty.value=String(row.min_qty+row.step);f.handlers['qty-input']();assert.equal(f.price.textContent,money.format(row.price*(row.min_qty+row.step)));checks+=5;
+  assert.equal(f.price.textContent,money.format(row.price*row.min_qty)+' + IVA');assert.equal(f.base.textContent,'Total con IVA: '+money.format(row.price*row.min_qty));
+  f.qty.value=String(row.min_qty+row.step);f.handlers['qty-input']();assert.equal(f.price.textContent,money.format(row.price*(row.min_qty+row.step))+' + IVA');checks+=5;
 }
-const old=fixture({option_key:'legacy',id:null,price:1000,min_qty:1,step:1},true);assert.match(old.price.textContent,/1[.]210/);checks++;
+const old=fixture({option_key:'legacy',id:null,price:1000,min_qty:1,step:1},true);assert.match(old.price.textContent,/1[.]000.*\+ IVA/);assert.match(old.base.textContent,/1[.]210/);checks++;
 console.log(JSON.stringify({passed:checks,active_options:rows.length,legacy_tax_unchanged:true}));

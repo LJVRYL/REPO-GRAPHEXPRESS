@@ -20,13 +20,16 @@ ok(count($products['gazebo-repuestos']['options'])===0,'inactive gazebo replacem
 ok($products['puffs-kids']['options']['wb-315-v57']['price']===31590.0,'rectangular kid without fill uses variant57');ok($products['puffs-kids']['options']['wb-315-v58']['price']===52650.0,'rectangular kid with fill uses variant58');
 ok($products['gazebos-completos']['options']['wb-227-v1']['price']===737100.0,'gazebo iron');ok($products['gazebos-completos']['options']['wb-227-v2']['price']===836550.0,'gazebo aluminum');
 ok(count($products['bases-estacas']['options'])===6,'all separate accessories');
-$context=GE_WTP_Windbanners_Catalog::tax_context();ok($context['multiplier']===1,'C has no IVA addition');
+$context=GE_WTP_Windbanners_Catalog::tax_context();ok($context['multiplier']===1.21,'public commercial net plus IVA irrespective of issuer');
 $issuers[0]['vat_status']='registered';$issuers[0]['invoice_types_allowed']=array('B');$issuers[0]['tax_rate_basis_points']=2100;
 ok(abs(GE_WTP_Windbanners_Catalog::tax_context()['multiplier']-1.21)<.00001,'verified actual registered rate');
-$issuers[0]['verification_status']='pending';ok(GE_WTP_Windbanners_Catalog::tax_context()===array(),'unverified issuer cannot sell automatically');
-$issuers[0]['verification_status']='verified';$issuers[0]['verified_at']='2020-01-01T00:00:00Z';ok(GE_WTP_Windbanners_Catalog::tax_context()===array(),'stale evidence blocked');
+$issuers[0]['verification_status']='pending';ok(GE_WTP_Windbanners_Catalog::tax_context()===$context,'fiscal verification cannot change advertised commercial policy');
+$issuers[0]['verification_status']='verified';$issuers[0]['verified_at']='2020-01-01T00:00:00Z';ok(GE_WTP_Windbanners_Catalog::tax_context()===$context,'public pricing does not select a fiscal issuer');
 $issuers[0]['verified_at']=gmdate('c',time()-60);$tax_enabled=true;ok(GE_WTP_Windbanners_Catalog::tax_context()===array(),'WC tax enabled prevents double taxation');
+$tax_enabled=false;
 $fixture=array(42=>array('_ge_public_catalog_key'=>'windbanners-gazebo-repuestos'));ok(GE_WTP_Windbanners_Catalog::storefront_config(42)===array(),'manual family has no checkout');ok(GE_WTP_Windbanners_Catalog::storefront_config(43)===null,'other products keep original configurator');
+foreach($products as $family=>$data){if(!$data['options'])continue;$s=GE_WTP_Windbanners_Catalog::selector_config($family,$data['options']);ok(!empty($s['selectors']),'separate selectors '.$family);ok(count($s['option_map'])===count($data['options']),'all native keys reachable '.$family);ok(array_values(array_diff(array_keys($data['options']),array_values($s['option_map'])))===array(),'no lost native variants '.$family);}
+$fixture[44]=array('_ge_public_catalog_key'=>'windbanners-gazebos-completos');$gazebo=GE_WTP_Windbanners_Catalog::storefront_config(44);ok(array_column($gazebo['selectors'],'label')===array('Estructura','Medida','Paredes'),'gazebo separates all three concepts');ok(count($gazebo['option_map'])===16,'all 16 gazebo combinations');ok($gazebo['option_map']['Aluminio|3 × 3 m|Sí, 3 paredes impresas']==='wb-233-v8','exact selected product preserved');
 $frozen=new class {public $price;function set_price($v){$this->price=$v;}};
 $cart_fixture=new class($frozen) {private $p;function __construct($p){$this->p=$p;}function get_cart(){return array(array('ge_calculated_price'=>117975,'ge_base_price'=>97500,'ge_configuration_key'=>'s0-r5-c1','data'=>$this->p));}};
 GE_WTP_Storefront::apply_cart_prices($cart_fixture);ok($frozen->price===117975.0,'existing cart snapshots retain stored prices');

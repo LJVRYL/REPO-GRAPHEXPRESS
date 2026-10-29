@@ -90,7 +90,8 @@ final class GE_WTP_Storefront {
         $first = reset($config['options']);
         $prints_final = class_exists('GE_WTP_Deco_Prints') && GE_WTP_Deco_Prints::manifest($product->get_id());
         $tax = $config['tax_context'] ?? array('multiplier'=>1.21,'label'=>'Total final con IVA','note'=>'');
-        if ($prints_final) { $tax['label'] = 'Precio final'; $tax['note'] = ''; }
+        // Artwork prints store their final price; display its net equivalent without charging IVA twice.
+        $net_multiplier = $prints_final ? (float)$tax['multiplier'] / 1.21 : 1;
         $price_decimals = ($prints_final || !empty($config['windbanners'])) ? 2 : 0;
         $minimum_quantity = max(1, isset($first['min_qty']) ? (int) $first['min_qty'] : (isset($config['min_qty']) ? (int) $config['min_qty'] : 1));
         $quantity_step = max(1, isset($first['step']) ? (int) $first['step'] : (isset($config['step']) ? (int) $config['step'] : 1));
@@ -103,7 +104,7 @@ final class GE_WTP_Storefront {
         $upload_description = !empty($config['upload_description']) ? $config['upload_description'] : 'Subí los originales al almacenamiento privado del VPS. Quedarán vinculados a este producto y a tu pedido.';
         $upload_hint = !empty($config['upload_hint']) ? $config['upload_hint'] : '';
         ?>
-        <form class="ge-storefront-config" method="post" enctype="multipart/form-data" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ge-storefront data-tax-multiplier="<?php echo esc_attr($tax['multiplier']); ?>" data-price-decimals="<?php echo esc_attr($price_decimals); ?>" data-options="<?php echo esc_attr(wp_json_encode($config['options'])); ?>" data-option-map="<?php echo esc_attr(wp_json_encode(isset($config['option_map']) ? $config['option_map'] : array())); ?>" data-roll-widths="<?php echo esc_attr(wp_json_encode($config['roll_widths_cm'] ?? array())); ?>">
+        <form class="ge-storefront-config" method="post" enctype="multipart/form-data" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ge-storefront data-net-multiplier="<?php echo esc_attr($net_multiplier); ?>" data-tax-multiplier="<?php echo esc_attr($tax['multiplier']); ?>" data-price-decimals="<?php echo esc_attr($price_decimals); ?>" data-options="<?php echo esc_attr(wp_json_encode($config['options'])); ?>" data-option-map="<?php echo esc_attr(wp_json_encode(isset($config['option_map']) ? $config['option_map'] : array())); ?>" data-roll-widths="<?php echo esc_attr(wp_json_encode($config['roll_widths_cm'] ?? array())); ?>">
             <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION); ?>">
             <input type="hidden" name="product_id" value="<?php echo esc_attr($product->get_id()); ?>">
             <?php wp_nonce_field(self::ACTION . '_' . $product->get_id(), 'ge_store_nonce'); ?>
@@ -148,7 +149,7 @@ final class GE_WTP_Storefront {
             <?php endif; ?>
             <div class="ge-storefront-buy-row<?php echo !empty($config['fixed_quantity_selector']) ? ' has-fixed-quantity' : ''; ?>">
                 <?php if (!empty($config['fixed_quantity_selector'])) : ?><input type="hidden" name="quantity" value="<?php echo esc_attr($minimum_quantity); ?>" data-ge-quantity><?php else : ?><label><span>Cantidad</span><input type="number" name="quantity" min="<?php echo esc_attr($minimum_quantity); ?>" step="<?php echo esc_attr($quantity_step); ?>" value="<?php echo esc_attr($minimum_quantity); ?>" data-ge-quantity></label><?php endif; ?>
-                <div class="ge-storefront-price"><small><?php echo esc_html($tax['label']); ?></small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $tax['multiplier'], array('decimals' => $price_decimals))); ?></strong><?php if (!$prints_final) : ?><span data-ge-base>Base sin IVA: <?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity, array('decimals' => $price_decimals))); ?></span><?php endif; ?></div>
+                <div class="ge-storefront-price"><small>Precio por la cantidad elegida</small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $net_multiplier, array('decimals' => $price_decimals))); ?> + IVA</strong><span data-ge-base>Total con IVA: <?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $tax['multiplier'], array('decimals' => $price_decimals))); ?></span></div>
             </div>
             <?php if (!empty($tax['note'])) : ?><p class="ge-storefront-account-note"><?php echo esc_html($tax['note']); ?></p><?php endif; ?>
             <?php if (!empty($config['windbanners'])) : ?><p data-ge-option-details aria-live="polite"></p><?php endif; ?>
