@@ -1,0 +1,812 @@
+{
+  "release": "20261028",
+  "assets": {
+    "gx-20261028-photo-002.webp": {
+      "ref": 2,
+      "title": "BANDERA 145 x 300",
+      "sha256": "cea866e616285712b5600c2349cfca2617b078c35893b31c32b520f54967e02b",
+      "source_sha256": "2b70a71f606b7f4b7f28718b65c4b930d7ca187734a94ef71e73a700bc4f3adb",
+      "kind": "edited_ai",
+      "bytes": 135230
+    },
+    "gx-20261028-photo-004.webp": {
+      "ref": 4,
+      "title": "Base Cruz",
+      "sha256": "ef3cd41b5f979a96851214d78dfb99db3dc85699823921082d515651a5a82035",
+      "source_sha256": "dc74f4904dd587afd1e060f33a4c875ab0a14a824a69e798deb94ac2b267d2f3",
+      "kind": "edited_ai",
+      "bytes": 26418
+    },
+    "gx-20261028-photo-005.webp": {
+      "ref": 5,
+      "title": "Base Cruz",
+      "sha256": "88200806e62d7219a0aef726d5433ecba7eef7080b326a5bf994f66593c22181",
+      "source_sha256": "cd6f49ab51764b601fe7590dc807ede89e5ac2522119aad88e15a2dcb8cf8670",
+      "kind": "edited_ai",
+      "bytes": 69798
+    },
+    "gx-20261028-photo-006.webp": {
+      "ref": 6,
+      "title": "Base Cruz con Sobrepeso",
+      "sha256": "b81c690c0761960cac6ed03772905008ca47fc966f3362d71ed027e52aea7260",
+      "source_sha256": "6a205450a80da6f39882e02063ed826d01803677d6857cf136864c91433cba78",
+      "kind": "edited_ai",
+      "bytes": 137012
+    },
+    "gx-20261028-photo-007.webp": {
+      "ref": 7,
+      "title": "Base Cruz con Sobrepeso",
+      "sha256": "2da60afe0ff48026355d687d1960ab398d06679f56356f9de6bd3ab6ec3276aa",
+      "source_sha256": "5a80674e9f35e8678c3b9b42ebd523f9864788a04eefb495ff1007977edb189d",
+      "kind": "edited_ai",
+      "bytes": 84318
+    },
+    "gx-20261028-photo-008.webp": {
+      "ref": 8,
+      "title": "Base Plana",
+      "sha256": "222a08e6f9e4b0c0e0c6f0f10f882d3f01acd67026ce7782bce7b7299cf59d91",
+      "source_sha256": "a77ab9f2df720f18b80989b0cafacef2d9ab3da760dba19a6114858a4e299d2f",
+      "kind": "edited_ai",
+      "bytes": 118560
+    },
+    "gx-20261028-photo-010.webp": {
+      "ref": 10,
+      "title": "Estaca 40cms / Estaca 60cms",
+      "sha256": "160656114ed4533186e893d0b39a4fa145415f5fb394e36e53543aa1a67ed1c7",
+      "source_sha256": "972af9c2861d3fceafae4e3b69c312cc07d76fcad5058b0de37c7ce0ac898df3",
+      "kind": "edited_ai",
+      "bytes": 31822
+    },
+    "gx-20261028-photo-013.webp": {
+      "ref": 13,
+      "title": "Carpa Estrella Large",
+      "sha256": "4fdc0a2df1695fbc733ae7b869348ea44847ac7b373b1dd776c6b95b7f4b827a",
+      "source_sha256": "5d78a14d97aaefb75d677fe61c44b95c78505c51699bc4ecf9094a4875a4ba80",
+      "kind": "edited_ai",
+      "bytes": 500802
+    },
+    "gx-20261028-photo-017.webp": {
+      "ref": 17,
+      "title": "Carpa Estrella Medium",
+      "sha256": "bda6292313057cd090aa7377e725215223928a2eb20e4a73ac269af09534b7c5",
+      "source_sha256": "36fd9cce2029832bc2c17d9dede3d269592dd6dca9f2f8cfb33c32fb70c5bcb4",
+      "kind": "edited_ai",
+      "bytes": 610760
+    },
+    "gx-20261028-photo-021.webp": {
+      "ref": 21,
+      "title": "Carpa Estrella Small",
+      "sha256": "d8c141abf3437438c928f269a28af8ca038a0b1bf5950d93d3e4cab4bee5bc9c",
+      "source_sha256": "15de5e66bb5bc9c4291205eaa7f38b19bac9399ff279ca5d1280f6225c2de27a",
+      "kind": "edited_ai",
+      "bytes": 530550
+    },
+    "gx-20261028-photo-103.webp": {
+      "ref": 103,
+      "title": "FLY BANNER CUBE 320",
+      "sha256": "78973ab5e80deefb18850d2a95cb3f19ad794c0d19788706c828bf4781f3c525",
+      "source_sha256": "3ba8d0ba7259317af65c860651f3eb258fff03a3e3250dbf098515e026cbf840",
+      "kind": "edited_ai",
+      "bytes": 292606
+    },
+    "gx-20261028-photo-104.webp": {
+      "ref": 104,
+      "title": "FLY BANNER CUBE 320",
+      "sha256": "d5d41af6a9b7bfdd80a1d7ad3d70842e21d249f6f540fec9f8b78cdf7e069e75",
+      "source_sha256": "439474bb6298f9c99d9b7bf541bda9695fb1a57d1dca44c3c5067fa3b27cfd45",
+      "kind": "edited_ai",
+      "bytes": 342976
+    },
+    "gx-20261028-photo-107.webp": {
+      "ref": 107,
+      "title": "FLY BANNER CUBE 420 / FLY BANNER CUBE 520",
+      "sha256": "e7489b8810ae88e989046c5cf4f1739a33cee4e4d56422772150dc5a31d06e0b",
+      "source_sha256": "2f90a91e69536a2560b8641d1a18a539061b0c08f1702e18e5d2284350891fcf",
+      "kind": "edited_ai",
+      "bytes": 391914
+    },
+    "gx-20261028-photo-108.webp": {
+      "ref": 108,
+      "title": "FLY BANNER CUBE 420",
+      "sha256": "51756371a04714861463392ea9e098cd5cb6470f272012ff5221d77c19bcb50b",
+      "source_sha256": "cf20a97ca170238d5c39a1e5cc130e54df3ffeb6864ff66f831707ca63b6d739",
+      "kind": "edited_ai",
+      "bytes": 367834
+    },
+    "gx-20261028-photo-122.webp": {
+      "ref": 122,
+      "title": "FLY BANNER DROP 320",
+      "sha256": "f57fabf4559abca869f2eee0e3045967b22a176b1c9d83a0b9bbe65335753b7b",
+      "source_sha256": "4e3f7310ca5944a2dd14fbc651c10e4a95f95aa519114fb23de5337e97d734a5",
+      "kind": "edited_ai",
+      "bytes": 388008
+    },
+    "gx-20261028-photo-125.webp": {
+      "ref": 125,
+      "title": "FLY BANNER DROP 420",
+      "sha256": "e0b9d0e03a53eefc07bf547363051fdb213de2d8fa7b903d2dda32151a0b2756",
+      "source_sha256": "1af53231f5e42115c81f1eb513e100c664db1ed5a2b092ce399d6f167f48a382",
+      "kind": "edited_ai",
+      "bytes": 258166
+    },
+    "gx-20261028-photo-138.webp": {
+      "ref": 138,
+      "title": "FLY BANNER GOTA 420",
+      "sha256": "dd974056bcc1a13d8a48d75c96a2520bf70f34cbbcbf8ac821d61c6ebaf7cf7b",
+      "source_sha256": "c67048ad7a914ab3e6caa116a3982f4c7592c118b5848539ca2169e02d807838",
+      "kind": "edited_ai",
+      "bytes": 227762
+    },
+    "gx-20261028-photo-143.webp": {
+      "ref": 143,
+      "title": "FLY BANNER OVAL LARGE",
+      "sha256": "0bf1a3230fecafbd5623cd61413fb90a5c2d1d1fbe9a47f9016eabca31ac8d9a",
+      "source_sha256": "52214274757e83ab9bc78a9ce1f3e93bb4c3399add22cb5783f94801dbcfbbe2",
+      "kind": "edited_ai",
+      "bytes": 245504
+    },
+    "gx-20261028-photo-151.webp": {
+      "ref": 151,
+      "title": "FLY BANNER PETALO 320",
+      "sha256": "f74940322ef3583a914d23d955b2b13d2cac25e24873234305a75a89f4d5f45b",
+      "source_sha256": "f238435e12da2b077839c420be4ca5ddc77e3022174c13e0c9683cfa8741574e",
+      "kind": "edited_ai",
+      "bytes": 219844
+    },
+    "gx-20261028-photo-160.webp": {
+      "ref": 160,
+      "title": "FLY BANNER PLUMA 320",
+      "sha256": "4ca020ff5183af745eb9efe120c78caebec8c2d1dad569e95bb8a94f72158d5b",
+      "source_sha256": "45d0151352fa65c44f30a8671c1080b0c3a14f9a81baddd1b4d321c82e87fde9",
+      "kind": "edited_ai",
+      "bytes": 489154
+    },
+    "gx-20261028-photo-161.webp": {
+      "ref": 161,
+      "title": "FLY BANNER PLUMA 320",
+      "sha256": "2a8b146d3c60075ae1ba1db52082228d8b90b6ce3b5d46e215ad8f3517b94e1b",
+      "source_sha256": "a728e28a5112dd3bec255d31ccc13790492b0a41e518ab099d0a6fac474b9e7a",
+      "kind": "edited_ai",
+      "bytes": 193284
+    },
+    "gx-20261028-photo-162.webp": {
+      "ref": 162,
+      "title": "FLY BANNER PLUMA 320",
+      "sha256": "2d5f807806903fcbb4f6def01d7ba5534daf74c1b72bef6b5aa6b1cc504bf7ff",
+      "source_sha256": "ddf8cb44af1982e9fb7321ae04a2bbeb71257c3d348cef22a976590725464a88",
+      "kind": "edited_ai",
+      "bytes": 502368
+    },
+    "gx-20261028-photo-165.webp": {
+      "ref": 165,
+      "title": "FLY BANNER PLUMA 420",
+      "sha256": "1058c4273c9290d9ea037759e65596ead6b7f3ec0c18fa3cfb335888d53baab5",
+      "source_sha256": "984b62dfd170c0b71a20a6e30b79e211de814fcffdde20cd48abb4925f45a506",
+      "kind": "edited_ai",
+      "bytes": 224278
+    },
+    "gx-20261028-photo-166.webp": {
+      "ref": 166,
+      "title": "FLY BANNER PLUMA 420 / FLY BANNER PLUMA 520",
+      "sha256": "79062e3d366d23f17a79a342dc70d6ed626a63d84bfcc5043232e6057a006ea6",
+      "source_sha256": "52f23b35de705c2f4a9cc798d2af7c979f2d8fb23c437e4c330d2823c376d4e7",
+      "kind": "edited_ai",
+      "bytes": 213348
+    },
+    "gx-20261028-photo-167.webp": {
+      "ref": 167,
+      "title": "FLY BANNER PLUMA 420 / FLY BANNER PLUMA 520",
+      "sha256": "ea9e68530e45daddc6b2c959d2b4b3d893b43903057673d4f3725b592a80af8d",
+      "source_sha256": "bd04f6d933e07a692b43a4485736a2e897e684695c0b11bf595ca263addfd59b",
+      "kind": "edited_ai",
+      "bytes": 234674
+    },
+    "gx-20261028-photo-180.webp": {
+      "ref": 180,
+      "title": "FLY BANNER SAIL 420 / FLY BANNER SAIL 520",
+      "sha256": "69cd94d1cb43ae8ff89cac69428766db82332f196e0c09be11f5174360f958e5",
+      "source_sha256": "9d8a63fcf2178f0ac7c8ada7f479fbc38cfa988977f028299a1a28e2eb0d9853",
+      "kind": "edited_ai",
+      "bytes": 237514
+    },
+    "gx-20261028-photo-181.webp": {
+      "ref": 181,
+      "title": "FLY BANNER SAIL 420 / FLY BANNER SAIL 520",
+      "sha256": "a1b10f18586b52ab1d670db800d8dd175af51b26855cb1a931da25899516688f",
+      "source_sha256": "bde9dd42bc290956b315f4f4d36146bbf75e33a1903d69d8b9cb38439259cf49",
+      "kind": "edited_ai",
+      "bytes": 230186
+    },
+    "gx-20261028-photo-187.webp": {
+      "ref": 187,
+      "title": "FLY BANNER SURF 230",
+      "sha256": "13537ab5e426232b8dfe7ebb3a3371cfaa005898ac67d5e8ad39e77f68f8eed8",
+      "source_sha256": "cf77a357b4715602899d568f57af74a0ac8fda66afd833defe0d423cc67e6af5",
+      "kind": "edited_ai",
+      "bytes": 378318
+    },
+    "gx-20261028-photo-190.webp": {
+      "ref": 190,
+      "title": "FLY BANNER SURF 320",
+      "sha256": "746050beef1d81fb2f6d96d33af4bf031a4656cd42cb49e62065b18f91fb21b9",
+      "source_sha256": "996815bc747bd4a9c96e2e2d23fff16ed2a688dc038195f390c342fd4e000446",
+      "kind": "edited_ai",
+      "bytes": 212502
+    },
+    "gx-20261028-photo-191.webp": {
+      "ref": 191,
+      "title": "FLY BANNER SURF 320",
+      "sha256": "d6ad5385010256cba9f331ab8754da4d6c7fdd4d2681f37b091c07af0c951315",
+      "source_sha256": "8295ac03e712f876e9aae06d2933fda4b2191b3a5ec4d629491d22eb36561f1d",
+      "kind": "edited_ai",
+      "bytes": 189616
+    },
+    "gx-20261028-photo-192.webp": {
+      "ref": 192,
+      "title": "FLY BANNER SURF 320",
+      "sha256": "33479755887a8ecc89433796b80d877692272e86864add42b2497eba2f834128",
+      "source_sha256": "e709a59c7b5bedf05d1095ac28d0be248b490b57831262bd2970ce575dd4389a",
+      "kind": "edited_ai",
+      "bytes": 222322
+    },
+    "gx-20261028-photo-195.webp": {
+      "ref": 195,
+      "title": "FLY BANNER SURF 420",
+      "sha256": "f5ee8c57ebee728d457194378845caea29102fb7c4e1732c168f00329fddd4c5",
+      "source_sha256": "85012e54594d3e200423278ec891d902a99a7e66692d105aecb8ecf78098467b",
+      "kind": "edited_ai",
+      "bytes": 460808
+    },
+    "gx-20261028-photo-198.webp": {
+      "ref": 198,
+      "title": "Banner Bow Medium",
+      "sha256": "72f941a781a62ed94d26bd12f07e12f5e098608aeebc7c4f1d60f7f79cc07699",
+      "source_sha256": "1266a58a4227b56b909a13f8b2bc064e8c413cd57768a052ea976201f6fb71f0",
+      "kind": "edited_ai",
+      "bytes": 403986
+    },
+    "gx-20261028-photo-202.webp": {
+      "ref": 202,
+      "title": "Banner Bow Small",
+      "sha256": "1665b86ec416cf457ce1c691b6084f2f2e550e90b88db9e51ab9273ae8cf0ad3",
+      "source_sha256": "27a57c43edda321b22acfddfba4713687377ca3c2cb9bcd3f4d7ae85a37c437f",
+      "kind": "edited_ai",
+      "bytes": 324162
+    },
+    "gx-20261028-photo-211.webp": {
+      "ref": 211,
+      "title": "Pop Up Circular Grande",
+      "sha256": "9bad91f0c5483053fb01e289a71ed3fd87f9f77a0ce49b3ede33d941a6cc93b3",
+      "source_sha256": "1eda6f77ca471acc88f334a2fe7a2cead4a74b9ef752f9063963a95f52aae54d",
+      "kind": "edited_ai",
+      "bytes": 536228
+    },
+    "gx-20261028-photo-216.webp": {
+      "ref": 216,
+      "title": "Pop Up Circular Mediano",
+      "sha256": "44e59b242e9dd8dad265fde15023bf9bbc646a9e4d036a23d864470874408b52",
+      "source_sha256": "a322ff53930a1898d06fcf12c399c8d757f69314e8dedff0076ea79aa6d15668",
+      "kind": "edited_ai",
+      "bytes": 744578
+    },
+    "gx-20261028-photo-220.webp": {
+      "ref": 220,
+      "title": "Pop Up Tower Large / Pop Up Tower Small",
+      "sha256": "ed61cf0c3ac9f3df0f87e1fa84042f88746d493b27d56c31625dd5c6e6727400",
+      "source_sha256": "8e4a9a6041a2bb2cb6b3321700ba1182f08e4b2147f5332871f0d4400e1655f3",
+      "kind": "edited_ai",
+      "bytes": 246850
+    },
+    "gx-20261028-photo-226.webp": {
+      "ref": 226,
+      "title": "Pop Up Valla 150",
+      "sha256": "bcef0c7b348b36d097eb92f5c606ecbc2a2c824ecdc80ef6cb77ad0add2b3ed4",
+      "source_sha256": "7ad789752221ad4bab9273ab91cac5ba36df5366e158ab0740972adfecd182f7",
+      "kind": "edited_ai",
+      "bytes": 316742
+    },
+    "gx-20261028-photo-230.webp": {
+      "ref": 230,
+      "title": "Pop Up Valla 200",
+      "sha256": "a17573b422fbe35f22d722672af0599ff5b1d6c22b400481b1070c07c4331207",
+      "source_sha256": "b8b9b839ae7f97961b57114edce1e9323d34680cc1f57a57433bc4dfa03615ad",
+      "kind": "edited_ai",
+      "bytes": 483222
+    },
+    "gx-20261028-photo-243.webp": {
+      "ref": 243,
+      "title": "Arco 350 / BackDrop 140 / BackDrop 208 / BackDrop 280 / BackDrop 350 / BackDrop 420 / BackDrop 560 / BackDrop 630 / Wall Banner 100x225 / Wall Banner 200x225 / Wall Banner 300x225 / Wall Banner 400x225 / Wall Banner 500x225 / Wall Banner Base Curvo 100x235 / Wall Banner Base Curvo 200x235 / Wall Banner Base Diagonal 100x232",
+      "sha256": "e8eac6b3efb30a6ec07fad0c2e4f87623febaa3b1af756a563ca7f56869b47d8",
+      "source_sha256": "3bbef52bc017a76a9b93ea43e7fddf1dff7942c46ac2123dc28b1f601f0d2695",
+      "kind": "edited_ai",
+      "bytes": 101100
+    },
+    "gx-20261028-photo-244.webp": {
+      "ref": 244,
+      "title": "Arco 350 / Totem Curvo / Totem Recto / Wall Banner 300x225 / Wall Banner 400x225 / Wall Banner 500x225 / Wall Banner Base Curvo 100x235 / Wall Banner Base Curvo 200x235 / Wall Banner Base Diagonal 100x232",
+      "sha256": "901da3679791fdef776b09bbc24bf4b426b282e28e521909b181461921d81022",
+      "source_sha256": "79060b3c18187adb21c58ccc1cd8c157fd226b0db4307d207e9abad56b71d8eb",
+      "kind": "edited_ai",
+      "bytes": 69346
+    },
+    "gx-20261028-photo-248.webp": {
+      "ref": 248,
+      "title": "Totem Curvo",
+      "sha256": "f0ac284faa5adb08d9c4adcb575118537e097b05093866e7238d18f1e873410e",
+      "source_sha256": "e618e8c3bc2a23cb18c696c1ebd8b13fc945af158deb38a94c61eb095fb97baa",
+      "kind": "edited_ai",
+      "bytes": 191492
+    },
+    "gx-20261028-photo-450.webp": {
+      "ref": 450,
+      "title": "Exhibición de banderas — vista general",
+      "sha256": "7a97a6b1aa1b22e20ac72142227c2ba6ae41c0ade35e386fb85f22255f92f221",
+      "source_sha256": "1532c0f9fd9469d7b59a8258cf5efe35fd29eea6f4e2328962e7378513470afe",
+      "kind": "edited_ai",
+      "bytes": 324584
+    },
+    "gx-20261028-photo-453.webp": {
+      "ref": 453,
+      "title": "Puff circular — detalle",
+      "sha256": "714e500ecf905813a0f0a85a12bc1da315b2f318fec8f89dcf517040b415f88d",
+      "source_sha256": "e1eeafa7c05ac4d89211947a67505d98096d63a78b83f460d8efcd80ee9d24b8",
+      "kind": "edited_ai",
+      "bytes": 412808
+    }
+  },
+  "products": {
+    "windbanners-banderas-sublimadas": {
+      "options": {
+        "wb-210": {
+          "label": "BANDERA 145 x 300",
+          "assets": [
+            "gx-20261028-photo-002.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-bases-estacas": {
+      "options": {
+        "wb-200": {
+          "label": "Base Cruz",
+          "assets": [
+            "gx-20261028-photo-004.webp",
+            "gx-20261028-photo-005.webp"
+          ]
+        },
+        "wb-201": {
+          "label": "Base Cruz con Sobrepeso",
+          "assets": [
+            "gx-20261028-photo-006.webp",
+            "gx-20261028-photo-007.webp"
+          ]
+        },
+        "wb-202": {
+          "label": "Base Plana",
+          "assets": [
+            "gx-20261028-photo-008.webp"
+          ]
+        },
+        "wb-203": {
+          "label": "Estaca 40cms",
+          "assets": [
+            "gx-20261028-photo-010.webp"
+          ]
+        },
+        "wb-204": {
+          "label": "Estaca 60cms",
+          "assets": [
+            "gx-20261028-photo-010.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-carpas-estrella": {
+      "options": {
+        "wb-257-v138": {
+          "label": "Carpa Estrella Large Estructura de Hierro",
+          "assets": [
+            "gx-20261028-photo-013.webp"
+          ]
+        },
+        "wb-256-v139": {
+          "label": "Carpa Estrella Medium Estructura de Hierro",
+          "assets": [
+            "gx-20261028-photo-017.webp"
+          ]
+        },
+        "wb-255-v128": {
+          "label": "Carpa Estrella Small Estructura de Hierro",
+          "assets": [
+            "gx-20261028-photo-021.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-cube": {
+      "options": {
+        "wb-162": {
+          "label": "FLY BANNER CUBE 320",
+          "assets": [
+            "gx-20261028-photo-103.webp",
+            "gx-20261028-photo-104.webp"
+          ]
+        },
+        "wb-169": {
+          "label": "FLY BANNER CUBE 420",
+          "assets": [
+            "gx-20261028-photo-107.webp",
+            "gx-20261028-photo-108.webp"
+          ]
+        },
+        "wb-175": {
+          "label": "FLY BANNER CUBE 520",
+          "assets": [
+            "gx-20261028-photo-107.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-drop": {
+      "options": {
+        "wb-163": {
+          "label": "FLY BANNER DROP 320",
+          "assets": [
+            "gx-20261028-photo-122.webp"
+          ]
+        },
+        "wb-170": {
+          "label": "FLY BANNER DROP 420",
+          "assets": [
+            "gx-20261028-photo-125.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-gota": {
+      "options": {
+        "wb-167": {
+          "label": "FLY BANNER GOTA 420",
+          "assets": [
+            "gx-20261028-photo-138.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-oval": {
+      "options": {
+        "wb-160": {
+          "label": "FLY BANNER OVAL LARGE",
+          "assets": [
+            "gx-20261028-photo-143.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-petalo": {
+      "options": {
+        "wb-166": {
+          "label": "FLY BANNER PETALO 320",
+          "assets": [
+            "gx-20261028-photo-151.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-pluma": {
+      "options": {
+        "wb-161": {
+          "label": "FLY BANNER PLUMA 320",
+          "assets": [
+            "gx-20261028-photo-160.webp",
+            "gx-20261028-photo-161.webp",
+            "gx-20261028-photo-162.webp"
+          ]
+        },
+        "wb-168": {
+          "label": "FLY BANNER PLUMA 420",
+          "assets": [
+            "gx-20261028-photo-165.webp",
+            "gx-20261028-photo-166.webp",
+            "gx-20261028-photo-167.webp"
+          ]
+        },
+        "wb-174": {
+          "label": "FLY BANNER PLUMA 520",
+          "assets": [
+            "gx-20261028-photo-166.webp",
+            "gx-20261028-photo-167.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-sail": {
+      "options": {
+        "wb-171": {
+          "label": "FLY BANNER SAIL 420",
+          "assets": [
+            "gx-20261028-photo-180.webp",
+            "gx-20261028-photo-181.webp"
+          ]
+        },
+        "wb-177": {
+          "label": "FLY BANNER SAIL 520",
+          "assets": [
+            "gx-20261028-photo-180.webp",
+            "gx-20261028-photo-181.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-fly-surf": {
+      "options": {
+        "wb-155": {
+          "label": "FLY BANNER SURF 230",
+          "assets": [
+            "gx-20261028-photo-187.webp"
+          ]
+        },
+        "wb-165": {
+          "label": "FLY BANNER SURF 320",
+          "assets": [
+            "gx-20261028-photo-190.webp",
+            "gx-20261028-photo-191.webp",
+            "gx-20261028-photo-192.webp"
+          ]
+        },
+        "wb-172": {
+          "label": "FLY BANNER SURF 420",
+          "assets": [
+            "gx-20261028-photo-195.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-banner-bow": {
+      "options": {
+        "wb-226": {
+          "label": "Banner Bow Medium",
+          "assets": [
+            "gx-20261028-photo-198.webp"
+          ]
+        },
+        "wb-225": {
+          "label": "Banner Bow Small",
+          "assets": [
+            "gx-20261028-photo-202.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-popup-circular": {
+      "options": {
+        "wb-222": {
+          "label": "Pop Up Circular Grande",
+          "assets": [
+            "gx-20261028-photo-211.webp"
+          ]
+        },
+        "wb-221": {
+          "label": "Pop Up Circular Mediano",
+          "assets": [
+            "gx-20261028-photo-216.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-popup-tower": {
+      "options": {
+        "wb-224": {
+          "label": "Pop Up Tower Large",
+          "assets": [
+            "gx-20261028-photo-220.webp"
+          ]
+        },
+        "wb-223": {
+          "label": "Pop Up Tower Small",
+          "assets": [
+            "gx-20261028-photo-220.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-popup-valla": {
+      "options": {
+        "wb-216": {
+          "label": "Pop Up Valla 150",
+          "assets": [
+            "gx-20261028-photo-226.webp"
+          ]
+        },
+        "wb-217": {
+          "label": "Pop Up Valla 200",
+          "assets": [
+            "gx-20261028-photo-230.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-arcos-totems-vallas": {
+      "options": {
+        "wb-287": {
+          "label": "Arco 350",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-288": {
+          "label": "Totem Curvo",
+          "assets": [
+            "gx-20261028-photo-244.webp",
+            "gx-20261028-photo-248.webp"
+          ]
+        },
+        "wb-289": {
+          "label": "Totem Recto",
+          "assets": [
+            "gx-20261028-photo-244.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-backdrops": {
+      "options": {
+        "wb-278": {
+          "label": "BackDrop 140",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-279": {
+          "label": "BackDrop 208",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-280": {
+          "label": "BackDrop 280",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-281": {
+          "label": "BackDrop 350",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-282": {
+          "label": "BackDrop 420",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-283": {
+          "label": "BackDrop 560",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-284": {
+          "label": "BackDrop 630",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        }
+      }
+    },
+    "windbanners-wall-banners": {
+      "options": {
+        "wb-261-v19": {
+          "label": "Wall Banner 100x225 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-261-v20": {
+          "label": "Wall Banner 100x225 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-263-v21": {
+          "label": "Wall Banner 200x225 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-263-v22": {
+          "label": "Wall Banner 200x225 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp"
+          ]
+        },
+        "wb-265-v23": {
+          "label": "Wall Banner 300x225 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-265-v24": {
+          "label": "Wall Banner 300x225 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-267-v25": {
+          "label": "Wall Banner 400x225 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-267-v26": {
+          "label": "Wall Banner 400x225 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-269-v27": {
+          "label": "Wall Banner 500x225 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-269-v28": {
+          "label": "Wall Banner 500x225 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-271-v29": {
+          "label": "Wall Banner Base Curvo 100x235 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-271-v30": {
+          "label": "Wall Banner Base Curvo 100x235 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-273-v31": {
+          "label": "Wall Banner Base Curvo 200x235 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-273-v32": {
+          "label": "Wall Banner Base Curvo 200x235 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-275-v33": {
+          "label": "Wall Banner Base Diagonal 100x232 Simple Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        },
+        "wb-275-v34": {
+          "label": "Wall Banner Base Diagonal 100x232 Doble Faz",
+          "assets": [
+            "gx-20261028-photo-243.webp",
+            "gx-20261028-photo-244.webp"
+          ]
+        }
+      }
+    }
+  }
+}

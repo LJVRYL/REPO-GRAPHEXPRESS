@@ -150,3 +150,5 @@ unset($ge_retired_action, $ge_retired_prefix);
 // Registered-user design references; isolated from commercial calculation and order flows.
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-registered-templates.php';
 GE_WTP_Registered_Templates::init();
+
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-catalog-reviewed-media.php';
