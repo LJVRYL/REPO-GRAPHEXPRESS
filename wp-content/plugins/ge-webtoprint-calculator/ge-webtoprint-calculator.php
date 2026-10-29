@@ -152,3 +152,5 @@ require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-registered-templates.php
 GE_WTP_Registered_Templates::init();
 
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-catalog-reviewed-media.php';
+
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-flags-product-experience.php';

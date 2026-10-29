@@ -152,6 +152,7 @@ final class GE_WTP_Storefront {
             </div>
             <?php if (!empty($tax['note'])) : ?><p class="ge-storefront-account-note"><?php echo esc_html($tax['note']); ?></p><?php endif; ?>
             <?php if (!empty($config['windbanners'])) : ?><p data-ge-option-details aria-live="polite"></p><?php endif; ?>
+            <?php do_action('ge_storefront_product_resources', $product, $config); ?>
             <?php if ($saved_artworks) : ?>
                 <fieldset class="ge-storefront-artworks">
                     <legend>Archivo de impresión</legend>

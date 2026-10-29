@@ -69,6 +69,7 @@ $_COOKIE['gx_template_return']=$cookie;check(strpos(GE_WTP_Registered_Templates:
 check(!isset($_COOKIE['gx_template_return']),'Return context consumed once');
 
 GE_WTP_Registered_Templates::wire();
-check(in_array(array('GE_WTP_Registered_Templates','item_button'),$GLOBALS['fixture_hooks']['graphex_after_product_card_actions'],true),'Custom Graphex card hook is connected');
+check(!in_array(array('GE_WTP_Registered_Templates','item_button'),$GLOBALS['fixture_hooks']['graphex_after_product_card_actions']??array(),true),'Catalog cards do not show template buttons');
+check(!in_array(array('GE_WTP_Registered_Templates','item_button'),$GLOBALS['fixture_hooks']['woocommerce_after_shop_loop_item']??array(),true),'Standard Woo cards do not show template buttons');
 check(strpos(file_get_contents(dirname(__DIR__).'/wp-content/themes/graphexpress-child/woocommerce/content-product.php'),"do_action('graphex_after_product_card_actions'")!==false,'Real custom card template invokes the extension hook');
 echo json_encode(array('status'=>'PASS','checks'=>$checks,'templates'=>83,'product_pages'=>25,'mode'=>'synthetic-users-no-real-records')).PHP_EOL;
