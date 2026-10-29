@@ -3,7 +3,7 @@ defined('ABSPATH') || exit;
 /** Product-family galleries share the native storefront configurator and private template gate. */
 final class GE_WTP_Flags_Product_Experience {
     const SLUG='windbanners-banderas-sublimadas';
-    const VERSION='20261029.2';
+    const VERSION='20261029.3';
     public static function init(){add_filter('body_class',array(__CLASS__,'body_class'));add_action('wp',array(__CLASS__,'layout'),150);add_action('wp_enqueue_scripts',array(__CLASS__,'assets'),160);add_action('ge_storefront_product_resources',array(__CLASS__,'resources'),10,2);}
     public static function supported($slug){return isset(GE_WTP_Catalog_Reviewed_Media::catalog()['products'][$slug]);}
     public static function is_product(){return function_exists('is_product')&&is_product()&&self::supported(get_post_field('post_name',get_queried_object_id()));}
@@ -26,15 +26,15 @@ final class GE_WTP_Flags_Product_Experience {
         $map=get_post_meta($product->get_id(),GE_WTP_Catalog_Reviewed_Media::META,true);if(!is_array($map))$map=array();
         $catalog=GE_WTP_Catalog_Reviewed_Media::catalog();$row=$catalog['products'][$product->get_slug()]??array();$static=array();$hashes=array();
         foreach(($row['options']??array()) as $key=>$option)foreach(($option['assets']??array()) as $name){
-            $asset=$catalog['assets'][$name]??array();if(($asset['kind']??'')!=='render')continue;
-            if(!isset($static[$name])){$static[$name]=array('id'=>0,'kind'=>'render','label'=>'Render y medidas · '.$asset['title'],'keys'=>array(),'url'=>GE_WTP_Catalog_Reviewed_Assets::url($name),'thumbnail'=>GE_WTP_Catalog_Reviewed_Assets::url($asset['thumbnail']['name']??$name));$hashes[]=$asset['sha256'];}
+            $asset=$catalog['assets'][$name]??array();if(!in_array($asset['kind']??'',array('render','photo'),true))continue;
+            if(!isset($static[$name])){$static[$name]=array('id'=>0,'kind'=>$asset['kind'],'label'=>($asset['kind']==='photo'?'Foto de referencia · ':'Render y medidas · ').$asset['title'],'keys'=>array(),'url'=>GE_WTP_Catalog_Reviewed_Assets::url($name),'thumbnail'=>GE_WTP_Catalog_Reviewed_Assets::url($asset['thumbnail']['name']??$name));$hashes[]=$asset['sha256'];}
             if(!in_array($key,$static[$name]['keys'],true))$static[$name]['keys'][]=$key;
         }
         foreach($map as $key=>$option)foreach(($option['ids']??array()) as $id){
             $id=(int)$id;if(!$id||$id===$mockup)continue;
             if(!isset($items[$id])){
                 $kind=get_post_meta($id,'_ge_catalog_reviewed_kind',true)==='render'?'render':'photo';
-                if($kind==='render'&&in_array(get_post_meta($id,'_ge_catalog_reviewed_sha256',true),$hashes,true))continue;
+                if(in_array(get_post_meta($id,'_ge_catalog_reviewed_sha256',true),$hashes,true))continue;
                 $items[$id]=array('id'=>$id,'kind'=>$kind,'label'=>$kind==='render'?'Render y medidas':'Foto de referencia','keys'=>array());
             }
             if(!in_array($key,$items[$id]['keys'],true))$items[$id]['keys'][]=$key;
