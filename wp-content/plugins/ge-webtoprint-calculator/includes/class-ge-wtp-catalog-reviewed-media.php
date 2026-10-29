@@ -6,11 +6,11 @@ final class GE_WTP_Catalog_Reviewed_Media {
     const META='_ge_catalog_reviewed_media_20261028';
     const BACKUP='ge_catalog_reviewed_media_backup_20261028';
     public static function init(){
-        add_action('template_redirect',array(__CLASS__,'release_page'),-80);
-        add_action('admin_post_'.self::ACTION,array(__CLASS__,'publish'));
+        add_action('template_redirect',array(__CLASS__,'retired_page'),-80);
         add_action('woocommerce_single_product_summary',array(__CLASS__,'gallery'),26);
         add_action('wp_enqueue_scripts',array(__CLASS__,'assets'));
     }
+    public static function retired_page(){if(isset($_GET['gx_catalog_media_release'])){nocache_headers();wp_die('La carga temporal de imágenes está cerrada.','',array('response'=>403));}}
     public static function catalog(){static $c;if(null===$c)$c=json_decode(file_get_contents(__DIR__.'/gx-catalog-media-20261028.json'),true);return $c;}
     public static function backup_key(){return self::BACKUP.'_'.substr(hash('sha256',wp_json_encode(self::catalog())),0,16);}
     public static function can_write(){return is_user_logged_in() && current_user_can('ge_manage_products') && class_exists('GE_Organization_Runtime') && GE_Organization_Runtime::allowed('cost_engine',true);}
