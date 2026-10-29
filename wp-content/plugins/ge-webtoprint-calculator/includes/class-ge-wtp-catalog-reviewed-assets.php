@@ -2,12 +2,12 @@
 defined('ABSPATH') || exit;
 /** Read-only delivery of fixed, approved public catalog assets. No uploads or business-record writes. */
 final class GE_WTP_Catalog_Reviewed_Assets {
-    const SOURCE_COMMIT='e193e5ef338b563db38344fe8307218246432691';
+    const SOURCE_COMMIT='01c74fb7e0b549e9a189eb075d123bc5ea4e24d7';
     public static function init(){add_action('template_redirect',array(__CLASS__,'serve'),-100);}
     public static function find($name){
-        if(!is_string($name)||!preg_match('/\Agx-20261029-render-[0-9]{3}(?:-thumb)?\.webp\z/D',$name))return null;
+        if(!is_string($name)||!preg_match('/\Agx-20261029-(?:render|photo)-[0-9]{3}(?:-thumb)?\.webp\z/D',$name))return null;
         foreach(GE_WTP_Catalog_Reviewed_Media::catalog()['assets'] as $file=>$asset){
-            if(($asset['kind']??'')!=='render')continue;
+            if(!in_array($asset['kind']??'',array('render','photo'),true))continue;
             if($name===$file)return $asset;
             if(isset($asset['thumbnail']['name'])&&$name===$asset['thumbnail']['name'])return $asset['thumbnail'];
         }

@@ -1639,6 +1639,45 @@
         "sha256": "9cb7af397bcb46f9ed71b0703f7238b983dcdb45c74ff83d7e040ea76a307b92",
         "bytes": 1572
       }
+    },
+    "gx-20261029-photo-121.webp": {
+      "ref": 121,
+      "title": "FLY BANNER DROP 320",
+      "sha256": "2ed6190b48fc600c555f36f70da6f7d7c3590dfd09873368ada4aa7236111011",
+      "source_sha256": "83d3eb200f71842d4a796a62c8e345b95ba723816293e8c3d1ec037f750a5c74",
+      "kind": "photo",
+      "bytes": 695240,
+      "thumbnail": {
+        "name": "gx-20261029-photo-121-thumb.webp",
+        "sha256": "0fd628379701e2a6247d83359312243f207686dffb7c2b017c23815ba0384f4c",
+        "bytes": 13126
+      }
+    },
+    "gx-20261029-photo-159.webp": {
+      "ref": 159,
+      "title": "FLY BANNER PLUMA 320",
+      "sha256": "7986f9ef9c9297b03b4823e74f5f5408337adf0f8049af4fb6808f40407b362a",
+      "source_sha256": "64bcda9d3535aa63f638c22910a535d3a4f28c444fd96faf0be95bd906991b6f",
+      "kind": "photo",
+      "bytes": 300572,
+      "thumbnail": {
+        "name": "gx-20261029-photo-159-thumb.webp",
+        "sha256": "e7fdb4b8fd6ab77e39d53ea819e5ff5b93db7659c5e54e6914918f240abf0816",
+        "bytes": 9614
+      }
+    },
+    "gx-20261029-photo-233.webp": {
+      "ref": 233,
+      "title": "Pop Up Vertical Chico",
+      "sha256": "0104d4383e904fabaa9b5736569407564f8e03d0edbe1ed7bd97062d2679f741",
+      "source_sha256": "32bb2c42a26f5e859f03cbab825516ff93eedc9d40c25f1d3539e46b8d5253b0",
+      "kind": "photo",
+      "bytes": 427148,
+      "thumbnail": {
+        "name": "gx-20261029-photo-233-thumb.webp",
+        "sha256": "d4f66b9fb3cb68b498ef364613327424d59ccd2c1961cfae1c5a42eb942edf75",
+        "bytes": 8192
+      }
     }
   },
   "products": {
@@ -1770,7 +1809,8 @@
           "label": "FLY BANNER DROP 320",
           "assets": [
             "gx-20261028-photo-122.webp",
-            "gx-20261029-render-056.webp"
+            "gx-20261029-render-056.webp",
+            "gx-20261029-photo-121.webp"
           ]
         },
         "wb-170": {
@@ -1901,7 +1941,8 @@
             "gx-20261028-photo-160.webp",
             "gx-20261028-photo-161.webp",
             "gx-20261028-photo-162.webp",
-            "gx-20261029-render-077.webp"
+            "gx-20261029-render-077.webp",
+            "gx-20261029-photo-159.webp"
           ]
         },
         "wb-168": {
@@ -2476,7 +2517,8 @@
         "wb-218": {
           "label": "Pop Up Vertical Chico",
           "assets": [
-            "gx-20261029-render-234.webp"
+            "gx-20261029-render-234.webp",
+            "gx-20261029-photo-233.webp"
           ]
         }
       }
