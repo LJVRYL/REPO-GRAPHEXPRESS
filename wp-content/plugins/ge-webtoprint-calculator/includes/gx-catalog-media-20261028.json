@@ -1678,6 +1678,986 @@
         "sha256": "d4f66b9fb3cb68b498ef364613327424d59ccd2c1961cfae1c5a42eb942edf75",
         "bytes": 8192
       }
+    },
+    "gx-20261029-photo-010.webp": {
+      "ref": 10,
+      "title": "Base plastica Rellenable",
+      "sha256": "0979c56bf00595e8a160c3c78797a85a37bf5e0d4f7926f7159898cbb7cf091a",
+      "source_sha256": "d5893c5bb10020c8e4285edae3bd67d537b45b86d1c4114daa0d93d1ec738eb8",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 225294,
+      "thumbnail": {
+        "name": "gx-20261029-photo-010-thumb.webp",
+        "sha256": "50ddd418e44844d77b2aaffe49ee6974089dedad27db4c75d5e7ccfca51a4103",
+        "bytes": 2028
+      }
+    },
+    "gx-20261029-photo-044.webp": {
+      "ref": 44,
+      "title": "FLY BANNER CUBE 230",
+      "sha256": "26b11b2e93bae3b61b472c5513b71ba1a3186ecf245fd0afa8473ea000ca4fd6",
+      "source_sha256": "22c5888f073ac01d08fca013ecccef2ce608f362739accf232726134271da487",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 93662,
+      "thumbnail": {
+        "name": "gx-20261029-photo-044-thumb.webp",
+        "sha256": "11694f9dc164d92464e4a06a7a75da3f059831eb25855c7db0570ed716b25f88",
+        "bytes": 4754
+      }
+    },
+    "gx-20261029-photo-103.webp": {
+      "ref": 103,
+      "title": "FLY BANNER CUBE 320",
+      "sha256": "86bc3954e441f99ed9ec98a9f86f9a789567c421bce40047225274c23d9467de",
+      "source_sha256": "c610cc012ea4d7dffc416b54621caca70a2486d685cedcf5bf8dc4500e9f39cd",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 72118,
+      "thumbnail": {
+        "name": "gx-20261029-photo-103-thumb.webp",
+        "sha256": "282ee5b795e9ebb8445f39775a78000d38a52ac477e191445757730efe67b65c",
+        "bytes": 2988
+      }
+    },
+    "gx-20261029-photo-110.webp": {
+      "ref": 110,
+      "title": "FLY BANNER CUBE 420 / FLY BANNER CUBE 520",
+      "sha256": "7ae16dcb423fc80a3a12a845c117a9061dc0cdd98878621354b54461d76fc512",
+      "source_sha256": "070b3a07447ea7606794ada16a388b0179a62848c8ce5a1d8e832d29e64bcb5d",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 81712,
+      "thumbnail": {
+        "name": "gx-20261029-photo-110-thumb.webp",
+        "sha256": "d55f8465e4b231176e47847529f68f3f691f07b6f36f515d775df221c892786a",
+        "bytes": 3166
+      }
+    },
+    "gx-20261029-photo-117.webp": {
+      "ref": 117,
+      "title": "FLY BANNER DROP 230",
+      "sha256": "ea24d863572e5d572a6cfee9b9876b019ed57097b23acc5543e49a06040fe618",
+      "source_sha256": "63a81f7f9a6b565c18220f77fc8769925fc3a715f28087ac0b0ccb5396ade6f7",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 112500,
+      "thumbnail": {
+        "name": "gx-20261029-photo-117-thumb.webp",
+        "sha256": "3d0b9c2f4d48d8160c6e780cf976c38a80fac6d5e981997b1d825e54ee3966c8",
+        "bytes": 3772
+      }
+    },
+    "gx-20261029-photo-118.webp": {
+      "ref": 118,
+      "title": "FLY BANNER DROP 230",
+      "sha256": "a9973be5d7b5aa07823b2c2e2ddc0975b7326d2040a9a5e885c627deaabd0c83",
+      "source_sha256": "791cd1eee17bce734768895da52d4fc5cd7b1d53859db1ad7fc9e54161064e51",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 76066,
+      "thumbnail": {
+        "name": "gx-20261029-photo-118-thumb.webp",
+        "sha256": "f9a5b44d9cec956359ac592e57d8c3fd868b91d1dcc24c2a04909166e2f5fc9b",
+        "bytes": 3898
+      }
+    },
+    "gx-20261029-photo-119.webp": {
+      "ref": 119,
+      "title": "FLY BANNER DROP 230",
+      "sha256": "bdcd3f3b2f3c4bf628c351a05f0e84e3eef51898db0414eaf2735c72728c4d72",
+      "source_sha256": "8c65e35f948655eb588588edadefb435f5601674c8644b51a1619f3e96e566d5",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 103390,
+      "thumbnail": {
+        "name": "gx-20261029-photo-119-thumb.webp",
+        "sha256": "c65bcdc8fb9d75b4a5cfc8fab24cf0f9abf42d865aaa524f3cfa31b6482d0d12",
+        "bytes": 5004
+      }
+    },
+    "gx-20261029-photo-129.webp": {
+      "ref": 129,
+      "title": "FLY BANNER GOTA 230",
+      "sha256": "fd7059374f2e8436365d6e03eaa209880b41be715cd45ebac05d079234eb7973",
+      "source_sha256": "5647bfe9d32d67f51db68025ea379b20efdf9427114f6a6f7d93cdd916894cf6",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 61586,
+      "thumbnail": {
+        "name": "gx-20261029-photo-129-thumb.webp",
+        "sha256": "58fddcff156ba07eadc2923f8066b87da7d066b9635cf3bab20b8cd07d68b2fd",
+        "bytes": 2626
+      }
+    },
+    "gx-20261029-photo-130.webp": {
+      "ref": 130,
+      "title": "FLY BANNER GOTA 230",
+      "sha256": "bbad2dd4913b2179d39e9bce4be81126b3ebd5d19efb7aaca63f695cbdbdd6b9",
+      "source_sha256": "be563b5b0c73a77e729f66ab427dcf5262e84e5c010a043aebc077fb2db39e3c",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 75088,
+      "thumbnail": {
+        "name": "gx-20261029-photo-130-thumb.webp",
+        "sha256": "ae11182832ea801b483a499765b290f6b71efee0da341cda4e56ad9ad008a587",
+        "bytes": 3656
+      }
+    },
+    "gx-20261029-photo-131.webp": {
+      "ref": 131,
+      "title": "FLY BANNER GOTA 230",
+      "sha256": "6773bd8078e38e6f5e51ee4ac053ad362a75efeff8693e7a25bd18c5c8db873b",
+      "source_sha256": "aa35eb4fde8f0c77735da05110f7ad046b46a020b1a323185ad63baeacbe7f56",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 145534,
+      "thumbnail": {
+        "name": "gx-20261029-photo-131-thumb.webp",
+        "sha256": "8552c0448daeea75b55e2127d12ad5e8a3b7c2b56a1d8439f0712dd1360e8e31",
+        "bytes": 4870
+      }
+    },
+    "gx-20261029-photo-134.webp": {
+      "ref": 134,
+      "title": "FLY BANNER GOTA 320",
+      "sha256": "ccdd5d7149671f8e18258f028df1d6e51533b430914621fe84af9654be1c4d77",
+      "source_sha256": "862d4a01a3b35bdb4082239145be1dc3580525c4536e2639141d96f6d83afa09",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 68186,
+      "thumbnail": {
+        "name": "gx-20261029-photo-134-thumb.webp",
+        "sha256": "07f7555185fec5d36e06a2c2200e63166e126cddfa57a9a17d79bbca5ef69da4",
+        "bytes": 3164
+      }
+    },
+    "gx-20261029-photo-147.webp": {
+      "ref": 147,
+      "title": "FLY BANNER OVAL SMALL",
+      "sha256": "22a18503141bdf7ee0631675beb79db267fbaffa116ca7e340e985de929201c2",
+      "source_sha256": "6b2d58714926bbebdde9a93ce2ad25806e55bc1310401a9c079661efe86cfa4c",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 110628,
+      "thumbnail": {
+        "name": "gx-20261029-photo-147-thumb.webp",
+        "sha256": "7fb7f8dd3815825339263d6ccec6d223a9d62f9fe780c8035e198da31cea9c70",
+        "bytes": 4882
+      }
+    },
+    "gx-20261029-photo-156.webp": {
+      "ref": 156,
+      "title": "FLY BANNER PLUMA 230",
+      "sha256": "9b4560cacd47d989c62e090bf58e0dff5e49bc589639ef2fb459d37f69550640",
+      "source_sha256": "75e3560e159ed10c48fe05700c2316dcdbc6b7ec251b2493484b377b7af2e42a",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 85584,
+      "thumbnail": {
+        "name": "gx-20261029-photo-156-thumb.webp",
+        "sha256": "c8aafa3ef3b0921d78d1d743c21c537283c352edcf0f09e3d64d389dc1614f20",
+        "bytes": 3514
+      }
+    },
+    "gx-20261029-photo-157.webp": {
+      "ref": 157,
+      "title": "FLY BANNER PLUMA 230",
+      "sha256": "5941aef9dfae74ffeac44eb747b4a5b7529acfd4b705b8caec79e8c4c44234e1",
+      "source_sha256": "fe7ce0341fc2e0d47687feaef90797c0ab3592a2b91a12c6637c4540f9e9f35b",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 117594,
+      "thumbnail": {
+        "name": "gx-20261029-photo-157-thumb.webp",
+        "sha256": "3cec870bebba1740e8bcda49a7a418b1a617a173ebd2b488a80fd8d4ddfefe1e",
+        "bytes": 4606
+      }
+    },
+    "gx-20261029-photo-174.webp": {
+      "ref": 174,
+      "title": "FLY BANNER SAIL 230",
+      "sha256": "7532751d7517ba487c44c351244b55093d94309f27be3297656c1117d80198e8",
+      "source_sha256": "de2ab9c3ec0d7d02956bc56646436d6809b463757b88cd9edc0a2c7e0410d892",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 201724,
+      "thumbnail": {
+        "name": "gx-20261029-photo-174-thumb.webp",
+        "sha256": "813ba42c5c72986cc096c2b1ec63e46334891ee1031eaffaf43a0f6fe50173ce",
+        "bytes": 6078
+      }
+    },
+    "gx-20261029-photo-175.webp": {
+      "ref": 175,
+      "title": "FLY BANNER SAIL 230",
+      "sha256": "fd67db0057bba8c6d82c0dac9eb32a13c8895000d420b6d49372356a610e27dc",
+      "source_sha256": "5458a84f631c953a2efb222d160ab6b4262978f181888df1bda67603c96dbaad",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 97694,
+      "thumbnail": {
+        "name": "gx-20261029-photo-175-thumb.webp",
+        "sha256": "71a6a744d65fab99a2a15f65ce23e38fc07d9604aa657e69da67d7d82de52746",
+        "bytes": 4746
+      }
+    },
+    "gx-20261029-photo-176.webp": {
+      "ref": 176,
+      "title": "FLY BANNER SAIL 230",
+      "sha256": "c2f8ccc509dde57ef6da08cc6eeb3b87c88a05b6ec8e41c30d857fd8aec6f5a8",
+      "source_sha256": "bb81aad76f72e9f1f9b7eca06db15a0aecb0058d376157e63679df22e6a92dba",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 99080,
+      "thumbnail": {
+        "name": "gx-20261029-photo-176-thumb.webp",
+        "sha256": "cbeee192b9a060e464a605589ba02a261f8ca4259fd8f10d0c76c9597f57e3f2",
+        "bytes": 4184
+      }
+    },
+    "gx-20261029-photo-187.webp": {
+      "ref": 187,
+      "title": "FLY BANNER SURF 230",
+      "sha256": "0995d0dba11f49d1fb50dd9ada97f1f7c9b21882ae655278915d3de1292e45e1",
+      "source_sha256": "a5cd7a5fbee94a93908363dcc984a167315ad90b01a68026554d118a1beed632",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 87862,
+      "thumbnail": {
+        "name": "gx-20261029-photo-187-thumb.webp",
+        "sha256": "c0b087eab21d9dd2f1309d5f73cdf756f0c2bbfec7781d7d7c519f5b8e40efbd",
+        "bytes": 3460
+      }
+    },
+    "gx-20261029-photo-198.webp": {
+      "ref": 198,
+      "title": "Banner Bow Medium",
+      "sha256": "285c6f65343dacb1c91cbf9b1c3b8d84d89c1dd21f0ba7782e5cee1507dae43a",
+      "source_sha256": "8ee9c40d03076684509648afa8176d9be2f6753ae2cc6945c6d91e352e646b93",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 138674,
+      "thumbnail": {
+        "name": "gx-20261029-photo-198-thumb.webp",
+        "sha256": "b141adf25710d19667ee18cb6a0298ca7c2b57fc675b88a8a146a0503a02cdfa",
+        "bytes": 5112
+      }
+    },
+    "gx-20261029-photo-202.webp": {
+      "ref": 202,
+      "title": "Banner Bow Small",
+      "sha256": "7b67a603cf7d56d268e796f77ecca63e55043d246177e6b716d2083ddc6f0292",
+      "source_sha256": "a8444bb1292ad91568a3fc3de8be27780ab5a3731846df5d784398ceda350b4e",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 135978,
+      "thumbnail": {
+        "name": "gx-20261029-photo-202-thumb.webp",
+        "sha256": "3dab93fbfe0cbaffbfc72d2d265eeb279a2238e9ef703f0513118695dd2bf46a",
+        "bytes": 4972
+      }
+    },
+    "gx-20261029-photo-208.webp": {
+      "ref": 208,
+      "title": "Pop Up Circular Chico",
+      "sha256": "5b98b92fd1f355a03dee0370b0718d502a416fd17643746c6c9a4858f3b03311",
+      "source_sha256": "54a3b07e4b3e5c64b71b8f021d3051cf948f051493e4ace8e3f8f84f0a166637",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 115504,
+      "thumbnail": {
+        "name": "gx-20261029-photo-208-thumb.webp",
+        "sha256": "d0d3884ec92a9c17dcd27ec56361a3d13a7db932b28d56e28f5084e1e6c848ed",
+        "bytes": 4050
+      }
+    },
+    "gx-20261029-photo-216.webp": {
+      "ref": 216,
+      "title": "Pop Up Circular Mediano",
+      "sha256": "c2d5b47322db50e824c06e4bf4b407a2a5654ff27fb9c3e2bd76e52bb5af9dfb",
+      "source_sha256": "0ae7b17a4530d16c2281408e01f4526ab529e5edcb84511f75c74deb3c226c3d",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 75244,
+      "thumbnail": {
+        "name": "gx-20261029-photo-216-thumb.webp",
+        "sha256": "9a7cb9ac6520361e26d477319ecc2354a92fa03d71b34601ebb30548f4b998dc",
+        "bytes": 2746
+      }
+    },
+    "gx-20261029-photo-238.webp": {
+      "ref": 238,
+      "title": "Pop Up Vertical Mediano",
+      "sha256": "4e12c16e6bfa111d791aecc31157adc966f8f04109e5055ac2d7edd812e8cd79",
+      "source_sha256": "82c95b31f1ae0078486b78b3e122b74ae1fdd950dc28548d0edbe15fbfe1b15d",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 127548,
+      "thumbnail": {
+        "name": "gx-20261029-photo-238-thumb.webp",
+        "sha256": "2e95b9a4f7a125236c215b8c629a9dc67b55dfda5eb4d8de970cfa9411b672ee",
+        "bytes": 4574
+      }
+    },
+    "gx-20261029-photo-239.webp": {
+      "ref": 239,
+      "title": "Pop Up Vertical Mediano",
+      "sha256": "e9f0752cf19d7d9623a8ca1705024d4bacb609657c2ef355975bf1d10dccca9c",
+      "source_sha256": "45ca383a05d34a2c0bd6b00b7022ae605674c28c0ea4a2b17c032d919a4f0dac",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 106514,
+      "thumbnail": {
+        "name": "gx-20261029-photo-239-thumb.webp",
+        "sha256": "89c9ed5485f89e33dd86c8b4eb64be8a35cb480074674d16ca19d1f75fbd5a93",
+        "bytes": 5020
+      }
+    },
+    "gx-20261029-photo-353.webp": {
+      "ref": 353,
+      "title": "Cinta Colgante Aro y Anzuelo",
+      "sha256": "9c6879bec8f9b1fa2788339b925892db494c330d81b14047aae17963e0920aab",
+      "source_sha256": "9a95d6558c0accde55fe1ee2f9cbb4870e22f1aecd1d421d21d77ade03ad21ae",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 142870,
+      "thumbnail": {
+        "name": "gx-20261029-photo-353-thumb.webp",
+        "sha256": "617ccd0217773aa80edc9acda25b24f97999323c07102ea8a002cac52aaad949",
+        "bytes": 4116
+      }
+    },
+    "gx-20261029-photo-354.webp": {
+      "ref": 354,
+      "title": "Cinta Colgante Aro y Anzuelo",
+      "sha256": "3287d974ef0d9f905f42f4f9d8c1028bf957a05800429ca0ad9f9bc51b9b0194",
+      "source_sha256": "5241d47abba7fd4c52ce7cff4bcc050755311845d582805c8e7fa45926342294",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 181084,
+      "thumbnail": {
+        "name": "gx-20261029-photo-354-thumb.webp",
+        "sha256": "8986a5fa76181bdc7236be4df803f5d4d5d67ca9c10be612f61df14dd07ab3b1",
+        "bytes": 4596
+      }
+    },
+    "gx-20261029-photo-355.webp": {
+      "ref": 355,
+      "title": "Cinta colgante con Doble Mosquetón Gatillo",
+      "sha256": "d975bb31f4700ee4ea76b84725473b232c2a0fabeb7e6e00264e404df4c207cc",
+      "source_sha256": "4cb83b755b17da7fca19141f7baa155e5008f72537ed461bf5e7bc1dadca0540",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 183280,
+      "thumbnail": {
+        "name": "gx-20261029-photo-355-thumb.webp",
+        "sha256": "48cc4dc94d18844f39162f2cffd45c34a3d799fe72156f33880310399dbf015e",
+        "bytes": 4164
+      }
+    },
+    "gx-20261029-photo-356.webp": {
+      "ref": 356,
+      "title": "Cinta colgante con Doble Mosquetón Gatillo",
+      "sha256": "f15b3fb61c78ed8e6f96f18b0b43e69f0c60df0f9fb8fd7275320554d9634ff6",
+      "source_sha256": "f57765d9c3842c274ef32aa79012ccb2b01b00ecef41d1ae69f83c652572e6ec",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 93450,
+      "thumbnail": {
+        "name": "gx-20261029-photo-356-thumb.webp",
+        "sha256": "071f2d59ba5e23ae6c9526bbc114e692da3e3fcd9273eb46276006cf76754763",
+        "bytes": 3212
+      }
+    },
+    "gx-20261029-photo-357.webp": {
+      "ref": 357,
+      "title": "Cinta Colgante con Hebilla y Aro Sinfin",
+      "sha256": "8c4da4c0aa6173853ed032d3ddc341d3e2972bbe948f851d6353c39a804c6508",
+      "source_sha256": "7e9235377935ad0cf60d233028aa2503b965c8485c24065ca9d4f7fe6a938eab",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 123546,
+      "thumbnail": {
+        "name": "gx-20261029-photo-357-thumb.webp",
+        "sha256": "5c0a3c95d12f19362577c3e87bd8d14493a544ea0ddf1d708399a4983b603c4b",
+        "bytes": 2892
+      }
+    },
+    "gx-20261029-photo-358.webp": {
+      "ref": 358,
+      "title": "Cinta Colgante con Hebilla y Aro Sinfin",
+      "sha256": "967eac404238922ec19d6c1bf1005ae4c2b23257548cd851ca568b0183683ea5",
+      "source_sha256": "0962ecf7bd43ab46169e6c470df6e754241d9b606ce0e5eace9a1f6a827ab513",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 136056,
+      "thumbnail": {
+        "name": "gx-20261029-photo-358-thumb.webp",
+        "sha256": "e3e3bc717d03c84ab19822b51c04877121de1690722fc1476a0eb928943178f1",
+        "bytes": 3592
+      }
+    },
+    "gx-20261029-photo-359.webp": {
+      "ref": 359,
+      "title": "Cinta Colgante con Hebilla y Mosqueton Gatillo",
+      "sha256": "b073893f55d3ea55b3eda270e94ea73401d1d90fb64d83d4b4f0ac412ffe0473",
+      "source_sha256": "ef259f95c458035c62f4546d9eb17003227c97f04a2d62306ccbe5873fc2931e",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 104106,
+      "thumbnail": {
+        "name": "gx-20261029-photo-359-thumb.webp",
+        "sha256": "2d09efb95a9279cc21e99ec3e86e5db6fad4e6f2c79491217d24fb016773d2e4",
+        "bytes": 2694
+      }
+    },
+    "gx-20261029-photo-360.webp": {
+      "ref": 360,
+      "title": "Cinta Colgante con Hebilla y Mosqueton Gatillo",
+      "sha256": "6cf18e2319dfeb42853a503730b2f1fcdfc80c3374e3461abcf45c4ab7d7fda9",
+      "source_sha256": "16b63d18170f7710a0b9393e849f61c63170ae2abdb66b0565ceb36888d35846",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 122966,
+      "thumbnail": {
+        "name": "gx-20261029-photo-360-thumb.webp",
+        "sha256": "46e745b001b1c7bdd4e83b060b13849ff3812d7c44e5d7b5855654427f14a581",
+        "bytes": 3498
+      }
+    },
+    "gx-20261029-photo-361.webp": {
+      "ref": 361,
+      "title": "Cinta Colgante con Mosqueton Gatillo",
+      "sha256": "c5da796e058e731a2498deba4b7ec914ccecb0e20da561d552bcbee90e145f44",
+      "source_sha256": "14998085598ac03c43774d10bc699dec7f11e58d277ba53f4fc9480445f9a7fd",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 126518,
+      "thumbnail": {
+        "name": "gx-20261029-photo-361-thumb.webp",
+        "sha256": "646cc38ec25607afc8bbb4ef105c142c1f83d5923cfcfde33e62303203e4c18c",
+        "bytes": 4100
+      }
+    },
+    "gx-20261029-photo-362.webp": {
+      "ref": 362,
+      "title": "Cinta Colgante con Mosqueton Gatillo",
+      "sha256": "ee646f819dd33fe30ca10abd045aa012c486473a292bdd8a57f030e69dde645e",
+      "source_sha256": "df5566448588edfbb0986c35388a1d5bb992dd51ecec4c35cb4e90da2570edf4",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 118714,
+      "thumbnail": {
+        "name": "gx-20261029-photo-362-thumb.webp",
+        "sha256": "8df86ff109295022a3f0caa3d0a55a95e1b0f0fd767cec29cacf6e0b46223f91",
+        "bytes": 3336
+      }
+    },
+    "gx-20261029-photo-363.webp": {
+      "ref": 363,
+      "title": "Cinta Colgante con Mosqueton Gatillo",
+      "sha256": "f15cf698d5d7ebb40f0f4fac18d4f8ace833a0187591fb8f363bff9707d33c51",
+      "source_sha256": "fc4b58bb434d0a571342d9df1042946068856b791982c9c5ce0b78ac9399508d",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 82144,
+      "thumbnail": {
+        "name": "gx-20261029-photo-363-thumb.webp",
+        "sha256": "ef078d6541484304fd93d043c94678e7d8c56c06dc5e455fc6020adc776d9e27",
+        "bytes": 3188
+      }
+    },
+    "gx-20261029-photo-364.webp": {
+      "ref": 364,
+      "title": "Cinta Colgante con Mosqueton Gatillo",
+      "sha256": "a2138a83515e8b16f1f02e244d33a84e6f84f0a552c8f22300235cd058ffb7a3",
+      "source_sha256": "87322bb0cba54c9638e42d4d571cce73e5ddda5932fb515e17f8798b0d969d68",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 138484,
+      "thumbnail": {
+        "name": "gx-20261029-photo-364-thumb.webp",
+        "sha256": "3e199fce755fa06ada6384a0c0f9f93bfdc857a12102bb9ee49ff1c4916d160a",
+        "bytes": 4168
+      }
+    },
+    "gx-20261029-photo-365.webp": {
+      "ref": 365,
+      "title": "Cinta Colgante Porta Medalla",
+      "sha256": "1503b38b3200569da533b77867832bc7de1560a076bad30f727b36575710c237",
+      "source_sha256": "733c14254188212a7b165d9714baa4a6db8c8cfb7a6242ed6b131430037e3f6a",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 168336,
+      "thumbnail": {
+        "name": "gx-20261029-photo-365-thumb.webp",
+        "sha256": "2cf877bd403b6c26fd1d68fdb51a296e6c3e2e4b63bb1cfc26a7a02af8388ac0",
+        "bytes": 4398
+      }
+    },
+    "gx-20261029-photo-366.webp": {
+      "ref": 366,
+      "title": "Cinta Colgante Porta Medalla",
+      "sha256": "f6a93cd9c6d19b294653956e0fefbbd30fcaa5cc45e2988842b14111307a4ee8",
+      "source_sha256": "68fdcfb176e72cf85e253ebd3d8d5d625691a432ba5339e4779f7aee0f01d0c3",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 160902,
+      "thumbnail": {
+        "name": "gx-20261029-photo-366-thumb.webp",
+        "sha256": "ef62ded9eab80ea8e0edaf2a529abfc4eb2527193b24eeb84ef49eb4160d96cc",
+        "bytes": 4602
+      }
+    },
+    "gx-20261029-photo-367.webp": {
+      "ref": 367,
+      "title": "Llavero Corto con Mosquetón de Zamak",
+      "sha256": "a773f880e443a2e43931417278387c141199e0ad2aa8b5a9f1bc464947583c2b",
+      "source_sha256": "260ef391b3673507c7da14cb676810dcdb42e6527798b5d6c6a002c1be402d41",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 89282,
+      "thumbnail": {
+        "name": "gx-20261029-photo-367-thumb.webp",
+        "sha256": "43da3b17a0131d894887e6d76fb91667f894663e769aab118d4c604fc10e1bd8",
+        "bytes": 2552
+      }
+    },
+    "gx-20261029-photo-368.webp": {
+      "ref": 368,
+      "title": "Llavero Corto con Mosquetón de Zamak",
+      "sha256": "b5cf40710a84070c17d26a38a6d1991606cac96ebc6abf8e49505128398c9b14",
+      "source_sha256": "2918399eb2e93a116133bca7af6a089321908cb84eedd09380d6513e4f66ac6c",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 122624,
+      "thumbnail": {
+        "name": "gx-20261029-photo-368-thumb.webp",
+        "sha256": "4529099230d106b335388e1595fbe24422f46f6d427245ab71b1b0068b43abb9",
+        "bytes": 2228
+      }
+    },
+    "gx-20261029-photo-371.webp": {
+      "ref": 371,
+      "title": "Cubo Chico",
+      "sha256": "7642f7a7fc388a72f5a68fac5c0d78a9197d009d3ee3919ef6c62db789e8a059",
+      "source_sha256": "ece4c0e6cfd337ab9ce1e5d0824535f3c32adaec942d9b41158a012b2b33b41a",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 120420,
+      "thumbnail": {
+        "name": "gx-20261029-photo-371-thumb.webp",
+        "sha256": "4f047b0a8f34143a3dffc6d582338d56b8500c4ef9aa0deb679cea1e9e8fac9c",
+        "bytes": 3784
+      }
+    },
+    "gx-20261029-photo-372.webp": {
+      "ref": 372,
+      "title": "Cubo Chico",
+      "sha256": "09ebbaea2fc48ef1021d98a00d287246e2ea6bbc945ca1f16c930edb26dfacc5",
+      "source_sha256": "e6f071e6801de7e3af9890bd51913dd9c4917395b79c03ca33d7ad27a395711f",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 181100,
+      "thumbnail": {
+        "name": "gx-20261029-photo-372-thumb.webp",
+        "sha256": "910e49b89aa4ccf5c887602bed48b9a6393dc8936edc5b018295565108c30b08",
+        "bytes": 5606
+      }
+    },
+    "gx-20261029-photo-377.webp": {
+      "ref": 377,
+      "title": "Cubo Grande",
+      "sha256": "a9c7dd9f23b01267d55c9d2090b6cd1933224aa38c7096506a3fc2ae6f494148",
+      "source_sha256": "92ed1ea8dac15a6e7980a274585ad9f8a519c1dac9b848d7db16021c1e27a4fa",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 145902,
+      "thumbnail": {
+        "name": "gx-20261029-photo-377-thumb.webp",
+        "sha256": "5fe11aa24bfdccdcb5e9a7282fb291270098857a6b9360f9b41dacc6312ed8a3",
+        "bytes": 4364
+      }
+    },
+    "gx-20261029-photo-378.webp": {
+      "ref": 378,
+      "title": "Cubo Grande",
+      "sha256": "8c3d4ebe2e99d0f0f3b636dddbb707498c93a0a5376bd13b3a5e773e5f7e1ed3",
+      "source_sha256": "480dbdc406b022237d0238f28a5635a9771bbc3f7592ddc62f463d3655e91d77",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 155178,
+      "thumbnail": {
+        "name": "gx-20261029-photo-378-thumb.webp",
+        "sha256": "0d685e5918642ba48cc3bd5deff9e01aa300259d424b4690432f469bf17234f2",
+        "bytes": 4918
+      }
+    },
+    "gx-20261029-photo-383.webp": {
+      "ref": 383,
+      "title": "Perita Medium",
+      "sha256": "847214aeccfca04aa64dcddc7e8a1d48e4004a1c3cc05629ae3a9805a6b65a4c",
+      "source_sha256": "70fbe5a0bc93119d5244ce0e8d23d047a53a52427ff9eddb74d99ae1614956ff",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 145860,
+      "thumbnail": {
+        "name": "gx-20261029-photo-383-thumb.webp",
+        "sha256": "cb3dc174e3ba5952f0f1d5290d72a3f38a4e1808ecf22d1384baceca46849491",
+        "bytes": 5506
+      }
+    },
+    "gx-20261029-photo-384.webp": {
+      "ref": 384,
+      "title": "Perita Medium",
+      "sha256": "9b32ca5b7a53cf97d9e36a2a43d63f6d5bb85d2d4666638f0b2b9a73e0d79dcf",
+      "source_sha256": "29f7b72a292c114a94e1c6a8373d5096b5ba6c4cd7c7dfbb7bd7af673130d45a",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 123340,
+      "thumbnail": {
+        "name": "gx-20261029-photo-384-thumb.webp",
+        "sha256": "881d90ede5725cd90f120f787b5da132aff6873bba535afa3ae81db5a0bbee08",
+        "bytes": 4212
+      }
+    },
+    "gx-20261029-photo-385.webp": {
+      "ref": 385,
+      "title": "Perita Medium",
+      "sha256": "5c0759c55afea29dd1be191714d3f317fefb755cda3ae1bd21d96443b7f88d40",
+      "source_sha256": "c2ee411942a1a0005f58996b04b1045fd63d3a07c2ae0fd1803346c39ec09df4",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 53544,
+      "thumbnail": {
+        "name": "gx-20261029-photo-385-thumb.webp",
+        "sha256": "533a6a481977c497cc140d4b473d0a5369394151076916886a3172545f7a5950",
+        "bytes": 1928
+      }
+    },
+    "gx-20261029-photo-388.webp": {
+      "ref": 388,
+      "title": "Perita Small",
+      "sha256": "2a2be2b701700a12241c6d56170a406ae789a97657868c9c3f33749133835dc5",
+      "source_sha256": "49f741fa70fc70c358c2104b290ee9a86c28b16c7fb605e2c585853eefa46bfe",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 101962,
+      "thumbnail": {
+        "name": "gx-20261029-photo-388-thumb.webp",
+        "sha256": "4f940e1cb4a671e8f3628d13ef92847306a950fe27dfb7f9b21aae84c5ee6204",
+        "bytes": 5382
+      }
+    },
+    "gx-20261029-photo-389.webp": {
+      "ref": 389,
+      "title": "Perita Small",
+      "sha256": "75400f791ad2a86b43384ce59d4b76aa3fceb39d990d41ecc2af4494182ad648",
+      "source_sha256": "c632a5719cdb80d023cc7cc58e4b914887fb0508f1c273cd176195013db38837",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 186516,
+      "thumbnail": {
+        "name": "gx-20261029-photo-389-thumb.webp",
+        "sha256": "497623abb3d36dec076bcd2633ce48274edb41a22088cede0d87506e2f96383c",
+        "bytes": 6866
+      }
+    },
+    "gx-20261029-photo-390.webp": {
+      "ref": 390,
+      "title": "Perita Small",
+      "sha256": "9c6eb0f4e7864c5802f472e848d59154061a616b84527b7cd4b0f49461bd3b88",
+      "source_sha256": "b6ed6939b00fce265e6ab1797f4b977be135256b96838c1c5553111e7832f74c",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 116190,
+      "thumbnail": {
+        "name": "gx-20261029-photo-390-thumb.webp",
+        "sha256": "f19755bdb50cd90301479323ce95f89faae8cc2063ac9c08da15b8cda5957bbc",
+        "bytes": 3948
+      }
+    },
+    "gx-20261029-photo-394.webp": {
+      "ref": 394,
+      "title": "Puff Fiaca XL",
+      "sha256": "8b93f769783fc2acf0aa42da7531cf7fb87ee713071fa8889eebbfbdb2569251",
+      "source_sha256": "01b5e087748e3257c9cd3ea5ccba381badb11c4e693d9911529ea227d4a53f4d",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 117740,
+      "thumbnail": {
+        "name": "gx-20261029-photo-394-thumb.webp",
+        "sha256": "e95c24f395ea1e983193dc62d4ee69eec83e213b1f5c799f0553f2a260468ac5",
+        "bytes": 4858
+      }
+    },
+    "gx-20261029-photo-395.webp": {
+      "ref": 395,
+      "title": "Puff Fiaca XL",
+      "sha256": "b35bbf7b56f37a299ab721cf3d00253c2732bd0a58472cb595958b489104cea7",
+      "source_sha256": "8571eadccb3185569078fed02869ed9b82e945b5e0192d370f6748e04d7a4bfe",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 126762,
+      "thumbnail": {
+        "name": "gx-20261029-photo-395-thumb.webp",
+        "sha256": "a9ac1f59e943bb25b62acbd61458867fd93f6b30b0301918ea4428c0ed11e8bc",
+        "bytes": 4364
+      }
+    },
+    "gx-20261029-photo-396.webp": {
+      "ref": 396,
+      "title": "Puff Fiaca XL",
+      "sha256": "e140b2e6e69f686743ee6d5d4a8f5cee495d09991c820e88c175ceb15e6e6f45",
+      "source_sha256": "348b13f1b736748769b125744655917e824b42c934a65d7dfe5b5b04294a17ac",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 158940,
+      "thumbnail": {
+        "name": "gx-20261029-photo-396-thumb.webp",
+        "sha256": "7be19791dcb55187b5cf1f8287850f74093d1a579a81a9bd1b4e8d081328dfe8",
+        "bytes": 5908
+      }
+    },
+    "gx-20261029-photo-399.webp": {
+      "ref": 399,
+      "title": "Puff Fiaca XXL",
+      "sha256": "c0408e19fabaaf9a418d2390661262ed113f6cc5d2625af36371e0b121989e44",
+      "source_sha256": "cce96a4f95f1242c6f1383f43600b95476d2e1c20f4ef677bafbe362770ff50b",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 155372,
+      "thumbnail": {
+        "name": "gx-20261029-photo-399-thumb.webp",
+        "sha256": "09fc8ac97bbb32a95635f3067b21731a470132e40b06e4786d61544bd52e427e",
+        "bytes": 6066
+      }
+    },
+    "gx-20261029-photo-400.webp": {
+      "ref": 400,
+      "title": "Puff Fiaca XXL",
+      "sha256": "694552ec5a7971bcfffcc2485f0dd13c084bec81680fdc88d1c795ae1ffb7d81",
+      "source_sha256": "6e2c414902ad99eb8bb46f1bd62f91fdf02cb03d7e50cdbb0fe50bc850eaf0ea",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 98104,
+      "thumbnail": {
+        "name": "gx-20261029-photo-400-thumb.webp",
+        "sha256": "0143686a3104335ef85bcb4da61fac567519724526a163b933fef68112c10fa7",
+        "bytes": 4576
+      }
+    },
+    "gx-20261029-photo-401.webp": {
+      "ref": 401,
+      "title": "Puff Fiaca XXL",
+      "sha256": "c86a5e11ef32008719ff52b80dd6044826dab2af6007379f9e9e2041fcb1f4b6",
+      "source_sha256": "94f77cdac52952447443de970b560e33f98ccc5fb3c300044551c23f576882fa",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 216270,
+      "thumbnail": {
+        "name": "gx-20261029-photo-401-thumb.webp",
+        "sha256": "72f4139f10727914e202ebae066846bd634ec3eae9d52a3823b486fb6c53a917",
+        "bytes": 7618
+      }
+    },
+    "gx-20261029-photo-404.webp": {
+      "ref": 404,
+      "title": "Puff Rectangular",
+      "sha256": "017324ee6aaa8533c51a6d68e93fe3e125007647be922386ebbe64124386a30c",
+      "source_sha256": "9ece627f915b108902b502a47732922fe2d76b7e468bd4cdf42c31eeac1fe058",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 122976,
+      "thumbnail": {
+        "name": "gx-20261029-photo-404-thumb.webp",
+        "sha256": "7203743e4b8054c6df0841fec17dc1452dc93302f869f049ca6027a465e0b98d",
+        "bytes": 5562
+      }
+    },
+    "gx-20261029-photo-405.webp": {
+      "ref": 405,
+      "title": "Puff Rectangular",
+      "sha256": "bd99981f3f98baa173a796498f0ddee5972a2d046db0ab42114820ab258070f5",
+      "source_sha256": "bf0e8b659f033c525a0b8603db43b46f25d23f4fac95d078ba207c430a1efb85",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 119890,
+      "thumbnail": {
+        "name": "gx-20261029-photo-405-thumb.webp",
+        "sha256": "56a791cd9f96c87ddd34ebfb4e12c687fa036491f0635fab7ef5dfa75b98c56c",
+        "bytes": 4610
+      }
+    },
+    "gx-20261029-photo-406.webp": {
+      "ref": 406,
+      "title": "Puff Rectangular",
+      "sha256": "ae1f81cd8d0cfab7a55612737a798c5eb1d17cc9ed58af2fe26aafa4f5531cb3",
+      "source_sha256": "cfe17e43da758fb0ea947625362c5f5ced32c040732f0f8efc7002e913709936",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 78766,
+      "thumbnail": {
+        "name": "gx-20261029-photo-406-thumb.webp",
+        "sha256": "00bcae7b24ce66b25881181fc4fc08c360cedc4fa3c0a3718b1440390e257425",
+        "bytes": 3638
+      }
+    },
+    "gx-20261029-photo-410.webp": {
+      "ref": 410,
+      "title": "Puff Redondo",
+      "sha256": "881d576bab1bd4806f667efef14bfae3ce8cef81ddf55ac7e0e7f798d63493c1",
+      "source_sha256": "cfa27a01e9ca924bbec49cbfbec1669d61dc2324de4100cf77dfcd025aacae01",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 138574,
+      "thumbnail": {
+        "name": "gx-20261029-photo-410-thumb.webp",
+        "sha256": "ed929cc069a5d0f400f235d12178772bb71a32ae0c6991290aad6b95c58d2b5c",
+        "bytes": 4550
+      }
+    },
+    "gx-20261029-photo-414.webp": {
+      "ref": 414,
+      "title": "Sillón Doble",
+      "sha256": "9c0a2120419d979ae9def606d9e20331e9f7d37490e179ba13f8adf4792cae38",
+      "source_sha256": "e815ada87f7a2274054fe3751c1a214c1a3f0df4e7aec803465ef38a04393fdf",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 101114,
+      "thumbnail": {
+        "name": "gx-20261029-photo-414-thumb.webp",
+        "sha256": "2c677607227413a1bfd2b3225029af749f41e4c3118cc64e21f6c9ebd9aeedc6",
+        "bytes": 4434
+      }
+    },
+    "gx-20261029-photo-415.webp": {
+      "ref": 415,
+      "title": "Sillón Doble",
+      "sha256": "45080c9ecf32bf5c37d7f706910f63862f1e3228ff408e26b12f2b956e9378a6",
+      "source_sha256": "b8482cc0fb4a84aacfb587857dec7ac061ba9d5aac128d9cbb0b2682ffa0442a",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 189694,
+      "thumbnail": {
+        "name": "gx-20261029-photo-415-thumb.webp",
+        "sha256": "8d57599644873a6cab305888399d325166d426ff0fb1e500ed6fd577272eda9f",
+        "bytes": 6942
+      }
+    },
+    "gx-20261029-photo-416.webp": {
+      "ref": 416,
+      "title": "Sillón Doble",
+      "sha256": "883fcb9ab9d5de49d7d502e8fcf6344b64676af7ed261173d64024b0f624f81a",
+      "source_sha256": "45eb2d9782ff92fe9fd0fc1ab615e0507fb7f0fabb17a6810a32b5fc01a7567b",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 131902,
+      "thumbnail": {
+        "name": "gx-20261029-photo-416-thumb.webp",
+        "sha256": "799fee3817cf1db59a9dfa07486665fcdad88188e2b673b36515806f6678f485",
+        "bytes": 6198
+      }
+    },
+    "gx-20261029-photo-418.webp": {
+      "ref": 418,
+      "title": "Sillón Largo",
+      "sha256": "73cca8fd2e7a5fdf52d58d0ed1e4df5cb7386e6d920a4335b26ca46df378a740",
+      "source_sha256": "71135ce3af3ccb1617967ccf556c5814da09e7d46a3c6c6b4d9e2fb678ea38bd",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 102330,
+      "thumbnail": {
+        "name": "gx-20261029-photo-418-thumb.webp",
+        "sha256": "7cb1cd1612ba1c6054e30777fa9ac33be55bda3fdc4cbdfa7a46ebd0e535dbbb",
+        "bytes": 4460
+      }
+    },
+    "gx-20261029-photo-419.webp": {
+      "ref": 419,
+      "title": "Sillón Largo",
+      "sha256": "cab2af2de82673f96a5f389fc22836b56d1f159380377dda5cbc28ab8f7bcddf",
+      "source_sha256": "43760347afe2708683f1bb8bdee6657203027127a0ba2d7baf6d89b06df96a3d",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 144038,
+      "thumbnail": {
+        "name": "gx-20261029-photo-419-thumb.webp",
+        "sha256": "d0a8b9bd7e2284475271e164eb5b5205bfbd8d98c0fb5c1f910bc950ae7c661a",
+        "bytes": 5554
+      }
+    },
+    "gx-20261029-photo-420.webp": {
+      "ref": 420,
+      "title": "Sillón Largo",
+      "sha256": "99fb353b723e0c849159d50d6f4ef085b6f2fd8dfceb37d87fbcb3020f10e38f",
+      "source_sha256": "755a24eb4440e3a363bab83ec7e93da693dcbc658a294666b01a7016829c03f4",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 79486,
+      "thumbnail": {
+        "name": "gx-20261029-photo-420-thumb.webp",
+        "sha256": "dea1fa805f6cc4011d5fe5ca9cf393a3b31388fb4b6269a340049f2fc0b97f06",
+        "bytes": 2812
+      }
+    },
+    "gx-20261029-photo-423.webp": {
+      "ref": 423,
+      "title": "Puff Rectangular Kid",
+      "sha256": "080d5a3bf07cb0e18d0e474f433ff3b34659a45e1b0ac2f9737dc5c5c99055ec",
+      "source_sha256": "500623ca10207abf00597f9105c34db46ba77a910aa2ef99bb8c202d5e44ee4f",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 150572,
+      "thumbnail": {
+        "name": "gx-20261029-photo-423-thumb.webp",
+        "sha256": "826ad706a1fa2947747f1b9aa2a337ac305559443f9954ede5c077e42f597771",
+        "bytes": 6074
+      }
+    },
+    "gx-20261029-photo-424.webp": {
+      "ref": 424,
+      "title": "Puff Rectangular Kid",
+      "sha256": "61bb2db1cbf32040249f031f8b9de3045b1ca08f4d09b9c39a98ae006c85acac",
+      "source_sha256": "33b4e03bcde79fc1bc83cc2a89ae7d203a696943a123bc579460dc36b87b43b7",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 192612,
+      "thumbnail": {
+        "name": "gx-20261029-photo-424-thumb.webp",
+        "sha256": "382c6a7bee05f5695d3c899ea16b07b15b27c1ebe613e6dcbf49262492caa49d",
+        "bytes": 7714
+      }
+    },
+    "gx-20261029-photo-426.webp": {
+      "ref": 426,
+      "title": "Puff Triangular Kid",
+      "sha256": "90b8dc98263a698b135835dc3d6a32b662cfe92d1c1b0dc66f8d86655777c602",
+      "source_sha256": "d6e033bfb18ddaf86cb05ed582f1ad94ded19fd03c09ef96dcacf0218c6122f8",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 113862,
+      "thumbnail": {
+        "name": "gx-20261029-photo-426-thumb.webp",
+        "sha256": "4a8c5f8b132e96707950275768c34621d5d5e94076405b46de465030c441267a",
+        "bytes": 3514
+      }
+    },
+    "gx-20261029-photo-427.webp": {
+      "ref": 427,
+      "title": "Puff Triangular Kid",
+      "sha256": "b2a5f240c28f713ef253cc6bb640d2735011f07b80d736a61d22502954620f4b",
+      "source_sha256": "f93befff8592bb5ae4a8ec65154e893a6ac53e04e15a26b61d38b257b53485a6",
+      "kind": "photo",
+      "origin_classification": "uncertain_original_ai_edited",
+      "bytes": 73992,
+      "thumbnail": {
+        "name": "gx-20261029-photo-427-thumb.webp",
+        "sha256": "c0e423c0a6ec58e2e30ae8593c2cfb7a0bd0a71c28974cf5dc3b955d46cad1e7",
+        "bytes": 2864
+      }
     }
   },
   "products": {
@@ -1724,6 +2704,12 @@
           "assets": [
             "gx-20261028-photo-010.webp"
           ]
+        },
+        "wb-348": {
+          "label": "Base plastica Rellenable",
+          "assets": [
+            "gx-20261029-photo-010.webp"
+          ]
         }
       }
     },
@@ -1759,7 +2745,8 @@
           "assets": [
             "gx-20261028-photo-103.webp",
             "gx-20261028-photo-104.webp",
-            "gx-20261029-render-047.webp"
+            "gx-20261029-render-047.webp",
+            "gx-20261029-photo-103.webp"
           ]
         },
         "wb-169": {
@@ -1767,26 +2754,30 @@
           "assets": [
             "gx-20261028-photo-107.webp",
             "gx-20261028-photo-108.webp",
-            "gx-20261029-render-050.webp"
+            "gx-20261029-render-050.webp",
+            "gx-20261029-photo-110.webp"
           ]
         },
         "wb-175": {
           "label": "FLY BANNER CUBE 520",
           "assets": [
             "gx-20261028-photo-107.webp",
-            "gx-20261029-render-112.webp"
+            "gx-20261029-render-112.webp",
+            "gx-20261029-photo-110.webp"
           ]
         },
         "wb-184": {
           "label": "FLY BANNER CUBE 230",
           "assets": [
-            "gx-20261029-render-044.webp"
+            "gx-20261029-render-044.webp",
+            "gx-20261029-photo-044.webp"
           ]
         },
         "wb-157": {
           "label": "FLY BANNER CUBE 230",
           "assets": [
-            "gx-20261029-render-044.webp"
+            "gx-20261029-render-044.webp",
+            "gx-20261029-photo-044.webp"
           ]
         },
         "wb-189": {
@@ -1829,7 +2820,10 @@
         "wb-152": {
           "label": "FLY BANNER DROP 230",
           "assets": [
-            "gx-20261029-render-053.webp"
+            "gx-20261029-render-053.webp",
+            "gx-20261029-photo-117.webp",
+            "gx-20261029-photo-118.webp",
+            "gx-20261029-photo-119.webp"
           ]
         },
         "wb-190": {
@@ -1864,7 +2858,10 @@
         "wb-151": {
           "label": "FLY BANNER GOTA 230",
           "assets": [
-            "gx-20261029-render-062.webp"
+            "gx-20261029-render-062.webp",
+            "gx-20261029-photo-129.webp",
+            "gx-20261029-photo-130.webp",
+            "gx-20261029-photo-131.webp"
           ]
         },
         "wb-186": {
@@ -1876,7 +2873,8 @@
         "wb-159": {
           "label": "FLY BANNER GOTA 320",
           "assets": [
-            "gx-20261029-render-065.webp"
+            "gx-20261029-render-065.webp",
+            "gx-20261029-photo-134.webp"
           ]
         }
       }
@@ -1899,7 +2897,8 @@
         "wb-158": {
           "label": "FLY BANNER OVAL SMALL",
           "assets": [
-            "gx-20261029-render-068.webp"
+            "gx-20261029-render-068.webp",
+            "gx-20261029-photo-147.webp"
           ]
         }
       }
@@ -1971,7 +2970,9 @@
         "wb-153": {
           "label": "FLY BANNER PLUMA 230",
           "assets": [
-            "gx-20261029-render-075.webp"
+            "gx-20261029-render-075.webp",
+            "gx-20261029-photo-156.webp",
+            "gx-20261029-photo-157.webp"
           ]
         },
         "wb-188": {
@@ -2015,7 +3016,10 @@
         "wb-154": {
           "label": "FLY BANNER SAIL 230",
           "assets": [
-            "gx-20261029-render-083.webp"
+            "gx-20261029-render-083.webp",
+            "gx-20261029-photo-174.webp",
+            "gx-20261029-photo-175.webp",
+            "gx-20261029-photo-176.webp"
           ]
         },
         "wb-191": {
@@ -2044,7 +3048,8 @@
           "label": "FLY BANNER SURF 230",
           "assets": [
             "gx-20261028-photo-187.webp",
-            "gx-20261029-render-092.webp"
+            "gx-20261029-render-092.webp",
+            "gx-20261029-photo-187.webp"
           ]
         },
         "wb-165": {
@@ -2089,7 +3094,8 @@
           "label": "Banner Bow Medium",
           "assets": [
             "gx-20261028-photo-198.webp",
-            "gx-20261029-render-199.webp"
+            "gx-20261029-render-199.webp",
+            "gx-20261029-photo-198.webp"
           ]
         },
         "wb-225": {
@@ -2097,7 +3103,8 @@
           "assets": [
             "gx-20261028-photo-202.webp",
             "gx-20261029-render-203.webp",
-            "gx-20261029-render-204.webp"
+            "gx-20261029-render-204.webp",
+            "gx-20261029-photo-202.webp"
           ]
         }
       }
@@ -2115,13 +3122,15 @@
           "label": "Pop Up Circular Mediano",
           "assets": [
             "gx-20261028-photo-216.webp",
-            "gx-20261029-render-217.webp"
+            "gx-20261029-render-217.webp",
+            "gx-20261029-photo-216.webp"
           ]
         },
         "wb-220": {
           "label": "Pop Up Circular Chico",
           "assets": [
-            "gx-20261029-render-208.webp"
+            "gx-20261029-render-208.webp",
+            "gx-20261029-photo-208.webp"
           ]
         }
       }
@@ -2520,6 +3529,13 @@
             "gx-20261029-render-234.webp",
             "gx-20261029-photo-233.webp"
           ]
+        },
+        "wb-219": {
+          "label": "Pop Up Vertical Mediano",
+          "assets": [
+            "gx-20261029-photo-238.webp",
+            "gx-20261029-photo-239.webp"
+          ]
         }
       }
     },
@@ -2545,142 +3561,297 @@
       "options": {}
     },
     "windbanners-cintas-colgantes": {
-      "options": {}
+      "options": {
+        "wb-318-v61": {
+          "label": "Cinta Colgante Aro y Anzuelo",
+          "assets": [
+            "gx-20261029-photo-353.webp",
+            "gx-20261029-photo-354.webp"
+          ]
+        },
+        "wb-318-v62": {
+          "label": "Cinta Colgante Aro y Anzuelo",
+          "assets": [
+            "gx-20261029-photo-353.webp",
+            "gx-20261029-photo-354.webp"
+          ]
+        },
+        "wb-330-v73": {
+          "label": "Cinta colgante con Doble Mosquetón Gatillo",
+          "assets": [
+            "gx-20261029-photo-355.webp",
+            "gx-20261029-photo-356.webp"
+          ]
+        },
+        "wb-330-v74": {
+          "label": "Cinta colgante con Doble Mosquetón Gatillo",
+          "assets": [
+            "gx-20261029-photo-355.webp",
+            "gx-20261029-photo-356.webp"
+          ]
+        },
+        "wb-326-v69": {
+          "label": "Cinta Colgante con Hebilla y Aro Sinfin",
+          "assets": [
+            "gx-20261029-photo-357.webp",
+            "gx-20261029-photo-358.webp"
+          ]
+        },
+        "wb-326-v70": {
+          "label": "Cinta Colgante con Hebilla y Aro Sinfin",
+          "assets": [
+            "gx-20261029-photo-357.webp",
+            "gx-20261029-photo-358.webp"
+          ]
+        },
+        "wb-324-v67": {
+          "label": "Cinta Colgante con Hebilla y Mosqueton Gatillo",
+          "assets": [
+            "gx-20261029-photo-359.webp",
+            "gx-20261029-photo-360.webp"
+          ]
+        },
+        "wb-324-v68": {
+          "label": "Cinta Colgante con Hebilla y Mosqueton Gatillo",
+          "assets": [
+            "gx-20261029-photo-359.webp",
+            "gx-20261029-photo-360.webp"
+          ]
+        },
+        "wb-320-v63": {
+          "label": "Cinta Colgante con Mosqueton Gatillo",
+          "assets": [
+            "gx-20261029-photo-361.webp",
+            "gx-20261029-photo-362.webp",
+            "gx-20261029-photo-363.webp",
+            "gx-20261029-photo-364.webp"
+          ]
+        },
+        "wb-320-v64": {
+          "label": "Cinta Colgante con Mosqueton Gatillo",
+          "assets": [
+            "gx-20261029-photo-361.webp",
+            "gx-20261029-photo-362.webp",
+            "gx-20261029-photo-363.webp",
+            "gx-20261029-photo-364.webp"
+          ]
+        },
+        "wb-328-v71": {
+          "label": "Cinta Colgante Porta Medalla",
+          "assets": [
+            "gx-20261029-photo-365.webp",
+            "gx-20261029-photo-366.webp"
+          ]
+        },
+        "wb-328-v72": {
+          "label": "Cinta Colgante Porta Medalla",
+          "assets": [
+            "gx-20261029-photo-365.webp",
+            "gx-20261029-photo-366.webp"
+          ]
+        },
+        "wb-322-v65": {
+          "label": "Llavero Corto con Mosquetón de Zamak",
+          "assets": [
+            "gx-20261029-photo-367.webp",
+            "gx-20261029-photo-368.webp"
+          ]
+        },
+        "wb-322-v66": {
+          "label": "Llavero Corto con Mosquetón de Zamak",
+          "assets": [
+            "gx-20261029-photo-367.webp",
+            "gx-20261029-photo-368.webp"
+          ]
+        }
+      }
     },
     "windbanners-puffs-personalizados": {
       "options": {
         "wb-301-v43": {
           "label": "Cubo Chico — Con Relleno",
           "assets": [
-            "gx-20261029-render-373.webp"
+            "gx-20261029-render-373.webp",
+            "gx-20261029-photo-371.webp",
+            "gx-20261029-photo-372.webp"
           ]
         },
         "wb-301-v44": {
           "label": "Cubo Chico — Sin Relleno",
           "assets": [
-            "gx-20261029-render-373.webp"
+            "gx-20261029-render-373.webp",
+            "gx-20261029-photo-371.webp",
+            "gx-20261029-photo-372.webp"
           ]
         },
         "wb-303-v46": {
           "label": "Cubo Grande — Con Relleno",
           "assets": [
-            "gx-20261029-render-379.webp"
+            "gx-20261029-render-379.webp",
+            "gx-20261029-photo-377.webp",
+            "gx-20261029-photo-378.webp"
           ]
         },
         "wb-303-v45": {
           "label": "Cubo Grande — Sin Relleno",
           "assets": [
-            "gx-20261029-render-379.webp"
+            "gx-20261029-render-379.webp",
+            "gx-20261029-photo-377.webp",
+            "gx-20261029-photo-378.webp"
           ]
         },
         "wb-309-v52": {
           "label": "Perita Medium — Con Relleno",
           "assets": [
-            "gx-20261029-render-385.webp"
+            "gx-20261029-render-385.webp",
+            "gx-20261029-photo-383.webp",
+            "gx-20261029-photo-384.webp",
+            "gx-20261029-photo-385.webp"
           ]
         },
         "wb-309-v51": {
           "label": "Perita Medium — Sin Relleno",
           "assets": [
-            "gx-20261029-render-385.webp"
+            "gx-20261029-render-385.webp",
+            "gx-20261029-photo-383.webp",
+            "gx-20261029-photo-384.webp",
+            "gx-20261029-photo-385.webp"
           ]
         },
         "wb-307-v49": {
           "label": "Perita Small — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-391.webp"
+            "gx-20261029-render-391.webp",
+            "gx-20261029-photo-388.webp",
+            "gx-20261029-photo-389.webp",
+            "gx-20261029-photo-390.webp"
           ]
         },
         "wb-307-v50": {
           "label": "Perita Small — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-391.webp"
+            "gx-20261029-render-391.webp",
+            "gx-20261029-photo-388.webp",
+            "gx-20261029-photo-389.webp",
+            "gx-20261029-photo-390.webp"
           ]
         },
         "wb-297-v39": {
           "label": "Puff Fiaca XL — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-396.webp"
+            "gx-20261029-render-396.webp",
+            "gx-20261029-photo-394.webp",
+            "gx-20261029-photo-395.webp",
+            "gx-20261029-photo-396.webp"
           ]
         },
         "wb-297-v40": {
           "label": "Puff Fiaca XL — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-396.webp"
+            "gx-20261029-render-396.webp",
+            "gx-20261029-photo-394.webp",
+            "gx-20261029-photo-395.webp",
+            "gx-20261029-photo-396.webp"
           ]
         },
         "wb-295-v37": {
           "label": "Puff Fiaca XXL — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-401.webp"
+            "gx-20261029-render-401.webp",
+            "gx-20261029-photo-399.webp",
+            "gx-20261029-photo-400.webp",
+            "gx-20261029-photo-401.webp"
           ]
         },
         "wb-295-v38": {
           "label": "Puff Fiaca XXL — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-401.webp"
+            "gx-20261029-render-401.webp",
+            "gx-20261029-photo-399.webp",
+            "gx-20261029-photo-400.webp",
+            "gx-20261029-photo-401.webp"
           ]
         },
         "wb-299-v42": {
           "label": "Puff Rectangular — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-406.webp"
+            "gx-20261029-render-406.webp",
+            "gx-20261029-photo-404.webp",
+            "gx-20261029-photo-405.webp",
+            "gx-20261029-photo-406.webp"
           ]
         },
         "wb-299-v41": {
           "label": "Puff Rectangular — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-406.webp"
+            "gx-20261029-render-406.webp",
+            "gx-20261029-photo-404.webp",
+            "gx-20261029-photo-405.webp",
+            "gx-20261029-photo-406.webp"
           ]
         },
         "wb-313-v55": {
           "label": "Puff Redondo — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-411.webp"
+            "gx-20261029-render-411.webp",
+            "gx-20261029-photo-410.webp"
           ]
         },
         "wb-313-v56": {
           "label": "Puff Redondo — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-411.webp"
+            "gx-20261029-render-411.webp",
+            "gx-20261029-photo-410.webp"
           ]
         },
         "wb-305-v47": {
           "label": "Sillón Doble — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-416.webp"
+            "gx-20261029-render-416.webp",
+            "gx-20261029-photo-414.webp",
+            "gx-20261029-photo-415.webp",
+            "gx-20261029-photo-416.webp"
           ]
         },
         "wb-305-v48": {
           "label": "Sillón Doble — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-416.webp"
+            "gx-20261029-render-416.webp",
+            "gx-20261029-photo-414.webp",
+            "gx-20261029-photo-415.webp",
+            "gx-20261029-photo-416.webp"
           ]
         },
         "wb-311-v54": {
           "label": "Sillón Largo — Con Relleno",
           "assets": [
             "gx-20261029-render-420.webp",
-            "gx-20261029-render-421.webp"
+            "gx-20261029-render-421.webp",
+            "gx-20261029-photo-418.webp",
+            "gx-20261029-photo-419.webp",
+            "gx-20261029-photo-420.webp"
           ]
         },
         "wb-311-v53": {
           "label": "Sillón Largo — Sin Relleno",
           "assets": [
             "gx-20261029-render-420.webp",
-            "gx-20261029-render-421.webp"
+            "gx-20261029-render-421.webp",
+            "gx-20261029-photo-418.webp",
+            "gx-20261029-photo-419.webp",
+            "gx-20261029-photo-420.webp"
           ]
         }
       }
@@ -2691,28 +3862,36 @@
           "label": "Puff Rectangular Kid — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-424.webp"
+            "gx-20261029-render-424.webp",
+            "gx-20261029-photo-423.webp",
+            "gx-20261029-photo-424.webp"
           ]
         },
         "wb-315-v57": {
           "label": "Puff Rectangular Kid — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-424.webp"
+            "gx-20261029-render-424.webp",
+            "gx-20261029-photo-423.webp",
+            "gx-20261029-photo-424.webp"
           ]
         },
         "wb-317-v59": {
           "label": "Puff Triangular Kid — Sin Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-427.webp"
+            "gx-20261029-render-427.webp",
+            "gx-20261029-photo-426.webp",
+            "gx-20261029-photo-427.webp"
           ]
         },
         "wb-317-v60": {
           "label": "Puff Triangular Kid — Con Relleno",
           "assets": [
             "gx-20261029-render-390.webp",
-            "gx-20261029-render-427.webp"
+            "gx-20261029-render-427.webp",
+            "gx-20261029-photo-426.webp",
+            "gx-20261029-photo-427.webp"
           ]
         }
       }

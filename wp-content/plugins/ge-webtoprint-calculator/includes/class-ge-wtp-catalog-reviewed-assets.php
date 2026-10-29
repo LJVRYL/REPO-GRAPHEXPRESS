@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 /** Read-only delivery of fixed, approved public catalog assets. No uploads or business-record writes. */
 final class GE_WTP_Catalog_Reviewed_Assets {
-    const SOURCE_COMMIT='01c74fb7e0b549e9a189eb075d123bc5ea4e24d7';
+    const SOURCE_COMMIT='a8d662de235626196ba8abc868e04a2c1a63f9f6';
     public static function init(){add_action('template_redirect',array(__CLASS__,'serve'),-100);}
     public static function find($name){
         if(!is_string($name)||!preg_match('/\Agx-20261029-(?:render|photo)-[0-9]{3}(?:-thumb)?\.webp\z/D',$name))return null;
