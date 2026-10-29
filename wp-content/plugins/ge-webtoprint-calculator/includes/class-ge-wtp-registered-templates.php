@@ -5,7 +5,7 @@ defined('ABSPATH') || exit;
 final class GE_WTP_Registered_Templates {
     // Design preparation belongs to the existing read-only order-file module policy.
     const ACTION = 'ge_order_design_template_download';
-    const VERSION = '20261028.2';
+    const VERSION = '20261028.3';
     private static $authenticated_now = false;
 
     public static function init() {
@@ -49,12 +49,9 @@ final class GE_WTP_Registered_Templates {
         if (is_page('plantillas-de-diseno')) {
             return true;
         }
-        global $product;
-        if (function_exists('is_product') && is_product()) {
-            if (!$product && function_exists('wc_get_product')) {
-                $product = wc_get_product(get_queried_object_id());
-            }
-            return null !== self::product_rows($product);
+        if (function_exists('is_product') && is_product() && function_exists('wc_get_product')) {
+            // The global may still be a WP_Post while head assets are enqueued.
+            return null !== self::product_rows(wc_get_product(get_queried_object_id()));
         }
         return false;
     }

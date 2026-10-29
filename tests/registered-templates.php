@@ -72,4 +72,8 @@ GE_WTP_Registered_Templates::wire();
 check(!in_array(array('GE_WTP_Registered_Templates','item_button'),$GLOBALS['fixture_hooks']['graphex_after_product_card_actions']??array(),true),'Catalog cards do not show template buttons');
 check(!in_array(array('GE_WTP_Registered_Templates','item_button'),$GLOBALS['fixture_hooks']['woocommerce_after_shop_loop_item']??array(),true),'Standard Woo cards do not show template buttons');
 check(strpos(file_get_contents(dirname(__DIR__).'/wp-content/themes/graphexpress-child/woocommerce/content-product.php'),"do_action('graphex_after_product_card_actions'")!==false,'Real custom card template invokes the extension hook');
+function is_page($slug){return false;}
+function is_product(){return true;}
+function get_queried_object_id(){return 100;}
+$product=(object)array('ID'=>100);check(GE_WTP_Registered_Templates::is_surface(),'Assets resolve the queried Woo product while global is WP_Post');check($product instanceof stdClass,'Asset detection does not overwrite the global product');$saved_fixture=$fixture_items[100];$fixture_items[100]=false;check(!GE_WTP_Registered_Templates::is_surface(),'Missing product is not a template surface');$fixture_items[100]=$saved_fixture;
 echo json_encode(array('status'=>'PASS','checks'=>$checks,'templates'=>83,'product_pages'=>25,'mode'=>'synthetic-users-no-real-records')).PHP_EOL;
