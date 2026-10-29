@@ -164,22 +164,32 @@ final class GE_WTP_Windbanners_Catalog {
     public static function selector_config($family, $options) {
         $records=array();$labels=array();
         foreach ($options as $key=>$option) {
-            $label=$option['label'];$parts=explode(' · ',$label);$name=$parts[0];$variant=$parts[1]??'';$values=array();
+            $label=strtr($option['label'],array('Ã³'=>'ó','Ã¡'=>'á','Ã±'=>'ñ','Ã©'=>'é'));$parts=explode(' · ',$label);$name=$parts[0];$variant=$parts[1]??'';$values=array();
             if ($family==='gazebos-completos' && preg_match('/Gazebo ([0-9x,]+) /i',$name,$m)) {
                 $values=array('structure'=>str_ireplace('Estructura de ','',$variant),'size'=>str_replace('x',' × ',$m[1]).' m','walls'=>stripos($name,'Tres paredes')!==false?'Sí, 3 paredes impresas':'No, sólo techo impreso');
                 $labels=array('structure'=>'Estructura','size'=>'Medida','walls'=>'Paredes');
             } elseif (strpos($family,'fly-')===0) {
-                $values=array('size'=>is_numeric($name)?$name.' cm':ucfirst(strtolower($name)),'print'=>$variant);$labels=array('size'=>'Altura / tamaño','print'=>'Impresión');
+                $values=array('size'=>is_numeric($name)?$name.' cm':ucfirst(strtolower($name)),'print'=>$variant);$labels=array('size'=>$family==='fly-oval'?'Tamaño':'Altura','print'=>'Impresión');
+            } elseif ($family==='bases-estacas') {
+                $is_stake=stripos($name,'Estaca')===0;$is_cross=stripos($name,'Base Cruz')===0;
+                $model=$is_stake?'Estaca':($is_cross?'Base cruz':(stripos($name,'Plana')!==false?'Base plana':'Base plástica rellenable'));
+                $length=$is_stake?(preg_match('/(40|60)/',$name,$m)?$m[1].' cm':'__none__'):'__none__';
+                $values=array('model'=>$model,'length'=>$length,'weight'=>$is_cross?(stripos($name,'con Sobrepeso')!==false?'Con estuche de sobrepeso':'Sin sobrepeso'):'__none__');$labels=array('model'=>'Tipo de base o estaca','length'=>'Largo de estaca','weight'=>'Sobrepeso');
             } elseif ($family==='wall-banners' && preg_match('/(\d+x\d+)/i',$name,$m)) {
                 $shape=stripos($name,'Curvo')!==false?'Base curva':(stripos($name,'Diagonal')!==false?'Base diagonal':(stripos($name,'Valla')!==false?'Valla':'Recto'));
                 $values=array('model'=>$shape,'size'=>str_replace('x',' × ',$m[1]).' cm','print'=>$variant?:'Según modelo');$labels=array('model'=>'Modelo','size'=>'Medida','print'=>'Impresión');
             } elseif (in_array($family,array('puffs-personalizados','puffs-kids'),true)) {
-                $model=$name;$size='Único';if(preg_match('/^(.*) (Chico|Grande|Medium|Small|XL|XXL)$/i',$name,$m)){$model=$m[1];$size=$m[2];}
+                $model=preg_replace('/^Puff\s+|\s+Kid$/i','',$name);$size='__none__';if(preg_match('/^(.*) (Chico|Grande|Medium|Small|XL|XXL)$/i',$model,$m)){$model=$m[1];$size=$m[2];}
                 $values=array('model'=>$model,'size'=>$size,'fill'=>stripos($variant,'Sin')===0?'Sin relleno':'Con relleno');$labels=array('model'=>'Modelo','size'=>'Tamaño','fill'=>'Relleno');
             } elseif ($family==='cintas-colgantes') {
-                $values=array('model'=>$name,'width'=>$variant);$labels=array('model'=>'Tipo de cinta o llavero','width'=>'Ancho');
+                $is_keyring=stripos($name,'Llavero')===0;$hardware=preg_replace('/^(?:Cinta Colgante|Llavero Corto)\s*(?:con\s*)?/i','',$name);
+                $values=array('type'=>$is_keyring?'Llavero corto':'Cinta colgante','hardware'=>ucfirst($hardware),'width'=>$variant);$labels=array('type'=>'Producto','hardware'=>'Herraje','width'=>'Ancho');
             } elseif ($family==='carpas-estrella') {
                 $values=array('size'=>trim(str_ireplace('Carpa Estrella','',$name)),'structure'=>str_ireplace('Estructura de ','',$variant));$labels=array('size'=>'Tamaño','structure'=>'Estructura');
+            } elseif ($family==='arcos-totems-vallas') {
+                $is_totem=stripos($name,'Totem')===0;$values=array('model'=>$is_totem?'Tótem':$name,'shape'=>$is_totem?(stripos($name,'Curvo')!==false?'Curvo':'Recto'):'__none__');$labels=array('model'=>'Modelo','shape'=>'Forma');
+            } elseif ($family==='mostradores') {
+                $values=array('shape'=>trim(str_ireplace('Mostrador','',$name)));$labels=array('shape'=>'Forma');
             } elseif ($family==='banderas-sublimadas') {
                 $values=array('size'=>preg_replace('/\s*[xX]\s*/',' × ',$name).' cm');$labels=array('size'=>'Medida');
             } elseif ($family==='stands' && preg_match('/(\d+x\d+)/i',$name,$m)) {
@@ -187,7 +197,7 @@ final class GE_WTP_Windbanners_Catalog {
             } elseif (strpos($family,'popup-')===0 || $family==='banner-bow') {
                 $values=array('size'=>preg_replace('/^(Pop Up (Circular|Tower|Valla|Vertical)|Banner Bow)\s*/i','',$name));$labels=array('size'=>'Tamaño');
             } elseif ($family==='backdrops') {
-                $values=array('size'=>trim(str_ireplace('BackDrop','',$name)));$labels=array('size'=>'Modelo / medida');
+                $width=trim(str_ireplace('BackDrop','',$name));$values=array('size'=>in_array($width,array('140','208','280','350','420','560','630'),true)?$width.' × 208 cm':$width);$labels=array('size'=>'Medida (ancho × alto)');
             } else {
                 $values=array('model'=>$name);$labels=array('model'=>'Modelo');
             }
@@ -195,7 +205,7 @@ final class GE_WTP_Windbanners_Catalog {
             $records[$key]=$values;
         }
         $fields=array();$map=array();
-        foreach($labels as $key=>$label){$choices=array();foreach($records as $values)$choices[$values[$key]]=$values[$key];$fields[]=array('key'=>$key,'label'=>$label,'options'=>$choices);}
+        foreach($labels as $key=>$label){$choices=array();foreach($records as $values)$choices[$values[$key]]=$values[$key]==='__none__'?'No aplica':$values[$key];$fields[]=array('key'=>$key,'label'=>$label,'options'=>$choices);}
         foreach($records as $key=>$values){$combination=implode('|',$values);if(isset($map[$combination]))return array();$map[$combination]=$key;}
         return array('selectors'=>$fields,'option_map'=>$map);
     }
