@@ -56,6 +56,7 @@ require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-vps-storage.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-canva.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-product-images.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-storefront.php';
+require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-wind-base-pairs.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-payments.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-review-requests.php';
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-production.php';

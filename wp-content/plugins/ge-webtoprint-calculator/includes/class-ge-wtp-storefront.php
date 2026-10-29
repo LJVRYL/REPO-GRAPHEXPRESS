@@ -147,6 +147,7 @@ final class GE_WTP_Storefront {
             <?php elseif ('ml' === $mode) : ?>
                 <div class="ge-storefront-measures"><label><span>Largo (cm)</span><input type="number" name="length" min="1" step="0.1" value="100" data-ge-length required></label></div>
             <?php endif; ?>
+            <?php do_action('ge_storefront_optional_accessories', $product, $config); ?>
             <div class="ge-storefront-buy-row<?php echo !empty($config['fixed_quantity_selector']) ? ' has-fixed-quantity' : ''; ?>">
                 <?php if (!empty($config['fixed_quantity_selector'])) : ?><input type="hidden" name="quantity" value="<?php echo esc_attr($minimum_quantity); ?>" data-ge-quantity><?php else : ?><label><span>Cantidad</span><input type="number" name="quantity" min="<?php echo esc_attr($minimum_quantity); ?>" step="<?php echo esc_attr($quantity_step); ?>" value="<?php echo esc_attr($minimum_quantity); ?>" data-ge-quantity></label><?php endif; ?>
                 <div class="ge-storefront-price"><small>Precio por la cantidad elegida</small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $net_multiplier, array('decimals' => $price_decimals))); ?> + IVA</strong><span data-ge-base>Total con IVA: <?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $tax['multiplier'], array('decimals' => $price_decimals))); ?></span></div>
@@ -290,7 +291,16 @@ final class GE_WTP_Storefront {
         if ($uploads) {
             $cart_data['ge_r2_artworks'] = $uploads;
         }
-        if (!WC()->cart->add_to_cart($product_id, $quantity, 0, array(), $cart_data)) {
+        $base_key=isset($_POST['ge_wind_base'])?sanitize_text_field(wp_unslash($_POST['ge_wind_base'])):'';
+        if ($base_key!=='' && class_exists('GE_WTP_Wind_Base_Pairs')) {
+            try { $added=GE_WTP_Wind_Base_Pairs::add_pair($product_id,$key,$base_key,$quantity,$cart_data,WC()->cart); }
+            catch (Throwable $error) {
+                wc_add_notice($error->getMessage(),'error');
+                wp_safe_redirect(get_permalink($product_id));
+                exit;
+            }
+        } else { $added=WC()->cart->add_to_cart($product_id,$quantity,0,array(),$cart_data); }
+        if (!$added) {
             wc_add_notice('No pudimos agregar el producto al carrito.', 'error');
             wp_safe_redirect(get_permalink($product_id));
             exit;

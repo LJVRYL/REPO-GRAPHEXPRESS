@@ -1,0 +1,9 @@
+# Optional bases for windbanners
+
+All nine products in the existing windbanners/banderas category offer an optional base. The default is Sin base. Current base choices and prices come from the existing published WB-BAS-001 product, with the same source/variant keys and commercial tax context. Textile flags explicitly require the customer's own compatible mast; no mast is included. The 40 cm stake is unavailable for known fly-banner heights above 320 cm, enforced by both UI and server.
+
+A purchase with a base adds two native WooCommerce product rows linked by a unique group and parent cart key. Each flag has one base. Parent quantity updates synchronize bases; orphan children are removed, deleting the parent removes its paired base, and undo restores the associated child. Removing only the base leaves the flag. Standalone bases and historical carts/orders are unaffected. Native stock checks and product pricing remain active. If adding the child fails, only the newly added parent is rolled back.
+
+The cart displays the association and stores it in order-line metadata. No client-submitted price or product ID defines the accessory: the server resolves the fixed published base product and selected canonical option. Ambiguous, unavailable, unsupported or tampered selections are rejected before addition. Assets and templates are unchanged.
+
+QA covers 327 valid pairs, 15 incompatible stake pairs, quantity synchronization, child removal, parent removal/undo, standalone bases, stock unavailability, atomic failure, order metadata, preview arithmetic and unchanged 164 windbanner/24 sheet choices. The release/result pack records native anonymous cart checks, code hashes, canonical merge, verified private broker backup and selective rollback. Deploy new module before adding its require; rollback removes its require before restoring/removing dependent files.
