@@ -2658,6 +2658,21 @@
         "sha256": "c0e423c0a6ec58e2e30ae8593c2cfb7a0bd0a71c28974cf5dc3b955d46cad1e7",
         "bytes": 2864
       }
+    },
+    "gx-20261029-photo-444.webp": {
+      "ref": 444,
+      "title": "Gazebo personalizado en evento",
+      "kind": "photo",
+      "source_sha256": "8b727e65e4c8ba3e560f0aa14f167847fc28519b0fdafaae297ebb536b1997ed",
+      "sha256": "9fdbcc1c72d07c9329aab172f8fdeae4b55b53c4e557d30cd7a47c29db809245",
+      "bytes": 106270,
+      "thumbnail": {
+        "name": "gx-20261029-photo-444-thumb.webp",
+        "sha256": "239b0099102f22a215069f008f4f2bea23739f921d6ae6fca217f1fd1dbd5a11",
+        "bytes": 7598
+      },
+      "origin_classification": "original_event_photo",
+      "usage": "Family personalization reference; dimensions, walls and frame material are not certified."
     }
   },
   "products": {
@@ -3519,7 +3534,10 @@
             "gx-20261029-render-039.webp"
           ]
         }
-      }
+      },
+      "family_assets": [
+        "gx-20261029-photo-444.webp"
+      ]
     },
     "windbanners-popup-vertical": {
       "options": {

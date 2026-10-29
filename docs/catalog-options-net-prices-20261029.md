@@ -1,0 +1,9 @@
+# Public product configuration and prices
+
+Leo requested net prices followed by “+ IVA” on all public product items, without invoice-type labels. The public catalog uses the existing commercial net-plus-21% policy independently of the eventual fiscal issuer. The product shows the net amount prominently and the total including IVA separately. Future catalog cart entries use that same total. Saved cart/order prices, fiscal issuers, invoice types and historical documents are preserved. If native WooCommerce taxes become enabled, automatic catalog sales remain blocked to prevent double charging.
+
+The 25 active promotional product families expose separate labeled controls. Gazebos have Estructura, Medida and Paredes; all 16 original combinations retain their keys and net prices. Other families separate the applicable measure/size, printing, model, filling or width. Dependent choices only allow existing combinations. A change dispatches the native option change event so quantity rules, templates and exact gallery filtering remain synchronized. All 164 active native purchase choices remain reachable.
+
+Gazebos include the original event photograph previously selected by Leo, extracted from the supplied sequence. It has no supplier watermark. It is explicitly a family personalization reference: no exact dimensions, frame material or wall configuration are claimed. The existing Graphex mockup remains first, followed by the photo and exact-size renders. The previous 216 approved images and exact option associations remain unchanged. The temporary image uploader remains closed.
+
+Delivery follows the fixed asset allowlist, immutable source commit and SHA-verified WebP cache. No upload permissions or visitor write endpoints are introduced. Production deployment is selective with pre-change hashes, verified broker backup and selective rollback. The result pack outside the repository records the canonical commit, operation, checks and final hashes.

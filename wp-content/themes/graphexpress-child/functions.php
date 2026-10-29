@@ -361,6 +361,11 @@ function graphexpress_render_product_price_tables() {
 
     $sections = $product->get_meta('_ge_public_price_sections');
     $notes = $product->get_meta('_ge_public_price_notes');
+    $is_wind = 0 === strpos((string)$product->get_meta('_ge_public_catalog_key'), 'windbanners-');
+    if ($is_wind && is_array($notes)) {
+        // Historical catalog metadata stays intact; public copy follows the current commercial policy.
+        $notes = array_map(function($note){return false!==stripos($note,'comprobante')?'Precio unitario + IVA. El total con IVA se muestra al configurar el pedido.':$note;},$notes);
+    }
     if (! is_array($sections)) {
         return;
     }
@@ -368,8 +373,7 @@ function graphexpress_render_product_price_tables() {
     echo '<div class="gx-price-guide">';
     $price_intro = 'Los importes publicados son valores Graph Express antes de IVA. Confirmamos disponibilidad y valor final al solicitar la cotización.';
     if (0 === strpos((string) $product->get_meta('_ge_public_catalog_key'), 'windbanners-') && class_exists('GE_WTP_Windbanners_Catalog')) {
-        $tax_context = GE_WTP_Windbanners_Catalog::tax_context();
-        $price_intro = 'Los importes de la tabla son valores netos Graph Express. ' . ($tax_context ? $tax_context['note'] : 'Consultanos para validar el comprobante y el precio final.');
+        $price_intro = 'Precios unitarios + IVA. Elegí medida, opciones y cantidad para ver el total con IVA.';
     }
     echo '<div class="gx-price-guide-intro"><span>Valores de referencia</span><h2>Elegí formato y cantidad</h2><p>' . esc_html($price_intro) . '</p></div>';
 
@@ -384,7 +388,7 @@ function graphexpress_render_product_price_tables() {
         }
         echo '<div class="gx-price-table-scroll"><table><thead><tr>';
         foreach ($section['columns'] as $column) {
-            echo '<th scope="col">' . esc_html($column) . '</th>';
+            echo '<th scope="col">' . esc_html($is_wind && $column==='Precio Graph Express' ? 'Precio + IVA' : $column) . '</th>';
         }
         echo '</tr></thead><tbody>';
         foreach ($section['rows'] as $row) {

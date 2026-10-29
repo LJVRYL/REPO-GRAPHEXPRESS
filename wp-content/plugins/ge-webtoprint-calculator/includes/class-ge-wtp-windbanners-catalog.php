@@ -26,7 +26,7 @@ final class GE_WTP_Windbanners_Catalog {
     }
 
     private static function definitions() {
-        $before_vat = 'Precio unitario neto. El tratamiento de IVA depende del emisor del comprobante. En comprobantes C no se agrega IVA.';
+        $before_vat = 'Precio unitario + IVA. El total con IVA se muestra al configurar el pedido.';
         return array(
             'banderas-sublimadas' => array('WB-BAN-001', 'Banderas sublimadas', 'windbanners-banderas', 'Banderas textiles full color para frentes, mástiles, eventos y comunicación institucional.', array('Impresión por sublimación full color.', $before_vat)),
             'bases-estacas' => array('WB-BAS-001', 'Bases y estacas para fly banners', 'bases-windbanners', 'Accesorios para instalar windbanners sobre pisos duros, tierra, arena o pasto.', array('El sobrepeso se entrega vacío.', 'Las estacas de 40 cm se recomiendan hasta 3,20 m y las de 60 cm para alturas mayores.', $before_vat)),
@@ -154,20 +154,50 @@ final class GE_WTP_Windbanners_Catalog {
         return array(array('title' => $product['name'], 'columns' => array('Modelo / medida', 'Precio Graph Express'), 'rows' => $rows));
     }
 
-    /** Live fiscal source: never infer an IVA percentage from the supplier. */
+    /** Public commercial policy, independent of the eventual fiscal document. */
     public static function tax_context() {
-        if (!class_exists('GE_WTP_Billing_Issuers') || !class_exists('GE_WTP_Customer_Tax')) { return array(); }
-        $matches = array();
-        foreach (GE_WTP_Billing_Issuers::all() as $issuer) {
-            if (!empty($issuer['active']) && in_array('common', (array)($issuer['default_for_scenarios'] ?? array()), true)) { $matches[]=$issuer; }
+        if (function_exists('wc_tax_enabled') && wc_tax_enabled()) { return array(); }
+        return array('multiplier'=>1.21,'rate_basis_points'=>2100,'policy'=>'catalog-net-plus-vat-20261029','label'=>'Precio + IVA','note'=>'Precios + IVA 21%. El total con IVA se muestra antes de agregar al carrito.');
+    }
+
+    /** Separate customer choices while preserving every native option key and price. */
+    public static function selector_config($family, $options) {
+        $records=array();$labels=array();
+        foreach ($options as $key=>$option) {
+            $label=$option['label'];$parts=explode(' · ',$label);$name=$parts[0];$variant=$parts[1]??'';$values=array();
+            if ($family==='gazebos-completos' && preg_match('/Gazebo ([0-9x,]+) /i',$name,$m)) {
+                $values=array('structure'=>str_ireplace('Estructura de ','',$variant),'size'=>str_replace('x',' × ',$m[1]).' m','walls'=>stripos($name,'Tres paredes')!==false?'Sí, 3 paredes impresas':'No, sólo techo impreso');
+                $labels=array('structure'=>'Estructura','size'=>'Medida','walls'=>'Paredes');
+            } elseif (strpos($family,'fly-')===0) {
+                $values=array('size'=>is_numeric($name)?$name.' cm':ucfirst(strtolower($name)),'print'=>$variant);$labels=array('size'=>'Altura / tamaño','print'=>'Impresión');
+            } elseif ($family==='wall-banners' && preg_match('/(\d+x\d+)/i',$name,$m)) {
+                $shape=stripos($name,'Curvo')!==false?'Base curva':(stripos($name,'Diagonal')!==false?'Base diagonal':(stripos($name,'Valla')!==false?'Valla':'Recto'));
+                $values=array('model'=>$shape,'size'=>str_replace('x',' × ',$m[1]).' cm','print'=>$variant?:'Según modelo');$labels=array('model'=>'Modelo','size'=>'Medida','print'=>'Impresión');
+            } elseif (in_array($family,array('puffs-personalizados','puffs-kids'),true)) {
+                $model=$name;$size='Único';if(preg_match('/^(.*) (Chico|Grande|Medium|Small|XL|XXL)$/i',$name,$m)){$model=$m[1];$size=$m[2];}
+                $values=array('model'=>$model,'size'=>$size,'fill'=>stripos($variant,'Sin')===0?'Sin relleno':'Con relleno');$labels=array('model'=>'Modelo','size'=>'Tamaño','fill'=>'Relleno');
+            } elseif ($family==='cintas-colgantes') {
+                $values=array('model'=>$name,'width'=>$variant);$labels=array('model'=>'Tipo de cinta o llavero','width'=>'Ancho');
+            } elseif ($family==='carpas-estrella') {
+                $values=array('size'=>trim(str_ireplace('Carpa Estrella','',$name)),'structure'=>str_ireplace('Estructura de ','',$variant));$labels=array('size'=>'Tamaño','structure'=>'Estructura');
+            } elseif ($family==='banderas-sublimadas') {
+                $values=array('size'=>preg_replace('/\s*[xX]\s*/',' × ',$name).' cm');$labels=array('size'=>'Medida');
+            } elseif ($family==='stands' && preg_match('/(\d+x\d+)/i',$name,$m)) {
+                $values=array('size'=>str_replace('x',' × ',$m[1]).' m');$labels=array('size'=>'Medida');
+            } elseif (strpos($family,'popup-')===0 || $family==='banner-bow') {
+                $values=array('size'=>preg_replace('/^(Pop Up (Circular|Tower|Valla|Vertical)|Banner Bow)\s*/i','',$name));$labels=array('size'=>'Tamaño');
+            } elseif ($family==='backdrops') {
+                $values=array('size'=>trim(str_ireplace('BackDrop','',$name)));$labels=array('size'=>'Modelo / medida');
+            } else {
+                $values=array('model'=>$name);$labels=array('model'=>'Modelo');
+            }
+            if (in_array('', $values, true)) { return array(); }
+            $records[$key]=$values;
         }
-        if (count($matches)!==1 || (function_exists('wc_tax_enabled') && wc_tax_enabled())) { return array(); }
-        $issuer=$matches[0]; $resolution=GE_WTP_Customer_Tax::resolve($issuer, array('vat_status'=>'final_consumer','country'=>'AR'));
-        if (empty($resolution['issuer_ready'])) { return array(); }
-        $rate=(int)($issuer['tax_rate_basis_points'] ?? 0);
-        if ('no_vat'===$resolution['tax_treatment'] && $rate===0) { return array('multiplier'=>1,'rate_basis_points'=>0,'issuer_id'=>$issuer['id'],'label'=>'Total final · comprobante C','note'=>'Comprobante C: no se agrega IVA. Si necesitás factura A, consultanos antes de confirmar.'); }
-        if ('vat_applies'===$resolution['tax_treatment'] && $rate>0) { return array('multiplier'=>1+$rate/10000,'rate_basis_points'=>$rate,'issuer_id'=>$issuer['id'],'label'=>'Total final con IVA','note'=>'IVA según el emisor vigente del comprobante.'); }
-        return array();
+        $fields=array();$map=array();
+        foreach($labels as $key=>$label){$choices=array();foreach($records as $values)$choices[$values[$key]]=$values[$key];$fields[]=array('key'=>$key,'label'=>$label,'options'=>$choices);}
+        foreach($records as $key=>$values){$combination=implode('|',$values);if(isset($map[$combination]))return array();$map[$combination]=$key;}
+        return array('selectors'=>$fields,'option_map'=>$map);
     }
 
     /** Stable source/variant keys avoid positional matching of different options. */
@@ -176,7 +206,7 @@ final class GE_WTP_Windbanners_Catalog {
         if (0!==strpos($key, 'windbanners-')) { return null; }
         $data=self::products(); $family=substr($key,strlen('windbanners-')); $tax=self::tax_context();
         if (!isset($data[$family]) || empty($data[$family]['options']) || !$tax) { return array(); }
-        return array('label'=>'Modelo y configuración', 'options'=>$data[$family]['options'], 'min_qty'=>1, 'step'=>1, 'tax_context'=>$tax, 'windbanners'=>true);
+        return array_merge(array('label'=>'Modelo', 'options'=>$data[$family]['options'], 'min_qty'=>1, 'step'=>1, 'tax_context'=>$tax, 'windbanners'=>true), self::selector_config($family,$data[$family]['options']));
     }
 
     /** Selective refresh: preserve identity, images, attributes and all historical sales. */

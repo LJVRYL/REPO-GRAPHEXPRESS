@@ -5,6 +5,7 @@
         var decimals = Number(form.dataset.priceDecimals || 0);
         var money = decimals ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : legacyMoney;
         var taxMultiplier = Number(form.dataset.taxMultiplier || 1.21);
+        var netMultiplier = Number(form.dataset.netMultiplier || 1);
         var catalogOptions = JSON.parse(form.dataset.options || '{}');
         var optionDetails = form.querySelector('[data-ge-option-details]');
         var select = form.querySelector('[data-ge-option]');
@@ -83,13 +84,13 @@
             }
             if (length) { factor = Math.max(0.01, Number(length.value || 0) / 100); }
             var total = Number(option.dataset.price || 0) * factor * Math.max(1, Number(quantity.value || 1));
-            price.textContent = money.format(decimals ? total * taxMultiplier : Math.round(total * taxMultiplier));
+            price.textContent = money.format(decimals ? total * netMultiplier : Math.round(total * netMultiplier)) + ' + IVA';
             if (optionDetails) { var detail = catalogOptions[option.value]; optionDetails.textContent = detail && detail.source_id ? [detail.includes, detail.description, 'Cantidad mínima: ' + detail.min_qty + '. Múltiplo: ' + detail.step + '.'].filter(Boolean).join(' ') : ''; }
-            if (base) { base.textContent = 'Base sin IVA: ' + money.format(decimals ? total : Math.round(total)); }
+            if (base) { base.textContent = 'Total con IVA: ' + money.format(decimals ? total * taxMultiplier : Math.round(total * taxMultiplier)); }
         }
         select.addEventListener('change', function () { applyQuantityRule(true); update(); });
         selectors.forEach(function (field) {
-            field.addEventListener('change', function () { refreshSelectors(); applyQuantityRule(true); update(); });
+            field.addEventListener('change', function () { refreshSelectors(); select.dispatchEvent(new Event('change', { bubbles: true })); });
         });
         quantity.addEventListener('input', update);
         [width, height, length].forEach(function (field) { if (field) { field.addEventListener('input', update); } });
