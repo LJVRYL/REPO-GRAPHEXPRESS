@@ -16,6 +16,8 @@
         var quantity = form.querySelector('[data-ge-quantity]');
         var price = form.querySelector('[data-ge-price]');
         var base = form.querySelector('[data-ge-base]');
+        var windBase = form.querySelector('[data-ge-wind-base]');
+        var windBaseSummary = form.querySelector('[data-ge-wind-base-summary]');
         var width = form.querySelector('[data-ge-width]');
         var height = form.querySelector('[data-ge-height]');
         var length = form.querySelector('[data-ge-length]');
@@ -85,7 +87,23 @@
                 if (rollHint) rollHint.textContent = 'Tamaño final: ' + requestedWidth + ' × ' + height.value + ' cm. Precio actualizado.';
             }
             if (length) { factor = Math.max(0.01, Number(length.value || 0) / 100); }
-            var total = Number(option.dataset.price || 0) * factor * Math.max(1, Number(quantity.value || 1));
+            var count = Math.max(1, Number(quantity.value || 1));
+            var accessory = 0;
+            if (windBase) {
+                var heightMatch = (option.textContent || '').match(/^(\d+)\s*·/);
+                var flagHeight = heightMatch ? Number(heightMatch[1]) : 0;
+                Array.prototype.slice.call(windBase.options).forEach(function (candidate) {
+                    var maximum = Number(candidate.dataset.maxHeight || 0);
+                    candidate.disabled = !!(maximum && flagHeight > maximum);
+                    candidate.hidden = candidate.disabled;
+                });
+                var baseReset = windBase.options[windBase.selectedIndex].disabled;
+                if (baseReset) { windBase.value = ''; }
+                var chosenBase = windBase.options[windBase.selectedIndex];
+                accessory = Number(chosenBase.dataset.price || 0) * count;
+                if (windBaseSummary) { windBaseSummary.textContent = windBase.value ? count + ' windbanners + ' + count + ' bases. Bases: ' + money.format(accessory) + ' + IVA. Incluidas en el total de abajo.' : (baseReset ? 'Para esta altura, elegí otra base. ' : '') + 'Sin base. Podés agregar una por cada windbanner.'; }
+            }
+            var total = Number(option.dataset.price || 0) * factor * count + accessory;
             price.textContent = money.format(decimals ? total * netMultiplier : Math.round(total * netMultiplier)) + ' + IVA';
             if (optionDetails) { var detail = catalogOptions[option.value]; optionDetails.textContent = detail && detail.source_id ? [detail.includes, detail.description, 'Cantidad mínima: ' + detail.min_qty + '. Múltiplo: ' + detail.step + '.'].filter(Boolean).join(' ') : ''; }
             if (base) { base.textContent = 'Total con IVA: ' + money.format(decimals ? total * taxMultiplier : Math.round(total * taxMultiplier)); }
@@ -95,6 +113,7 @@
             field.addEventListener('change', function () { refreshSelectors(); select.dispatchEvent(new Event('change', { bubbles: true })); });
         });
         quantity.addEventListener('input', update);
+        if (windBase) { windBase.addEventListener('change', update); }
         [width, height, length].forEach(function (field) { if (field) { field.addEventListener('input', update); } });
         if (r2Files && r2Claims && r2Button && window.geR2Upload) {
             var uploading = false;
