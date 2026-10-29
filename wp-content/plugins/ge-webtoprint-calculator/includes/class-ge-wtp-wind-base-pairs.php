@@ -13,6 +13,9 @@ final class GE_WTP_Wind_Base_Pairs {
         add_action('woocommerce_cart_item_restored', array(__CLASS__, 'restored'), 10, 2);
         add_filter('woocommerce_cart_item_quantity', array(__CLASS__, 'quantity_html'), 10, 3);
         add_filter('woocommerce_update_cart_validation', array(__CLASS__, 'quantity_valid'), 10, 4);
+        add_filter('woocommerce_store_api_product_quantity_editable', array(__CLASS__, 'blocks_editable'), 10, 3);
+        add_filter('woocommerce_store_api_product_quantity_minimum', array(__CLASS__, 'blocks_quantity'), 10, 3);
+        add_filter('woocommerce_store_api_product_quantity_maximum', array(__CLASS__, 'blocks_quantity'), 10, 3);
         add_filter('woocommerce_get_item_data', array(__CLASS__, 'item_data'), 20, 2);
         add_action('woocommerce_checkout_create_order_line_item', array(__CLASS__, 'order_data'), 20, 4);
     }
@@ -100,6 +103,8 @@ final class GE_WTP_Wind_Base_Pairs {
     }
 
     public static function quantity_html($html,$key,$item) { return empty($item['ge_wind_base_parent'])?$html:esc_html((int)$item['quantity'].' · una por windbanner'); }
+    public static function blocks_editable($editable,$product,$item) { return empty($item['ge_wind_base_parent'])?$editable:false; }
+    public static function blocks_quantity($quantity,$product,$item) { return empty($item['ge_wind_base_parent'])?$quantity:(int)$item['quantity']; }
 
     public static function quantity_valid($valid,$key,$item,$quantity) {
         if(!empty($item['ge_wind_base_parent']) && (int)$quantity!==(int)$item['quantity']){wc_add_notice('La cantidad de bases se ajusta desde la cantidad del windbanner. Podés quitar la base si no la necesitás.','error');return false;}

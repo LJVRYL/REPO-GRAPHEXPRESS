@@ -13,6 +13,7 @@ class PairCartFixture{
  function restore_cart_item($key){if(!isset($this->removed_cart_contents[$key]))return false;$this->cart_contents[$key]=$this->removed_cart_contents[$key];unset($this->removed_cart_contents[$key]);GE_WTP_Wind_Base_Pairs::restored($key,$this);return true;}
 }
 require GE_WTP_PLUGIN_DIR.'includes/class-ge-wtp-wind-base-pairs.php';
+ok(GE_WTP_Wind_Base_Pairs::blocks_editable(true,null,array('ge_wind_base_parent'=>'p'))===false,'blocks child quantity read only');ok(GE_WTP_Wind_Base_Pairs::blocks_quantity(9999,null,array('ge_wind_base_parent'=>'p','quantity'=>4))===4,'blocks child minimum/maximum equals paired quantity');ok(GE_WTP_Wind_Base_Pairs::blocks_editable(true,null,array())===true&&GE_WTP_Wind_Base_Pairs::blocks_quantity(9999,null,null)===9999,'standalone limits preserved');
 $base_ids=array(88);$base_stock=true;$fixture[88]=array('_ge_public_catalog_key'=>'windbanners-bases-estacas');$fixture[42]=array('_ge_public_catalog_key'=>'windbanners-fly-pluma');$tax_enabled=false;$pairs=0;$rejected=0;
 foreach($products as $family=>$p){$fixture[42]=array('_ge_public_catalog_key'=>'windbanners-'.$family);if(!GE_WTP_Wind_Base_Pairs::supported(42))continue;foreach($p['options'] as $key=>$flag){foreach($products['bases-estacas']['options'] as $base_key=>$base){
  $qty=max(2,$flag['min_qty']);$cart=new PairCartFixture();$data=array('ge_configuration'=>$flag['label'],'ge_base_price'=>$flag['price'],'ge_calculated_price'=>round($flag['price']*1.21,4));
