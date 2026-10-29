@@ -515,9 +515,40 @@ final class GE_WTP_Storefront {
                 $config['selectors'] = $selector_config['fields'];
                 $config['option_map'] = $selector_config['map'];
             }
-            return $config;
+            return self::rigid_sheet_selectors($product_id, $config);
         }
         return array();
+    }
+
+    /** Present independent sheet choices without rebuilding native prices or option keys. */
+    private static function rigid_sheet_selectors($product_id, $config) {
+        if (!$config || !empty($config['selectors']) || !class_exists('GE_WTP_Public_Catalog')) { return $config; }
+        $catalog_key = (string) get_post_meta($product_id, '_ge_public_catalog_key', true);
+        $products = GE_WTP_Public_Catalog::products();
+        $definition = $products[$catalog_key] ?? array();
+        if (($definition['group'] ?? '') !== 'placas-rigidas') { return $config; }
+        $sizes = $definition['attributes']['Medidas'] ?? ($definition['attributes']['Medida'] ?? array());
+        $size_choices = array(); $print_choices = array(); $map = array();
+        foreach ($config['options'] as $key => $option) {
+            if (!preg_match('/(?:^|-)(simple|bifaz)$/D', $key, $face)) { return $config; }
+            if (preg_match('/^(\d+)x(\d+)-(?:simple|bifaz)$/D', $key, $measure)) {
+                $size = $measure[1] . ' × ' . $measure[2] . ' cm';
+            } elseif (in_array($key, array('simple', 'bifaz'), true) && count($sizes) === 1) {
+                $size = $sizes[0];
+            } else { return $config; }
+            if (!in_array($size, $sizes, true)) { return $config; }
+            $print = $face[1] === 'simple' ? 'Simple faz' : 'Doble faz';
+            $combination = $size . '|' . $print;
+            if (isset($map[$combination])) { return $config; }
+            $map[$combination] = $key; $size_choices[$size] = $size; $print_choices[$print] = $print;
+        }
+        if (!$map) { return $config; }
+        $config['selectors'] = array(
+            array('key'=>'size', 'label'=>'Medida', 'options'=>$size_choices),
+            array('key'=>'print', 'label'=>'Impresión', 'options'=>$print_choices),
+        );
+        $config['option_map'] = $map;
+        return $config;
     }
 
     public static function minimum_price($product_id) {

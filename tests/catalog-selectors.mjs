@@ -1,5 +1,6 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';
-const data=JSON.parse(execFileSync(process.argv[2],['tests/catalog-selectors-fixture.php'],{encoding:'utf8'}));
+const data=JSON.parse(execFileSync(process.argv[2],process.argv[3]?[process.argv[3],'--export']:['tests/catalog-selectors-fixture.php'],{encoding:'utf8'}));
+for(const c of Object.values(data))for(const o of Object.values(c.options)){o.min_qty??=1;o.step??=1;}
 const code=fs.readFileSync('wp-content/plugins/ge-webtoprint-calculator/assets/js/storefront.js','utf8');
 const galleryCode=fs.readFileSync('wp-content/plugins/ge-webtoprint-calculator/assets/js/flags-product.js','utf8');
 class Field{constructor(options){this.options=options;this.selectedIndex=0;this.events={};this.wrapper={hidden:false};}closest(){return this.wrapper;}get value(){return this.options[this.selectedIndex].value;}set value(v){this.selectedIndex=this.options.findIndex(o=>o.value===v);}addEventListener(k,f){(this.events[k]??=[]).push(f);}dispatchEvent(e){for(const f of this.events[e.type]??[])f(e);}querySelector(s){return this.options.find(o=>s==='option[value="'+o.value+'"]');}}
