@@ -2,7 +2,7 @@ import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:asser
 const data=JSON.parse(execFileSync(process.argv[2],['tests/catalog-selectors-fixture.php'],{encoding:'utf8'}));
 const code=fs.readFileSync('wp-content/plugins/ge-webtoprint-calculator/assets/js/storefront.js','utf8');
 const galleryCode=fs.readFileSync('wp-content/plugins/ge-webtoprint-calculator/assets/js/flags-product.js','utf8');
-class Field{constructor(options){this.options=options;this.selectedIndex=0;this.events={};}get value(){return this.options[this.selectedIndex].value;}set value(v){this.selectedIndex=this.options.findIndex(o=>o.value===v);}addEventListener(k,f){(this.events[k]??=[]).push(f);}dispatchEvent(e){for(const f of this.events[e.type]??[])f(e);}querySelector(s){return this.options.find(o=>s==='option[value="'+o.value+'"]');}}
+class Field{constructor(options){this.options=options;this.selectedIndex=0;this.events={};this.wrapper={hidden:false};}closest(){return this.wrapper;}get value(){return this.options[this.selectedIndex].value;}set value(v){this.selectedIndex=this.options.findIndex(o=>o.value===v);}addEventListener(k,f){(this.events[k]??=[]).push(f);}dispatchEvent(e){for(const f of this.events[e.type]??[])f(e);}querySelector(s){return this.options.find(o=>s==='option[value="'+o.value+'"]');}}
 class Event{constructor(type){this.type=type;}}
 let checked=0;
 for(const [family,c] of Object.entries(data)){
@@ -19,6 +19,7 @@ for(const [family,c] of Object.entries(data)){
  for(const [combination,key] of Object.entries(c.option_map)){
   const choices=combination.split('|');for(let n=0;n<fields.length;n++){fields[n].value=choices[n];fields[n].dispatchEvent(new Event('change'));}
   const o=c.options[key];assert.equal(select.value,key,family+' '+combination);assert.equal(submit.disabled,false);assert.equal(Number(quantity.value),o.min_qty);assert.equal(Number(quantity.step),o.step);
+  for(const field of fields)assert.equal(field.wrapper.hidden,field.value==='__none__','only relevant fields remain visible');
   const money=new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:2,maximumFractionDigits:2});assert.equal(price.textContent,money.format(o.price*o.min_qty)+' + IVA');assert.equal(base.textContent,'Total con IVA: '+money.format(o.price*o.min_qty*1.21));
   for(const b of buttons)assert.equal(b.hidden,b.dataset.kind!=='mockup'&&b.dataset.gxOptions!==key,'gallery follows exact key');
   checked++;

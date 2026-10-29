@@ -45,6 +45,8 @@
                     var replacement = Array.prototype.slice.call(field.options).find(function (candidate) { return !candidate.disabled; });
                     if (replacement) { field.value = replacement.value; }
                 }
+                var wrapper = field.closest('label');
+                if (wrapper) { wrapper.hidden = field.value === '__none__'; }
             });
             var combination = selectors.map(function (field) { return field.value; }).join('|');
             if (optionMap[combination] && select.querySelector('option[value="' + optionMap[combination] + '"]')) {

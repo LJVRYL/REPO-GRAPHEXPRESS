@@ -3,7 +3,7 @@ defined('ABSPATH') || exit;
 /** Product-family galleries share the native storefront configurator and private template gate. */
 final class GE_WTP_Flags_Product_Experience {
     const SLUG='windbanners-banderas-sublimadas';
-    const VERSION='20261029.5';
+    const VERSION='20261029.6';
     public static function init(){add_filter('body_class',array(__CLASS__,'body_class'));add_action('wp',array(__CLASS__,'layout'),150);add_action('wp_enqueue_scripts',array(__CLASS__,'assets'),160);add_action('ge_storefront_product_resources',array(__CLASS__,'resources'),10,2);}
     public static function supported($slug){return isset(GE_WTP_Catalog_Reviewed_Media::catalog()['products'][$slug]);}
     public static function is_product(){return function_exists('is_product')&&is_product()&&self::supported(get_post_field('post_name',get_queried_object_id()));}
