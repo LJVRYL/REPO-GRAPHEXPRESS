@@ -152,7 +152,7 @@ final class GE_WTP_Storefront {
                 <div class="ge-storefront-price"><small>Precio por la cantidad elegida</small><strong data-ge-price><?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $net_multiplier, array('decimals' => $price_decimals))); ?> + IVA</strong><span data-ge-base>Total con IVA: <?php echo wp_kses_post(wc_price($first['price'] * $minimum_quantity * $tax['multiplier'], array('decimals' => $price_decimals))); ?></span></div>
             </div>
             <?php if (!empty($tax['note'])) : ?><p class="ge-storefront-account-note"><?php echo esc_html($tax['note']); ?></p><?php endif; ?>
-            <?php if (!empty($config['windbanners'])) : ?><p data-ge-option-details aria-live="polite"></p><?php endif; ?>
+            <?php if (!empty($config['windbanners'])) : ?><details class="gx-flags-resources gx-flags-option-specs"><summary>Características de esta opción</summary><div class="gx-flags-resources-body"><p data-ge-option-details aria-live="polite"></p></div></details><?php endif; ?>
             <?php do_action('ge_storefront_product_resources', $product, $config); ?>
             <?php if ($saved_artworks) : ?>
                 <fieldset class="ge-storefront-artworks">
