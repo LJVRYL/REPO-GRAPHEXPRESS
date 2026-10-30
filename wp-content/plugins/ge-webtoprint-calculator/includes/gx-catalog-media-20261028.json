@@ -2673,6 +2673,447 @@
       },
       "origin_classification": "original_event_photo",
       "usage": "Family personalization reference; dimensions, walls and frame material are not certified."
+    },
+    "gx-20261030-gazebo-013-76a9d524d0.webp": {
+      "ref": "gazebo-20261030-G13",
+      "title": "Gazebo 3 × 4,5 m · Aluminio · Shell Agro · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "1f6b057fe6a01a6dd58bf757e19b64377520d54fbc24d765eabdb9f6165086c9",
+      "source_sha256": "76a9d524d098f2a61c3ee0311775d6d3feb6fb65f1b903e478bb21a2316c0440",
+      "kind": "photo",
+      "bytes": 292554,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-013-76a9d524d0-thumb.webp",
+        "sha256": "01b3fb4ed7c94931da4442552ac8764f9befadbc70af1db4f797566b1f143060",
+        "bytes": 9520
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-016-794d297061.webp": {
+      "ref": "gazebo-20261030-G16",
+      "title": "Gazebo 3 × 3 m · Aluminio · Amstel · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "374b682a489fe3f624202d52d6e192944749b89e28c9de1169a511205f63eba5",
+      "source_sha256": "794d29706167126d163c564bd3dfc613b0bc6c01b72eef3e95370d788554633e",
+      "kind": "photo",
+      "bytes": 343286,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-016-794d297061-thumb.webp",
+        "sha256": "a79cb438d06ed69f6f32441a63b3344eeb763013ef807ff53fabcd3d36b16d82",
+        "bytes": 11514
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-007-7cda6dcc6c.webp": {
+      "ref": "gazebo-20261030-G07",
+      "title": "Gazebo 3 × 4,5 m · Aluminio · Magin · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "732810df1791cc14eeb43848cca6cfa7e67fb49651fb53fcbe43478f1875ae6c",
+      "source_sha256": "7cda6dcc6cab76349053d129ae249a73e748cfe54ece8c229d30f68b97049bc1",
+      "kind": "photo",
+      "bytes": 423792,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-007-7cda6dcc6c-thumb.webp",
+        "sha256": "7fe30dab436de8609dd137685ddc4ad9b76d6a6cd324d1b0706f33e5c748d828",
+        "bytes": 12752
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-004-4730c24188.webp": {
+      "ref": "gazebo-20261030-G04",
+      "title": "Gazebo 3 × 3 m · Hierro · Omint · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "ab9334305a07bee0403128816d5d84fe0892d76de362c483ffcfec5412f3104e",
+      "source_sha256": "4730c241883f7c2e9302b6c940eaf529245125f760df4e35fa0c3647736d7c43",
+      "kind": "photo",
+      "bytes": 219838,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-004-4730c24188-thumb.webp",
+        "sha256": "087be040ee3a58cae295355fc4a1e83010a00d37035ee9d14f329b22fa7bb04b",
+        "bytes": 10774
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-017-0d9b857f33.webp": {
+      "ref": "gazebo-20261030-G17",
+      "title": "Gazebo 3 × 3 m · Aluminio · Heineken 0.0 · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "db704cbec2b21a58ba233be3963756cde71ba38a11b20ccf1ef286dd6419e3cb",
+      "source_sha256": "0d9b857f331aa5a385cdd8b762a3a7a119d3069c3c2ce894e4fb579047f2056d",
+      "kind": "photo",
+      "bytes": 275458,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-017-0d9b857f33-thumb.webp",
+        "sha256": "d1150f8d7ea553b00d4e9e455dbae6e0e82f379a7baf521affddc402b7ab3f5c",
+        "bytes": 12840
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-001-8d2ae99dd4.webp": {
+      "ref": "gazebo-20261030-G01",
+      "title": "Gazebo 3 × 6 m · Aluminio · Fertierra · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "fe2a8aed6bc5250f2b12515d961aedd909aa0df05ae065d9b9144bd768909570",
+      "source_sha256": "8d2ae99dd465ce9e9ac12b8e161ce44fab72ff40cac59fb15102c1372ae6c322",
+      "kind": "photo",
+      "bytes": 163578,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-001-8d2ae99dd4-thumb.webp",
+        "sha256": "9e9875b8b24a6e306cfae58a5a75332a70cddc6b8054e288d5a32832a85bf308",
+        "bytes": 12780
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-020-b67722bf40.webp": {
+      "ref": "gazebo-20261030-G20",
+      "title": "Gazebo 3 × 3 m · Aluminio · Gamax · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "d9718f34d3cb6aa54a0d5bd4f215e895278e4d47971e3a5c87a47b091ed1a778",
+      "source_sha256": "b67722bf40e832630e7d05fe160a808feadef5978df982062dc149b2c2676429",
+      "kind": "photo",
+      "bytes": 322578,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-020-b67722bf40-thumb.webp",
+        "sha256": "00f31f4bcf71e1e81ef6694298a38c9e2172fd7e38dc14e5fed593427de4e41e",
+        "bytes": 13206
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-008-99de35f0a7.webp": {
+      "ref": "gazebo-20261030-G08",
+      "title": "Gazebo 2 × 2 m · Hierro · Speed · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "f66dde44c8353ed531a67b0288d3390dc15c092e7f46379cdf8b0686e052b7ac",
+      "source_sha256": "99de35f0a7e30d11f149390c9a2e58b19082ae912e28b4cddc0fd442ed97fca3",
+      "kind": "photo",
+      "bytes": 213098,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-008-99de35f0a7-thumb.webp",
+        "sha256": "91cfc93500d7c7d03e29d004f637bfac3e0677680f459278dd6428d4956fa7f8",
+        "bytes": 13386
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-018-37158b8f9b.webp": {
+      "ref": "gazebo-20261030-G18",
+      "title": "Gazebo 2 × 2 m · Hierro · Amplid · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "794cd48811a98b2de393c0f5007cdb605292e403a7239c35ff9f73659697d013",
+      "source_sha256": "37158b8f9b79002289d5e0318ab2f413abea7e2db81700d943fc8554ea5a3a07",
+      "kind": "photo",
+      "bytes": 245974,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-018-37158b8f9b-thumb.webp",
+        "sha256": "7828135e9782a62ba00d634530719e2726a575827f4068650c183b871203406d",
+        "bytes": 9476
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-019-2af24ef016.webp": {
+      "ref": "gazebo-20261030-G19",
+      "title": "Gazebo 2 × 2 m · Aluminio · Triunfo Seguros · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "6c7df321924256513e88c7531e4461045207977e738cbd326f7be94d32af16be",
+      "source_sha256": "2af24ef01646f3fb691e9e9b3a6ff0876b52b4a6df30ed0b5c11321fa1707214",
+      "kind": "photo",
+      "bytes": 264734,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-019-2af24ef016-thumb.webp",
+        "sha256": "a43059c4ec9431475310cf272d3706de7ed38518bccd98a7735cc7771dfe2f59",
+        "bytes": 11630
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-021-7963c10d7c.webp": {
+      "ref": "gazebo-20261030-G21",
+      "title": "Gazebo 3 × 3 m · Hierro · Gulf · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "aa7ccc6f3001e038ef8da62ad2affea367e17556af814caf290f76a0aa8ce47c",
+      "source_sha256": "7963c10d7cc52f578e9b631d75ef5c500664ed08e9dd3d59dce974f6b9884384",
+      "kind": "photo",
+      "bytes": 242248,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-021-7963c10d7c-thumb.webp",
+        "sha256": "a719c761fba5e768eda0c75dda50a4465ca2eb06386b528fdf2dd66e67de00f1",
+        "bytes": 9830
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-012-679977958e.webp": {
+      "ref": "gazebo-20261030-G12",
+      "title": "Gazebo 3 × 4,5 m · Aluminio · Shell Agro · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "3b4645f9307be25d63885b78e59763aad467dc2ee91807fb9b8e914d2dad31fd",
+      "source_sha256": "679977958e9fa4f9302b54f98a28ed4ed89c5d63e848117280317f4f0ab3e5dd",
+      "kind": "photo",
+      "bytes": 206388,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-012-679977958e-thumb.webp",
+        "sha256": "ee968f4f92f6f2dc120a48a84cda434a16616a7934502030abfbdc839afbe3e5",
+        "bytes": 10116
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-015-a1c4aaefe8.webp": {
+      "ref": "gazebo-20261030-G15",
+      "title": "Gazebo 3 × 4,5 m · Hierro · Magin · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "0919a967b0d348ea067abd6b2ded3d76bc293c24f3bcf43039bafe27783544f1",
+      "source_sha256": "a1c4aaefe8dcd26981e45a47a1b704f6bc50b30bac1c93844cd4c667c1481515",
+      "kind": "photo",
+      "bytes": 314048,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-015-a1c4aaefe8-thumb.webp",
+        "sha256": "c06b194db7d0942b42b617abf11afbff46bc773744ce032e121eff1bbc2ae4a0",
+        "bytes": 12370
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-009-84bba2bc44.webp": {
+      "ref": "gazebo-20261030-G09",
+      "title": "Gazebo 3 × 3 m · Hierro · Amstel · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "87be4d9d768dc1ca19e2a1349dba0358a6f37628b0b4f1b86f1dd0ca2ea4f41a",
+      "source_sha256": "84bba2bc443a75f571d3ede44f2599668f9673361fe251e8384677a8e430f443",
+      "kind": "photo",
+      "bytes": 238034,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-009-84bba2bc44-thumb.webp",
+        "sha256": "72366cb6749b194c88288955bc6c5cf8f64d0e36734ee2d2e98a6c9a3398a619",
+        "bytes": 12144
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-010-3347e6fcaa.webp": {
+      "ref": "gazebo-20261030-G10",
+      "title": "Gazebo 3 × 4,5 m · Hierro · Heineken 0.0 · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "e92594b69bddde8263429a5202981567e9517ed8b7e0065c7f5d93b3e4e18fcd",
+      "source_sha256": "3347e6fcaa1c574b2b85e82711e9b8d1e4211e5fa74279333e5ef9acfcda2010",
+      "kind": "photo",
+      "bytes": 347680,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-010-3347e6fcaa-thumb.webp",
+        "sha256": "3b650515bdf11361c3bd3cd2a6cd56a43c9f4964f0c5831fe81e12d60a17fee3",
+        "bytes": 13024
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-006-de4b2921d7.webp": {
+      "ref": "gazebo-20261030-G06",
+      "title": "Gazebo 3 × 3 m · Aluminio · Gamax · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "a4cf1d276cb79472e5aaaa9bcf4adc8f07acb8ee28f2a0f9808354a5e381b81f",
+      "source_sha256": "de4b2921d7a5448cc8e1cc07e6fa9ad1e9275f764062fdd8fd0ec6c97c1c4fe6",
+      "kind": "photo",
+      "bytes": 245838,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-006-de4b2921d7-thumb.webp",
+        "sha256": "bae262ba7ea06ce6e0c05f2fa48325a741ed89208d516aa84e081184c8ac4dbb",
+        "bytes": 11386
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-005-fc3addd5c7.webp": {
+      "ref": "gazebo-20261030-G05",
+      "title": "Gazebo 3 × 3 m · Aluminio · Playadito · paredes y terminaciones ilustrativas, a consultar · ventanas/panel transparente no incluidos automáticamente",
+      "sha256": "6f8c1d68f70defa192d016b6ecca389c4496ebbfcdcb774f61830d0a18f47d65",
+      "source_sha256": "fc3addd5c7d329e5b7ef15b46f8cd657006fd7506551813426cb66a66b01a347",
+      "kind": "photo",
+      "bytes": 278238,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-005-fc3addd5c7-thumb.webp",
+        "sha256": "4e85fe8e9374aaf8d222461b1fa7ff6868a42185e976b65b4548dc5ca98b12ee",
+        "bytes": 11914
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-002-bc31fbd197.webp": {
+      "ref": "gazebo-20261030-G02",
+      "title": "Gazebo 3 × 3 m · Aluminio · Playadito · paredes y terminaciones ilustrativas, a consultar · ventanas/panel transparente no incluidos automáticamente",
+      "sha256": "7d4ed149e17f033823bd2f5eda1e2a2ed9cb61df22a5292fe5a5aad943d9dc62",
+      "source_sha256": "bc31fbd1971ab17c2d14b4065ac5c45a0095c581e8897586ddead10c4360f058",
+      "kind": "photo",
+      "bytes": 266626,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-002-bc31fbd197-thumb.webp",
+        "sha256": "478ccb584f08b95d5d6239e8f825868e68d0c9abdf14e2308d70c42cb1f10d58",
+        "bytes": 10874
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-011-5872b931c8.webp": {
+      "ref": "gazebo-20261030-G11",
+      "title": "Gazebo 3 × 3 m · Aluminio · La Patria Gaucha · paredes y terminaciones ilustrativas, a consultar · ventanas/panel transparente no incluidos automáticamente",
+      "sha256": "45ff9ee3feb77d7b9a2a754fffea3927f1827e21488a9d881f92c407b8087c4b",
+      "source_sha256": "5872b931c8cfd3c41649a589ac5d1c3ceb4c0c723b918e5240465d911e73a42c",
+      "kind": "photo",
+      "bytes": 324980,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-011-5872b931c8-thumb.webp",
+        "sha256": "48844c17993867f77043f6d0f59918bb89b1d05fe3956e67442d05d37ab61bf1",
+        "bytes": 9666
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-014-95aee80b97.webp": {
+      "ref": "gazebo-20261030-G14",
+      "title": "Gazebo 3 × 6 m · Hierro · Comercial Domínguez · paredes y terminaciones ilustrativas, a consultar · ventanas/panel transparente no incluidos automáticamente",
+      "sha256": "b41d7d4a7c88bd8c5441ed86efd2e4cfc42acc331f5ab740d2905bc4a32f5e2f",
+      "source_sha256": "95aee80b97b187edb5a4382f6da655682d8a9a2522980f3f319448ff7f589444",
+      "kind": "photo",
+      "bytes": 326122,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-014-95aee80b97-thumb.webp",
+        "sha256": "fb0ebe1c5b1605d0a8cc1391a113b77adac166dd77cbc2e7149fe3e08b485f99",
+        "bytes": 10160
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
+    },
+    "gx-20261030-gazebo-003-bc9b10d1cd.webp": {
+      "ref": "gazebo-20261030-G03",
+      "title": "Gazebo 3 × 6 m · Aluminio · Bomberos voluntarios · paredes y terminaciones ilustrativas, a consultar",
+      "sha256": "9a7315a8b84e2f3216cdfc3b8a4329327c7402bb1e2eeb02c0f1be2e57320f21",
+      "source_sha256": "bc9b10d1cdaa375e136364e7f91af5d1b66322a88f2e3a23aaadd5e3ae5a2283",
+      "kind": "photo",
+      "bytes": 65576,
+      "thumbnail": {
+        "name": "gx-20261030-gazebo-003-bc9b10d1cd-thumb.webp",
+        "sha256": "eeab39bf964ba981649ce195d2d6f36fb66ee19032bb6c4fbbfe1f7dec0eb0c2",
+        "bytes": 10036
+      },
+      "origin_classification": "supplier_photograph_received_from_Leo",
+      "ai_edited": false,
+      "source_batch": "gazebos-proveedor-20261030",
+      "candidate_state": "VISUALLY_APPROVED_NOT_PUBLISHED",
+      "exact_measure_confirmed": true,
+      "frame_material_confirmed": true,
+      "walls_configuration_confirmed": false,
+      "review_source_sha256": "0f0aaffcd13f3d264057d4589a6c70847bd0ebca9bd0926440b6b37fdfde5859"
     }
   },
   "products": {
@@ -3441,97 +3882,139 @@
         "wb-227-v1": {
           "label": "Gazebo 2x2 + Techo con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-025.webp"
+            "gx-20261029-render-025.webp",
+            "gx-20261030-gazebo-008-99de35f0a7.webp",
+            "gx-20261030-gazebo-018-37158b8f9b.webp"
           ]
         },
         "wb-227-v2": {
           "label": "Gazebo 2x2 + Techo con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-025.webp"
+            "gx-20261029-render-025.webp",
+            "gx-20261030-gazebo-019-2af24ef016.webp"
           ]
         },
         "wb-229-v3": {
           "label": "Gazebo 2x2 + Techo y Tres paredes con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-025.webp"
+            "gx-20261029-render-025.webp",
+            "gx-20261030-gazebo-008-99de35f0a7.webp",
+            "gx-20261030-gazebo-018-37158b8f9b.webp"
           ]
         },
         "wb-229-v4": {
           "label": "Gazebo 2x2 + Techo y Tres paredes con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-025.webp"
+            "gx-20261029-render-025.webp",
+            "gx-20261030-gazebo-019-2af24ef016.webp"
           ]
         },
         "wb-231-v5": {
           "label": "Gazebo 3x3 + Techo con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-029.webp"
+            "gx-20261029-render-029.webp",
+            "gx-20261030-gazebo-004-4730c24188.webp",
+            "gx-20261030-gazebo-021-7963c10d7c.webp",
+            "gx-20261030-gazebo-009-84bba2bc44.webp"
           ]
         },
         "wb-231-v6": {
           "label": "Gazebo 3x3 + Techo con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-029.webp"
+            "gx-20261029-render-029.webp",
+            "gx-20261030-gazebo-016-794d297061.webp",
+            "gx-20261030-gazebo-017-0d9b857f33.webp",
+            "gx-20261030-gazebo-020-b67722bf40.webp",
+            "gx-20261030-gazebo-006-de4b2921d7.webp",
+            "gx-20261030-gazebo-005-fc3addd5c7.webp",
+            "gx-20261030-gazebo-002-bc31fbd197.webp",
+            "gx-20261030-gazebo-011-5872b931c8.webp"
           ]
         },
         "wb-233-v7": {
           "label": "Gazebo 3x3 + Techo y Tres paredes con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-029.webp"
+            "gx-20261029-render-029.webp",
+            "gx-20261030-gazebo-004-4730c24188.webp",
+            "gx-20261030-gazebo-021-7963c10d7c.webp",
+            "gx-20261030-gazebo-009-84bba2bc44.webp"
           ]
         },
         "wb-233-v8": {
           "label": "Gazebo 3x3 + Techo y Tres paredes con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-029.webp"
+            "gx-20261029-render-029.webp",
+            "gx-20261030-gazebo-016-794d297061.webp",
+            "gx-20261030-gazebo-017-0d9b857f33.webp",
+            "gx-20261030-gazebo-020-b67722bf40.webp",
+            "gx-20261030-gazebo-006-de4b2921d7.webp",
+            "gx-20261030-gazebo-005-fc3addd5c7.webp",
+            "gx-20261030-gazebo-002-bc31fbd197.webp",
+            "gx-20261030-gazebo-011-5872b931c8.webp"
           ]
         },
         "wb-235-v9": {
           "label": "Gazebo 3x4,5 + Techo con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-034.webp"
+            "gx-20261029-render-034.webp",
+            "gx-20261030-gazebo-015-a1c4aaefe8.webp",
+            "gx-20261030-gazebo-010-3347e6fcaa.webp"
           ]
         },
         "wb-235-v10": {
           "label": "Gazebo 3x4,5 + Techo con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-034.webp"
+            "gx-20261029-render-034.webp",
+            "gx-20261030-gazebo-013-76a9d524d0.webp",
+            "gx-20261030-gazebo-007-7cda6dcc6c.webp",
+            "gx-20261030-gazebo-012-679977958e.webp"
           ]
         },
         "wb-237-v11": {
           "label": "Gazebo 3x4,5 + Techo y Tres paredes con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-034.webp"
+            "gx-20261029-render-034.webp",
+            "gx-20261030-gazebo-015-a1c4aaefe8.webp",
+            "gx-20261030-gazebo-010-3347e6fcaa.webp"
           ]
         },
         "wb-237-v12": {
           "label": "Gazebo 3x4,5 + Techo y Tres paredes con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-034.webp"
+            "gx-20261029-render-034.webp",
+            "gx-20261030-gazebo-013-76a9d524d0.webp",
+            "gx-20261030-gazebo-007-7cda6dcc6c.webp",
+            "gx-20261030-gazebo-012-679977958e.webp"
           ]
         },
         "wb-239-v13": {
           "label": "Gazebo 3x6 + Techo con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-039.webp"
+            "gx-20261029-render-039.webp",
+            "gx-20261030-gazebo-014-95aee80b97.webp"
           ]
         },
         "wb-239-v14": {
           "label": "Gazebo 3x6 + Techo con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-039.webp"
+            "gx-20261029-render-039.webp",
+            "gx-20261030-gazebo-001-8d2ae99dd4.webp",
+            "gx-20261030-gazebo-003-bc9b10d1cd.webp"
           ]
         },
         "wb-241-v15": {
           "label": "Gazebo 3x6 + Techo y Tres paredes con Impresion — Estructura de Hierro",
           "assets": [
-            "gx-20261029-render-039.webp"
+            "gx-20261029-render-039.webp",
+            "gx-20261030-gazebo-014-95aee80b97.webp"
           ]
         },
         "wb-241-v16": {
           "label": "Gazebo 3x6 + Techo y Tres paredes con Impresion — Estructura de Aluminio",
           "assets": [
-            "gx-20261029-render-039.webp"
+            "gx-20261029-render-039.webp",
+            "gx-20261030-gazebo-001-8d2ae99dd4.webp",
+            "gx-20261030-gazebo-003-bc9b10d1cd.webp"
           ]
         }
       },
