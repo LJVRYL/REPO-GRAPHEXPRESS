@@ -117,6 +117,7 @@ final class GE_Organization_Runtime {
     }
     public static function action_policy($action) {
         global $wp_filter;
+        if(in_array($action,array('ge_arca_invoice_review','ge_arca_invoice_emit','ge_arca_invoice_recover'),true))return array('finance',true);
         $name=$action;$hook=(wp_doing_ajax()?'wp_ajax_':'admin_post_').$action;
         if(isset($wp_filter[$hook]))foreach($wp_filter[$hook]->callbacks as $callbacks)foreach($callbacks as $c) {
             $f=$c['function'];if(is_array($f))$name.=' '.(is_object($f[0])?get_class($f[0]):$f[0]).' '.$f[1];
@@ -171,7 +172,7 @@ final class GE_Organization_Runtime {
         if(GE_Organization::PRIMARY!=='graph-express' && empty($o['onboarding']['ready']) && !in_array($section,array('company','profile'),true)){wp_safe_redirect(GE_WTP_Staff_Portal::portal_url('company',array('tab'=>'onboarding')));exit;}
         if(in_array($section,array('company','profile','dashboard'),true))return;
         if($section==='jobs'){if(class_exists('GE_WTP_Work_Panel') && GE_WTP_Work_Panel::accessible())return;self::deny();}
-        $map=array('invoice-reviews'=>'finance','requests'=>'quotes','administration'=>'finance','costs'=>'cost_engine','library'=>'orders','supplier-invoices'=>'suppliers','notifications'=>'company','settings'=>'company');
+        $map=array('invoice-reviews'=>'finance','requests'=>'quotes','administration'=>'finance','costs'=>'cost_engine','library'=>'orders','supplier-invoices'=>'suppliers','candidates'=>'communications','notifications'=>'company','settings'=>'company');
         $m=$map[$section]??self::module_for($section);
         if($m==='company'){if(!GE_Organization::can(GE_Organization::PRIMARY,get_current_user_id(),true))self::deny();return;}
         if(!$m || !self::allowed($m,false))self::deny();
