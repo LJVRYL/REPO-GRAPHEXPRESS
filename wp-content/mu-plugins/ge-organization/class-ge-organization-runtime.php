@@ -117,6 +117,7 @@ final class GE_Organization_Runtime {
     }
     public static function action_policy($action) {
         global $wp_filter;
+        if(in_array($action,array('ge_arca_invoice_review','ge_arca_invoice_emit','ge_arca_invoice_recover'),true))return array('finance',true);
         $name=$action;$hook=(wp_doing_ajax()?'wp_ajax_':'admin_post_').$action;
         if(isset($wp_filter[$hook]))foreach($wp_filter[$hook]->callbacks as $callbacks)foreach($callbacks as $c) {
             $f=$c['function'];if(is_array($f))$name.=' '.(is_object($f[0])?get_class($f[0]):$f[0]).' '.$f[1];
