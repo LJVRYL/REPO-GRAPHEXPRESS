@@ -86,19 +86,38 @@ final class GE_WTP_Operations_UI {
     public static function administration() {
 
         self::heading('Administración','Finanzas operativas, gastos y cuentas a pagar. Cada concepto conserva su fuente y su moneda.');
-        $period=sanitize_key($_GET['period']??'custom'); $year=absint($_GET['year']??current_time('Y'));$month=absint($_GET['month']??current_time('m'));$from=sanitize_text_field($_GET['from']??current_time('Y-m').'-01'); $to=sanitize_text_field($_GET['to']??current_time('Y-m-d'));$f=array('from'=>$from,'to'=>$to); if($period==='month'||$period==='year') { $f=array('year'=>$year);if($period==='month')$f['month']=$month; $preview=GE_WTP_Operations_Finance::summary($f);$from=$preview['from'];$to=$preview['to']; }
+        $period = sanitize_key($_GET['period'] ?? 'custom');
+        $year = absint($_GET['year'] ?? current_time('Y'));
+        $month = absint($_GET['month'] ?? current_time('m'));
+        $from = sanitize_text_field($_GET['from'] ?? current_time('Y-m').'-01');
+        $to = sanitize_text_field($_GET['to'] ?? current_time('Y-m-d'));
+        $f = array('from'=>$from, 'to'=>$to);
+        if ($period === 'month' || $period === 'year') {
+            $f = array('year'=>$year);
+            if ($period === 'month') $f['month'] = $month;
+        }
 
-        self::administration_overview($f, array());
+        $month_input = sanitize_text_field($_GET['cash_month'] ?? '');
+        if (preg_match('/^(20[0-9]{2}|2100)-(0[1-9]|1[0-2])$/D', $month_input)) {
+            $year = (int)substr($month_input,0,4);
+            $month = (int)substr($month_input,5,2);
+            $f = array('year'=>$year, 'month'=>$month);
+            $period = 'month';
+        }
+        $sum = GE_WTP_Operations_Finance::summary($f);
+        $from = $sum['from'];
+        $to = $sum['to'];
+        self::administration_overview($sum, array('monthly'=>$period==='month'));
         echo '<details class="ge-admin-panel" id="ge-finance-details"><summary>Movimientos, filtros y reportes</summary>';
         echo '<form class="ge-v3-toolbar ge-op-filter" method="get"><input type="hidden" name="section" value="administration">'; self::select('period','Período',array('custom'=>'Rango de fechas','month'=>'Mes completo','year'=>'Año completo'),$period);self::field('year','Año','number',$year);self::field('month','Mes · 1 a 12','number',$month);self::field('from','Desde','date',$from); self::field('to','Hasta','date',$to); echo '<button type="submit">Aplicar período</button></form>';
-        $sum=GE_WTP_Operations_Finance::summary($f); echo '<div class="ge-op-actions"><a href="#op-graph-finance-expense-create">Cargar gasto</a><a href="#op-graph-finance-payment-record">Registrar pago</a><a href="'.esc_url(self::url('supplier-invoices')).'">Facturas y documentos</a></div><section class="ge-admin-stats">'; foreach($sum['currencies'] as $c) { echo '<article><span>Costos y gastos devengados</span><strong>'.self::money($c['costs_minor'],$c['currency']).'</strong></article><article><span>Pagos registrados</span><strong>'.self::money($c['cash_out_minor'],$c['currency']).'</strong><small>Salida de dinero, separada del gasto</small></article>'; }
+        echo '<div class="ge-op-actions"><a href="#op-graph-finance-expense-create">Cargar gasto</a><a href="#op-graph-finance-payment-record">Registrar pago</a><a href="'.esc_url(self::url('supplier-invoices')).'">Facturas y documentos</a></div><section class="ge-admin-stats">'; foreach($sum['currencies'] as $c) { echo '<article><span>Costos y gastos devengados</span><strong>'.self::money($c['costs_minor'],$c['currency']).'</strong></article><article><span>Pagos registrados</span><strong>'.self::money($c['cash_out_minor'],$c['currency']).'</strong><small>Salida de dinero, separada del gasto</small></article>'; }
         foreach($sum['sales']['currencies']??array() as $c) echo '<article><span>Vendido · '.self::e($c['currency']).'</span><strong>'.self::money($c['sold_minor'],$c['currency']).'</strong><small>Pedidos netos de devoluciones, por fecha de creación</small></article>';
         foreach($sum['collections']['currencies']??array() as $c) echo '<article><span>Cobros confirmados · registro parcial</span><strong>'.self::money($c['confirmed_minor'],$c['currency']).'</strong><small>Última confirmación por pedido; no es caja conciliada</small></article>';
         if(empty($sum['collections']['currencies'])) echo '<article><span>Cobros confirmados</span><strong>Sin registros del período</strong><small>Caja total sin conciliar</small></article>'; echo '</section>';
         echo '<section class="ge-admin-panel"><h2>Movimiento de caja registrado</h2>'; $report=array(); $previous=array_column($sum['previous']['currencies'],'costs_minor','currency'); foreach($sum['currencies'] as $c) $report[]=array(self::e($c['currency']),self::money($c['cash_in_minor']??0,$c['currency']),self::money($c['cash_out_minor'],$c['currency']),self::money($c['costs_minor'],$c['currency']),self::money($previous[$c['currency']]??0,$c['currency'])); self::table(array('Moneda','Ingresos manuales netos','Pagos registrados','Gastos / costos actuales','Gastos período anterior'),$report); echo '<p class="ge-op-hint">Los ingresos manuales se muestran separados de las confirmaciones del pedido para evitar sumarlos dos veces. Un presupuesto o un estado de pago no representa caja conciliada.</p></section>';
         $suppliers=GE_WTP_Operations::suppliers(); $rows=array(); $total=array(); $due=array(); $today=current_time('Y-m-d'); $week=(new DateTimeImmutable($today))->modify('+7 days')->format('Y-m-d');
         foreach(GE_WTP_Operations_Finance::payables(!empty($_GET['supplier_id'])?array('supplier_id'=>absint($_GET['supplier_id'])):array()) as $p) { $s=$suppliers[$p['supplier_id']]??array(); $total[$p['currency']]=($total[$p['currency']]??0)+$p['outstanding_minor']; $rows[]=array('<a href="'.esc_url(self::url('suppliers',array('supplier_id'=>$s['key']??''))).'">'.self::e($s['name']??'Proveedor').'</a>',self::payable_order_detail($p),self::money($p['amount_minor'],$p['currency']),self::money($p['paid_minor'],$p['currency']),self::money($p['outstanding_minor'],$p['currency']),self::e($p['due_on']?:'Sin fecha').($p['due_on']&&$p['due_on']<$today?'<small>Vencido</small>':''),self::e('#'.$p['id'])); if($p['due_on']&&$p['due_on']<=$week) $due[]=$p; }
-        echo '<section class="ge-admin-panel"><h2>Cuentas a pagar</h2><p>'.count($due).' vencimiento(s) próximos o vencidos. '; foreach($total as $currency=>$amount) echo 'Saldo: '.self::money($amount,$currency).' '; echo '</p>'; self::table(array('Proveedor','Documento / compra','Importe','Pagado','Saldo','Vence','Referencia'),$rows); echo '</section>';
+        echo '<section class="ge-admin-panel" id="ge-cash-payables"><h2>Cuentas a pagar</h2><p>'.count($due).' vencimiento(s) próximos o vencidos. '; foreach($total as $currency=>$amount) echo 'Saldo: '.self::money($amount,$currency).' '; echo '</p>'; self::table(array('Proveedor','Documento / compra','Importe','Pagado','Saldo','Vence','Referencia'),$rows); echo '</section>';
         $rows=array(); foreach(GE_WTP_Operations::legacy_balances() as $b) { $p=GE_WTP_Supplier_Workspace::supplier($b['key']); $rows[]=array('<a href="'.esc_url(self::url('suppliers',array('supplier_id'=>$b['key']))).'">'.self::e($p['name']??$b['key']).'</a>',self::money($b['cost_minor'],$b['currency']),self::money($b['paid_minor'],$b['currency']),self::money($b['cost_minor']-$b['paid_minor'],$b['currency'])); } if($rows) { echo '<section class="ge-admin-panel"><h2>Registros anteriores de proveedores</h2>'; self::table(array('Proveedor','Costos registrados','Pagos registrados','Saldo conocido'),$rows); echo '<p class="ge-op-hint">Fuente: Supplier Workspace. No se importó ni duplicó deuda en el ledger nuevo. Los costos ausentes y pagos sin asignación requieren conciliación.</p></section>'; }
         if(current_user_can('ge_record_finance')||current_user_can('manage_options')) { self::start_form('graph.finance.payment.record','administration','Registrar pago parcial o total'); $opts=array(); foreach(GE_WTP_Operations_Finance::payables(array()) as $p) $opts[$p['id']]='#'.$p['id'].' · '.($suppliers[$p['supplier_id']]['name']??'Proveedor').' · '.$p['currency']; self::select('payable_id','Cuenta a pagar',$opts); self::field('amount','Importe pagado'); self::select('currency','Moneda',array('ARS'=>'ARS','USD'=>'USD')); self::field('paid_on','Fecha de pago','date',$today); self::field('method','Método de pago'); self::field('reference','Comprobante / referencia'); self::end_form('Registrar pago');
         self::start_form('graph.finance.expense.create','administration','Cargar gasto'); self::field('description','Descripción'); self::select('category','Categoría',array('rent'=>'Alquiler','utilities'=>'Servicios','software'=>'Software','taxes'=>'Impuestos / tasas','maintenance'=>'Mantenimiento','logistics'=>'Logística','marketing'=>'Publicidad','fees'=>'Honorarios','other'=>'Otros')); self::field('amount','Importe'); self::select('currency','Moneda',array('ARS'=>'ARS','USD'=>'USD')); self::field('incurred_on','Fecha del gasto','date',$today); self::field('due_on','Vencimiento','date','',false); self::select('supplier_id','Proveedor · opcional',array('0'=>'Sin proveedor')+self::supplier_options()); self::select('recurrence','Repetición',array(''=>'Una vez','weekly'=>'Semanal','monthly'=>'Mensual','yearly'=>'Anual')); self::select('payment_state','Estado inicial',array('unpaid'=>'Pendiente','paid'=>'Ya pagado'));self::field('paid_on','Fecha de pago · si ya está pagado','date',$today);self::field('method','Método · si ya está pagado','text','',false); self::field('attachment_ref','Comprobante privado · referencia','text','',false); echo '<p class="ge-op-hint">La frecuencia queda registrada para seguimiento; no genera automáticamente futuros gastos ni pagos.</p>'; self::end_form('Registrar gasto'); }
@@ -111,7 +130,7 @@ final class GE_WTP_Operations_UI {
             self::start_form('graph.finance.costs.verify','administration','Verificar costos completos'); self::field('order_id','Pedido / trabajo','number'); self::select('complete','Resultado',array('no'=>'Costos incompletos','yes'=>'Todos los costos verificados')); self::field('reason','Detalle de verificación'); self::end_form('Guardar verificación');
             self::start_form('graph.finance.reverse','administration','Corregir movimiento financiero'); self::field('entry_id','Referencia del ledger','number'); self::field('date','Fecha de reverso','date',$today); self::field('reason','Motivo de corrección'); self::end_form('Registrar reverso');
         }
-        global $wpdb; $entries=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.GE_WTP_Operations::table('finance_entries').' WHERE entry_date BETWEEN %s AND %s ORDER BY id DESC LIMIT 200',$from,$to),ARRAY_A); $ledger=array(); foreach($entries as $e) $ledger[]=array(self::e('#'.$e['id']),self::e($e['entry_date']),self::e($e['entry_type']),self::money($e['amount_minor'],$e['currency']),self::e($e['order_id']?:'—'),self::e($e['reverses_id']?'Reverso #'.$e['reverses_id']:'Original')); echo '<section class="ge-admin-panel"><h2>Ledger operativo</h2>'; self::table(array('Referencia','Fecha','Tipo','Importe','Pedido','Auditoría'),$ledger); echo '<p class="ge-op-hint">Últimos 200 movimientos del período. Correcciones por reverso; se conserva el original.</p></section>';
+        global $wpdb; $entries=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.GE_WTP_Operations::table('finance_entries').' WHERE entry_date BETWEEN %s AND %s ORDER BY id DESC LIMIT 200',$from,$to),ARRAY_A); $ledger=array(); foreach($entries as $e) $ledger[]=array(self::e('#'.$e['id']),self::e($e['entry_date']),self::e($e['entry_type']),self::money($e['amount_minor'],$e['currency']),self::e($e['order_id']?:'—'),self::e($e['reverses_id']?'Reverso #'.$e['reverses_id']:'Original')); echo '<section class="ge-admin-panel" id="ge-cash-ledger"><h2>Ledger operativo</h2>'; self::table(array('Referencia','Fecha','Tipo','Importe','Pedido','Auditoría'),$ledger); echo '<p class="ge-op-hint">Últimos 200 movimientos del período. Correcciones por reverso; se conserva el original.</p></section>';
         self::finance_reports($from,$to);
         if(class_exists('GE_WTP_Cost_Reconciliation_R82')) GE_WTP_Cost_Reconciliation_R82::render();
         echo '</details><script>function geOpenFinanceDetails(){var id=location.hash.slice(1);var target=document.getElementById(id);var details=document.getElementById("ge-finance-details");if(target && details && details.contains(target)){details.open=true;target.scrollIntoView();}}window.addEventListener("hashchange",geOpenFinanceDetails);geOpenFinanceDetails();</script>';
@@ -124,8 +143,7 @@ final class GE_WTP_Operations_UI {
         $spend=array();foreach($r['supplier_spend']??array() as $g)$spend[]=array(self::e(self::supplier_options()[$g['supplier_id']]??'Sin proveedor'),self::money($g['purchases_minor'],$g['currency']),self::money($g['expenses_minor'],$g['currency']),self::money($g['total_minor'],$g['currency']));echo '<h3>Compras y gastos por proveedor</h3>';self::table(array('Proveedor','Compras reconocidas','Gastos registrados','Total por moneda'),$spend);
         $rows=array();foreach($r['margins']['currencies'] as $g) $rows[]=array(self::e($g['currency']),self::e($g['complete_count']),self::e($g['incomplete_count']),$g['complete_margin_minor']===null?'Costo incompleto':self::money($g['complete_margin_minor'],$g['currency']),$g['operating_estimate_minor']===null?'Sin cobertura suficiente':self::money($g['operating_estimate_minor'],$g['currency']));echo '<h3>Margen y resultado estimado</h3>';self::table(array('Moneda','Pedidos con costos completos','Con costos pendientes','Margen del subconjunto completo','Resultado operativo parcial'),$rows);echo '<p class="ge-op-hint">El margen incluye solamente pedidos con todos sus costos verificados. Resultado operativo parcial: no representa la ganancia total del negocio mientras falten costos. Cada moneda se informa por separado.</p><h3>Cuentas a cobrar</h3><p>Saldo sin conciliar: la fuente de pagos conserva la última confirmación, pero no permite reconstruir todos los cobros históricos. Se mantiene como desconocido hasta contar con esa evidencia.</p></section>';
     }
-    private static function administration_overview($filters, $context) {
-        $summary = GE_WTP_Operations_Finance::summary($filters);
+    private static function administration_overview($summary, $context) {
         $payables = GE_WTP_Operations_Finance::payables(array('status' => 'all'));
         $suppliers = GE_WTP_Operations::suppliers();
         $due = $accounts = $receivable = array();
@@ -140,7 +158,7 @@ final class GE_WTP_Operations_UI {
             $accounts[$id][$currency] = $account;
         }
         $unverified = 0;
-        $cash = array();
+        $cash = $previous_cash = $receipts_for_period = array();
         $from = $summary['from'];
         $to = $summary['to'];
         $page = 1;
@@ -171,6 +189,9 @@ final class GE_WTP_Operations_UI {
                 foreach ($dated as [$date,$amount]) {
                     if ($date >= $from && $date <= $to) {
                         $cash[$currency] = ($cash[$currency] ?? 0) + $amount;
+                        $receipts_for_period[] = array($date, $currency, $amount, $order->get_id(), $order->get_order_number());
+                    } elseif ($date >= $summary['previous']['from'] && $date <= $summary['previous']['to']) {
+                        $previous_cash[$currency] = ($previous_cash[$currency] ?? 0) + $amount;
                     }
                 }
                 $balance = $order->get_meta('_ge_amount_due_cents',true);
@@ -186,9 +207,8 @@ final class GE_WTP_Operations_UI {
         } while (++$page <= $batch->max_num_pages);
 
         $metrics = array(
-            array('cash','Caja registrada',$cash,'Cobros de pedidos · '.$from.' a '.$to,'cash'),
             array('receivable','Por cobrar',$receivable,$unverified.' pedidos sin saldo registrado.','work'),
-            array('payable','Por pagar',$due,'Obligaciones registradas, descontando pagos.','costs'),
+            array('payable','Por pagar',$due,'Saldo de las obligaciones registradas.','costs'),
         );
         echo '<style>
         .ge-money-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin:12px 0 24px}
@@ -200,7 +220,22 @@ final class GE_WTP_Operations_UI {
         .ge-money-card strong{display:block;font-size:clamp(1.2rem,2vw,1.6rem)}
         .ge-money-card small{color:#41516b}
         .ge-money-card a{width:fit-content}
-        </style><div class="ge-money-grid">';
+        .ge-cash-period{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:0 0 14px}
+        .ge-cash-period label{display:grid;gap:4px;font-weight:600}
+        .ge-cash-period a{padding:.5rem .65rem}
+        .ge-cash-section{margin-top:18px;padding:clamp(12px,2.5vw,24px);background:#f8fafc;border:1px solid #dbe3ef;border-radius:16px}
+        .ge-cash-section h2{margin-top:0}
+        .ge-cash-comparison{display:grid;gap:12px;margin:18px 0}
+        .ge-cash-bar{display:grid;grid-template-columns:minmax(100px,1fr) minmax(70px,3fr) minmax(95px,auto);align-items:center;gap:10px}
+        .ge-cash-bar b{text-align:right;font-variant-numeric:tabular-nums}
+        .ge-cash-track{height:10px;border-radius:6px;background:#e2e8f0;overflow:hidden}
+        .ge-cash-track span{display:block;height:100%;background:#17835e;border-radius:inherit}
+        .ge-cash-bar.is-out .ge-cash-track span{background:#ab5d13}
+        .ge-cash-bar.is-previous .ge-cash-track span{opacity:.55}
+        .ge-cash-section details{margin-top:16px}
+        </style>';
+        self::administration_cash($summary, $context['monthly'], $cash, $previous_cash, $receipts_for_period);
+        echo '<h2>Saldos actuales</h2><div class="ge-money-grid">';
         foreach ($metrics as [$class,$label,$totals,$note,$view]) {
             echo '<article class="ge-money-card '.esc_attr($class).'"><h3>'.self::e($label).'</h3>';
             if (!$totals) {
@@ -209,7 +244,7 @@ final class GE_WTP_Operations_UI {
             foreach ($totals as $currency => $amount) {
                 echo '<strong>'.self::money($amount,$currency).'</strong>';
             }
-            echo '<small>'.self::e($note).'</small><a href="'.esc_url(($view === 'work' ? self::url('jobs') : self::url('administration').($view === 'costs' ? '#op-graph-finance-payment-record' : '#op-graph-finance-income-record'))).'">Ver detalle</a></article>';
+            echo '<small>'.self::e($note).'</small><a href="'.esc_url($view === 'work' ? self::url('jobs') : '#ge-cash-payables').'">Ver detalle</a></article>';
         }
         echo '</div>';
         echo '<h2>Cuentas por proveedor</h2><div class="ge-money-grid">';
@@ -235,6 +270,71 @@ final class GE_WTP_Operations_UI {
             echo '<a href="'.esc_url(self::url('suppliers',array('view'=>'supplier','supplier_id'=>$profile['key']))).'#supplier-account">Ver cuenta</a></article>';
         }
         echo '</div>'.$reconciliation;
+    }
+
+    private static function administration_cash($summary, $monthly, $cash, $previous_cash, $receipts) {
+        $from = new DateTimeImmutable($summary['from']);
+        $to = new DateTimeImmutable($summary['to']);
+        $month = $from->modify('first day of this month');
+        $previous_month = $month->modify('-1 month')->format('Y-m');
+        $next_month = $month->modify('+1 month')->format('Y-m');
+        $current_month = current_time('Y-m');
+        $out = array_column($summary['currencies'], 'cash_out_minor', 'currency');
+        $previous_out = array_column($summary['previous']['currencies'], 'cash_out_minor', 'currency');
+        $sales = array_column($summary['sales']['currencies'] ?? array(), 'sold_minor', 'currency');
+        $currencies = array_keys($cash + $out + $sales + $previous_cash + $previous_out);
+        sort($currencies);
+
+        echo '<section class="ge-cash-section" aria-labelledby="ge-cash-heading"><h2 id="ge-cash-heading">Caja registrada</h2>';
+        echo '<form class="ge-cash-period" method="get"><input type="hidden" name="section" value="administration">';
+        echo '<a href="'.esc_url(self::url('administration',array('cash_month'=>$previous_month))).'">Mes anterior</a>';
+        echo '<label>Mes<input type="month" name="cash_month" required min="2000-01" max="2100-12" value="'.esc_attr($month->format('Y-m')).'"></label>';
+        echo '<button class="ge-staff-button" type="submit">Ver mes</button>';
+        if ($monthly && $next_month <= $current_month) {
+            echo '<a href="'.esc_url(self::url('administration',array('cash_month'=>$next_month))).'">Mes siguiente</a>';
+        }
+        echo '<a href="'.esc_url(self::url('administration')).'">Mes en curso</a></form>';
+        echo '<p>Del '.self::e($from->format('d/m/Y')).' al '.self::e($to->format('d/m/Y')).'</p>';
+        if (!$currencies) echo '<p>Sin movimientos registrados en el período.</p>';
+        foreach ($currencies as $currency) {
+            $received = (int)($cash[$currency] ?? 0);
+            $paid = (int)($out[$currency] ?? 0);
+            $previous_received = (int)($previous_cash[$currency] ?? 0);
+            $previous_paid = (int)($previous_out[$currency] ?? 0);
+            $scale = max(1,abs($received),abs($paid),abs($previous_received),abs($previous_paid));
+            $metrics = array(
+                array('cash','Cobros de pedidos',$received),
+                array('payable','Pagos registrados',$paid),
+                array('','Cobros menos pagos',$received-$paid),
+                array('receivable','Ventas del período',$sales[$currency] ?? 0),
+            );
+            echo '<h3>'.self::e($currency).'</h3><div class="ge-money-grid">';
+            foreach ($metrics as [$class,$label,$amount]) {
+                echo '<article class="ge-money-card '.esc_attr($class).'"><h3>'.self::e($label).'</h3><strong>'.self::money($amount,$currency).'</strong></article>';
+            }
+            echo '</div><h3>Comparación de movimientos</h3><p>Período anterior del '.self::e((new DateTimeImmutable($summary['previous']['from']))->format('d/m/Y')).' al '.self::e((new DateTimeImmutable($summary['previous']['to']))->format('d/m/Y')).'</p>';
+            echo '<div class="ge-cash-comparison">';
+            foreach (array(
+                array('','Cobros del período',$received),
+                array('is-previous','Cobros anteriores',$previous_received),
+                array('is-out','Pagos del período',$paid),
+                array('is-out is-previous','Pagos anteriores',$previous_paid),
+            ) as [$class,$label,$amount]) {
+                $width = (int)round(100 * abs($amount) / $scale);
+                echo '<div class="ge-cash-bar '.esc_attr($class).'"><span>'.self::e($label).'</span><span class="ge-cash-track" aria-hidden="true"><span style="width:'.$width.'%"></span></span><b>'.self::money($amount,$currency).'</b></div>';
+            }
+            echo '</div>';
+        }
+        echo '<p class="ge-op-hint">Las ventas se agrupan por fecha del pedido. Los cobros se agrupan por fecha registrada. Los ingresos manuales se consultan por separado para evitar duplicaciones.</p>';
+        usort($receipts, static function($a,$b) { return strcmp($b[0],$a[0]) ?: $b[3] <=> $a[3]; });
+        echo '<details><summary>Ver cobros de pedidos ('.count($receipts).')</summary>';
+        $rows = array();
+        foreach ($receipts as [$date,$currency,$amount,$order_id,$number]) {
+            $url = self::url('orders',array('order_id'=>$order_id));
+            $rows[] = array(self::e((new DateTimeImmutable($date))->format('d/m/Y')), '<a href="'.esc_url($url).'">#'.self::e($number).'</a>', self::money($amount,$currency));
+        }
+        self::table(array('Fecha','Pedido','Importe'),$rows);
+        echo '</details><p><a href="#ge-cash-ledger">Ver movimientos del registro de caja</a></p></section>';
     }
 
     private static function administration_reconciliation() {
