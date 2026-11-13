@@ -58,7 +58,8 @@ final class GE_WTP_Work_Panel {
         $stage=GE_WTP_Order_Lifecycle::stage($order);
         $operational=array('production'=>'produccion','ready'=>'listo')[$order->get_meta('_ge_production_status',true)]??'';
         if($operational&&'entregado'!==$stage&&!in_array($order->get_status(),array('cancelled','refunded','failed'),true))$stage=$operational;
-        $closed='entregado'===$stage || in_array($order->get_status(),array('cancelled','refunded','failed'),true);
+        $operationally_closed=class_exists('GE_WTP_Production') && GE_WTP_Production::is_closed($order);
+        $closed='entregado'===$stage || $operationally_closed || in_array($order->get_status(),array('cancelled','refunded','failed'),true);
         $kind=in_array($stage,array('produccion','listo','entregado'),true)?'production':'orders';
         $target=self::allowed('production')?'production':'orders';
         $next='Revisar el pedido y sus archivos'; $owner='Graph Express';
@@ -68,7 +69,12 @@ final class GE_WTP_Work_Panel {
         elseif(in_array($order->get_status(),array('cancelled','refunded','failed'),true)){$next='Revisar el historial del pedido';}
         else { $blocked=GE_WTP_Artwork_Library::blocked_item_names($order); if($blocked){$next='Revisar y aprobar el archivo exacto';$owner='Graph Express y cliente';}else{$next='Revisar condiciones y liberar producción';} }
         $date=$order->get_date_modified()?:$order->get_date_created();
-        return array('key'=>'order:'.$order->get_id(),'kind'=>$kind,'order_id'=>$order->get_id(),'customer_id'=>(int)$order->get_customer_id(),'reference'=>'#'.$order->get_order_number(),'customer'=>self::customer($order->get_customer_id(),$order->get_formatted_billing_full_name()),'title'=>($order->get_meta('_ge_work_label',true)?$order->get_meta('_ge_work_label',true).' · ':'').self::item_title($order->get_items()),'status'=>GE_WTP_Order_Lifecycle::label($order),'next'=>$next,'owner'=>$owner,'closed'=>$closed,'updated'=>$date?$date->getTimestamp():0,'version'=>(int)$order->get_meta('_ge_commercial_quote_version',true),'quote_id'=>(int)$order->get_meta('_ge_commercial_quote_id',true),'request_id'=>0,'url'=>GE_WTP_Staff_Portal::portal_url($target,array('order_id'=>$order->get_id())));
+        if ($operationally_closed && 'entregado' !== $stage) {
+            $next = 'Consultar el cierre del trabajo';
+            $owner = 'Graph Express';
+        }
+        $status = $operationally_closed && 'entregado' !== $stage ? 'Cerrado' : GE_WTP_Order_Lifecycle::label($order);
+        return array('key'=>'order:'.$order->get_id(),'kind'=>$kind,'order_id'=>$order->get_id(),'customer_id'=>(int)$order->get_customer_id(),'reference'=>'#'.$order->get_order_number(),'customer'=>self::customer($order->get_customer_id(),$order->get_formatted_billing_full_name()),'title'=>($order->get_meta('_ge_work_label',true)?$order->get_meta('_ge_work_label',true).' · ':'').self::item_title($order->get_items()),'status'=>$status,'next'=>$next,'owner'=>$owner,'closed'=>$closed,'updated'=>$date?$date->getTimestamp():0,'version'=>(int)$order->get_meta('_ge_commercial_quote_version',true),'quote_id'=>(int)$order->get_meta('_ge_commercial_quote_id',true),'request_id'=>0,'url'=>GE_WTP_Staff_Portal::portal_url($target,array('order_id'=>$order->get_id())));
     }
     public static function rows() {
         if(!self::accessible())return array();
