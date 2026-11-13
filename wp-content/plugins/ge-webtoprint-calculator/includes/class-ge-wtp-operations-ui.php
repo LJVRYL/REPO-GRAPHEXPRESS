@@ -198,7 +198,9 @@ final class GE_WTP_Operations_UI {
             }
             echo '<small>'.self::e($note).'</small><a href="'.esc_url(($view === 'work' ? self::url('jobs') : self::url('administration').($view === 'costs' ? '#op-graph-finance-payment-record' : '#op-graph-finance-income-record'))).'">Ver detalle</a></article>';
         }
-        echo '</div><h2>Proveedores</h2><div class="ge-money-grid">';
+        echo '</div>';
+        self::administration_reconciliation();
+        echo '<h2>Proveedores</h2><div class="ge-money-grid">';
         uasort($suppliers,static function($a,$b) {
             $rank=static function($profile) {
                 $name=strtolower($profile['name']);
@@ -211,23 +213,53 @@ final class GE_WTP_Operations_UI {
         });
         foreach ($suppliers as $id=>$profile) {
             if (empty($accounts[$id])) { continue; }
-            $prointec = stripos($profile['name'],'prointec')!==false;
+
             echo '<article class="ge-money-card"><h3>'.self::e($profile['name']).'</h3>';
             foreach ($accounts[$id] ?? array() as $currency=>$amounts) {
                 echo '<p>Por pagar <strong>'.self::money($amounts['pending'],$currency).'</strong></p><small>Pagado '.self::money($amounts['paid'],$currency).'</small>';
             }
-            if ($prointec) {
-                self::prointec_obligations();
-            }
+
             echo '<a href="'.esc_url(self::url('suppliers',array('view'=>'supplier','supplier_id'=>$profile['key']))).'#supplier-account">Ver cuenta</a></article>';
         }
         echo '</div>';
     }
 
-    private static function prointec_obligations() {
-        echo '<p>Cuota de octubre · saldo por conciliar</p><p>Cuota de noviembre · '.self::money(131950000).' informados</p><p>Tóner · importe de compra pendiente de validar</p>';
+    private static function administration_reconciliation() {
+        $mardones = array(
+            array('Saldo a favor al 27/10/2026', 84979200),
+            array('Belgrano Multiplex · factura 1241', 47190000),
+            array('Transferencia a Mardones · factura 1242', 1694000),
+            array('Transferencia a Mardones · factura 1274', 17907698),
+            array('Pago por nuestra cuenta a Candia / Windbanners', -21296000),
+        );
+        $prointec = array(
+            array('02/11/2026 · transferencia a Prointec', 25710000),
+            array('05/11/2026 · operación 186866770177', 61290000),
+            array('12/11/2026 · operación 188150554457', 6940000),
+        );
+        $paid = array_sum(array_column($prointec, 1));
+        $mardones_due = array_sum(array_column($mardones, 1)) - $paid;
+        $october = 131950000 - $paid;
+        $november = 131950000;
+        echo '<section aria-label="Conciliación de cuentas corrientes"><h2>Conciliación al 12/11/2026</h2>';
+        echo '<p>Estos saldos conciliados se muestran aparte del saldo de pedidos y de los movimientos de caja.</p>';
+        echo '<div class="ge-money-grid"><article class="ge-money-card receivable"><h3>Mardones</h3>';
+        echo '<p>Saldo a favor de GRAPHEX</p><strong>'.self::money($mardones_due).'</strong>';
+        echo '<small>Compensado con pagos a Prointec por '.self::money($paid).'</small></article>';
+        echo '<article class="ge-money-card payable"><h3>Prointec</h3><p>Cuotas pendientes</p><strong>'.self::money($october+$november).'</strong>';
+        echo '<small>Octubre pendiente '.self::money($october).' · Noviembre '.self::money($november).'</small>';
+        echo '<small>Pagado de octubre '.self::money($paid).'</small></article></div>';
+        echo '<details class="ge-admin-panel"><summary>Ver movimientos de la conciliación</summary>';
+        $rows = array();
+        foreach ($mardones as [$label,$amount]) {
+            $rows[] = array(self::e($label),self::money($amount));
+        }
+        foreach ($prointec as [$label,$amount]) {
+            $rows[] = array(self::e('Prointec · '.$label),self::money(-$amount));
+        }
+        self::table(array('Movimiento','Impacto en saldo a favor con Mardones'),$rows);
+        echo '</details></section>';
     }
-
 
     public static function supplier_finance($key) {
         if(!current_user_can('ge_view_finance')&&!current_user_can('manage_options')) return;
