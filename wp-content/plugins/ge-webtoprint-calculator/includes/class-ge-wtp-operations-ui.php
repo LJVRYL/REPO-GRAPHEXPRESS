@@ -234,7 +234,6 @@ final class GE_WTP_Operations_UI {
         .ge-cash-bar.is-previous .ge-cash-track span{opacity:.55}
         .ge-cash-section details{margin-top:16px}
         </style>';
-        self::administration_cash($summary, $context['monthly'], $cash, $previous_cash, $receipts_for_period);
         echo '<h2>Saldos actuales</h2><div class="ge-money-grid">';
         foreach ($metrics as [$class,$label,$totals,$note,$view]) {
             echo '<article class="ge-money-card '.esc_attr($class).'"><h3>'.self::e($label).'</h3>';
@@ -270,6 +269,7 @@ final class GE_WTP_Operations_UI {
             echo '<a href="'.esc_url(self::url('suppliers',array('view'=>'supplier','supplier_id'=>$profile['key']))).'#supplier-account">Ver cuenta</a></article>';
         }
         echo '</div>'.$reconciliation;
+        self::administration_cash($summary, $context['monthly'], $cash, $previous_cash, $receipts_for_period);
     }
 
     private static function administration_cash($summary, $monthly, $cash, $previous_cash, $receipts) {
