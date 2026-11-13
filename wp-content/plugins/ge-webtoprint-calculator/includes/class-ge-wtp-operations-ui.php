@@ -203,20 +203,12 @@ final class GE_WTP_Operations_UI {
             };
             return $rank($a)<=>$rank($b) ?: strcasecmp($a['name'],$b['name']);
         });
-        $has_prointec = (bool) array_filter($suppliers, static function($profile) { return stripos($profile['name'],'prointec') !== false; });
-        if (!$has_prointec) {
-            echo '<article class="ge-money-card payable"><h3>Prointec</h3>';
-            self::prointec_obligations();
-            echo '</article>';
-        }
         foreach ($suppliers as $id=>$profile) {
+            if (empty($accounts[$id])) { continue; }
             $prointec = stripos($profile['name'],'prointec')!==false;
             echo '<article class="ge-money-card"><h3>'.self::e($profile['name']).'</h3>';
             foreach ($accounts[$id] ?? array() as $currency=>$amounts) {
                 echo '<p>Por pagar <strong>'.self::money($amounts['pending'],$currency).'</strong></p><small>Pagado '.self::money($amounts['paid'],$currency).'</small>';
-            }
-            if (empty($accounts[$id])) {
-                echo '<p>Sin cuentas registradas</p>';
             }
             if ($prointec) {
                 self::prointec_obligations();
