@@ -140,6 +140,9 @@ final class GE_WTP_Operations_UI {
             $accounts[$id][$currency] = $account;
         }
         $unverified = 0;
+        $cash = array();
+        $from = $summary['from'];
+        $to = $summary['to'];
         $page = 1;
         do {
             $batch = wc_get_orders(array('type'=>'shop_order','limit'=>100,'paginate'=>true,'page'=>$page,'orderby'=>'ID','order'=>'ASC'));
@@ -149,6 +152,26 @@ final class GE_WTP_Operations_UI {
                     || $order->get_meta('_ge_commercial_payment_order') === 'yes'
                     || $order->get_meta('_ge_financial_parent_order_id')) {
                     continue;
+                }
+                $currency = $order->get_currency();
+                $receipts = (array)$order->get_meta('_ge_work_manual_payments',true);
+                $dated = array();
+                foreach ($receipts as $receipt) {
+                    if (is_array($receipt) && !empty($receipt['received_date']) && !empty($receipt['amount_cents'])) {
+                        $dated[] = array($receipt['received_date'], (int)$receipt['amount_cents']);
+                    }
+                }
+                if (!$dated) {
+                    $confirmed = $order->get_meta('_ge_payment_confirmed_at',true);
+                    $total = $order->get_meta('_ge_payment_confirmed_total',true);
+                    if ($confirmed && is_numeric($total) && (float)$total > 0) {
+                        $dated[] = array(substr($confirmed,0,10), (int)round((float)$total * 100));
+                    }
+                }
+                foreach ($dated as [$date,$amount]) {
+                    if ($date >= $from && $date <= $to) {
+                        $cash[$currency] = ($cash[$currency] ?? 0) + $amount;
+                    }
                 }
                 $balance = $order->get_meta('_ge_amount_due_cents',true);
                 if ($balance === '') {
@@ -162,13 +185,8 @@ final class GE_WTP_Operations_UI {
             }
         } while (++$page <= $batch->max_num_pages);
 
-        $cash = array();
-        foreach ($summary['currencies'] as $row) {
-            $currency = $row['currency'];
-            $cash[$currency] = array('income' => (int)$row['cash_in_minor'], 'outgoing' => (int)$row['cash_out_minor']);
-        }
         $metrics = array(
-            array('cash','Caja registrada',$cash,'Ingresos y egresos asentados en el período seleccionado. Saldo bancario sin conciliar.','cash'),
+            array('cash','Caja registrada',$cash,'Cobros de pedidos · '.$from.' a '.$to,'cash'),
             array('receivable','Por cobrar',$receivable,$unverified.' pedidos sin saldo registrado.','work'),
             array('payable','Por pagar',$due,'Obligaciones registradas, descontando pagos.','costs'),
         );
@@ -189,12 +207,7 @@ final class GE_WTP_Operations_UI {
                 echo '<strong>Sin registros</strong>';
             }
             foreach ($totals as $currency => $amount) {
-                if ($class === 'cash') {
-                    echo '<strong>'.self::money($amount['income'] - $amount['outgoing'],$currency).'</strong>';
-                    echo '<small>Ingresos '.self::money($amount['income'],$currency).' · Egresos '.self::money($amount['outgoing'],$currency).'</small>';
-                } else {
-                    echo '<strong>'.self::money($amount,$currency).'</strong>';
-                }
+                echo '<strong>'.self::money($amount,$currency).'</strong>';
             }
             echo '<small>'.self::e($note).'</small><a href="'.esc_url(($view === 'work' ? self::url('jobs') : self::url('administration').($view === 'costs' ? '#op-graph-finance-payment-record' : '#op-graph-finance-income-record'))).'">Ver detalle</a></article>';
         }
