@@ -84,9 +84,11 @@ final class GE_WTP_Operations_UI {
         $opts=array(); foreach($rows as $r) $opts[$r['id']]=$r['name']; self::start_form('graph.production.materials.consume','stock','Confirmar consumo de producción interna'); self::select('recipe_id','Receta',$opts); self::field('order_id','Pedido / trabajo','number'); self::field('outputs','Unidades producidas','number'); self::select('duplex','Caras impresas por hoja',array('1'=>'Simple faz','2'=>'Dúplex')); self::field('waste_factor','Factor de consumo · 1 sin merma','number','1'); self::select('currency','Moneda del costo de materiales',array('ARS'=>'ARS','USD'=>'USD')); self::end_form('Confirmar consumo'); self::start_form('graph.production.materials.authorize','stock','Materiales propios aportados a un trabajo tercerizado');self::field('order_id','Pedido tercerizado','number');self::select('authorized','Autorización explícita',array('no'=>'No aportar / revocar','yes'=>'Graphex aporta materiales'));self::field('reason','Materiales aportados y motivo');self::end_form('Registrar autorización');
     }
     public static function administration() {
+        if(class_exists('GE_WTP_Cost_Reconciliation_R82')) GE_WTP_Cost_Reconciliation_R82::render();
         self::heading('Administración','Finanzas operativas, gastos y cuentas a pagar. Cada concepto conserva su fuente y su moneda.');
         $period=sanitize_key($_GET['period']??'custom'); $year=absint($_GET['year']??current_time('Y'));$month=absint($_GET['month']??current_time('m'));$from=sanitize_text_field($_GET['from']??current_time('Y-m').'-01'); $to=sanitize_text_field($_GET['to']??current_time('Y-m-d'));$f=array('from'=>$from,'to'=>$to); if($period==='month'||$period==='year') { $f=array('year'=>$year);if($period==='month')$f['month']=$month; $preview=GE_WTP_Operations_Finance::summary($f);$from=$preview['from'];$to=$preview['to']; }
 
+        self::administration_overview($f, array());
         echo '<form class="ge-v3-toolbar ge-op-filter" method="get"><input type="hidden" name="section" value="administration">'; self::select('period','Período',array('custom'=>'Rango de fechas','month'=>'Mes completo','year'=>'Año completo'),$period);self::field('year','Año','number',$year);self::field('month','Mes · 1 a 12','number',$month);self::field('from','Desde','date',$from); self::field('to','Hasta','date',$to); echo '<button type="submit">Aplicar período</button></form>';
         $sum=GE_WTP_Operations_Finance::summary($f); echo '<div class="ge-op-actions"><a href="#op-graph-finance-expense-create">Cargar gasto</a><a href="#op-graph-finance-payment-record">Registrar pago</a><a href="'.esc_url(self::url('supplier-invoices')).'">Facturas y documentos</a></div><section class="ge-admin-stats">'; foreach($sum['currencies'] as $c) { echo '<article><span>Costos y gastos devengados</span><strong>'.self::money($c['costs_minor'],$c['currency']).'</strong></article><article><span>Pagos registrados</span><strong>'.self::money($c['cash_out_minor'],$c['currency']).'</strong><small>Salida de dinero, separada del gasto</small></article>'; }
         foreach($sum['sales']['currencies']??array() as $c) echo '<article><span>Vendido · '.self::e($c['currency']).'</span><strong>'.self::money($c['sold_minor'],$c['currency']).'</strong><small>Pedidos netos de devoluciones, por fecha de creación</small></article>';
@@ -119,6 +121,113 @@ final class GE_WTP_Operations_UI {
         $spend=array();foreach($r['supplier_spend']??array() as $g)$spend[]=array(self::e(self::supplier_options()[$g['supplier_id']]??'Sin proveedor'),self::money($g['purchases_minor'],$g['currency']),self::money($g['expenses_minor'],$g['currency']),self::money($g['total_minor'],$g['currency']));echo '<h3>Compras y gastos por proveedor</h3>';self::table(array('Proveedor','Compras reconocidas','Gastos registrados','Total por moneda'),$spend);
         $rows=array();foreach($r['margins']['currencies'] as $g) $rows[]=array(self::e($g['currency']),self::e($g['complete_count']),self::e($g['incomplete_count']),$g['complete_margin_minor']===null?'Costo incompleto':self::money($g['complete_margin_minor'],$g['currency']),$g['operating_estimate_minor']===null?'Sin cobertura suficiente':self::money($g['operating_estimate_minor'],$g['currency']));echo '<h3>Margen y resultado estimado</h3>';self::table(array('Moneda','Pedidos con costos completos','Con costos pendientes','Margen del subconjunto completo','Resultado operativo parcial'),$rows);echo '<p class="ge-op-hint">El margen incluye solamente pedidos con todos sus costos verificados. Resultado operativo parcial: no representa la ganancia total del negocio mientras falten costos. Cada moneda se informa por separado.</p><h3>Cuentas a cobrar</h3><p>Saldo sin conciliar: la fuente de pagos conserva la última confirmación, pero no permite reconstruir todos los cobros históricos. Se mantiene como desconocido hasta contar con esa evidencia.</p></section>';
     }
+    private static function administration_overview($filters, $context) {
+        $summary = GE_WTP_Operations_Finance::summary($filters);
+        $payables = GE_WTP_Operations_Finance::payables(array('status' => 'all'));
+        $suppliers = GE_WTP_Operations::suppliers();
+        $due = $accounts = $receivable = array();
+        foreach ($payables as $entry) {
+            $balance = (int) $entry['outstanding_minor'];
+            $currency = $entry['currency'];
+            $id = (int) $entry['supplier_id'];
+            $due[$currency] = ($due[$currency] ?? 0) + $balance;
+            $account = $accounts[$id][$currency] ?? array('pending' => 0, 'paid' => 0);
+            $account['pending'] += $balance;
+            $account['paid'] += (int) $entry['paid_minor'];
+            $accounts[$id][$currency] = $account;
+        }
+        $unverified = 0;
+        $page = 1;
+        do {
+            $batch = wc_get_orders(array('type'=>'shop_order','limit'=>100,'paginate'=>true,'page'=>$page,'orderby'=>'ID','order'=>'ASC'));
+            foreach ($batch->orders as $order) {
+                if (in_array($order->get_status(),array('cancelled','failed','refunded','checkout-draft','draft','pending','ge-quote','quote'),true)
+                    || GE_WTP_Customer_Quotes::is_quote_order($order)
+                    || $order->get_meta('_ge_commercial_payment_order') === 'yes'
+                    || $order->get_meta('_ge_financial_parent_order_id')) {
+                    continue;
+                }
+                $balance = $order->get_meta('_ge_amount_due_cents',true);
+                if ($balance === '') {
+                    if ($order->get_meta('_ge_payment_state',true) !== 'paid') {
+                        $unverified++;
+                    }
+                    continue;
+                }
+                $currency = $order->get_currency();
+                $receivable[$currency] = ($receivable[$currency] ?? 0) + max(0,(int)$balance);
+            }
+        } while (++$page <= $batch->max_num_pages);
+
+        $cash = array();
+        foreach ($summary['currencies'] as $row) {
+            $cash[$row['currency']] = (int)$row['cash_in_minor'] - (int)$row['cash_out_minor'];
+        }
+        $metrics = array(
+            array('cash','Caja registrada',$cash,'Movimiento neto del período. Saldo bancario sin conciliar.','cash'),
+            array('receivable','Por cobrar',$receivable,$unverified.' pedidos sin saldo registrado.','work'),
+            array('payable','Por pagar',$due,'Obligaciones registradas, descontando pagos.','costs'),
+        );
+        echo '<style>
+        .ge-money-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin:12px 0 24px}
+        .ge-money-card{display:grid;align-content:start;gap:8px;padding:18px;background:#fff;border:1px solid #dbe3ef;border-top:4px solid #3262ad;border-radius:12px;color:#182742}
+        .ge-money-card.cash{border-top-color:#17835e;background:#effaf5}
+        .ge-money-card.receivable{border-top-color:#2b61b2;background:#f0f6ff}
+        .ge-money-card.payable{border-top-color:#ab5d13;background:#fff6e9}
+        .ge-money-card h3,.ge-money-card p{margin:0}
+        .ge-money-card strong{display:block;font-size:clamp(1.2rem,2vw,1.6rem)}
+        .ge-money-card small{color:#41516b}
+        .ge-money-card a{width:fit-content}
+        </style><div class="ge-money-grid">';
+        foreach ($metrics as [$class,$label,$totals,$note,$view]) {
+            echo '<article class="ge-money-card '.esc_attr($class).'"><h3>'.self::e($label).'</h3>';
+            if (!$totals) {
+                echo '<strong>Sin registros</strong>';
+            }
+            foreach ($totals as $currency => $amount) {
+                echo '<strong>'.self::money($amount,$currency).'</strong>';
+            }
+            echo '<small>'.self::e($note).'</small><a href="'.esc_url(($view === 'work' ? self::url('jobs') : self::url('administration').($view === 'costs' ? '#op-graph-finance-payment-record' : '#op-graph-finance-income-record'))).'">Ver detalle</a></article>';
+        }
+        echo '</div><h2>Proveedores</h2><div class="ge-money-grid">';
+        uasort($suppliers,static function($a,$b) {
+            $rank=static function($profile) {
+                $name=strtolower($profile['name']);
+                foreach (array('prointec','mardones','bandurria','windbanners') as $index=>$preferred) {
+                    if (strpos($name,$preferred)!==false) return $index;
+                }
+                return 4;
+            };
+            return $rank($a)<=>$rank($b) ?: strcasecmp($a['name'],$b['name']);
+        });
+        $has_prointec = (bool) array_filter($suppliers, static function($profile) { return stripos($profile['name'],'prointec') !== false; });
+        if (!$has_prointec) {
+            echo '<article class="ge-money-card payable"><h3>Prointec</h3>';
+            self::prointec_obligations();
+            echo '</article>';
+        }
+        foreach ($suppliers as $id=>$profile) {
+            $prointec = stripos($profile['name'],'prointec')!==false;
+            echo '<article class="ge-money-card"><h3>'.self::e($profile['name']).'</h3>';
+            foreach ($accounts[$id] ?? array() as $currency=>$amounts) {
+                echo '<p>Por pagar <strong>'.self::money($amounts['pending'],$currency).'</strong></p><small>Pagado '.self::money($amounts['paid'],$currency).'</small>';
+            }
+            if (empty($accounts[$id])) {
+                echo '<p>Sin cuentas registradas</p>';
+            }
+            if ($prointec) {
+                self::prointec_obligations();
+            }
+            echo '<a href="'.esc_url(self::url('suppliers',array('view'=>'supplier','supplier_id'=>$profile['key']))).'#supplier-account">Ver cuenta</a></article>';
+        }
+        echo '</div>';
+    }
+
+    private static function prointec_obligations() {
+        echo '<p>Cuota de octubre · saldo por conciliar</p><p>Cuota de noviembre · '.self::money(131950000).' informados</p><p>Tóner · importe de compra pendiente de validar</p>';
+    }
+
+
     public static function supplier_finance($key) {
         if(!current_user_can('ge_view_finance')&&!current_user_can('manage_options')) return;
         $sid=0;foreach(GE_WTP_Operations::suppliers() as $id=>$profile)if($profile['key']===$key)$sid=$id;
