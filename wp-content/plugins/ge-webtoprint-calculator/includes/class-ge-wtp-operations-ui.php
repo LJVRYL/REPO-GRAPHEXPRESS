@@ -164,10 +164,11 @@ final class GE_WTP_Operations_UI {
 
         $cash = array();
         foreach ($summary['currencies'] as $row) {
-            $cash[$row['currency']] = (int)$row['cash_in_minor'] - (int)$row['cash_out_minor'];
+            $currency = $row['currency'];
+            $cash[$currency] = array('income' => (int)$row['cash_in_minor'], 'outgoing' => (int)$row['cash_out_minor']);
         }
         $metrics = array(
-            array('cash','Caja registrada',$cash,'Movimiento neto del período. Saldo bancario sin conciliar.','cash'),
+            array('cash','Caja registrada',$cash,'Ingresos y egresos asentados en el período seleccionado. Saldo bancario sin conciliar.','cash'),
             array('receivable','Por cobrar',$receivable,$unverified.' pedidos sin saldo registrado.','work'),
             array('payable','Por pagar',$due,'Obligaciones registradas, descontando pagos.','costs'),
         );
@@ -188,7 +189,12 @@ final class GE_WTP_Operations_UI {
                 echo '<strong>Sin registros</strong>';
             }
             foreach ($totals as $currency => $amount) {
-                echo '<strong>'.self::money($amount,$currency).'</strong>';
+                if ($class === 'cash') {
+                    echo '<strong>'.self::money($amount['income'] - $amount['outgoing'],$currency).'</strong>';
+                    echo '<small>Ingresos '.self::money($amount['income'],$currency).' · Egresos '.self::money($amount['outgoing'],$currency).'</small>';
+                } else {
+                    echo '<strong>'.self::money($amount,$currency).'</strong>';
+                }
             }
             echo '<small>'.self::e($note).'</small><a href="'.esc_url(($view === 'work' ? self::url('jobs') : self::url('administration').($view === 'costs' ? '#op-graph-finance-payment-record' : '#op-graph-finance-income-record'))).'">Ver detalle</a></article>';
         }
