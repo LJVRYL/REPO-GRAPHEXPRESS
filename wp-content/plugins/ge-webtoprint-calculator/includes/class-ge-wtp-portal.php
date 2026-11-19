@@ -5,9 +5,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/class-ge-wtp-quick-quote.php';
+require_once __DIR__ . '/class-ge-wtp-private-catalog.php';
 
 final class GE_WTP_Portal {
     public static function init() {
+        GE_WTP_Private_Catalog::init();
         add_shortcode( 'ge_markcom_portal', array( __CLASS__, 'render' ) );
         add_filter( 'woocommerce_order_needs_payment', array( __CLASS__, 'historical_needs_payment' ), 10, 3 );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
@@ -234,7 +236,7 @@ final class GE_WTP_Portal {
         $section = isset( $_GET['seccion'] ) ? sanitize_key( wp_unslash( $_GET['seccion'] ) ) : 'inicio';
         $allowed = array( 'inicio', 'presupuestos', 'pedidos', 'guardados', 'documentos', 'perfil', 'personalizado', 'solicitudes', 'facturas' );
         if(class_exists('GE_WTP_Deco_Creators')&&GE_WTP_Deco_Creators::enabled())$allowed[]='mi-galeria';
-        if ( self::portal_is_markcom() ) {
+        if ( self::portal_is_markcom() || GE_WTP_Private_Catalog::available( self::portal_customer_id() ) ) {
             $allowed[] = 'catalogo';
         }
         if ( ! in_array( $section, $allowed, true ) ) {
@@ -257,7 +259,11 @@ final class GE_WTP_Portal {
                 endif; ?>
                 <?php
                 if ( 'catalogo' === $section ) {
-                    self::render_catalog();
+                    if ( self::portal_is_markcom() ) {
+                        self::render_catalog();
+                    } else {
+                        GE_WTP_Private_Catalog::render( self::portal_customer_id(), self::is_staff_preview() );
+                    }
                 } elseif ( 'presupuestos' === $section ) {
                     GE_WTP_Commercial_Quote_UI::render_customer();
                 } elseif ( 'pedidos' === $section ) {
@@ -372,7 +378,7 @@ final class GE_WTP_Portal {
             'perfil'     => 'Mi perfil',
         );
         if(class_exists('GE_WTP_Deco_Creators')&&GE_WTP_Deco_Creators::enabled())$items=array_slice($items,0,4,true)+array('mi-galeria'=>'Mi galería')+array_slice($items,4,null,true);
-        if ( self::portal_is_markcom() ) {
+        if ( self::portal_is_markcom() || GE_WTP_Private_Catalog::available( self::portal_customer_id() ) ) {
             $items = array_merge( array( 'inicio' => 'Resumen', 'catalogo' => 'Productos' ), array_slice( $items, 1, null, true ) );
         }
         ?>
