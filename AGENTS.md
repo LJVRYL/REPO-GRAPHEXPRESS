@@ -7,3 +7,5 @@ La rama canónica vigente es master; verificar HEAD remoto antes de cada release
 Antes de integrar/deploy respaldar y verificar; comparar manifiestos y proteger snapshots, numeración y datos reales. Publicar sólo allowlist custom. Nunca copiar DB/config/secrets/backups a Git, reemplazar producción completa, reset/clean/force-push ni borrar ramas/worktrees sin autorización.
 
 Result Pack: repo/rama/HEAD, source commits, tests, manifest, backup/rollback, estados candidate/merged/deployed/verified/canonical_synced y blockers concretos. No afirmar sincronización si un hash productivo queda sin explicar.
+
+Canal firmado de producción para workers: leer [docs/GRAPHEX_WORKER_DEPLOY.md](docs/GRAPHEX_WORKER_DEPLOY.md) antes de publicar o recuperar un despliegue de Graphex.
