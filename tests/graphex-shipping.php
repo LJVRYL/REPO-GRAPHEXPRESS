@@ -1,6 +1,6 @@
 <?php
 if (PHP_SAPI !== 'cli') { exit; }
-require __DIR__ . '/calculator.php';
+require dirname(__DIR__) . '/wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-shipping-calculator.php';
 
 function check($condition, $label) {
     if (!$condition) {
@@ -45,7 +45,7 @@ class WC_Shipping_Rate {
     public function __construct($id, $label, $cost, $taxes, $method) { $this->method = $method; }
     public function get_method_id() { return $this->method; }
 }
-require __DIR__ . '/checkout.php';
+require dirname(__DIR__) . '/wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-shipping-checkout.php';
 $package = array('destination' => $caba, 'ge_delivery_intent' => 'delivery');
 $pickup = new WC_Shipping_Rate('local_pickup:1', 'Retiro en tienda', 0, array(), 'local_pickup');
 $rated = new WC_Shipping_Rate('ge_shipping:2', 'Entrega a domicilio', 200, array(), 'ge_shipping');

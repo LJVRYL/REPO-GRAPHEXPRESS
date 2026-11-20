@@ -221,9 +221,9 @@ final class GE_Shipping_Checkout {
         if (!self::is_checkout()) {
             return;
         }
-        wp_enqueue_style('ge-shipping-checkout', plugins_url('checkout.css', __FILE__), array(), self::VERSION);
+        wp_enqueue_style('ge-shipping-checkout', GE_WTP_PLUGIN_URL . 'assets/css/ge-shipping-checkout.css', array(), self::VERSION);
         if (self::classic_form()) {
-            wp_enqueue_script('ge-shipping-choice', plugins_url('checkout.js', __FILE__), array('wc-checkout'), self::VERSION, true);
+            wp_enqueue_script('ge-shipping-choice', GE_WTP_PLUGIN_URL . 'assets/js/ge-shipping-checkout.js', array('wc-checkout'), self::VERSION, true);
         }
     }
 }

@@ -1,18 +1,11 @@
 <?php
-/**
- * Plugin Name: Graphex Envíos
- * Description: Cotización de envíos en WooCommerce para pedidos de impresión.
- * Version: 0.2.0
- * Requires PHP: 7.4
- * Requires Plugins: woocommerce
- */
 defined('ABSPATH') || exit;
 
-require_once __DIR__ . '/calculator.php';
-require_once __DIR__ . '/checkout.php';
+require_once __DIR__ . '/class-ge-wtp-shipping-calculator.php';
+require_once __DIR__ . '/class-ge-wtp-shipping-checkout.php';
 
 add_action('woocommerce_shipping_init', function () {
-    require_once __DIR__ . '/shipping-method.php';
+    require_once __DIR__ . '/class-ge-wtp-shipping-method.php';
 });
 
 add_filter('woocommerce_shipping_methods', function ($methods) {
@@ -57,7 +50,7 @@ add_action('wp_enqueue_scripts', function () {
         || is_wc_endpoint_url('order-pay')) {
         return;
     }
-    wp_enqueue_script('ge-shipping-address', plugins_url('address.js', __FILE__), array(), '0.1.0', true);
+    wp_enqueue_script('ge-shipping-address', GE_WTP_PLUGIN_URL . 'assets/js/ge-shipping-address.js', array(), '0.1.0', true);
     wp_add_inline_script('ge-shipping-address', 'window.geShippingMapsKey = '
         . wp_json_encode(GE_SHIPPING_MAPS_BROWSER_KEY) . ';', 'before');
 });
