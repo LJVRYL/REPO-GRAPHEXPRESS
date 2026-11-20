@@ -44,8 +44,19 @@ function WC() {
     });
 }
 class WC_Shipping_Rate {
+    private $id;
+    private $label;
+    private $cost;
     private $method;
-    public function __construct($id, $label, $cost, $taxes, $method) { $this->method = $method; }
+    public function __construct($id, $label, $cost, $taxes, $method) {
+        $this->id = $id;
+        $this->label = $label;
+        $this->cost = $cost;
+        $this->method = $method;
+    }
+    public function get_id() { return $this->id; }
+    public function get_label() { return $this->label; }
+    public function get_cost() { return $this->cost; }
     public function get_method_id() { return $this->method; }
 }
 require dirname(__DIR__) . '/wp-content/plugins/ge-webtoprint-calculator/includes/class-ge-wtp-shipping-checkout.php';
@@ -59,3 +70,12 @@ check(GE_Shipping_Checkout::rates($available, array_replace($package, array('ge_
 $incorrect = array_replace($caba, array('state' => 'B'));
 check(GE_Shipping_Checkout::rates(array(), array_replace($package, array('destination' => $incorrect))) === array(), 'invalid CPA cannot request quote');
 echo "Checkout rate cases OK\n";
+
+$legacy_pickup = new WC_Shipping_Rate('flat_rate:1', 'Retiro en Graph Express (sin cargo)', 0, array(), 'flat_rate');
+$legacy_delivery = new WC_Shipping_Rate('flat_rate:2', 'Entrega a coordinar', 0, array(), 'flat_rate');
+$legacy_rates = array('flat_rate:1' => $legacy_pickup, 'flat_rate:2' => $legacy_delivery);
+check(array_keys(GE_Shipping_Checkout::rates($legacy_rates, $package)) === array('ge_shipping_quote'), 'legacy delivery becomes quote');
+check(array_keys(GE_Shipping_Checkout::rates($legacy_rates, array_replace($package, array('ge_delivery_intent' => 'pickup')))) === array('flat_rate:1'), 'legacy pickup still offered');
+check(array_keys(GE_Shipping_Checkout::rates($legacy_rates, array_replace($package, array('ge_delivery_intent' => '')))) === array('flat_rate:1', 'ge_shipping_quote'), 'WooCommerce Store API keeps pickup and quote');
+check(array_keys(GE_Shipping_Checkout::rates($legacy_rates + array('ge_shipping:2' => $rated), $package)) === array('ge_shipping:2'), 'real tariff supersedes legacy delivery');
+echo "Graphex legacy methods OK\n";

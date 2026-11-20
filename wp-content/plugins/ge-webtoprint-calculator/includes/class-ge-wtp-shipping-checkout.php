@@ -3,7 +3,7 @@ defined('ABSPATH') || exit;
 
 final class GE_Shipping_Checkout {
     const QUOTE = 'ge_shipping_quote';
-    const VERSION = '0.2.0';
+    const VERSION = '0.2.1';
     const QUOTE_MESSAGE = 'Te informaremos el costo del envío por separado. El total de este pedido todavía no lo incluye.';
 
     private static $intent = '';
@@ -100,7 +100,8 @@ final class GE_Shipping_Checkout {
     }
 
     private static function is_pickup($rate) {
-        return in_array($rate->get_method_id(), array('local_pickup', 'legacy_local_pickup', 'pickup_location'), true);
+        return in_array($rate->get_method_id(), array('local_pickup', 'legacy_local_pickup', 'pickup_location'), true)
+            || ($rate->get_id() === 'flat_rate:1' && strpos($rate->get_label(), 'Retiro en Graph Express') === 0);
     }
 
     private static function has_destination($destination) {
@@ -116,6 +117,11 @@ final class GE_Shipping_Checkout {
         $intent = $package['ge_delivery_intent'] ?? '';
         $pickup = array_filter($rates, array(__CLASS__, 'is_pickup'));
         $delivery = array_diff_key($rates, $pickup);
+        // The legacy zero-cost placeholder must use the quote path and its order note.
+        $legacy = $delivery['flat_rate:2'] ?? null;
+        if ($legacy && (float) $legacy->get_cost() === 0.0 && strpos($legacy->get_label(), 'Entrega a coordinar') === 0) {
+            unset($delivery['flat_rate:2']);
+        }
 
         if ($intent === 'pickup') {
             return $pickup;
@@ -127,7 +133,7 @@ final class GE_Shipping_Checkout {
             }
             $delivery[self::QUOTE] = $rate;
         }
-        return $intent === 'delivery' ? $delivery : $rates + $delivery;
+        return $intent === 'delivery' ? $delivery : $pickup + $delivery;
     }
 
     public static function rate_label($label, $rate) {
