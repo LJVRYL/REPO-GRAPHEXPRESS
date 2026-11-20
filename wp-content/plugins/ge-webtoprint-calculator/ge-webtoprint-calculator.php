@@ -157,3 +157,5 @@ require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-catalog-reviewed-media.p
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-catalog-reviewed-assets.php';
 
 require_once GE_WTP_PLUGIN_DIR . 'includes/class-ge-wtp-flags-product-experience.php';
+
+require_once GE_WTP_PLUGIN_DIR . 'includes/ge-wtp-shipping.php';
