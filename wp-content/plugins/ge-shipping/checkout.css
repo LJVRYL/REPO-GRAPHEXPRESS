@@ -1,0 +1,10 @@
+.ge-delivery-choice {
+    margin: 0 0 1.25rem;
+    padding: .85rem 1rem;
+    border: 1px solid currentColor;
+    border-radius: .5rem;
+}
+
+.ge-delivery-choice legend { padding: 0 .35rem; font-weight: 600; }
+.ge-delivery-choice label { display: inline-flex; align-items: center; gap: .45rem; margin-right: 1.25rem; }
+#ship-to-different-address[hidden] { display: none !important; }
