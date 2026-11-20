@@ -1,0 +1,31 @@
+# Graphex Envíos
+
+Plugin de WooCommerce para cotizar entregas a domicilio desde el carrito y el checkout. WooCommerce conserva el método, el importe y el domicilio en el pedido. La línea de envío incorpora la referencia del tarifario, los pesos y el detalle de bultos.
+
+## Configuración en pruebas
+
+1. Instalá y activá el ZIP en el WordPress de pruebas. En WooCommerce → Ajustes → Envío, agregá **Graphex Envíos** a las zonas argentinas existentes. Usá instancias distintas si CABA y el resto del país tienen operadores o condiciones diferentes. Conservá el retiro en tienda y verificá el orden de las zonas y su cobertura.
+2. Cargá las tarifas vigentes de cada servicio, su origen de despacho, referencia y fecha de revisión como parte de la referencia del tarifario. La vigencia configurada se aplica hasta el fin de ese día en la zona horaria de WordPress. Pegá las filas CSV sin encabezado. Usá punto decimal. El precio es por bulto. Si el operador cobra por un envío multibulto con una tarifa única, esas reglas requieren otro adaptador.
+3. Cargá el divisor volumétrico, los límites físicos del servicio y el tratamiento de impuestos según los valores contratados. El CSV incluido es una transcripción de referencia de [Encomienda Correo Clásica](https://www.correoargentino.com.ar/servicios/paqueteria/encomienda-correo-clasica), consultada el 19 de noviembre de 2026, con [alcance regional desde CABA](https://www.correoargentino.com.ar/encomiendas-alcance-regional-y-nacional). El límite de suma de lados publicado es 250 cm. La página de tarifas no indica divisor ni vigencia. Verificá la cobertura efectiva y el total a pagar para el CP de despacho de Graphex antes de activar esas filas. [PAQ.AR](https://www.correoargentino.com.ar/MiCorreo/public/paq-ar) usa otro esquema de precios y tiene API con credenciales. [Vía Cargo](https://formularios.viacargo.com.ar/) cuenta con cotizador público para contrastar rutas y bultos, que pide origen, destino, peso, medidas y valor declarado.
+4. En cada instancia cargá los perfiles de papel de las tiradas habilitadas. Medí espesor y masa de una pila, peso de cada caja, diferencia entre dimensiones internas y externas y máximo operativo. El plugin reconoce los SKU ID-EXP-001 (tarjetas) e ID-EXP-002 (folletos), incluyendo las configuraciones digitales de Graphex ya guardadas en el carrito. Lee tamaño, gramaje, cantidad y caras laminadas. Un producto WooCommerce simple o variación con peso y tres medidas configurados usa esos datos como un bulto por unidad. Para tiradas personalizadas de otros productos, la tarifa automática requiere modelar su embalaje.
+5. Para autocompletar domicilios en el checkout clásico, configurá GE_SHIPPING_MAPS_BROWSER_KEY en wp-config.php con una clave de navegador restringida a los dominios permitidos y a las APIs Maps JavaScript y Places API (New). Los campos manuales están disponibles con o sin clave. El costo se resuelve en WooCommerce a partir de provincia, código postal, bultos y tarifa. La clave de navegador no debe reutilizarse como clave de servidor.
+
+## Cálculo de referencia
+
+Una tarjeta de 5 × 9 cm en 300 g/m² pesa 1,35 g de papel. Mil pesan 1,35 kg, antes de sumar acabado y caja. Cinco mil folletos A5 de 150 g/m² pesan 23,31 kg de papel. En A4 con el mismo gramaje pesan 46,7775 kg. El cálculo por bulto incluye laminado según el perfil, tara y dimensiones estimadas de la pila. Para cotizar toma el mayor entre peso real y volumétrico, redondeado hacia arriba al gramo. Agrupa por línea de carrito y reparte al superar el máximo configurado para el embalaje.
+
+## Verificación previa a publicar
+
+- Probar CABA, GBA e interior con CP coincidente y un mismo pedido, contrastando los importes con el operador desde el CP real de despacho.
+- Cambiar cantidades, dirección de envío y método en el checkout. Confirmar que el nuevo costo llega al total y a la línea de envío del pedido.
+- Probar el retiro, una dirección manual, Google Maps, una tirada laminada, un carrito mixto y un envío multibulto. Probar también un tarifario vencido y un producto sin datos físicos.
+- Revisar que el pedido pueda verse correctamente desde el backoffice de Graphex y que WooCommerce use el tratamiento impositivo configurado.
+- Ejecutar php -l sobre cada PHP del paquete. Probar los casos puros con el archivo de verificación adjunto.
+
+## Retiro, entrega y costo pendiente
+
+- En el checkout clásico, el selector **Retiro en tienda / Quiero que me lo envíen** abre los campos nativos de domicilio al elegir entrega. El retiro sigue dependiendo de las zonas que lo ofrecen. El formulario captura nombre del destinatario, dirección, localidad, provincia y código postal. Google Maps sigue siendo opcional.
+- En Checkout de bloques, el selector Entrega/Retiro es el nativo de WooCommerce. Habilitá **Retiro local** en WooCommerce → Ajustes → Envío → Retiro local, cargá el punto de retiro real y verificá el bloque **Método de entrega**. Evitá duplicar la misma ubicación como retiro clásico y de bloques. El autocompletado del plugin está disponible en el checkout clásico.
+- Cuando el paquete tiene una opción de entrega con precio, se muestran los métodos disponibles y WooCommerce calcula el total. Con destino argentino válido y sin tarifa de entrega, se ofrece **Envío a cotizar**, incluso si falta peso o todavía no se configuró un tarifario. Su cargo es cero en el cálculo porque el importe queda pendiente. El cliente puede completar el pedido con el pago de la mercadería habitual. El texto de checkout aclara que el costo de envío se informa por separado.
+- Al confirmar un pedido con costo pendiente, se guarda el domicilio, se marca el pedido y se agrega una nota interna. El correo usa los destinatarios y la configuración de «Pedido nuevo» del Centro de notificaciones de Graphex. En una instalación sin ese centro, usa el correo de administración de WordPress. Si el correo falla, la nota queda registrada.
+- Probá ambos tipos de checkout que use el sitio, con un retiro y dos pedidos a domicilio. Usá una tirada con tarifa y otra sin ficha de peso. Verificá que abrir y cerrar el domicilio actualice la opción, que la tarifa pendiente jamás se sume como un cargo y que la nota aparezca una sola vez por solicitud. Revisá los destinatarios internos antes de enviar un pedido de prueba.
