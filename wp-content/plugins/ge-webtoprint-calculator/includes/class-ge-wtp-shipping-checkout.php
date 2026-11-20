@@ -14,7 +14,7 @@ final class GE_Shipping_Checkout {
         add_action('woocommerce_checkout_process', array(__CLASS__, 'read_checkout'), 1);
         add_filter('pre_option_woocommerce_ship_to_destination', array(__CLASS__, 'shipping_destination'));
         add_filter('woocommerce_cart_shipping_packages', array(__CLASS__, 'mark_packages'), 20);
-        add_filter('woocommerce_package_rates', array(__CLASS__, 'rates'), 100);
+        add_filter('woocommerce_package_rates', array(__CLASS__, 'rates'), 100, 2);
         add_filter('woocommerce_cart_shipping_method_full_label', array(__CLASS__, 'rate_label'), 10, 2);
         add_action('woocommerce_after_checkout_validation', array(__CLASS__, 'validate'), 10, 2);
         add_action('woocommerce_checkout_order_processed', array(__CLASS__, 'classic_order'), 20, 3);

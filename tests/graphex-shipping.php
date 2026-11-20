@@ -33,8 +33,11 @@ echo "OK\n";
 
 
 define('ABSPATH', __DIR__);
-function add_action(...$args) {}
-function add_filter(...$args) {}
+function add_action($hook, $callback, $priority = 10, $accepted_args = 1) { add_filter($hook, $callback, $priority, $accepted_args); }
+function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
+    $method = new ReflectionMethod($callback[0], $callback[1]);
+    check($method->getNumberOfRequiredParameters() <= $accepted_args, "hook arguments for $hook");
+}
 function WC() {
     return (object) array('countries' => new class {
         public function get_states($country) { return array('C' => 'CABA', 'B' => 'Buenos Aires'); }
