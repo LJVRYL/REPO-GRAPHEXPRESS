@@ -5,10 +5,12 @@ defined( 'ABSPATH' ) || exit;
 /** Staff-issued commercial documents attached to a WooCommerce order. */
 require_once __DIR__ . '/class-ge-wtp-billing-issuers.php';
 require_once __DIR__ . '/class-ge-wtp-arca-emission.php';
+require_once __DIR__ . '/class-ge-wtp-customer-work-documents.php';
 
 final class GE_WTP_Issued_Documents {
     public static function init() {
         GE_WTP_ARCA_Emission::init();
+        GE_WTP_Customer_Work_Documents::init();
         add_action( 'admin_post_ge_issued_document_attach', array( __CLASS__, 'handle_attach' ) );
     }
 
@@ -29,6 +31,7 @@ final class GE_WTP_Issued_Documents {
     }
 
     public static function render_staff( $order, $include_emission = true ) {
+        GE_WTP_Customer_Work_Documents::render($order,true);
         if(!GE_WTP_Customer_Invoices::staff(get_current_user_id()))return;
         if($include_emission)GE_WTP_ARCA_Emission::render_staff( $order );
         $documents = GE_WTP_Documents::issued_documents( $order->get_id(), true );
@@ -53,6 +56,7 @@ final class GE_WTP_Issued_Documents {
     }
 
     public static function render_portal( $order ) {
+        GE_WTP_Customer_Work_Documents::render($order,false);
         $documents = GE_WTP_Documents::issued_documents( $order->get_id() );
         echo '<section class="ge-panel ge-issued-documents"><span class="ge-eyebrow">Facturación</span><h2>Facturas y documentos emitidos</h2>';
         if ( ! $documents ) { echo '<p>La factura estará disponible acá cuando se cargue.</p>'; }
