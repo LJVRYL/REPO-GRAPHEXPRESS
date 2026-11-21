@@ -152,7 +152,7 @@ final class GE_WTP_Customer_Work_Documents {
         if(self::allowed($order,'work'))echo '<p><a class="ge-staff-button is-secondary" href="'.esc_url(self::url($order,'work')).'">Descargar orden de trabajo</a></p>';
         if(self::allowed($order,'receipt')){$m=self::model($order,'receipt');if(!is_wp_error($m))echo '<p><a class="ge-staff-button is-secondary" href="'.esc_url(self::url($order,'receipt')).'">Descargar recibo X</a> 路 Total recibido '.esc_html(self::money($m['paid'],$m['currency'])).'</p>';else echo '<p>'.esc_html($m->get_error_message()).'</p>';}
         $m=self::model($order,'work');$ack=$order->get_meta(self::ACK_META,true);$current=is_array($ack)&&($ack['revision']??'')===$m['revision'];
-        if(is_array($ack)&&!empty($ack['comment']))echo '<p>Observaci髇: '.esc_html($ack['comment']).'</p>';
+        if(is_array($ack)&&!empty($ack['comment']))echo '<p>Observaci贸n: '.esc_html($ack['comment']).'</p>';
         if($ack)echo '<p>Conformidad: '.esc_html(($ack['decision']??'')==='accepted'?'Conforme':'Con observaciones').($current?'':' 路 corresponde a una versi贸n anterior').'</p>';
         if(!$staff && GE_WTP_Portal::customer_owns_order($order,get_current_user_id())){
             echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="ge_customer_work_ack"><input type="hidden" name="order_id" value="'.absint($order->get_id()).'"><input type="hidden" name="revision" value="'.esc_attr($m['revision']).'">';wp_nonce_field('ge_customer_work_ack_'.$order->get_id());
