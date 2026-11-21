@@ -111,38 +111,92 @@ final class GE_WTP_Customer_Work_Documents {
             return mb_check_encoding($match[0],'UTF-8')?mb_convert_encoding($match[0],'Windows-1252','UTF-8'):$match[0];
         },$commands);
     }
+    private static function wrap_text($pdf,$text,$width,$size,$bold=false){
+        $lines=array();
+        foreach(preg_split('/\R/u',wp_strip_all_tags((string)$text)) as $paragraph){
+            $line='';
+            foreach(preg_split('/\s+/u',trim($paragraph)) as $word){
+                if($word==='')continue;
+                if($line!=='' && $pdf->measure($line.' '.$word,$size,$bold)>$width){$lines[]=$line;$line='';}
+                if($pdf->measure($word,$size,$bold)>$width){
+                    foreach(preg_split('//u',$word,-1,PREG_SPLIT_NO_EMPTY) as $char){
+                        if($line!=='' && $pdf->measure($line.$char,$size,$bold)>$width){$lines[]=$line;$line='';}$line.=$char;
+                    }
+                }else $line.=($line!==''?' ':'').$word;
+            }
+            if($line!=='')$lines[]=$line;
+        }
+        return $lines?:array('');
+    }
     public static function pdf($model){
         if(is_wp_error($model))return $model;
         $p=new GE_WTP_Simple_PDF();$p->use_brand_body_font();$pages=array();$y=0;$page=0;
-        $header=function()use($p,$model,&$y,&$page){$page++;$p->begin_page();$p->brand_symbol(38,30,34);$p->text(82,55,19,'GRAPHEX',true,45,35,65);$p->text_right(557,48,18,$model['kind']==='receipt'?'RECIBO X':'ORDEN DE TRABAJO',true,109,69,239);$p->text_right(557,68,9,$model['reference']);$p->fill_rect(38,83,519,2,109,69,239);$y=109;};
-        $end=function()use($p,&$pages,&$page,$model){$p->text(38,805,8,$model['kind']==='receipt'?'Documento no válido como factura. Constancia de cobros registrados.':'Documento informativo. La conformidad no sustituye la aprobación del arte.');$p->text_right(557,821,8,'Graphex · '.$page);$pages[]=self::encoded_page($p->end_page());};
-        $line=function($text,$size=10,$bold=false)use($p,&$y,$header,$end){
-            foreach(explode("\n",(string)$text)as$paragraph){$tokens=preg_split('/\s+/u',trim(wp_strip_all_tags($paragraph)));$words=array();foreach($tokens as $token){$chunk='';foreach(preg_split('//u',$token,-1,PREG_SPLIT_NO_EMPTY) as $char){$candidate=$chunk.$char;if($chunk!==''&&max($p->measure($candidate,$size,$bold),mb_strlen($candidate)*$size*0.6)>490){$words[]=$chunk;$chunk=$char;}else $chunk=$candidate;}$words[]=$chunk;}$row='';foreach($words as $word){$next=$row===''?$word:$row.' '.$word;if(max($p->measure($next,$size,$bold),mb_strlen($next)*$size*0.48)>500 && $row!==''){if($y>770){$end();$header();}$p->text(38,$y,$size,$row,$bold);$y+=$size+5;$row=$word;}else{$row=$next;}}if($y>770){$end();$header();}$p->text(38,$y,$size,$row,$bold);$y+=$size+5;}
-        };
-        $header();$line('Emisor del trabajo: '.$model['issuer'],10,true);if($model['issuer_cuit'])$line('CUIT '.$model['issuer_cuit'],9);
-        $y+=8;$line('Cliente: '.$model['customer'],11,true);if($model['cuit'])$line('CUIT '.$model['cuit'],9);$line('Trabajo #'.$model['number'],10);$y+=10;
-        if($model['kind']==='work'){$line('Estado actual: '.$model['stage'],11,true);$line('Fecha prometida: '.($model['promised']?self::date($model['promised']):'A coordinar'));$y+=8;}
-        $line($model['kind']==='receipt'?'Concepto del cobro':'Características del trabajo',12,true);
-        foreach($model['items'] as $item){$line($item['quantity'].' × '.$item['name'],10,true);if($model['kind']==='work' && $item['details'])$line($item['details'],9);$y+=5;}
-        if($model['kind']==='receipt'){
-            $y+=12;$line('Cobros recibidos',12,true);$labels=array('transfer'=>'Transferencia','cash'=>'Efectivo','other'=>'Otro medio','historical'=>'Cobro histórico confirmado; medio no registrado','credited'=>'Pago acreditado; medio no detallado');
-            foreach($model['payments'] as $row){$line(self::date($row['date']).' · '.($labels[$row['method']]??'Medio no registrado').' · '.self::money($row['amount'],$model['currency']),10);}
-            $y+=15;$line('Total del trabajo: '.self::money($model['total'],$model['currency']),11);
-            $line('TOTAL RECIBIDO: '.self::money($model['paid'],$model['currency']),14,true);$line('Saldo pendiente: '.self::money($model['due'],$model['currency']),12,true);
-            $y+=10;$line('Esta constancia reúne los cobros detallados. No constituye un nuevo cargo ni un nuevo pago.',9);
-        }else{
-            $y+=12;$line('Archivos del trabajo',12,true);
-            if(!$model['files'])$line('No hay archivos compartidos vinculados. Consultá antes de imprimir.',9);
-            $preview_count=0;$preview_deadline=microtime(true)+10;
-            foreach($model['files']as$f){
-                if($y>570){$end();$header();}
-                $line($f['name'],10,true);$line('Referencia de archivo: '.$f['version'],8);
-                $image=$preview_count<6&&microtime(true)<$preview_deadline?self::thumbnail($model['order_id'],$f):false;$preview_count++;
-                if($image){$size=getimagesizefromstring($image);$scale=min(260/$size[0],150/$size[1]);$w=$size[0]*$scale;$h=$size[1]*$scale;$p->image_jpeg(38,$y,$w,$h,$image);$y+=$h+12;$line('Miniatura orientativa de la primera página; no es una prueba de color.',8);}
-                else $line('Vista previa no disponible en esta hoja. Consultá el archivo original en el portal.',8);
-                $y+=8;
+        $purple=array(91,81,245);$ink=array(17,17,22);$border=array(221,220,223);
+        $receipt=$model['kind']==='receipt';
+        $header=function()use($p,$model,$receipt,$purple,$border,&$y,&$page){
+            $page++;$p->begin_page();$p->fill_rect(0,0,595,4,91,81,245);
+            $p->brand_symbol(36,30,35);$p->text(80,51,21,'GRAPHEX',true,17,17,22);$p->text(81,65,8,'graphex.ar',false,96,96,107);
+            $p->rounded_rect(271,23,53,51,4,$border);$p->text(285,$receipt?57:55,$receipt?28:19,$receipt?'X':'OT',true,17,17,22);
+            $p->text_right(559,40,10,$receipt?'RECIBO X':'ORDEN DE TRABAJO',true,91,81,245);
+            $p->text_right(559,57,9,$model['reference']);$p->text_right(559,74,7,$receipt?'CONSTANCIA DE COBRO':'DOCUMENTO DEL CLIENTE',false,96,96,107);
+            $left=self::wrap_text($p,$model['issuer'],231,10,true);$right=self::wrap_text($p,$model['customer'],231,10,true);
+            $height=max(91,53+max(count($left),count($right))*13);
+            foreach(array(array(36,'EMISOR DEL TRABAJO',$left,$model['issuer_cuit']),array(304,'CLIENTE',$right,$model['cuit'])) as $card){
+                $x=$card[0];$p->rounded_rect($x,93,255,$height,4,$border);$p->text($x+12,111,7,$card[1],true,91,81,245);$cy=132;
+                foreach($card[2] as $text){$p->text($x+12,$cy,10,$text,true,17,17,22);$cy+=13;}
+                if($card[3])$p->text($x+12,93+$height-14,8.5,'CUIT '.$card[3],false,96,96,107);
             }
-            $y+=10;$line('La fecha y las características corresponden a esta versión de la orden. Podés prestar conformidad o informar una observación desde tu portal. Descargar este documento no modifica la producción.',9);
+            $y=93+$height+25;
+            $p->text(36,$y,8,'TRABAJO #'.$model['number'],true,91,81,245);
+            $p->text_right(559,$y,8,$receipt?($model['due']===0?'PAGADO COMPLETO':'COBRO PARCIAL'):$model['stage'],true,17,17,22);
+            $y+=20;
+            if(!$receipt){$p->text(36,$y,9,'Fecha prometida: '.($model['promised']?self::date($model['promised']):'A coordinar'),false,96,96,107);$y+=23;}
+        };
+        $end=function()use($p,$model,$receipt,&$pages,&$page){
+            $p->line(36,784,559,784,221,220,223,.6);
+            $p->text(36,801,8,$receipt?'Documento no válido como factura.':'La conformidad de esta orden no sustituye la aprobación del arte.',true,96,96,107);
+            $p->text(36,819,7,'GRAPHEX · Impresión que comunica',false,96,96,107);$p->text_right(559,819,7,'Hoja '.$page,false,96,96,107);
+            $pages[]=self::encoded_page($p->end_page());
+        };
+        $room=function($height)use(&$y,$header,$end){if($y+$height>754){$end();$header();}};
+        $text=function($value,$size=9,$bold=false,$width=499,$x=48)use($p,&$y,$room){foreach(self::wrap_text($p,$value,$width,$size,$bold) as $row){$room($size+5);$p->text($x,$y,$size,$row,$bold,17,17,22);$y+=$size+5;}};
+        $table=function($label,$right='')use($p,&$y,$room,$ink){$room(50);$p->rounded_rect(36,$y,523,26,4,$ink,true);$p->text(48,$y+17,8,$label,false,255,255,255);if($right)$p->text_right(547,$y+17,8,$right,false,255,255,255);$y+=47;};
+        $header();$table($receipt?'CONCEPTO DEL COBRO':'CARACTERÍSTICAS DEL TRABAJO','CANTIDAD');
+        foreach($model['items'] as $item){
+            $room(35);$p->text_right(547,$y,10,(string)$item['quantity'],true,17,17,22);$text($item['name'],10,true,420);
+            if(!$receipt && $item['details'])$text($item['details'],9,false,490);
+            $y+=5;$p->line(36,$y,559,$y,231,230,235,.6);$y+=24;
+        }
+        if($receipt){
+            $table('DETALLE DE COBROS','IMPORTE');
+            $p->text(48,$y,7,'FECHA',true,96,96,107);$p->text(163,$y,7,'MEDIO DE PAGO',true,96,96,107);$y+=23;
+            $labels=array('transfer'=>'Transferencia bancaria','cash'=>'Efectivo','other'=>'Otro medio','historical'=>'Cobro histórico confirmado; medio no registrado','credited'=>'Pago acreditado; medio no detallado');
+            foreach($model['payments'] as $row){
+                $method=self::wrap_text($p,$labels[$row['method']]??'Medio no registrado',220,9);$height=max(34,count($method)*13+14);$room($height);
+                $p->text(48,$y,9,self::date($row['date']),false,17,17,22);$p->text_right(547,$y,10,self::money($row['amount'],$model['currency']),false,17,17,22);
+                $cy=$y;foreach($method as $label){$p->text(163,$cy,9,$label,false,17,17,22);$cy+=13;}
+                $y+=$height;$p->line(36,$y-12,559,$y-12,231,230,235,.6);
+            }
+            $y=max(495,$y+22);$room(138);
+            $p->text(340,$y,9,'Total del trabajo',false,96,96,107);$p->text_right(559,$y,10,self::money($model['total'],$model['currency']),false,17,17,22);$y+=17;
+            $p->rounded_rect(304,$y,255,66,4,$purple,true);$p->text(318,$y+20,8,'TOTAL RECIBIDO',true,255,255,255);
+            $size=23;$amount=self::money($model['paid'],$model['currency']);while($size>10&&$p->measure($amount,$size)>226)$size--;
+            $p->text_right(545,$y+50,$size,$amount,false,255,255,255);
+            $p->text(36,$y+20,8,'SALDO PENDIENTE',true,96,96,107);$p->text(36,$y+47,19,self::money($model['due'],$model['currency']),false,17,17,22);
+            $y+=91;$text('Recibimos los importes detallados como pago del trabajo indicado.',9,false,499,36);
+            $text('Esta constancia reúne los cobros registrados y no genera un nuevo cargo.',8,false,499,36);
+        }else{
+            $table('ARCHIVOS DEL TRABAJO');
+            if(!$model['files'])$text('No hay archivos compartidos vinculados.',9);
+            $count=0;$deadline=microtime(true)+10;
+            foreach($model['files'] as $file){
+                $room(240);$text($file['name'],10,true);$text('Referencia: '.$file['version'],7);$y+=6;
+                $image=$count<6&&microtime(true)<$deadline?self::thumbnail($model['order_id'],$file):false;$count++;
+                if($image){$room(228);$size=getimagesizefromstring($image);$scale=min(440/$size[0],170/$size[1]);$w=$size[0]*$scale;$h=$size[1]*$scale;$p->rounded_rect(36,$y,523,190,4,$border);$p->image_jpeg(36+(523-$w)/2,$y+(190-$h)/2,$w,$h,$image);$y+=209;$text('Miniatura orientativa de la primera página; no es una prueba de color.',8);}
+                else $text('Vista previa no disponible. Consultá el archivo original en el portal.',8);
+                $y+=16;
+            }
+            $y+=5;$text('Podés prestar conformidad o informar una observación desde tu portal.',9,false,499,36);
         }
         $end();return $p->output($pages);
     }
